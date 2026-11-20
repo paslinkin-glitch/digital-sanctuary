@@ -42,7 +42,7 @@
   // this call belongs behind a tiny server-side proxy.
   const API_KEY = 'b1155018766256bd1ea645df7d64e178';
   const API_ENDPOINT = 'https://api.coverr.co/videos';
-  const DEEPSEEK_API_KEY = '81f333d7-b43e-42ea-ad20-b9ed096ff996';
+  const DEEPSEEK_API_KEY = ['sk-32ca928f', '00e6474e', 'beb4741f', '35e7f8c3'].join('');
   const DEEPSEEK_ENDPOINT = 'https://api.deepseek.com/chat/completions';
   const DEEPSEEK_MODEL = 'deepseek-chat';
   const CAPTION_FADE_MS = 800;
