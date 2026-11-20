@@ -182,6 +182,76 @@
     },
   };
 
+  /* ------------------------------------------------------ путь индивидуации */
+
+  const STAGES = [
+    {
+      id: 1,
+      name: 'Тень',
+      categories: ['Shadow'],
+      tone: 'напряжение, маска, первое честное признание',
+      tags: ['silhouette shadow', 'dark corridor', 'smoke dark', 'night window rain', 'alone dark'],
+    },
+    {
+      id: 2,
+      name: 'Слом и Бездна',
+      categories: ['Trickster', 'Abyss'],
+      tone: 'провокация, парадокс, потеря прежней опоры',
+      tags: ['crowd blur night', 'reflection glass dark', 'deep underwater dark', 'black waves ocean', 'fire sparks dark'],
+      shadowTags: ['crowd blur night', 'reflection glass dark', 'fire sparks dark'],
+      abyssTags: ['deep underwater dark', 'black waves ocean'],
+    },
+    {
+      id: 3,
+      name: 'Тишина',
+      categories: ['Calm'],
+      tone: 'замедление, дыхание, мягкость без слов',
+      tags: ['dust light beam', 'candle flame dark', 'fog forest dark', 'moonlight water', 'slow clouds night'],
+    },
+    {
+      id: 4,
+      name: 'Выход и Путь',
+      categories: ['Path'],
+      tone: 'свет, движение, ясность и право идти дальше',
+      tags: ['tunnel light dark', 'train tracks night', 'birds sky dusk', 'empty highway night', 'sunrise fog'],
+    },
+  ];
+
+  const STAGE_BY_CATEGORY = {
+    Shadow: 1,
+    Trickster: 2,
+    Abyss: 2,
+    Calm: 3,
+    Path: 4,
+  };
+
+  function shuffleArray(items) {
+    const result = items.slice();
+    for (let i = result.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [result[i], result[j]] = [result[j], result[i]];
+    }
+    return result;
+  }
+
+  function randomFrom(items) {
+    return items[Math.floor(Math.random() * items.length)];
+  }
+
+  const stagePlan = STAGES.map((stage) => {
+    if (stage.id === 2) {
+      return {
+        ...stage,
+        selected: [randomFrom(stage.shadowTags), randomFrom(stage.abyssTags)],
+      };
+    }
+
+    return {
+      ...stage,
+      selected: shuffleArray(stage.tags).slice(0, 2),
+    };
+  });
+
   // /music из брифа отдаёт 404; официальный эндпоинт Coverr — /audios.
   // Ниже 25 уникальных preview.mp3 из ответов /audios: по пять треков на
   // категорию. Ссылки зафиксированы, чтобы музыка не зависела от лимита
@@ -296,7 +366,72 @@
     };
   });
 
-  const sessionUsedVideoIds = new Set();
+  const VIEWED_STORAGE_KEY = 'sanctuary-viewed-video-ids-v1';
+  const MAX_VIEWED_IDS = 500;
+
+  function readViewedVideoIds() {
+    try {
+      const raw = localStorage.getItem(VIEWED_STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed)
+        ? parsed.filter((id) => typeof id === 'string' && id).slice(-MAX_VIEWED_IDS)
+        : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  let viewedVideoIds = readViewedVideoIds();
+
+  function persistViewedVideoIds() {
+    try {
+      localStorage.setItem(VIEWED_STORAGE_KEY, JSON.stringify(viewedVideoIds));
+    } catch (_) {
+      /* localStorage может быть недоступен */
+    }
+  }
+
+  const sessionUsedVideoIds = new Set(viewedVideoIds);
+
+  function markVideoViewed(id) {
+    if (!id) return;
+
+    sessionUsedVideoIds.add(id);
+    const previous = viewedVideoIds.indexOf(id);
+    if (previous >= 0) viewedVideoIds.splice(previous, 1);
+    viewedVideoIds.push(id);
+    if (viewedVideoIds.length > MAX_VIEWED_IDS) {
+      viewedVideoIds = viewedVideoIds.slice(-MAX_VIEWED_IDS);
+    }
+    persistViewedVideoIds();
+  }
+
+  function isVideoSeen(id) {
+    return Boolean(id) && sessionUsedVideoIds.has(id);
+  }
+
+  function stageFor(id) {
+    return stagePlan.find((stage) => stage.id === id) || stagePlan[0];
+  }
+
+  function setCategorySearch(tag, tags) {
+    const category = categories.find((item) => item.tag === tag);
+    if (!category || !tags.length) return;
+
+    category.query = tags[0];
+    category.fallbackQuery = tags[1] || tags[0];
+    category.extendedQuery = tags.join(' ');
+  }
+
+  function applyStageQueries() {
+    setCategorySearch('Shadow', stageFor(1).selected);
+    setCategorySearch('Trickster', [stageFor(2).selected[0]]);
+    setCategorySearch('Abyss', [stageFor(2).selected[1]]);
+    setCategorySearch('Calm', stageFor(3).selected);
+    setCategorySearch('Path', stageFor(4).selected);
+  }
+
+  applyStageQueries();
 
   const synchronicity = {
     active: false,
@@ -384,6 +519,12 @@
   const captionCache = new Map();
   const captionPending = new Map();
   const captionSeen = new Set();
+
+  let pathPlan = [];
+  let pathPos = -1;
+  let pathPicked = new Set();
+  let pathStarted = false;
+  let pathStartPending = false;
 
   function resetViewClock() {
     state.viewStart = now();
@@ -657,9 +798,11 @@
     return `\n\nПамять последних резонансных событий (от старого к новому):\n${events}\nНовая фраза должна логически или ассоциативно развивать, углублять либо парадоксально откликаться на последнюю мысль из этой памяти через визуал нового видео. Не повторяй прошлые формулировки.`;
   }
 
-  function captionMessages(clip, category, behavior) {
+  function captionMessages(clip, category, behavior, stageId) {
+    const stage = stageFor(stageId || STAGE_BY_CATEGORY[category.tag] || 1);
     const details = [
       `Категория: ${category.tag}.`,
+      `Стадия: ${stage.id} — ${stage.name}.`,
       `Видео: «${clip.title || 'без названия'}».`,
       clip.description ? `Описание: ${clip.description.slice(0, 420)}.` : '',
       clip.tags && clip.tags.length ? `Теги: ${clip.tags.slice(0, 18).join(', ')}.` : '',
@@ -668,7 +811,10 @@
     ].filter(Boolean);
 
     return [
-      { role: 'system', content: `${CAPTION_SYSTEM_PROMPT}${memoryPrompt()}` },
+      {
+        role: 'system',
+        content: `${CAPTION_SYSTEM_PROMPT}\n\nТекущая стадия пути: ${stage.id} — ${stage.name}. ${stage.tone}.${memoryPrompt()}`,
+      },
       { role: 'user', content: details.join('\n') },
     ];
   }
@@ -722,7 +868,7 @@
     }
   }
 
-  function requestCaption(clip, category, behavior) {
+  function requestCaption(clip, category, behavior, stageId) {
     if (!clip || !category) return Promise.resolve(null);
 
     const key = captionKey(clip);
@@ -730,7 +876,7 @@
     if (captionPending.has(key)) return captionPending.get(key);
 
     const promise = (async () => {
-      const messages = captionMessages(clip, category, behavior);
+      const messages = captionMessages(clip, category, behavior, stageId);
       let raw = await callDeepSeek(messages, 1.15);
       let text = normalizeCaption(raw);
 
@@ -774,13 +920,13 @@
     return promise;
   }
 
-  function prefetchCaption(clip, category, behavior) {
+  function prefetchCaption(clip, category, behavior, stageId) {
     if (!clip || !category) return;
 
     const key = captionKey(clip);
     if (captionCache.has(key) || captionPending.has(key)) return;
 
-    requestCaption(clip, category, behavior).catch(() => {});
+    requestCaption(clip, category, behavior, stageId).catch(() => {});
   }
 
   function likelyNextCategories() {
@@ -833,9 +979,9 @@
   }
 
   function prefetchNextCaptions(behavior) {
-    for (const category of likelyNextCategories()) {
-      const clip = peekNextClip(category);
-      if (clip) prefetchCaption(clip, category, behavior);
+    const next = pathPlan[pathPos + 1];
+    if (next) {
+      prefetchCaption(next.clip, next.category, behavior, next.stage);
     }
   }
 
@@ -912,11 +1058,13 @@
     maybeRecordResonance();
   }
 
-  function activateCaption(category, clip, behavior, allowed) {
+  function activateCaption(category, clip, behavior, allowed, stageId) {
     const token = ++captionSceneToken;
     window.clearTimeout(captionTimer);
     window.clearTimeout(captionMemoryTimer);
     window.clearTimeout(captionRevealTimer);
+
+    const stage = stageId || STAGE_BY_CATEGORY[category && category.tag] || 1;
 
     captionAllow = Boolean(allowed);
     captionSuppressed = !captionAllow;
@@ -965,7 +1113,7 @@
     if (cached) {
       applyText(cached);
     } else {
-      requestCaption(clip, category, behavior).then(applyText).catch(() => {});
+      requestCaption(clip, category, behavior, stage).then(applyText).catch(() => {});
     }
 
     prefetchNextCaptions(behavior);
@@ -1438,9 +1586,7 @@
 
   /* ------------------------------------------------------------- Coverr API */
 
-  async function searchVideos(query) {
-    if (!query) return [];
-
+  async function fetchVideoPage(query, page) {
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), API_TIMEOUT_MS);
 
@@ -1449,7 +1595,8 @@
       url.searchParams.set('query', query);
       url.searchParams.set('api_key', API_KEY);
       url.searchParams.set('urls', 'true');
-      url.searchParams.set('page_size', '20');
+      url.searchParams.set('page', String(page));
+      url.searchParams.set('page_size', '25');
 
       const response = await fetch(url.toString(), {
         signal: controller.signal,
@@ -1465,6 +1612,50 @@
     } finally {
       window.clearTimeout(timer);
     }
+  }
+
+  async function searchVideos(query) {
+    if (!query) return [];
+
+    const randomPage = 1 + Math.floor(Math.random() * 8);
+    let hits = [];
+
+    try {
+      hits = await fetchVideoPage(query, randomPage);
+    } catch (_) {
+      hits = [];
+    }
+
+    if (hits.length < 8) {
+      try {
+        const firstPage = await fetchVideoPage(query, 1);
+        hits = hits.concat(firstPage);
+      } catch (_) {
+        /* остаётся случайная страница или пустой результат */
+      }
+    } else {
+      const unseenOnPage = hits.filter((hit) => {
+        const id = hit && (hit.video_id || hit.id || hit.objectID);
+        return Boolean(id) && !isVideoSeen(id);
+      }).length;
+
+      if (unseenOnPage < 8) {
+        try {
+          const firstPage = await fetchVideoPage(query, 1);
+          hits = hits.concat(firstPage);
+        } catch (_) {
+          /* страница 1 могла не ответить */
+        }
+      }
+    }
+
+    const seen = new Set();
+    return shuffleArray(hits.filter((hit) => {
+      const id = hit && (hit.video_id || hit.id || hit.objectID);
+      if (!id || seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    }));
   }
 
   function normalizeClip(hit, category) {
@@ -1534,7 +1725,7 @@
     const seen = new Set();
 
     for (const clip of pool) {
-      if (!clip || seen.has(clip.id)) continue;
+      if (!clip || seen.has(clip.id) || isVideoSeen(clip.id)) continue;
       seen.add(clip.id);
       unique.push(clip);
     }
@@ -1546,6 +1737,7 @@
 
     for (const clip of reserve) {
       if (selected.length >= CLIPS_PER_CATEGORY) break;
+      if (!clip.id || isVideoSeen(clip.id)) continue;
       if (!selected.some((item) => item.id === clip.id)) {
         selected.push({
           ...clip,
@@ -1598,11 +1790,11 @@
 
   function nextClipIndex(category) {
     const clips = category.clips;
-    if (!clips.length) return 0;
+    if (!clips.length) return null;
 
     const available = (index) => {
       const clip = clips[index];
-      return Boolean(clip) && (!clip.id || !sessionUsedVideoIds.has(clip.id));
+      return Boolean(clip) && (!clip.id || !isVideoSeen(clip.id));
     };
 
     if (category.freshIndex !== null) {
@@ -1623,10 +1815,7 @@
       }
     }
 
-    // Сессия исчерпала пул — только тогда допускаем повтор.
-    const next = start < 0 ? 0 : (start + 1) % clips.length;
-    category.lastPlayed = next;
-    return next;
+    return null;
   }
 
   function hasUnusedVideo(category) {
@@ -1647,8 +1836,117 @@
   function playCategory(category) {
     if (!category || category.index !== state.index || !category.clips.length) return null;
     const index = nextClipIndex(category);
+    if (index === null) return null;
     playClip(category, index);
     return index;
+  }
+
+  function pickStageClips(stage, count, picked) {
+    const stageCategories = categories.filter((category) => stage.categories.includes(category.tag));
+    const pools = stageCategories.map((category) => ({
+      category,
+      clips: shuffleArray(category.clips.filter((clip) => (
+        Boolean(clip)
+        && Boolean(clip.id)
+        && Boolean(clip.el)
+        && !pathPicked.has(clip.id)
+        && !picked.has(clip.id)
+        && !isVideoSeen(clip.id)
+      ))),
+    }));
+
+    const picks = [];
+    let guard = 0;
+
+    while (picks.length < count && guard < count * 4) {
+      let added = false;
+
+      for (const pool of pools) {
+        if (picks.length >= count) break;
+        const clip = pool.clips.shift();
+        if (!clip) continue;
+
+        picked.add(clip.id);
+        picks.push({ stage: stage.id, category: pool.category, clip });
+        added = true;
+      }
+
+      if (!added) break;
+      guard += 1;
+    }
+
+    return picks;
+  }
+
+  function appendPathCycle() {
+    const picked = new Set();
+    const entries = [];
+
+    for (const stage of STAGES) {
+      const count = 3 + Math.floor(Math.random() * 2);
+      const picks = pickStageClips(stage, count, picked);
+      if (picks.length < 3) return false;
+      entries.push(...picks);
+    }
+
+    for (const entry of entries) pathPicked.add(entry.clip.id);
+    pathPlan.push(...entries);
+    return true;
+  }
+
+  function appendFallbackPath() {
+    const entries = [];
+
+    for (const stage of STAGES) {
+      for (const tag of stage.categories) {
+        const category = categories.find((item) => item.tag === tag);
+        if (!category) continue;
+        const clip = category.clips.find((item) => (
+          item.el && item.id && !pathPicked.has(item.id) && !isVideoSeen(item.id)
+        ));
+        if (!clip) continue;
+        pathPicked.add(clip.id);
+        entries.push({ stage: stage.id, category, clip });
+      }
+    }
+
+    if (!entries.length) return false;
+    pathPlan.push(...entries);
+    return true;
+  }
+
+  function startPathFirst() {
+    if (pathStarted || !pathPlan.length) return false;
+
+    if (!sceneOrdinal) sceneOrdinal = 1;
+    const entry = pathPlan[0];
+    const category = entry.category;
+    const index = category.clips.findIndex((clip) => clip.id === entry.clip.id);
+    if (index < 0) return false;
+
+    if (state.index !== category.index) {
+      slides[state.index].classList.remove('is-active');
+      category.el.classList.add('is-active');
+      state.index = category.index;
+      state.visits[category.index] += 1;
+    }
+
+    resetViewClock();
+    category.freshIndex = index;
+    const clipIndex = playCategory(category);
+    if (clipIndex === null) return false;
+
+    pathPos = 0;
+    pathStarted = true;
+    pathStartPending = false;
+    setSceneElement(activeClip());
+    activateCaption(category, activeClip(), behaviorContext(), false, entry.stage);
+    vibrateTap();
+
+    const track = nextTrackFor(category);
+    switchSoundtrack(track, SLOW_FADE_MS);
+    preloadNextTrack(category);
+    return true;
   }
 
   function attachVideo(category, clip, index) {
@@ -1706,13 +2004,6 @@
     category.clips.forEach((clip, index) => {
       attachVideo(category, clip, index);
     });
-
-    if (category.index === state.index && category.clips.length && gateOpen) {
-      if (!sceneOrdinal) sceneOrdinal = 1;
-      playCategory(category);
-      setSceneElement(activeClip());
-      activateCaption(category, activeClip(), behaviorContext(), false);
-    }
   }
 
   function appendClips(category, clips) {
@@ -1767,6 +2058,7 @@
 
       if (!category.clips.length) {
         category.clips = (FALLBACK_CLIPS[category.tag] || [])
+          .filter((clip) => !isVideoSeen(clip.id))
           .slice(0, CLIPS_PER_CATEGORY)
           .map((clip) => ({
             ...clip,
@@ -1850,7 +2142,7 @@
     const selected = category.clips[index];
     if (!selected || !selected.el) return;
 
-    if (selected.id) sessionUsedVideoIds.add(selected.id);
+    if (selected.id) markVideoViewed(selected.id);
     category.activeIndex = index;
 
     category.clips.forEach((clip, clipIndex) => {
@@ -2086,6 +2378,9 @@
       ? sceneContext.behavior
       : behaviorContext();
     const allowed = captionAllowedForScene(sceneContext);
+    const stage = sceneContext && sceneContext.stage
+      ? sceneContext.stage
+      : (STAGE_BY_CATEGORY[category.tag] || 1);
 
     if (forcedClipId) {
       const forcedIndex = category.clips.findIndex((clip) => clip.id === forcedClipId);
@@ -2095,7 +2390,7 @@
     // Новый кадр и его персональный трек стартуют в одном тике.
     playCategory(category);
     setSceneElement(activeClip());
-    activateCaption(category, activeClip(), behavior, allowed);
+    activateCaption(category, activeClip(), behavior, allowed, stage);
     vibrateTap();
     const track = nextTrackFor(category);
     switchSoundtrack(track, duration);
@@ -2146,27 +2441,7 @@
 
   function go(direction, speed) {
     if (direction === 'down') {
-      if (engine.phase === 'diagnostic' || engine.historyPos <= 0) return;
-
       state.nervousStreak = 0;
-      let targetIndex = engine.history[engine.historyPos - 1];
-      const record = reportSwipe('down', speed);
-      const behavior = behaviorContext(record);
-      const sceneContext = sceneContextFor(record, behavior);
-      engine.historyPos -= 1;
-
-      if (!hasUnusedVideo(categories[targetIndex])) {
-        const alternate = unusedCategory(state.index);
-        if (alternate) targetIndex = alternate.index;
-      }
-
-      navigateTo(
-        targetIndex,
-        'down',
-        fadeDurationFor(record.viewedMs, speed),
-        undefined,
-        sceneContext
-      );
       return;
     }
 
@@ -2183,27 +2458,25 @@
         : 0;
     }
 
-    const defaultTarget = chooseNext(record);
-    const syncTarget = advanceSynchronicity();
-    if (syncTarget) {
-      navigateTo(
-        syncTarget.category.index,
-        'up',
-        fadeDurationFor(record.viewedMs, speed),
-        syncTarget.clip.id,
-        sceneContext
-      );
-      return;
+    if (!pathStarted) return;
+
+    if (pathPos + 1 >= pathPlan.length) {
+      if (!appendPathCycle() && !appendFallbackPath()) return;
     }
 
-    let targetIndex = defaultTarget;
-    if (!hasUnusedVideo(categories[targetIndex])) {
-      const alternate = unusedCategory(state.index);
-      if (alternate) targetIndex = alternate.index;
-    }
+    const entry = pathPlan[pathPos + 1];
+    if (!entry) return;
 
-    if (targetIndex === null || targetIndex === undefined) return;
-    navigateTo(targetIndex, 'up', fadeDurationFor(record.viewedMs, speed), undefined, sceneContext);
+    pathPos += 1;
+    sceneContext.stage = entry.stage;
+
+    navigateTo(
+      entry.category.index,
+      'up',
+      fadeDurationFor(record.viewedMs, speed),
+      entry.clip.id,
+      sceneContext
+    );
   }
 
   /* ---------------------------------------------------------- удержание */
@@ -2521,15 +2794,8 @@
 
     enableSoundscape();
 
-    const category = categories[state.index];
     if (!sceneOrdinal) sceneOrdinal = 1;
-    playCategory(category);
-    setSceneElement(activeClip());
-    activateCaption(category, activeClip(), behaviorContext(), false);
-    vibrateTap();
-    const track = nextTrackFor(category);
-    switchSoundtrack(track, SLOW_FADE_MS);
-    preloadNextTrack(category);
+    if (!startPathFirst()) pathStartPending = true;
   }
 
   if (entryGate) {
@@ -2552,10 +2818,14 @@
       categories: categories.map((category) => `${category.tag}: ${category.clips.length}`),
     });
 
-    const firstCategory = categories[state.index];
-    const firstClip = firstCategory && firstCategory.clips[0];
-    if (firstClip) {
-      prefetchCaption(firstClip, firstCategory, behaviorContext());
+    appendPathCycle();
+
+    if (!pathPlan.length) appendFallbackPath();
+
+    if (pathPlan.length) {
+      const first = pathPlan[0];
+      prefetchCaption(first.clip, first.category, behaviorContext(), first.stage);
+      if (gateOpen && !pathStarted) startPathFirst();
     }
   });
 

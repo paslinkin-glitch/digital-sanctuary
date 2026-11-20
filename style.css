@@ -246,7 +246,7 @@ body {
   object-fit: cover;
   background: #000;
   opacity: 0;
-  filter: brightness(0.82) saturate(0.9);
+  filter: contrast(1.12) saturate(0.68) brightness(0.86);
   transform: scale(var(--optic-zoom, 1)) translateZ(0);
   transition:
     opacity 900ms var(--organic),
