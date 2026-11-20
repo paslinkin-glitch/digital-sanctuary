@@ -1,14 +1,11 @@
-/* Digital Sanctuary — MVP 2: real Coverr footage.
+/* Digital Sanctuary — MVP 3: curated individuation catalog.
  *
- * Silent vertical feed, five Jungian categories. Each category is filled with
- * 10–15 free clips from the official Coverr REST API, muted, looping and
- * autoplaying. Swipe up/down (touch, mouse or wheel) crossfades to the next
- * engine-selected category; a slow drag is tactile contact and does not change
- * the scene. Optical CSS layers react to the current element, while the audio
- * breathing filter and stupor pulse respond to the body. Every swipe prints
- * one behaviour record; occasional «synchronicity» scenes are chosen by the
- * element anchor of the current video. A short phrase from DeepSeek is
- * prefetched for the next scene and appears in the lower third.
+ * Zero-UI vertical feed built on the Jungian path from concept.md:
+ * Shadow -> Trickster & Abyss -> Calm -> Path. The 80-film catalog is loaded
+ * from videos.json, shuffled inside each stage, and filtered by the IDs the
+ * viewer has already seen. Coverr API calls are intentionally disabled.
+ * Behaviour (view time, swipe speed, hold) remains invisible; optical layers
+ * and the DeepSeek caption rhythm answer it without buttons or counters.
  */
 (() => {
   'use strict';
@@ -31,7 +28,7 @@
   const FLICK_MIN_SPEED = 0.5;
   const SLOW_RATE = 0.45;
   const API_TIMEOUT_MS = 7000;
-  const CLIPS_PER_CATEGORY = 15;
+  const CLIPS_PER_CATEGORY = 30;
   const RESONANCE_HOLD_MS = 500;
   const FAST_VIEW_MS = 2000;
   const NERVOUS_VIEW_MS = 1500;
@@ -165,6 +162,7 @@
     {
       id: 1,
       name: 'Тень',
+      archetype: 'Тень',
       categories: ['Shadow'],
       tone: 'напряжение, маска, первое честное признание',
       tags: ['silhouette shadow', 'dark corridor', 'smoke dark', 'night window rain', 'alone dark'],
@@ -172,6 +170,7 @@
     {
       id: 2,
       name: 'Слом и Бездна',
+      archetype: 'Трикстер и Бездна',
       categories: ['Trickster', 'Abyss'],
       tone: 'провокация, парадокс, потеря прежней опоры',
       tags: ['crowd blur night', 'reflection glass dark', 'deep underwater dark', 'black waves ocean', 'fire sparks dark'],
@@ -181,6 +180,7 @@
     {
       id: 3,
       name: 'Тишина',
+      archetype: 'Покой / Анима',
       categories: ['Calm'],
       tone: 'замедление, дыхание, мягкость без слов',
       tags: ['dust light beam', 'candle flame dark', 'fog forest dark', 'moonlight water', 'slow clouds night'],
@@ -188,6 +188,7 @@
     {
       id: 4,
       name: 'Выход и Путь',
+      archetype: 'Путь / Самость',
       categories: ['Path'],
       tone: 'свет, движение, ясность и право идти дальше',
       tags: ['tunnel light dark', 'train tracks night', 'birds sky dusk', 'empty highway night', 'sunrise fog'],
@@ -322,42 +323,7 @@
     return;
   }
 
-  const debugStatusEl = document.createElement('div');
-  debugStatusEl.className = 'debug-status';
-  debugStatusEl.id = 'debug-status';
-  debugStatusEl.setAttribute('aria-hidden', 'true');
-  debugStatusEl.textContent = '0 / 0';
-  document.body.appendChild(debugStatusEl);
 
-  let lastDebugError = '';
-
-  function updateDebugStatus() {
-    let current = 0;
-    let total = 0;
-
-    try {
-      total = pathPlan.length;
-      current = pathStarted ? Math.min(pathPos + 1, total) : 0;
-    } catch (_) {
-      /* path ещё не инициализирован */
-    }
-
-    debugStatusEl.textContent = `${current} / ${total}${lastDebugError ? ` · ${lastDebugError}` : ''}`;
-  }
-
-  function setDebugError(message) {
-    lastDebugError = message ? String(message).replace(/\s+/g, ' ').slice(0, 90) : '';
-    updateDebugStatus();
-  }
-
-  window.addEventListener('error', (event) => {
-    if (event.error || event.message) setDebugError(event.message || 'JS error');
-  });
-
-  window.addEventListener('unhandledrejection', (event) => {
-    const reason = event.reason && (event.reason.message || event.reason);
-    setDebugError(reason || 'promise rejection');
-  });
 
   const categories = slides.map((slide, index) => {
     const tag = slide.dataset.tag;
@@ -821,7 +787,9 @@
 
   function captionMessages(clip, category, behavior, stageId) {
     const stage = stageFor(stageId || STAGE_BY_CATEGORY[category.tag] || 1);
+    const archetype = clip.archetype || stage.archetype || stage.name;
     const details = [
+      `Архетип: ${archetype}.`,
       `Категория: ${category.tag}.`,
       `Стадия: ${stage.id} — ${stage.name}.`,
       `Видео: «${clip.title || 'без названия'}».`,
@@ -834,7 +802,7 @@
     return [
       {
         role: 'system',
-        content: `${CAPTION_SYSTEM_PROMPT}\n\nТекущая стадия пути: ${stage.id} — ${stage.name}. ${stage.tone}.${memoryPrompt()}`,
+        content: `${CAPTION_SYSTEM_PROMPT}\n\nТекущая стадия пути: ${stage.id} — ${stage.name}. Архетип: ${archetype}. ${stage.tone}.${memoryPrompt()}`,
       },
       { role: 'user', content: details.join('\n') },
     ];
@@ -1648,7 +1616,6 @@
       hits = await fetchVideoPage(query, apiPage);
     } catch (error) {
       hits = [];
-      setDebugError(`Coverr: ${error.message || error}`);
     }
 
     if (hits.length < 8) {
@@ -1656,7 +1623,6 @@
         const firstPage = await fetchVideoPage(query, 0);
         hits = hits.concat(firstPage);
       } catch (error) {
-        setDebugError(`Coverr: ${error.message || error}`);
       }
     } else {
       const unseenOnPage = hits.filter((hit) => {
@@ -1669,7 +1635,6 @@
           const firstPage = await fetchVideoPage(query, 0);
           hits = hits.concat(firstPage);
         } catch (error) {
-          setDebugError(`Coverr: ${error.message || error}`);
         }
       }
     }
@@ -1682,7 +1647,6 @@
       return true;
     }));
 
-    if (!result.length) setDebugError(`Coverr: empty "${query}"`);
     return result;
   }
 
@@ -1977,7 +1941,6 @@
       category.clips.some((clip) => clip.el)
     ));
     if (!playable.length) {
-      setDebugError('no playable video');
       return false;
     }
 
@@ -2045,7 +2008,6 @@
     pathPos = 0;
     pathStarted = true;
     pathStartPending = false;
-    updateDebugStatus();
     setSceneElement(activeClip());
     activateCaption(category, activeClip(), behaviorContext(), false, entry.stage);
     vibrateTap();
@@ -2094,7 +2056,6 @@
         return;
       }
       console.warn('[sanctuary] video unavailable:', clip.title);
-      setDebugError(`video: ${clip.title}`);
     });
 
     video.src = playUrl;
@@ -2132,6 +2093,98 @@
     });
 
     category.freshIndex = firstNew;
+  }
+
+  const CATALOG_STAGE_CATEGORIES = {
+    shadow: ['Shadow'],
+    trickster_abyss: ['Trickster', 'Abyss'],
+    calm: ['Calm'],
+    path: ['Path'],
+  };
+
+  async function loadVideoCatalog() {
+    const response = await fetch('./videos.json', { cache: 'no-store' });
+    if (!response.ok) {
+      throw new Error(`videos.json HTTP ${response.status}`);
+    }
+
+    const catalog = await response.json();
+    if (!Array.isArray(catalog) || !catalog.length) {
+      throw new Error('videos.json is empty or malformed');
+    }
+
+    const pools = {
+      Shadow: [],
+      Trickster: [],
+      Abyss: [],
+      Calm: [],
+      Path: [],
+    };
+    const usedIds = new Set();
+    const usedUrls = new Set();
+    let tricksterFlip = 0;
+    let loaded = 0;
+
+    for (const item of catalog) {
+      if (!item || typeof item.url !== 'string' || !/^https:\/\//i.test(item.url)) continue;
+      if (usedUrls.has(item.url)) continue;
+
+      const rawStage = String(item.stage || '').toLowerCase().replace(/\s+/g, '_');
+      const stageKey = rawStage === 'trickster' || rawStage === 'abyss'
+        ? 'trickster_abyss'
+        : rawStage;
+      const tags = CATALOG_STAGE_CATEGORIES[stageKey];
+      if (!tags) continue;
+
+      const tag = tags.length > 1
+        ? tags[tricksterFlip++ % tags.length]
+        : tags[0];
+      const category = categories.find((entry) => entry.tag === tag);
+      if (!category) continue;
+
+      const id = String(item.id || item.url);
+      if (usedIds.has(id)) continue;
+      usedIds.add(id);
+      usedUrls.add(item.url);
+
+      const title = String(item.title || 'Без названия').trim();
+      const archetype = String(item.archetype || category.tag);
+      const clip = {
+        id,
+        title,
+        url: item.url,
+        duration: Number.isFinite(Number(item.duration)) ? Number(item.duration) : 10,
+        description: archetype,
+        tags: [stageKey, archetype],
+        vertical: true,
+        element: elementForClip(title, [stageKey, archetype], tag, archetype),
+        archetype,
+        stage: stageKey,
+        source: item.source || 'catalog',
+      };
+
+      pools[tag].push(clip);
+      loaded += 1;
+    }
+
+    if (!loaded) {
+      throw new Error('videos.json contains no playable entries');
+    }
+
+    for (const category of categories) {
+      category.clips = shuffleArray(pools[category.tag] || []).slice(0, CLIPS_PER_CATEGORY);
+      category.activeIndex = 0;
+      category.lastPlayed = null;
+      category.freshIndex = null;
+      mountClips(category);
+    }
+
+    console.info('[sanctuary] catalog loaded:', {
+      videos: loaded,
+      categories: categories.map((category) => `${category.tag}: ${category.clips.length}`),
+    });
+
+    return loaded;
   }
 
   async function loadCategory(category) {
@@ -2191,6 +2244,7 @@
   }
 
   async function expandCategory(category) {
+    return;
     if (!category || category.extendedLoaded || category.extendedLoading) return;
     if (category.loading) {
       category.extendWanted = true;
@@ -2507,7 +2561,6 @@
     const track = nextTrackFor(category);
     switchSoundtrack(track, duration);
     preloadNextTrack(category);
-    updateDebugStatus();
 
     if (direction === 'up') {
       engine.history = engine.history.slice(0, engine.historyPos + 1);
@@ -2571,28 +2624,18 @@
     if (!pathStarted) {
       try {
         if (startPathFirst()) {
-          updateDebugStatus();
           return;
         }
       } catch (error) {
-        setDebugError(`start: ${error.message || error}`);
       }
 
-      if (forceNextAvailableScene(direction)) {
-        updateDebugStatus();
-      } else {
-        setDebugError('queue is empty');
-      }
+      forceNextAvailableScene(direction);
       return;
     }
 
     if (pathPos + 1 >= pathPlan.length) {
       if (!extendPathPlan()) {
-        if (forceNextAvailableScene(direction)) {
-          updateDebugStatus();
-        } else {
-          setDebugError('queue is empty');
-        }
+        forceNextAvailableScene(direction);
         return;
       }
     }
@@ -2986,7 +3029,7 @@
     gateOpen = true;
   }
 
-  const startupTasks = categories.map(loadCategory);
+  const startupTasks = [loadVideoCatalog()];
 
   Promise.allSettled(startupTasks).then(() => {
     try {
@@ -3002,7 +3045,6 @@
         extendPathPlan();
       } catch (error) {
         console.error('[sanctuary] path build failed:', error);
-        setDebugError(`path: ${error.message || error}`);
       }
 
       if (!pathPlan.length) {
@@ -3011,15 +3053,12 @@
           extendPathPlan();
         } catch (error) {
           console.error('[sanctuary] fallback path failed:', error);
-          setDebugError(`fallback: ${error.message || error}`);
         }
       }
 
-      updateDebugStatus();
 
       if (!pathPlan.length) {
         console.error('[sanctuary] no video clips available after all fallbacks');
-        setDebugError('no video clips');
         return;
       }
 
@@ -3035,7 +3074,6 @@
           startPathFirst();
         } catch (error) {
           console.error('[sanctuary] first scene failed:', error);
-          setDebugError(`start: ${error.message || error}`);
         }
       }
     } catch (error) {

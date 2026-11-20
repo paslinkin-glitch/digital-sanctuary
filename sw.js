@@ -3,12 +3,13 @@
  * the cache is only a fallback for offline launches. Coverr API and video
  * CDN requests are cross-origin and deliberately pass through untouched.
  */
-const CACHE = 'sanctuary-shell-v4';
+const CACHE = 'sanctuary-shell-v5';
 const ASSETS = [
   './',
   './index.html',
   './style.css',
   './app.js',
+  './videos.json',
   './manifest.json',
   './icon.svg',
   './icon-192.png',
