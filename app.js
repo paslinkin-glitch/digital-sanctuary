@@ -36,7 +36,6 @@
   // this call belongs behind a tiny server-side proxy.
   const API_KEY = 'b1155018766256bd1ea645df7d64e178';
   const API_ENDPOINT = 'https://api.coverr.co/videos';
-  const SOUND_CROSSFADE_S = 1.5;
   const MUSIC_GAIN = 0.55;
   const NOISE_GAIN = 0.3;
 
@@ -423,12 +422,17 @@
         activeTag: null,
         activeType: null,
         held: false,
-        token: 0,
         fadeToken: 0,
       };
 
       if (ctx.state === 'suspended') ctx.resume().catch(() => {});
-      switchSoundtrack(activeCategory());
+
+      // Первое касание: прогреваем все пять треков, чтобы свайпы не ждали сеть.
+      for (const category of categories) {
+        if (category.music && !category.musicFailed) ensureSoundChannel(category);
+      }
+
+      switchSoundtrack(activeCategory(), SLOW_FADE_MS);
     } catch (_) {
       // Web Audio недоступен — остаётся только визуальная сцена.
     } finally {
@@ -444,7 +448,7 @@
       const audio = document.createElement('audio');
       audio.crossOrigin = 'anonymous';
       audio.loop = true;
-      audio.preload = 'metadata';
+      audio.preload = 'auto';
       audio.setAttribute('playsinline', '');
       audio.style.display = 'none';
 
@@ -476,105 +480,36 @@
     }
   }
 
-  function raiseNoiseBed() {
-    if (!sound) return;
-
-    const now = sound.ctx.currentTime;
-    sound.fadeToken += 1;
-    sound.activeTag = null;
-    sound.activeType = 'noise';
-
-    for (const item of sound.channels.values()) {
-      item.gain.gain.cancelScheduledValues(now);
-      item.gain.gain.setValueAtTime(item.gain.gain.value, now);
-      item.gain.gain.linearRampToValueAtTime(0, now + SOUND_CROSSFADE_S);
-    }
-
-    sound.noiseGain.gain.cancelScheduledValues(now);
-    sound.noiseGain.gain.setValueAtTime(sound.noiseGain.gain.value, now);
-    sound.noiseGain.gain.linearRampToValueAtTime(NOISE_GAIN, now + SOUND_CROSSFADE_S);
-  }
-
-  function switchSoundtrack(category) {
+  function switchSoundtrack(category, fadeMs) {
     if (!sound || !category) return;
 
-    const token = ++sound.token;
-    sound.held = stage.classList.contains('is-held');
-
+    const duration = fadeMs || SLOW_FADE_MS;
     const channel = category.music && !category.musicFailed
       ? ensureSoundChannel(category)
       : null;
 
     if (!channel) {
-      startSoundCrossfade(null);
+      startSoundCrossfade(null, duration);
+      return;
+    }
+
+    const samePlaying = sound.activeType === 'music'
+      && sound.activeTag === category.tag
+      && !channel.audio.paused;
+
+    if (samePlaying) {
+      channel.audio.playbackRate = sound.held ? SLOW_RATE : 1;
       return;
     }
 
     channel.audio.playbackRate = sound.held ? SLOW_RATE : 1;
-
-    let begun = false;
-    let timedOut = false;
-
-    const begin = () => {
-      if (begun || timedOut) return;
-      begun = true;
-      if (!sound || token !== sound.token) return;
-
-      const promise = channel.audio.play();
-      if (promise && typeof promise.catch === 'function') {
-        promise.catch(() => {
-          if (!sound || token !== sound.token) return;
-          // Не помечаем трек сломанным: следующий жест сможет запустить его снова.
-          startSoundCrossfade(null);
-        });
-      }
-      startSoundCrossfade(channel);
-    };
-
-    if (channel.audio.readyState >= 2) {
-      begin();
-      return;
-    }
-
-    // Пока трек грузится, не оставляем тишину: если музыка ещё не звучит,
-    // заводим мягкий дождь/ветер и потом растворяем его в трек.
-    const previous = sound.activeTag ? sound.channels.get(sound.activeTag) : null;
-    const previousPlaying = sound.activeType === 'music' && previous && !previous.audio.paused;
-    if (!previousPlaying) {
-      raiseNoiseBed();
-    }
-
-    const onReady = () => {
-      channel.audio.removeEventListener('canplay', onReady);
-      channel.audio.removeEventListener('playing', onReady);
-      begin();
-    };
-
-    channel.audio.addEventListener('canplay', onReady);
-    channel.audio.addEventListener('playing', onReady);
-
-    const promise = channel.audio.play();
-    if (promise && typeof promise.catch === 'function') {
-      promise.catch(() => {
-        if (!sound || token !== sound.token) return;
-        channel.audio.removeEventListener('canplay', onReady);
-        channel.audio.removeEventListener('playing', onReady);
-        startSoundCrossfade(null);
-      });
-    }
-
-    window.setTimeout(() => {
-      if (!sound || token !== sound.token || begun) return;
-      timedOut = true;
-      channel.audio.removeEventListener('canplay', onReady);
-      channel.audio.removeEventListener('playing', onReady);
-      startSoundCrossfade(null);
-    }, 6000);
+    startSoundCrossfade(channel, duration);
   }
 
-  function startSoundCrossfade(channel) {
+  function startSoundCrossfade(channel, fadeMs) {
     if (!sound) return;
 
+    const duration = Math.max(0.05, (fadeMs || SLOW_FADE_MS) / 1000);
     const now = sound.ctx.currentTime;
     const targetTag = channel ? channel.category.tag : null;
     const fadeToken = ++sound.fadeToken;
@@ -586,27 +521,32 @@
       const target = channel && tag === targetTag ? MUSIC_GAIN : 0;
       item.gain.gain.cancelScheduledValues(now);
       item.gain.gain.setValueAtTime(item.gain.gain.value, now);
-      item.gain.gain.linearRampToValueAtTime(target, now + SOUND_CROSSFADE_S);
+      item.gain.gain.linearRampToValueAtTime(target, now + duration);
     }
 
     sound.noiseGain.gain.cancelScheduledValues(now);
     sound.noiseGain.gain.setValueAtTime(sound.noiseGain.gain.value, now);
-    sound.noiseGain.gain.linearRampToValueAtTime(channel ? 0 : NOISE_GAIN, now + SOUND_CROSSFADE_S);
+    sound.noiseGain.gain.linearRampToValueAtTime(channel ? 0 : NOISE_GAIN, now + duration);
 
     if (channel) {
       channel.audio.playbackRate = sound.held ? SLOW_RATE : 1;
       const promise = channel.audio.play();
-      if (promise && typeof promise.catch === 'function') promise.catch(() => {});
+      if (promise && typeof promise.catch === 'function') {
+        promise.catch(() => {
+          if (!sound || sound.activeTag !== targetTag) return;
+          startSoundCrossfade(null, fadeMs);
+        });
+      }
     }
 
     window.setTimeout(() => {
       if (!sound || fadeToken !== sound.fadeToken) return;
       for (const [tag, item] of sound.channels) {
-        if (!channel || tag !== channel.category.tag) {
-          if (item.gain.gain.value < 0.01) item.audio.pause();
+        if ((!channel || tag !== channel.category.tag) && item.gain.gain.value < 0.01) {
+          item.audio.pause();
         }
       }
-    }, (SOUND_CROSSFADE_S + 0.1) * 1000);
+    }, (duration + 0.1) * 1000);
   }
 
   function setSoundDepth(deep) {
@@ -1204,6 +1144,9 @@
     state.visits[targetIndex] += 1;
     resetViewClock();
 
+    // Звук переключается в тот же тик, что и классы видео, с той же длительностью.
+    switchSoundtrack(categories[targetIndex], duration);
+
     if (direction === 'up') {
       engine.history = engine.history.slice(0, engine.historyPos + 1);
       engine.history.push(targetIndex);
@@ -1212,7 +1155,6 @@
 
     // Видео нового кадра запускается немедленно, ещё под растворяющимся затемнением.
     playCategory(categories[targetIndex]);
-    switchSoundtrack(categories[targetIndex]);
   }
 
   /* ------------------------------------------------------------- телеметрия */
