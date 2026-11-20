@@ -68,72 +68,48 @@
   const FALLBACK_CLIPS = {
     Shadow: [
       {
-        id: 'VC1PStUKzq',
-        title: 'Rain falling in the forest',
-        duration: 16.29,
-        url: 'https://cdn.coverr.co/videos/coverr-rain-falling-in-the-forest-9275/1080p.mp4',
+        id: 'fallback-shadow-field',
+        title: 'Slow field in low light',
+        duration: 30,
+        url: 'https://media.w3.org/2010/05/video/movie_300.mp4',
       },
       {
-        id: 'Jl07Anu9ty',
-        title: 'Tree in the mist',
-        duration: 26.17,
-        url: 'https://cdn.coverr.co/videos/coverr-tree-in-the-mist-4598/1080p.mp4',
+        id: 'fallback-shadow-trailer',
+        title: 'Dusk before the dark',
+        duration: 33,
+        url: 'https://media.w3.org/2010/05/bunny/trailer.mp4',
       },
     ],
     Trickster: [
       {
-        id: 'ZNfyKwAM8L',
-        title: 'Ring of burning matches',
-        duration: 6.0,
-        url: 'https://cdn.coverr.co/videos/user-ai-generation-4kf566VvRQxB/1080p.mp4',
-      },
-      {
-        id: 'mGv4TVmkZo',
-        title: 'Using a lighter in the dark',
-        duration: 12.0,
-        url: 'https://cdn.coverr.co/videos/coverr-using-a-lighter-in-the-dark-7305/1080p.mp4',
+        id: 'fallback-trickster-sintel',
+        title: 'Firelit descent',
+        duration: 10,
+        url: 'https://test-videos.co.uk/vids/sintel/mp4/h264/720/Sintel_720_10s_1MB.mp4',
       },
     ],
     Abyss: [
       {
-        id: 'ni2blF5Md9',
-        title: 'Caged boat hull descending',
-        duration: 5.04,
-        url: 'https://cdn.coverr.co/videos/user-ai-generation-gTC7iYAR37SD/1080p.mp4',
-      },
-      {
-        id: '8KyLPpPmVA',
-        title: 'Pink jellyfish in deep blue',
-        duration: 4.0,
-        url: 'https://cdn.coverr.co/videos/user-ai-generation-lNY7b4F0UVS3/1080p.mp4',
+        id: 'fallback-abyss-jellyfish',
+        title: 'Jellyfish in deep blue',
+        duration: 10,
+        url: 'https://test-videos.co.uk/vids/jellyfish/mp4/h264/720/Jellyfish_720_10s_1MB.mp4',
       },
     ],
     Calm: [
       {
-        id: 'aMlApWfzYF',
-        title: 'Raindrops on the window',
-        duration: 7.88,
-        url: 'https://cdn.coverr.co/videos/coverr-raindrops-on-the-window-7102/1080p.mp4',
-      },
-      {
-        id: 'oEw7PbASZW',
-        title: 'Cozy coffee by the window',
-        duration: 8.0,
-        url: 'https://cdn.coverr.co/videos/user-ai-generation-lZ8wOYvP6xmM/1080p.mp4',
+        id: 'fallback-calm-flower',
+        title: 'Flower opening in silence',
+        duration: 5,
+        url: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
       },
     ],
     Path: [
       {
-        id: 'KK342MfQEX',
-        title: 'Moving car on an empty road',
-        duration: 11.85,
-        url: 'https://cdn.coverr.co/videos/coverr-moving-car-on-an-empty-road-5120/1080p.mp4',
-      },
-      {
-        id: 'fwwKKUlRGF',
-        title: 'Night city from a moving car',
-        duration: 23.61,
-        url: 'https://cdn.coverr.co/videos/coverr-night-city-from-a-moving-car-6550/1080p.mp4',
+        id: 'fallback-path-bunny',
+        title: 'Small movement toward the light',
+        duration: 10,
+        url: 'https://www.w3schools.com/html/mov_bbb.mp4',
       },
     ],
   };
@@ -340,6 +316,11 @@
   const captionLines = captionEl
     ? Array.from(captionEl.querySelectorAll('.caption-line'))
     : [];
+
+  if (!stage || !slides.length || slides.some((slide) => !slide.querySelector('.media'))) {
+    console.error('[sanctuary] stage markup is missing or incomplete');
+    return;
+  }
 
   const categories = slides.map((slide, index) => {
     const tag = slide.dataset.tag;
@@ -1609,7 +1590,7 @@
       }
 
       const payload = await response.json();
-      return Array.isArray(payload.hits) ? payload.hits : [];
+      return payload && Array.isArray(payload.hits) ? payload.hits : [];
     } finally {
       window.clearTimeout(timer);
     }
@@ -1618,18 +1599,21 @@
   async function searchVideos(query) {
     if (!query) return [];
 
+    // Coverr uses zero-based pagination: page=0 is the first page. The UI
+    // still chooses one of eight logical pages 1..8, but sends page 0..7.
     const randomPage = 1 + Math.floor(Math.random() * 8);
+    const apiPage = randomPage - 1;
     let hits = [];
 
     try {
-      hits = await fetchVideoPage(query, randomPage);
+      hits = await fetchVideoPage(query, apiPage);
     } catch (_) {
       hits = [];
     }
 
     if (hits.length < 8) {
       try {
-        const firstPage = await fetchVideoPage(query, 1);
+        const firstPage = await fetchVideoPage(query, 0);
         hits = hits.concat(firstPage);
       } catch (_) {
         /* остаётся случайная страница или пустой результат */
@@ -1642,7 +1626,7 @@
 
       if (unseenOnPage < 8) {
         try {
-          const firstPage = await fetchVideoPage(query, 1);
+          const firstPage = await fetchVideoPage(query, 0);
           hits = hits.concat(firstPage);
         } catch (_) {
           /* страница 1 могла не ответить */
@@ -1673,20 +1657,27 @@
     const duration = Number(hit.duration);
     if (!Number.isFinite(duration) || duration < 3 || duration > 45) return null;
 
-    const tags = Array.isArray(hit.tags) ? hit.tags : [];
-    const haystack = `${hit.title || ''} ${tags.join(' ')} ${hit.description || ''}`.toLowerCase();
+    const id = hit.video_id || hit.id || hit.objectID || url;
+    const title = typeof hit.title === 'string' && hit.title.trim()
+      ? hit.title.trim()
+      : 'Untitled';
+    const description = typeof hit.description === 'string' ? hit.description : '';
+    const tags = Array.isArray(hit.tags)
+      ? hit.tags.filter((tag) => typeof tag === 'string')
+      : [];
+    const haystack = `${title} ${tags.join(' ')} ${description}`.toLowerCase();
     if (category.blocked.some((word) => haystack.includes(word))) return null;
 
     return {
-      id: hit.video_id || hit.id || hit.objectID,
-      title: hit.title || 'Untitled',
+      id: String(id),
+      title,
       url,
       playUrl: playbackUrl(url),
       duration,
-      description: hit.description || '',
+      description,
       vertical: Boolean(hit.is_vertical),
       tags,
-      element: elementForClip(hit.title, tags, category.tag, hit.description),
+      element: elementForClip(title, tags, category.tag, description),
     };
   }
 
@@ -1917,6 +1908,23 @@
     if (!entries.length) return false;
     pathPlan.push(...entries);
     return true;
+  }
+
+  function ensureFallbackCategories() {
+    for (const category of categories) {
+      if (category.clips.length) continue;
+
+      const fallback = (FALLBACK_CLIPS[category.tag] || []).map((clip) => ({
+        ...clip,
+        description: clip.description || '',
+        tags: Array.isArray(clip.tags) ? clip.tags : [],
+        element: clip.element || elementForClip(clip.title, [], category.tag, ''),
+      }));
+      if (!fallback.length) continue;
+
+      category.clips = fallback;
+      mountClips(category);
+    }
   }
 
   function extendPathPlan() {
@@ -2725,7 +2733,7 @@
   let wheelFirstAt = 0;
   let wheelLastAt = 0;
 
-  stage.addEventListener('wheel', (event) => {
+  window.addEventListener('wheel', (event) => {
     event.preventDefault();
     markInteraction();
     rememberAnchor('wheel');
@@ -2755,6 +2763,28 @@
   }, { passive: false });
 
   /* ------------------------------------ пауза, когда вкладка скрыта */
+
+  window.addEventListener('keydown', (event) => {
+    const key = event.key;
+
+    if (!gateOpen) {
+      if (key === 'Enter' || key === ' ' || key === 'Spacebar') {
+        event.preventDefault();
+        unlockExperience();
+      }
+      return;
+    }
+
+    if (key !== 'ArrowUp' && key !== 'ArrowDown' && key !== 'PageUp' && key !== 'PageDown') {
+      return;
+    }
+
+    event.preventDefault();
+    markInteraction();
+    rememberAnchor('key');
+    setBreath(0);
+    go(key === 'ArrowUp' || key === 'PageUp' ? 'up' : 'down', 1);
+  });
 
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
@@ -2811,7 +2841,12 @@
     enableSoundscape();
 
     if (!sceneOrdinal) sceneOrdinal = 1;
-    if (!startPathFirst()) pathStartPending = true;
+    try {
+      if (!startPathFirst()) pathStartPending = true;
+    } catch (error) {
+      pathStartPending = true;
+      console.error('[sanctuary] gate start failed:', error);
+    }
   }
 
   if (entryGate) {
@@ -2826,28 +2861,57 @@
   const startupTasks = categories.map(loadCategory);
 
   Promise.allSettled(startupTasks).then(() => {
-    const total = categories.reduce((sum, category) => sum + category.clips.length, 0);
-    const music = categories.reduce((sum, category) => sum + category.musicTracks.length, 0);
-    console.info('[sanctuary] video feed ready:', {
-      clips: total,
-      music,
-      categories: categories.map((category) => `${category.tag}: ${category.clips.length}`),
-    });
+    try {
+      const total = categories.reduce((sum, category) => sum + category.clips.length, 0);
+      const music = categories.reduce((sum, category) => sum + category.musicTracks.length, 0);
+      console.info('[sanctuary] video feed ready:', {
+        clips: total,
+        music,
+        categories: categories.map((category) => `${category.tag}: ${category.clips.length}`),
+      });
 
-    extendPathPlan();
+      try {
+        extendPathPlan();
+      } catch (error) {
+        console.error('[sanctuary] path build failed:', error);
+      }
 
-    if (!pathPlan.length) appendFallbackPath(true);
+      if (!pathPlan.length) {
+        ensureFallbackCategories();
+        try {
+          extendPathPlan();
+        } catch (error) {
+          console.error('[sanctuary] fallback path failed:', error);
+        }
+      }
 
-    if (pathPlan.length) {
-      const first = pathPlan[0];
-      prefetchCaption(first.clip, first.category, behaviorContext(), first.stage);
-      if (gateOpen && !pathStarted) startPathFirst();
+      if (!pathPlan.length) {
+        console.error('[sanctuary] no video clips available after all fallbacks');
+        return;
+      }
+
+      try {
+        const first = pathPlan[0];
+        prefetchCaption(first.clip, first.category, behaviorContext(), first.stage);
+      } catch (error) {
+        console.warn('[sanctuary] caption prefetch failed:', error);
+      }
+
+      if (gateOpen && !pathStarted) {
+        try {
+          startPathFirst();
+        } catch (error) {
+          console.error('[sanctuary] first scene failed:', error);
+        }
+      }
+    } catch (error) {
+      console.error('[sanctuary] startup failed:', error);
     }
   });
 
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').catch((error) => {
+      navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).catch((error) => {
         console.warn('[sanctuary] service worker registration failed', error);
       });
     });
