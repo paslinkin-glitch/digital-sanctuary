@@ -161,42 +161,45 @@
   };
 
   // /music из брифа отдаёт 404; официальный эндпоинт Coverr — /audios.
-  // Запросы: Shadow — dark ambient atmospheric, Calm — rain peaceful ambient,
-  // Abyss — deep ambient drone space, Trickster — mystery cinematic dark,
-  // Path — dreamy ambient piano. Для трёх категорий точная фраза давала 0,
-  // и трек взят из близкой выдачи /audios. Ссылки preview.mp3 зафиксированы,
-  // чтобы музыка не зависела от лимита поисковых запросов API.
-  const MUSIC_TRACKS = {
-    Shadow: {
-      id: 'romQsuZqm1',
-      title: 'Dark Entries',
-      duration: 132,
-      url: 'https://cdn.coverr.co/audios/coverr-dark-entries-n4GG3j/preview.mp3',
-    },
-    Trickster: {
-      id: '1gXx49lFvI',
-      title: 'Mysterious',
-      duration: 123.64,
-      url: 'https://cdn.coverr.co/audios/coverr-mysterious-FykdJh/preview.mp3',
-    },
-    Abyss: {
-      id: 'UjcADXXvc8',
-      title: 'deep space',
-      duration: 123.64,
-      url: 'https://cdn.coverr.co/audios/coverr-deep-space-lqfqIj/preview.mp3',
-    },
-    Calm: {
-      id: 'HTzsyicaIT',
-      title: 'crystal rain',
-      duration: 110.4,
-      url: 'https://cdn.coverr.co/audios/coverr-crylstal-rain-uq0tDK/preview.mp3',
-    },
-    Path: {
-      id: 'EX6e6IkDGx',
-      title: 'A Piano For Travel',
-      duration: 132.04,
-      url: 'https://cdn.coverr.co/audios/coverr-a-piano-for-travel-OgNcjz/preview.mp3',
-    },
+  // Ниже 25 уникальных preview.mp3 из ответов /audios: по пять треков на
+  // категорию. Ссылки зафиксированы, чтобы музыка не зависела от лимита
+  // поисковых запросов API, и чередуются под каждый новый кадр.
+  const MUSIC_CATALOG = {
+    Shadow: [
+      { id: 'romQsuZqm1', title: 'Dark Entries', url: 'https://cdn.coverr.co/audios/coverr-dark-entries-n4GG3j/preview.mp3' },
+      { id: 'HDgXJpCNph', title: 'Whisper Canyon', url: 'https://cdn.coverr.co/audios/coverr-song-15-whisper-canyon-ambient-5-mix-1--zXUbWU/preview.mp3' },
+      { id: 'DoetucQLKg', title: 'Monolith', url: 'https://cdn.coverr.co/audios/coverr-song-12-monolith-ambient-4-mix-2-ozGFbG/preview.mp3' },
+      { id: 'cH1b7erY3p', title: 'Song Before The Ritual', url: 'https://cdn.coverr.co/audios/coverr-song-before-the-ritual-36s2hf/preview.mp3' },
+      { id: 'GK7hNqbWfn', title: 'Darkness', url: 'https://cdn.coverr.co/audios/coverr-darkness-TAJPb7/preview.mp3' },
+    ],
+    Calm: [
+      { id: 'HTzsyicaIT', title: 'crystal rain', url: 'https://cdn.coverr.co/audios/coverr-crylstal-rain-uq0tDK/preview.mp3' },
+      { id: 'WUzwP3T0HC', title: 'tokio rain', url: 'https://cdn.coverr.co/audios/coverr-tokio-rain-VBOD5g/preview.mp3' },
+      { id: '2D7bBaIE3r', title: 'Waiting for the Bell to Ring', url: 'https://cdn.coverr.co/audios/coverr-19-waiting-for-the-bell-to-ring-ToOKsQ/preview.mp3' },
+      { id: '2v8dZRPll8', title: 'inner world', url: 'https://cdn.coverr.co/audios/coverr-inner-world-7oAf9q/preview.mp3' },
+      { id: 'mvh5rImd1R', title: 'clouds', url: 'https://cdn.coverr.co/audios/coverr-clouds-tzNU5D/preview.mp3' },
+    ],
+    Abyss: [
+      { id: 'UjcADXXvc8', title: 'deep space', url: 'https://cdn.coverr.co/audios/coverr-deep-space-lqfqIj/preview.mp3' },
+      { id: '5nxzquf11g', title: 'The Color of Space', url: 'https://cdn.coverr.co/audios/coverr-09-the-color-of-space-HGrgoz/preview.mp3' },
+      { id: 'AItrEi4QtA', title: 'inside a space lounge', url: 'https://cdn.coverr.co/audios/coverr-coverrco-inside-a-space-lounge-i43PLU/preview.mp3' },
+      { id: 'sGPevMbGzP', title: 'Deep Meditation', url: 'https://cdn.coverr.co/audios/coverr-deep-meditation-U8tCn6/preview.mp3' },
+      { id: 'AeWsKx2z16', title: 'A Look At The Sky', url: 'https://cdn.coverr.co/audios/coverr-a-look-at-the-sky-xEdhi6/preview.mp3' },
+    ],
+    Trickster: [
+      { id: 'YwOh8LspUf', title: 'What Awaits In The Dark', url: 'https://cdn.coverr.co/audios/coverr-what-awaits-in-the-dark-2kG5h0/preview.mp3' },
+      { id: 'nJ5W7hjMnK', title: 'Tension Scene', url: 'https://cdn.coverr.co/audios/14-tension-scene-Q9JhvP/preview.mp3' },
+      { id: 'QmqMQlXuFA', title: 'Throne of Blood', url: 'https://cdn.coverr.co/audios/coverr-throne-of-blood-tsouNm/preview.mp3' },
+      { id: 'MJnihkiJny', title: 'Psychopath', url: 'https://cdn.coverr.co/audios/coverr-psychopath-QmAJXt/preview.mp3' },
+      { id: '75i7cLNkgY', title: 'Left Behind', url: 'https://cdn.coverr.co/audios/coverr-left-behind-Qe9qNf/preview.mp3' },
+    ],
+    Path: [
+      { id: 'EX6e6IkDGx', title: 'A Piano For Travel', url: 'https://cdn.coverr.co/audios/coverr-a-piano-for-travel-OgNcjz/preview.mp3' },
+      { id: 'aUHfXkgixI', title: 'Cinematic Visions', url: 'https://cdn.coverr.co/audios/coverr-08-cinematic-visions-wdPqT9/preview.mp3' },
+      { id: 'yutSfOSE7l', title: 'Lotus Flower', url: 'https://cdn.coverr.co/audios/coverr-08-lotus-flower-mDp10e/preview.mp3' },
+      { id: 'p2sexNoWO6', title: 'horizons', url: 'https://cdn.coverr.co/audios/coverr-horizons-1WOjtJ/preview.mp3' },
+      { id: 'Ou9ZrAwafj', title: 'Through The Looking Glass', url: 'https://cdn.coverr.co/audios/coverr-song-1-ambient-1-mix-1-OCpc63/preview.mp3' },
+    ],
   };
 
   /* ------------------------------------------------------------------ DOM */
@@ -225,9 +228,8 @@
       extendWanted: false,
       extendedLoading: false,
       extendedLoaded: false,
-      music: null,
-      musicLoaded: false,
-      musicFailed: false,
+      musicTracks: MUSIC_CATALOG[tag] || [],
+      trackCursor: 0,
     };
   });
 
@@ -275,6 +277,10 @@
   let resonanceTimer = 0;
   let sound = null;
   let soundStarting = false;
+  let gateOpen = false;
+  let soundBank = null;
+  let libraryPrepared = false;
+  const trackAudio = new Map();
 
   function resetViewClock() {
     state.viewStart = now();
@@ -330,6 +336,122 @@
     return buffer;
   }
 
+  function prepareSoundLibrary() {
+    if (libraryPrepared) return;
+    libraryPrepared = true;
+
+    soundBank = document.createElement('div');
+    soundBank.setAttribute('aria-hidden', 'true');
+    soundBank.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;pointer-events:none;';
+    document.body.appendChild(soundBank);
+
+    // Первый трек ставим в очередь первым — он нужен к моменту касания.
+    const first = categories[0].musicTracks[0];
+    if (first) {
+      createTrackAudio(first);
+      preloadTrack(first);
+    }
+
+    for (const category of categories) {
+      for (const track of category.musicTracks) {
+        if (!trackAudio.has(track.id)) createTrackAudio(track);
+      }
+    }
+  }
+
+  function createTrackAudio(track) {
+    if (!track) return null;
+    if (trackAudio.has(track.id)) return trackAudio.get(track.id);
+
+    if (!soundBank) {
+      soundBank = document.createElement('div');
+      soundBank.setAttribute('aria-hidden', 'true');
+      soundBank.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;pointer-events:none;';
+      document.body.appendChild(soundBank);
+    }
+
+    const audio = document.createElement('audio');
+    track.failed = false;
+    audio.crossOrigin = 'anonymous';
+    audio.loop = true;
+    audio.preload = 'metadata';
+    audio.setAttribute('playsinline', '');
+    audio.style.display = 'none';
+
+    audio.addEventListener('error', () => {
+      track.failed = true;
+      if (sound && sound.activeTrackId === track.id) {
+        startSoundCrossfade(null, SLOW_FADE_MS);
+      }
+    });
+
+    audio.src = track.url;
+    soundBank.appendChild(audio);
+    audio.load();
+    trackAudio.set(track.id, audio);
+    return audio;
+  }
+
+  function preloadTrack(track) {
+    if (!track || track.failed) return;
+
+    const audio = trackAudio.get(track.id) || createTrackAudio(track);
+    if (!audio) return;
+
+    audio.preload = 'auto';
+    if (audio.readyState === 0) {
+      audio.load();
+    }
+  }
+
+  function preloadFirstTracks() {
+    for (const category of categories) {
+      preloadTrack(category.musicTracks[0]);
+    }
+  }
+
+  function preloadNextTrack(category) {
+    if (!category || !category.musicTracks.length) return;
+    preloadTrack(category.musicTracks[category.trackCursor % category.musicTracks.length]);
+  }
+
+  function nextTrackFor(category) {
+    const tracks = category.musicTracks || [];
+    if (!tracks.length) return null;
+
+    for (let i = 0; i < tracks.length; i += 1) {
+      const track = tracks[category.trackCursor % tracks.length];
+      category.trackCursor = (category.trackCursor + 1) % tracks.length;
+      if (!track.failed) return track;
+    }
+
+    return null;
+  }
+
+  function ensureTrackChannel(track) {
+    if (!sound || !track || track.failed) return null;
+    if (sound.channels.has(track.id)) return sound.channels.get(track.id);
+
+    const audio = trackAudio.get(track.id) || createTrackAudio(track);
+    if (!audio) return null;
+
+    try {
+      const source = sound.ctx.createMediaElementSource(audio);
+      const gain = sound.ctx.createGain();
+      gain.gain.value = 0;
+      source.connect(gain);
+      gain.connect(sound.bus);
+
+      const channel = { track, audio, source, gain };
+      sound.channels.set(track.id, channel);
+      return channel;
+    } catch (error) {
+      console.warn('[sanctuary] audio graph failed:', track.title, error);
+      track.failed = true;
+      return null;
+    }
+  }
+
   function enableSoundscape() {
     if (sound) {
       if (sound.ctx.state === 'suspended') sound.ctx.resume().catch(() => {});
@@ -339,6 +461,7 @@
 
     const AudioCtor = window.AudioContext || window.webkitAudioContext;
     if (!AudioCtor) return;
+    if (!libraryPrepared) prepareSoundLibrary();
 
     soundStarting = true;
     try {
@@ -404,11 +527,6 @@
       windDepth.connect(noiseTone.frequency);
       wind.start();
 
-      const container = document.createElement('div');
-      container.setAttribute('aria-hidden', 'true');
-      container.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;pointer-events:none;';
-      document.body.appendChild(container);
-
       sound = {
         ctx,
         bus,
@@ -417,9 +535,10 @@
         master,
         noise,
         noiseGain,
-        container,
+        bank: soundBank,
         channels: new Map(),
-        activeTag: null,
+        activeTrackId: null,
+        activeTrack: null,
         activeType: null,
         held: false,
         fadeToken: 0,
@@ -427,12 +546,8 @@
 
       if (ctx.state === 'suspended') ctx.resume().catch(() => {});
 
-      // Первое касание: прогреваем все пять треков, чтобы свайпы не ждали сеть.
-      for (const category of categories) {
-        if (category.music && !category.musicFailed) ensureSoundChannel(category);
-      }
-
-      switchSoundtrack(activeCategory(), SLOW_FADE_MS);
+      // Первый жест: первые треки всех категорий идут в preload сразу.
+      preloadFirstTracks();
     } catch (_) {
       // Web Audio недоступен — остаётся только визуальная сцена.
     } finally {
@@ -440,69 +555,28 @@
     }
   }
 
-  function ensureSoundChannel(category) {
-    if (!sound || !category || !category.music) return null;
-    if (sound.channels.has(category.tag)) return sound.channels.get(category.tag);
-
-    try {
-      const audio = document.createElement('audio');
-      audio.crossOrigin = 'anonymous';
-      audio.loop = true;
-      audio.preload = 'auto';
-      audio.setAttribute('playsinline', '');
-      audio.style.display = 'none';
-
-      audio.addEventListener('error', () => {
-        console.warn('[sanctuary] audio unavailable:', category.tag);
-        category.musicFailed = true;
-        if (sound && activeCategory().tag === category.tag) {
-          switchSoundtrack(activeCategory());
-        }
-      });
-
-      audio.src = category.music.url;
-      sound.container.appendChild(audio);
-
-      const source = sound.ctx.createMediaElementSource(audio);
-      const gain = sound.ctx.createGain();
-      gain.gain.value = 0;
-      source.connect(gain);
-      gain.connect(sound.bus);
-
-      const channel = { category, audio, source, gain };
-      sound.channels.set(category.tag, channel);
-      audio.load();
-      return channel;
-    } catch (error) {
-      console.warn('[sanctuary] audio graph failed:', category.tag, error);
-      category.musicFailed = true;
-      return null;
-    }
-  }
-
-  function switchSoundtrack(category, fadeMs) {
-    if (!sound || !category) return;
+  function switchSoundtrack(track, fadeMs) {
+    if (!sound) return;
 
     const duration = fadeMs || SLOW_FADE_MS;
-    const channel = category.music && !category.musicFailed
-      ? ensureSoundChannel(category)
-      : null;
+    if (!track || track.failed) {
+      startSoundCrossfade(null, duration);
+      return;
+    }
 
+    const channel = ensureTrackChannel(track);
     if (!channel) {
       startSoundCrossfade(null, duration);
       return;
     }
 
-    const samePlaying = sound.activeType === 'music'
-      && sound.activeTag === category.tag
-      && !channel.audio.paused;
-
-    if (samePlaying) {
+    if (sound.activeType === 'music' && sound.activeTrackId === track.id && !channel.audio.paused) {
       channel.audio.playbackRate = sound.held ? SLOW_RATE : 1;
       return;
     }
 
     channel.audio.playbackRate = sound.held ? SLOW_RATE : 1;
+    channel.audio.preload = 'auto';
     startSoundCrossfade(channel, duration);
   }
 
@@ -511,14 +585,15 @@
 
     const duration = Math.max(0.05, (fadeMs || SLOW_FADE_MS) / 1000);
     const now = sound.ctx.currentTime;
-    const targetTag = channel ? channel.category.tag : null;
+    const targetId = channel ? channel.track.id : null;
     const fadeToken = ++sound.fadeToken;
 
-    sound.activeTag = targetTag;
+    sound.activeTrackId = targetId;
+    sound.activeTrack = channel ? channel.track : null;
     sound.activeType = channel ? 'music' : 'noise';
 
-    for (const [tag, item] of sound.channels) {
-      const target = channel && tag === targetTag ? MUSIC_GAIN : 0;
+    for (const [id, item] of sound.channels) {
+      const target = channel && id === targetId ? MUSIC_GAIN : 0;
       item.gain.gain.cancelScheduledValues(now);
       item.gain.gain.setValueAtTime(item.gain.gain.value, now);
       item.gain.gain.linearRampToValueAtTime(target, now + duration);
@@ -533,7 +608,7 @@
       const promise = channel.audio.play();
       if (promise && typeof promise.catch === 'function') {
         promise.catch(() => {
-          if (!sound || sound.activeTag !== targetTag) return;
+          if (!sound || sound.activeTrackId !== targetId) return;
           startSoundCrossfade(null, fadeMs);
         });
       }
@@ -541,8 +616,8 @@
 
     window.setTimeout(() => {
       if (!sound || fadeToken !== sound.fadeToken) return;
-      for (const [tag, item] of sound.channels) {
-        if ((!channel || tag !== channel.category.tag) && item.gain.gain.value < 0.01) {
+      for (const [id, item] of sound.channels) {
+        if ((!channel || id !== targetId) && item.gain.gain.value < 0.01) {
           item.audio.pause();
         }
       }
@@ -580,7 +655,7 @@
   function resumeSound() {
     if (!sound) return;
     sound.ctx.resume().catch(() => {});
-    switchSoundtrack(activeCategory());
+    if (sound.activeTrack) switchSoundtrack(sound.activeTrack, SLOW_FADE_MS);
   }
 
   /* ------------------------------------------------------------- Coverr API */
@@ -611,23 +686,6 @@
       return Array.isArray(payload.hits) ? payload.hits : [];
     } finally {
       window.clearTimeout(timer);
-    }
-  }
-
-  function loadMusicForCategory(category) {
-    if (!category || category.musicLoaded) return;
-
-    const track = MUSIC_TRACKS[category.tag];
-    category.music = track || null;
-    category.musicLoaded = true;
-
-    if (!track) {
-      console.warn('[sanctuary] no ambient track for', category.tag);
-      return;
-    }
-
-    if (sound && categories[state.index].tag === category.tag) {
-      switchSoundtrack(category);
     }
   }
 
@@ -736,8 +794,10 @@
   }
 
   function playCategory(category) {
-    if (!category || category.index !== state.index || !category.clips.length) return;
-    playClip(category, nextClipIndex(category));
+    if (!category || category.index !== state.index || !category.clips.length) return null;
+    const index = nextClipIndex(category);
+    playClip(category, index);
+    return index;
   }
 
   function attachVideo(category, clip, index) {
@@ -796,7 +856,7 @@
       attachVideo(category, clip, index);
     });
 
-    if (category.index === state.index && category.clips.length) {
+    if (category.index === state.index && category.clips.length && gateOpen) {
       playCategory(category);
     }
   }
@@ -921,6 +981,7 @@
 
   function playClip(category, index) {
     if (!category || category.index !== state.index) return;
+    if (!gateOpen) return;
     const selected = category.clips[index];
     if (!selected || !selected.el) return;
 
@@ -962,6 +1023,7 @@
   }
 
   function wakePlayback() {
+    if (!gateOpen) return;
     const category = activeCategory();
     const clip = category && category.clips[category.activeIndex];
     if (!clip || !clip.el || !clip.el.paused) return;
@@ -1144,17 +1206,19 @@
     state.visits[targetIndex] += 1;
     resetViewClock();
 
-    // Звук переключается в тот же тик, что и классы видео, с той же длительностью.
-    switchSoundtrack(categories[targetIndex], duration);
+    const category = categories[targetIndex];
+
+    // Новый кадр и его персональный трек стартуют в одном тике.
+    playCategory(category);
+    const track = nextTrackFor(category);
+    switchSoundtrack(track, duration);
+    preloadNextTrack(category);
 
     if (direction === 'up') {
       engine.history = engine.history.slice(0, engine.historyPos + 1);
       engine.history.push(targetIndex);
       engine.historyPos = engine.history.length - 1;
     }
-
-    // Видео нового кадра запускается немедленно, ещё под растворяющимся затемнением.
-    playCategory(categories[targetIndex]);
   }
 
   /* ------------------------------------------------------------- телеметрия */
@@ -1300,6 +1364,13 @@
     enableSoundscape();
     wakePlayback();
 
+    if (sound && gateOpen && !sound.activeTrack) {
+      const category = activeCategory();
+      const track = nextTrackFor(category);
+      switchSoundtrack(track, SLOW_FADE_MS);
+      preloadNextTrack(category);
+    }
+
     if (gesture) return;
     if (event.pointerType === 'mouse' && event.button !== 0) return;
 
@@ -1431,14 +1502,50 @@
 
   /* ------------------------------------------------------------ инициализация */
 
-  const startupTasks = [
-    ...categories.map(loadCategory),
-    ...categories.map(loadMusicForCategory),
-  ];
+  try {
+    prepareSoundLibrary();
+  } catch (error) {
+    console.warn('[sanctuary] sound library failed:', error);
+  }
+
+  const entryGate = document.querySelector('.entry');
+
+  function unlockExperience() {
+    if (gateOpen) return;
+    gateOpen = true;
+    resetViewClock();
+
+    if (entryGate) {
+      entryGate.classList.add('is-open');
+      entryGate.setAttribute('aria-hidden', 'true');
+      window.setTimeout(() => {
+        entryGate.hidden = true;
+      }, 850);
+    }
+
+    enableSoundscape();
+
+    const category = categories[state.index];
+    playCategory(category);
+    const track = nextTrackFor(category);
+    switchSoundtrack(track, SLOW_FADE_MS);
+    preloadNextTrack(category);
+  }
+
+  if (entryGate) {
+    entryGate.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+      unlockExperience();
+    }, { passive: false });
+  } else {
+    gateOpen = true;
+  }
+
+  const startupTasks = categories.map(loadCategory);
 
   Promise.allSettled(startupTasks).then(() => {
     const total = categories.reduce((sum, category) => sum + category.clips.length, 0);
-    const music = categories.filter((category) => category.music).length;
+    const music = categories.reduce((sum, category) => sum + category.musicTracks.length, 0);
     console.info('[sanctuary] video feed ready:', {
       clips: total,
       music,
