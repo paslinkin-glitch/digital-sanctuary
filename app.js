@@ -1,12 +1,13 @@
 /* Digital Sanctuary — MVP 2: real Coverr footage.
  *
  * Silent vertical feed, five Jungian categories. Each category is filled with
- * one or two free clips from the official Coverr REST API, muted, looping and
+ * 10–15 free clips from the official Coverr REST API, muted, looping and
  * autoplaying. Swipe up/down (touch, mouse or wheel) crossfades to the next
- * engine-selected category; the fade adapts to pace and is never input-blocking.
- * Holding slows the active clip to 0.5x and filters the Coverr soundtrack
- * underwater; a soft rain/wind bed covers any audio loading gap. Every swipe
- * prints one behaviour record.
+ * engine-selected category; a slow drag is tactile contact and does not change
+ * the scene. A canvas layer paints element-specific trails, while the audio
+ * breathing filter and stupor pulse respond to the body. Every swipe prints
+ * one behaviour record; occasional «synchronicity» scenes are chosen by the
+ * element anchor of the current video.
  */
 (() => {
   'use strict';
@@ -23,13 +24,17 @@
 
   const HOLD_MS = 260;
   const SWIPE_MIN_RATIO = 0.08;
+  const SWIPE_MIN_SPEED = 0.32;
   const FLICK_MIN_PX = 28;
-  const FLICK_MIN_SPEED = 0.65;
+  const FLICK_MIN_SPEED = 0.5;
   const SLOW_RATE = 0.5;
   const API_TIMEOUT_MS = 7000;
-  const CLIPS_PER_CATEGORY = 2;
+  const CLIPS_PER_CATEGORY = 15;
   const RESONANCE_HOLD_MS = 500;
   const FAST_VIEW_MS = 2000;
+  const NERVOUS_VIEW_MS = 1500;
+  const STUPOR_IDLE_MS = 20000;
+  const ANCHOR_WATCH_MS = 12000;
   const MAX_WEIGHT = 6;
 
   // Demo key from the brief. A static prototype must expose it; for production
@@ -204,6 +209,43 @@
 
   /* ------------------------------------------------------------------ DOM */
 
+  const ELEMENT_DEFAULT = {
+    Shadow: 'fog',
+    Calm: 'water',
+    Abyss: 'water',
+    Trickster: 'fire',
+    Path: 'space',
+  };
+
+  const ELEMENT_WORDS = {
+    water: ['water', 'rain', 'ocean', 'sea', 'underwater', 'wave', 'river', 'storm', 'wet', 'drop', 'glass', 'lake'],
+    fire: ['fire', 'flame', 'burning', 'burn', 'smoke', 'spark', 'match', 'lighter', 'ember', 'sun', 'light'],
+    fog: ['fog', 'mist', 'haze', 'forest', 'tree', 'cloud', 'shadow', 'dark', 'gloomy', 'condensation'],
+    space: ['space', 'sky', 'road', 'night', 'star', 'city', 'highway', 'street', 'journey', 'path', 'car', 'lights'],
+  };
+
+  function elementForClip(title, tags, categoryTag, description) {
+    const haystack = `${title || ''} ${(tags || []).join(' ')} ${description || ''}`.toLowerCase();
+    let best = ELEMENT_DEFAULT[categoryTag] || 'fog';
+    let bestScore = 0;
+
+    for (const [element, words] of Object.entries(ELEMENT_WORDS)) {
+      let score = 0;
+      for (const word of words) {
+        if (haystack.includes(word)) score += 1;
+      }
+      if (element === ELEMENT_DEFAULT[categoryTag]) score += 0.5;
+      if (score > bestScore) {
+        bestScore = score;
+        best = element;
+      }
+    }
+
+    return best;
+  }
+
+  /* ------------------------------------------------------------------ DOM */
+
   const stage = document.querySelector('.stage');
   const slides = Array.from(document.querySelectorAll('.slide'));
 
@@ -232,6 +274,16 @@
       trackCursor: 0,
     };
   });
+
+  const sessionUsedVideoIds = new Set();
+
+  const synchronicity = {
+    active: false,
+    swipes: 0,
+    threshold: 0,
+    symbol: null,
+    anchorClipId: null,
+  };
 
   const engine = {
     phase: 'diagnostic',       // 'diagnostic' | 'flow'
@@ -269,6 +321,9 @@
     loopsInView: 0,
     totalLoops: 0,
     resonanceAwarded: false,
+    lastInteraction: now(),
+    stupor: false,
+    nervousStreak: 0,
   };
   state.visits[0] = 1;
 
@@ -282,6 +337,23 @@
   let libraryPrepared = false;
   const trackAudio = new Map();
 
+  let anchorWatchTimer = 0;
+  let anchorWatchToken = 0;
+  let stuporMonitor = 0;
+  let stuporPulseTimer = 0;
+  let trailCanvas = null;
+  let trailCtx = null;
+  let canvasW = 0;
+  let canvasH = 0;
+  let canvasDpr = 1;
+  let canvasElement = 'fog';
+  let lastTrail = null;
+  let trailParticles = [];
+  let ripples = [];
+  let sparks = [];
+  let lastCanvasFrame = 0;
+  let breathValue = 0;
+
   function resetViewClock() {
     state.viewStart = now();
     state.holdsInView = 0;
@@ -289,6 +361,12 @@
     state.longestHoldMs = 0;
     state.loopsInView = 0;
     state.resonanceAwarded = false;
+
+    window.clearTimeout(anchorWatchTimer);
+    const token = ++anchorWatchToken;
+    anchorWatchTimer = window.setTimeout(() => {
+      if (gateOpen && token === anchorWatchToken) rememberAnchor('watch');
+    }, ANCHOR_WATCH_MS);
   }
 
   function activeCategory() {
@@ -304,6 +382,453 @@
 
   function categoryByTag(tag) {
     return categories.find((category) => category.tag === tag) || null;
+  }
+
+  function rememberAnchor(source) {
+    if (!gateOpen || synchronicity.active) return;
+
+    const clip = activeClip();
+    if (!clip) return;
+
+    synchronicity.active = true;
+    synchronicity.swipes = 0;
+    synchronicity.threshold = 6 + Math.floor(Math.random() * 3);
+    synchronicity.symbol = clip.element || ELEMENT_DEFAULT[activeCategory().tag] || 'fog';
+    synchronicity.anchorClipId = clip.id;
+
+    console.info('[sanctuary] shadow anchor', {
+      source,
+      symbol: synchronicity.symbol,
+      video: clip.title,
+      inSwipes: synchronicity.threshold,
+    });
+  }
+
+  function findSyncTarget() {
+    const current = activeCategory();
+    const symbol = synchronicity.symbol;
+    const candidates = [];
+
+    for (const category of categories) {
+      if (category.index === current.index) continue;
+
+      category.clips.forEach((clip, index) => {
+        if (!clip || clip.element !== symbol || !clip.el) return;
+        if (!clip.id || clip.id === synchronicity.anchorClipId) return;
+        if (sessionUsedVideoIds.has(clip.id)) return;
+        candidates.push({ category, clip, index });
+      });
+    }
+
+    if (!candidates.length) return null;
+    return candidates[Math.floor(Math.random() * candidates.length)];
+  }
+
+  function advanceSynchronicity() {
+    if (!synchronicity.active) return null;
+
+    synchronicity.swipes += 1;
+    if (synchronicity.swipes < synchronicity.threshold) return null;
+
+    const target = findSyncTarget();
+    synchronicity.active = false;
+    synchronicity.swipes = 0;
+    return target;
+  }
+
+  function clamp(value, min, max) {
+    return Math.min(max, Math.max(min, value));
+  }
+
+  function vibrateTap() {
+    if (typeof navigator.vibrate === 'function') {
+      try {
+        navigator.vibrate(12);
+      } catch (_) {
+        /* вибрация не критична */
+      }
+    }
+  }
+
+  function resizeTrailCanvas() {
+    if (!trailCanvas || !trailCtx) return;
+
+    const rect = stage.getBoundingClientRect();
+    canvasDpr = Math.min(2, window.devicePixelRatio || 1);
+    canvasW = Math.max(1, rect.width);
+    canvasH = Math.max(1, rect.height);
+    trailCanvas.width = Math.round(canvasW * canvasDpr);
+    trailCanvas.height = Math.round(canvasH * canvasDpr);
+    trailCtx.setTransform(canvasDpr, 0, 0, canvasDpr, 0, 0);
+  }
+
+  function pointForEvent(event) {
+    const rect = stage.getBoundingClientRect();
+    return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+  }
+
+  function setSceneElement(clip) {
+    const category = activeCategory();
+    const next = (clip && clip.element)
+      || (category && ELEMENT_DEFAULT[category.tag])
+      || 'fog';
+
+    if (next === canvasElement) return;
+
+    canvasElement = next;
+    trailParticles = [];
+    ripples = [];
+    sparks = [];
+    lastTrail = null;
+
+    if (trailCtx) {
+      trailCtx.clearRect(0, 0, canvasW, canvasH);
+    }
+  }
+
+  function setBreath(amount) {
+    breathValue = clamp(amount, -1, 1);
+
+    const brightness = 1 + breathValue * 0.18;
+    const zoom = canvasElement === 'space' ? 1 + breathValue * 0.055 : 1;
+
+    stage.style.setProperty('--breath-brightness', brightness.toFixed(3));
+    stage.style.setProperty('--tactile-zoom', zoom.toFixed(3));
+
+    if (sound && sound.breath) {
+      const cutoff = breathValue < 0
+        ? 20000 * Math.pow(1400 / 20000, -breathValue)
+        : 20000;
+      const t = sound.ctx.currentTime;
+      sound.breath.frequency.cancelScheduledValues(t);
+      sound.breath.frequency.setValueAtTime(sound.breath.frequency.value, t);
+      sound.breath.frequency.exponentialRampToValueAtTime(cutoff, t + 0.18);
+    }
+  }
+
+  function spawnTactile(point) {
+    if (!trailCtx) return;
+
+    const element = canvasElement;
+    const ctx = trailCtx;
+    const from = lastTrail || point;
+
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    if (element === 'water') {
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.strokeStyle = 'rgba(155, 210, 255, 0.48)';
+      ctx.lineWidth = 2;
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = 'rgba(120, 190, 255, 0.55)';
+      ctx.beginPath();
+      ctx.moveTo(from.x, from.y);
+      ctx.lineTo(point.x, point.y);
+      ctx.stroke();
+
+      ripples.push({
+        x: point.x,
+        y: point.y,
+        r: 3 + Math.random() * 3,
+        max: 70 + Math.random() * 70,
+        speed: 26 + Math.random() * 20,
+        alpha: 0.45,
+        width: 1.2 + Math.random() * 0.8,
+      });
+
+      for (let i = 0; i < 2; i += 1) {
+        trailParticles.push({
+          x: point.x + (Math.random() - 0.5) * 8,
+          y: point.y + (Math.random() - 0.5) * 8,
+          vx: (Math.random() - 0.5) * 0.5,
+          vy: -0.15 - Math.random() * 0.35,
+          life: 1,
+          decay: 0.018,
+          size: 1.2 + Math.random() * 1.8,
+          color: '155, 210, 255',
+        });
+      }
+    } else if (element === 'fire') {
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.strokeStyle = 'rgba(255, 172, 82, 0.52)';
+      ctx.lineWidth = 2.4;
+      ctx.shadowBlur = 18;
+      ctx.shadowColor = 'rgba(255, 120, 40, 0.55)';
+      ctx.beginPath();
+      ctx.moveTo(from.x, from.y);
+      ctx.lineTo(point.x, point.y);
+      ctx.stroke();
+
+      for (let i = 0; i < 2; i += 1) {
+        trailParticles.push({
+          x: point.x + (Math.random() - 0.5) * 10,
+          y: point.y + (Math.random() - 0.5) * 10,
+          vx: (Math.random() - 0.5) * 0.7,
+          vy: -0.2 - Math.random() * 0.6,
+          life: 1,
+          decay: 0.024,
+          size: 1.6 + Math.random() * 2.4,
+          color: '255, 168, 78',
+        });
+      }
+
+      if (Math.random() < 0.55) {
+        sparks.push({
+          x: point.x + (Math.random() - 0.5) * 14,
+          y: point.y + (Math.random() - 0.5) * 10,
+          vx: (Math.random() - 0.5) * 0.8,
+          vy: -0.6 - Math.random() * 1.1,
+          life: 1,
+          decay: 0.018,
+          size: 0.8 + Math.random() * 1.2,
+        });
+      }
+    } else if (element === 'fog') {
+      ctx.filter = 'blur(14px)';
+      ctx.strokeStyle = 'rgba(226, 232, 242, 0.10)';
+      ctx.lineWidth = 34;
+      ctx.beginPath();
+      ctx.moveTo(from.x, from.y);
+      ctx.lineTo(point.x, point.y);
+      ctx.stroke();
+
+      trailParticles.push({
+        x: point.x + (Math.random() - 0.5) * 18,
+        y: point.y + (Math.random() - 0.5) * 18,
+        vx: (Math.random() - 0.5) * 0.25,
+        vy: -0.05 - Math.random() * 0.18,
+        life: 1,
+        decay: 0.012,
+        size: 26 + Math.random() * 34,
+        color: '220, 228, 240',
+      });
+    } else {
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.strokeStyle = 'rgba(186, 204, 255, 0.34)';
+      ctx.lineWidth = 1.15;
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = 'rgba(150, 180, 255, 0.5)';
+      ctx.beginPath();
+      ctx.moveTo(from.x, from.y);
+      ctx.lineTo(point.x, point.y);
+      ctx.stroke();
+
+      ripples.push({
+        x: point.x,
+        y: point.y,
+        r: 6,
+        max: 150 + Math.random() * 90,
+        speed: 42 + Math.random() * 26,
+        alpha: 0.3,
+        width: 0.7,
+      });
+
+      trailParticles.push({
+        x: point.x + (Math.random() - 0.5) * 10,
+        y: point.y + (Math.random() - 0.5) * 10,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: -0.1 - Math.random() * 0.25,
+        life: 1,
+        decay: 0.016,
+        size: 1 + Math.random() * 1.2,
+        color: '190, 208, 255',
+      });
+    }
+
+    ctx.restore();
+
+    if (ripples.length > 28) ripples.splice(0, ripples.length - 28);
+    if (trailParticles.length > 320) trailParticles.splice(0, trailParticles.length - 320);
+    if (sparks.length > 160) sparks.splice(0, sparks.length - 160);
+
+    lastTrail = point;
+  }
+
+  function renderTrail(time) {
+    if (trailCtx) {
+      const dt = lastCanvasFrame
+        ? Math.min(0.05, (time - lastCanvasFrame) / 1000)
+        : 0.016;
+      const step = dt * 60;
+      lastCanvasFrame = time;
+
+      trailCtx.save();
+      trailCtx.globalCompositeOperation = 'destination-out';
+      trailCtx.fillStyle = 'rgba(0, 0, 0, 0.09)';
+      trailCtx.fillRect(0, 0, canvasW, canvasH);
+      trailCtx.restore();
+
+      for (let i = ripples.length - 1; i >= 0; i -= 1) {
+        const ripple = ripples[i];
+        ripple.r += ripple.speed * step;
+        ripple.alpha *= 0.986;
+
+        if (ripple.r > ripple.max || ripple.alpha < 0.02) {
+          ripples.splice(i, 1);
+          continue;
+        }
+
+        trailCtx.save();
+        trailCtx.globalCompositeOperation = 'lighter';
+        const tint = canvasElement === 'space' ? '182, 202, 255' : '155, 215, 255';
+        trailCtx.strokeStyle = `rgba(${tint}, ${ripple.alpha})`;
+        trailCtx.lineWidth = ripple.width;
+        trailCtx.beginPath();
+        trailCtx.arc(ripple.x, ripple.y, ripple.r, 0, Math.PI * 2);
+        trailCtx.stroke();
+        trailCtx.restore();
+      }
+
+      trailCtx.save();
+      if (canvasElement === 'fire' || canvasElement === 'space') {
+        trailCtx.globalCompositeOperation = 'lighter';
+      }
+      if (canvasElement === 'fog') {
+        trailCtx.filter = 'blur(10px)';
+      }
+
+      for (let i = trailParticles.length - 1; i >= 0; i -= 1) {
+        const particle = trailParticles[i];
+        particle.x += particle.vx * step;
+        particle.y += particle.vy * step;
+        particle.life -= particle.decay * step;
+
+        if (particle.life <= 0) {
+          trailParticles.splice(i, 1);
+          continue;
+        }
+
+        trailCtx.fillStyle = `rgba(${particle.color}, ${particle.life * 0.24})`;
+        trailCtx.beginPath();
+        trailCtx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+        trailCtx.fill();
+      }
+      trailCtx.restore();
+
+      if (sparks.length) {
+        trailCtx.save();
+        trailCtx.globalCompositeOperation = 'lighter';
+        for (let i = sparks.length - 1; i >= 0; i -= 1) {
+          const spark = sparks[i];
+          spark.x += spark.vx * step;
+          spark.y += spark.vy * step;
+          spark.vy -= 0.012 * step;
+          spark.life -= spark.decay * step;
+
+          if (spark.life <= 0) {
+            sparks.splice(i, 1);
+            continue;
+          }
+
+          trailCtx.fillStyle = `rgba(255, 190, 100, ${spark.life * 0.8})`;
+          trailCtx.beginPath();
+          trailCtx.arc(spark.x, spark.y, spark.size, 0, Math.PI * 2);
+          trailCtx.fill();
+        }
+        trailCtx.restore();
+      }
+    }
+
+    window.requestAnimationFrame(renderTrail);
+  }
+
+  function markInteraction() {
+    state.lastInteraction = now();
+    if (state.stupor) exitStupor();
+  }
+
+  function enterStupor() {
+    if (state.stupor || !gateOpen) return;
+
+    state.stupor = true;
+    stage.classList.add('is-stupor');
+    stage.style.setProperty('--stupor-ms', '15000ms');
+    stage.style.setProperty('--stupor-scale', '1.12');
+    startStuporBreath();
+  }
+
+  function exitStupor() {
+    if (!state.stupor) return;
+
+    state.stupor = false;
+    stage.classList.remove('is-stupor');
+    stage.style.setProperty('--stupor-ms', '800ms');
+    stage.style.setProperty('--stupor-scale', '1');
+    stopStuporBreath();
+  }
+
+  function startStuporBreath() {
+    if (!sound || !sound.breathPulse || stuporPulseTimer) return;
+
+    const pulse = () => {
+      if (!sound || !state.stupor) return;
+
+      const t = sound.ctx.currentTime;
+      const gain = sound.breathPulse.gain;
+      gain.cancelScheduledValues(t);
+      gain.setValueAtTime(1, t);
+      gain.linearRampToValueAtTime(1.16, t + 4);
+      gain.linearRampToValueAtTime(1, t + 10);
+    };
+
+    pulse();
+    stuporPulseTimer = window.setInterval(pulse, 10000);
+  }
+
+  function stopStuporBreath() {
+    if (!stuporPulseTimer) return;
+
+    window.clearInterval(stuporPulseTimer);
+    stuporPulseTimer = 0;
+
+    if (!sound || !sound.breathPulse) return;
+
+    const t = sound.ctx.currentTime;
+    const gain = sound.breathPulse.gain;
+    gain.cancelScheduledValues(t);
+    gain.setValueAtTime(gain.value, t);
+    gain.linearRampToValueAtTime(1, t + 0.8);
+  }
+
+  function checkStupor() {
+    if (!gateOpen || document.hidden || gesture) return;
+    if (!state.stupor && now() - state.lastInteraction >= STUPOR_IDLE_MS) {
+      enterStupor();
+    }
+  }
+
+  function triggerTricksterPrick() {
+    if (!gateOpen || stage.classList.contains('is-prick')) return;
+
+    stage.classList.add('is-prick');
+    playTricksterClick();
+    window.setTimeout(() => {
+      stage.classList.remove('is-prick');
+    }, 150);
+  }
+
+  function playTricksterClick() {
+    if (!sound || !sound.master) return;
+
+    const ctx = sound.ctx;
+    const t = ctx.currentTime;
+    const oscillator = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    oscillator.type = 'triangle';
+    oscillator.frequency.setValueAtTime(190, t);
+    oscillator.frequency.exponentialRampToValueAtTime(80, t + 0.05);
+
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(0.035, t + 0.005);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
+
+    oscillator.connect(gain);
+    gain.connect(sound.master);
+    oscillator.start(t);
+    oscillator.stop(t + 0.12);
   }
 
   /* ---------------------------------------------------------- звуковая среда */
@@ -486,13 +1011,23 @@
       compressor.attack.value = 0.006;
       compressor.release.value = 0.3;
 
+      const breath = ctx.createBiquadFilter();
+      breath.type = 'lowpass';
+      breath.frequency.value = 20000;
+      breath.Q.value = 0.3;
+
+      const breathPulse = ctx.createGain();
+      breathPulse.gain.value = 1;
+
       const master = ctx.createGain();
       master.gain.value = 0.72;
 
       bus.connect(rumbleCut);
       rumbleCut.connect(depth);
-      depth.connect(compressor);
-      compressor.connect(master);
+      depth.connect(breath);
+      breath.connect(compressor);
+      compressor.connect(breathPulse);
+      breathPulse.connect(master);
       master.connect(ctx.destination);
 
       // Мягкий дождь/ветер: резерв, если музыка временно недоступна.
@@ -532,6 +1067,8 @@
         bus,
         rumbleCut,
         depth,
+        breath,
+        breathPulse,
         master,
         noise,
         noiseGain,
@@ -716,6 +1253,7 @@
       description: hit.description || '',
       vertical: Boolean(hit.is_vertical),
       tags,
+      element: elementForClip(hit.title, tags, category.tag, hit.description),
     };
   }
 
@@ -767,28 +1305,85 @@
 
     for (const clip of reserve) {
       if (selected.length >= CLIPS_PER_CATEGORY) break;
-      if (!selected.some((item) => item.id === clip.id)) selected.push(clip);
+      if (!selected.some((item) => item.id === clip.id)) {
+        selected.push({
+          ...clip,
+          description: clip.description || '',
+          tags: Array.isArray(clip.tags) ? clip.tags : [],
+          element: clip.element || elementForClip(clip.title, [], category.tag, ''),
+        });
+      }
+    }
+
+    // Один якорь каждой стихии в пуле: иначе «Синхроничность» не найдёт
+    // видео с тем же символом в другой категории.
+    const symbolsInPool = new Set(unique.map((clip) => clip.element));
+    for (const symbol of symbolsInPool) {
+      if (selected.some((clip) => clip.element === symbol)) continue;
+
+      const candidate = unique.find(
+        (clip) => clip.element === symbol && !selected.some((item) => item.id === clip.id)
+      );
+      if (!candidate) continue;
+
+      if (selected.length < CLIPS_PER_CATEGORY) {
+        selected.push(candidate);
+        continue;
+      }
+
+      const counts = {};
+      for (const clip of selected) {
+        counts[clip.element] = (counts[clip.element] || 0) + 1;
+      }
+
+      let replaceIndex = -1;
+      selected.forEach((clip, index) => {
+        if (counts[clip.element] <= 1) return;
+        if (
+          replaceIndex < 0
+          || scoreClip(clip, category) < scoreClip(selected[replaceIndex], category)
+        ) {
+          replaceIndex = index;
+        }
+      });
+
+      if (replaceIndex >= 0) {
+        selected[replaceIndex] = candidate;
+      }
     }
 
     return selected;
   }
 
   function nextClipIndex(category) {
-    if (!category.clips.length) return 0;
+    const clips = category.clips;
+    if (!clips.length) return 0;
 
-    if (category.freshIndex !== null && category.clips[category.freshIndex]) {
+    const available = (index) => {
+      const clip = clips[index];
+      return Boolean(clip) && (!clip.id || !sessionUsedVideoIds.has(clip.id));
+    };
+
+    if (category.freshIndex !== null) {
       const fresh = category.freshIndex;
       category.freshIndex = null;
-      category.lastPlayed = fresh;
-      return fresh;
+      if (available(fresh)) {
+        category.lastPlayed = fresh;
+        return fresh;
+      }
     }
 
-    if (category.lastPlayed === null) {
-      category.lastPlayed = 0;
-      return 0;
+    const start = category.lastPlayed === null ? -1 : category.lastPlayed;
+    for (let step = 1; step <= clips.length; step += 1) {
+      const index = (start + step + clips.length) % clips.length;
+      if (available(index)) {
+        category.lastPlayed = index;
+        return index;
+      }
     }
 
-    const next = (category.lastPlayed + 1) % category.clips.length;
+    // Сессия исчерпала пул — только тогда допускаем повтор.
+    const next = start < 0 ? 0 : (start + 1) % clips.length;
     category.lastPlayed = next;
     return next;
   }
@@ -864,11 +1459,15 @@
   function appendClips(category, clips) {
     if (!clips.length) return;
 
+    const room = Math.max(0, CLIPS_PER_CATEGORY - category.clips.length);
+    if (!room) return;
+
     const media = category.el.querySelector('.media');
     if (!media) return;
 
+    const incoming = clips.slice(0, room);
     const firstNew = category.clips.length;
-    clips.forEach((clip) => {
+    incoming.forEach((clip) => {
       const index = category.clips.length;
       category.clips.push(clip);
       attachVideo(category, clip, index);
@@ -908,7 +1507,14 @@
       }
 
       if (!category.clips.length) {
-        category.clips = (FALLBACK_CLIPS[category.tag] || []).slice(0, CLIPS_PER_CATEGORY);
+        category.clips = (FALLBACK_CLIPS[category.tag] || [])
+          .slice(0, CLIPS_PER_CATEGORY)
+          .map((clip) => ({
+            ...clip,
+            description: clip.description || '',
+            tags: Array.isArray(clip.tags) ? clip.tags : [],
+            element: clip.element || elementForClip(clip.title, [], category.tag, ''),
+          }));
       }
 
       mountClips(category);
@@ -985,6 +1591,7 @@
     const selected = category.clips[index];
     if (!selected || !selected.el) return;
 
+    if (selected.id) sessionUsedVideoIds.add(selected.id);
     category.activeIndex = index;
 
     category.clips.forEach((clip, clipIndex) => {
@@ -1180,9 +1787,13 @@
     return viewedMs < QUICK_VIEW_MS || impulsive ? QUICK_FADE_MS : SLOW_FADE_MS;
   }
 
-  function navigateTo(targetIndex, direction, fadeMs) {
+  function navigateTo(targetIndex, direction, fadeMs, forcedClipId) {
     if (targetIndex === null || targetIndex === undefined) return;
     if (!slides[targetIndex]) return;
+
+    markInteraction();
+    setBreath(0);
+    lastTrail = null;
 
     const fromIndex = state.index;
     const from = slides[fromIndex];
@@ -1208,8 +1819,15 @@
 
     const category = categories[targetIndex];
 
+    if (forcedClipId) {
+      const forcedIndex = category.clips.findIndex((clip) => clip.id === forcedClipId);
+      if (forcedIndex >= 0) category.freshIndex = forcedIndex;
+    }
+
     // Новый кадр и его персональный трек стартуют в одном тике.
     playCategory(category);
+    setSceneElement(activeClip());
+    vibrateTap();
     const track = nextTrackFor(category);
     switchSoundtrack(track, duration);
     preloadNextTrack(category);
@@ -1261,6 +1879,7 @@
     if (direction === 'down') {
       if (engine.phase === 'diagnostic' || engine.historyPos <= 0) return;
 
+      state.nervousStreak = 0;
       const targetIndex = engine.history[engine.historyPos - 1];
       const record = reportSwipe('down', speed);
       engine.historyPos -= 1;
@@ -1269,9 +1888,30 @@
     }
 
     const record = reportSwipe('up', speed);
-    const targetIndex = chooseNext(record);
-    if (targetIndex === null || targetIndex === undefined) return;
-    navigateTo(targetIndex, 'up', fadeDurationFor(record.viewedMs, speed));
+
+    if (state.nervousStreak >= 3) {
+      triggerTricksterPrick();
+      state.nervousStreak = 0;
+    } else {
+      state.nervousStreak = record.viewedMs < NERVOUS_VIEW_MS
+        ? state.nervousStreak + 1
+        : 0;
+    }
+
+    const defaultTarget = chooseNext(record);
+    const syncTarget = advanceSynchronicity();
+    if (syncTarget) {
+      navigateTo(
+        syncTarget.category.index,
+        'up',
+        fadeDurationFor(record.viewedMs, speed),
+        syncTarget.clip.id
+      );
+      return;
+    }
+
+    if (defaultTarget === null || defaultTarget === undefined) return;
+    navigateTo(defaultTarget, 'up', fadeDurationFor(record.viewedMs, speed));
   }
 
   /* ---------------------------------------------------------- удержание */
@@ -1292,6 +1932,7 @@
     stage.classList.add('is-held');
     setActivePlaybackRate(SLOW_RATE);
     setSoundDepth(true);
+    vibrateTap();
   }
 
   function stopHold() {
@@ -1301,6 +1942,7 @@
     const duration = now() - gesture.holdStart;
     state.heldMs += duration;
     state.longestHoldMs = Math.max(state.longestHoldMs, duration);
+    if (duration >= 600) rememberAnchor('hold');
     stage.classList.remove('is-held');
     setActivePlaybackRate(1);
     setSoundDepth(false);
@@ -1317,12 +1959,15 @@
         const duration = now() - gesture.holdStart;
         state.heldMs += duration;
         state.longestHoldMs = Math.max(state.longestHoldMs, duration);
+        if (duration >= 600) rememberAnchor('hold');
         setActivePlaybackRate(1);
         setSoundDepth(false);
       }
       gesture = null;
     }
 
+    setBreath(0);
+    lastTrail = null;
     stage.classList.remove('is-held');
   }
 
@@ -1344,19 +1989,28 @@
     const g = gesture;
     gesture = null;
 
+    setBreath(0);
+    lastTrail = null;
+    markInteraction();
+
     const dx = event.clientX - g.x0;
     const dy = event.clientY - g.y0;
     const distance = Math.abs(dy);
     const elapsed = Math.max(1, now() - g.t0);
-    const speed = g.peakSpeed > 0 ? g.peakSpeed : distance / elapsed;
+    const velocity = distance / elapsed;
 
-    if (distance < Math.abs(dx)) return;
+    if (distance < Math.abs(dx)) {
+      state.nervousStreak = 0;
+      return;
+    }
 
-    const isLongEnough = distance >= swipeThreshold();
-    const isFlick = distance >= FLICK_MIN_PX && speed >= FLICK_MIN_SPEED;
+    const isLongEnough = distance >= swipeThreshold() && velocity >= SWIPE_MIN_SPEED;
+    const isFlick = distance >= FLICK_MIN_PX && velocity >= FLICK_MIN_SPEED;
 
     if (isLongEnough || isFlick) {
-      go(dy < 0 ? 'up' : 'down', speed);
+      go(dy < 0 ? 'up' : 'down', velocity);
+    } else {
+      state.nervousStreak = 0;
     }
   }
 
@@ -1373,6 +2027,16 @@
 
     if (gesture) return;
     if (event.pointerType === 'mouse' && event.button !== 0) return;
+
+    if (gateOpen) {
+      markInteraction();
+      setSceneElement(activeClip());
+      const point = pointForEvent(event);
+      spawnTactile(point);
+      lastTrail = point;
+      setBreath(0);
+      rememberAnchor('touch');
+    }
 
     gesture = {
       id: event.pointerId,
@@ -1413,6 +2077,20 @@
       event.clientX - gesture.x0,
       event.clientY - gesture.y0
     );
+
+    markInteraction();
+
+    if (gateOpen) {
+      const point = pointForEvent(event);
+      if (!lastTrail || Math.hypot(point.x - lastTrail.x, point.y - lastTrail.y) > 2) {
+        spawnTactile(point);
+      }
+
+      const dy = event.clientY - gesture.y0;
+      if (Math.abs(dy) > 8) {
+        setBreath(clamp(-dy / 140, -1, 1));
+      }
+    }
 
     if (!gesture.moved && distance > 10) {
       gesture.moved = true;
@@ -1457,6 +2135,9 @@
 
   stage.addEventListener('wheel', (event) => {
     event.preventDefault();
+    markInteraction();
+    rememberAnchor('wheel');
+    setBreath(0);
 
     if (gesture) return;
 
@@ -1492,6 +2173,9 @@
     } else if (state.hiddenAt !== null) {
       state.viewStart += now() - state.hiddenAt;
       state.hiddenAt = null;
+      markInteraction();
+      setBreath(0);
+      setSceneElement(activeClip());
 
       const category = activeCategory();
       if (category.clips.length) playClip(category, category.activeIndex);
@@ -1508,12 +2192,27 @@
     console.warn('[sanctuary] sound library failed:', error);
   }
 
+  trailCanvas = document.getElementById('trail-canvas');
+  if (trailCanvas && trailCanvas.getContext) {
+    trailCtx = trailCanvas.getContext('2d');
+    resizeTrailCanvas();
+    window.addEventListener('resize', resizeTrailCanvas);
+    if ('ResizeObserver' in window) {
+      new window.ResizeObserver(resizeTrailCanvas).observe(stage);
+    }
+    window.requestAnimationFrame(renderTrail);
+  }
+
+  stuporMonitor = window.setInterval(checkStupor, 1000);
+
   const entryGate = document.querySelector('.entry');
 
   function unlockExperience() {
     if (gateOpen) return;
     gateOpen = true;
     resetViewClock();
+    markInteraction();
+    setBreath(0);
 
     if (entryGate) {
       entryGate.classList.add('is-open');
@@ -1527,6 +2226,8 @@
 
     const category = categories[state.index];
     playCategory(category);
+    setSceneElement(activeClip());
+    vibrateTap();
     const track = nextTrackFor(category);
     switchSoundtrack(track, SLOW_FADE_MS);
     preloadNextTrack(category);
