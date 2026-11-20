@@ -4,10 +4,11 @@
  * 10–15 free clips from the official Coverr REST API, muted, looping and
  * autoplaying. Swipe up/down (touch, mouse or wheel) crossfades to the next
  * engine-selected category; a slow drag is tactile contact and does not change
- * the scene. A canvas layer paints element-specific trails, while the audio
+ * the scene. Optical CSS layers react to the current element, while the audio
  * breathing filter and stupor pulse respond to the body. Every swipe prints
  * one behaviour record; occasional «synchronicity» scenes are chosen by the
- * element anchor of the current video.
+ * element anchor of the current video. A short phrase from DeepSeek is
+ * prefetched for the next scene and appears in the lower third.
  */
 (() => {
   'use strict';
@@ -41,6 +42,18 @@
   // this call belongs behind a tiny server-side proxy.
   const API_KEY = 'b1155018766256bd1ea645df7d64e178';
   const API_ENDPOINT = 'https://api.coverr.co/videos';
+  const DEEPSEEK_API_KEY = '81f333d7-b43e-42ea-ad20-b9ed096ff996';
+  const DEEPSEEK_ENDPOINT = 'https://api.deepseek.com/chat/completions';
+  const DEEPSEEK_MODEL = 'deepseek-chat';
+  const CAPTION_FADE_MS = 800;
+  const CAPTION_MIN_WORDS = 8;
+  const CAPTION_MAX_WORDS = 11;
+  const CAPTION_TIMEOUT_MS = 9000;
+  const CAPTION_SYSTEM_PROMPT = `Ты — голос бессознательного и пространства сновидения. Пиши только по-русски, обращаясь к человеку на «ты».
+Создай одну фразу строго из 8–11 слов. Одно законченное, глубокое предложение; оно должно естественно ложиться на две строки.
+Тон: тихий, гипнотический, психологически точный; говори о скрытом конфликте между внешней маской и внутренней усталостью или правдой.
+Запрещено: банальные мотивационные цитаты, советы и призывы, академические термины («архетип», «персона», «либидо»), кавычки, заголовки, списки, пояснения.
+Не используй шаблонные формулы. Верни только саму фразу, без кавычек и комментариев.`;
   const MUSIC_GAIN = 0.55;
   const NOISE_GAIN = 0.3;
 
@@ -248,6 +261,10 @@
 
   const stage = document.querySelector('.stage');
   const slides = Array.from(document.querySelectorAll('.slide'));
+  const captionEl = document.querySelector('.caption');
+  const captionLines = captionEl
+    ? Array.from(captionEl.querySelectorAll('.caption-line'))
+    : [];
 
   const categories = slides.map((slide, index) => {
     const tag = slide.dataset.tag;
@@ -341,18 +358,14 @@
   let anchorWatchToken = 0;
   let stuporMonitor = 0;
   let stuporPulseTimer = 0;
-  let trailCanvas = null;
-  let trailCtx = null;
-  let canvasW = 0;
-  let canvasH = 0;
-  let canvasDpr = 1;
-  let canvasElement = 'fog';
-  let lastTrail = null;
-  let trailParticles = [];
-  let ripples = [];
-  let sparks = [];
-  let lastCanvasFrame = 0;
+  let currentOpticElement = 'fog';
   let breathValue = 0;
+  let captionSceneToken = 0;
+  let captionTimer = 0;
+  let captionApiUnavailable = false;
+  const captionCache = new Map();
+  const captionPending = new Map();
+  const captionSeen = new Set();
 
   function resetViewClock() {
     state.viewStart = now();
@@ -450,18 +463,6 @@
     }
   }
 
-  function resizeTrailCanvas() {
-    if (!trailCanvas || !trailCtx) return;
-
-    const rect = stage.getBoundingClientRect();
-    canvasDpr = Math.min(2, window.devicePixelRatio || 1);
-    canvasW = Math.max(1, rect.width);
-    canvasH = Math.max(1, rect.height);
-    trailCanvas.width = Math.round(canvasW * canvasDpr);
-    trailCanvas.height = Math.round(canvasH * canvasDpr);
-    trailCtx.setTransform(canvasDpr, 0, 0, canvasDpr, 0, 0);
-  }
-
   function pointForEvent(event) {
     const rect = stage.getBoundingClientRect();
     return { x: event.clientX - rect.left, y: event.clientY - rect.top };
@@ -469,31 +470,53 @@
 
   function setSceneElement(clip) {
     const category = activeCategory();
-    const next = (clip && clip.element)
+    const element = (clip && clip.element)
       || (category && ELEMENT_DEFAULT[category.tag])
       || 'fog';
 
-    if (next === canvasElement) return;
+    currentOpticElement = element;
+    stage.dataset.element = element;
+    stage.classList.remove('is-touching');
+    stage.style.removeProperty('--optic-zoom');
+    stage.style.setProperty('--optic-x', '50%');
+    stage.style.setProperty('--optic-y', '50%');
+  }
 
-    canvasElement = next;
-    trailParticles = [];
-    ripples = [];
-    sparks = [];
-    lastTrail = null;
+  function startOptics(event) {
+    if (!gateOpen) return;
 
-    if (trailCtx) {
-      trailCtx.clearRect(0, 0, canvasW, canvasH);
+    const point = pointForEvent(event);
+    stage.classList.add('is-touching');
+    stage.style.setProperty('--optic-x', `${point.x}px`);
+    stage.style.setProperty('--optic-y', `${point.y}px`);
+
+    if (currentOpticElement === 'space') {
+      stage.style.setProperty('--optic-zoom', '1.04');
     }
+  }
+
+  function updateOptics(event) {
+    if (!gateOpen || !gesture) return;
+
+    const point = pointForEvent(event);
+    stage.style.setProperty('--optic-x', `${point.x}px`);
+    stage.style.setProperty('--optic-y', `${point.y}px`);
+
+    if (currentOpticElement === 'space') {
+      const dy = event.clientY - gesture.y0;
+      const amount = clamp(-dy / 160, -1, 1);
+      const zoom = 1 + ((amount + 1) / 2) * 0.08;
+      stage.style.setProperty('--optic-zoom', zoom.toFixed(3));
+    }
+  }
+
+  function stopOptics() {
+    stage.classList.remove('is-touching');
+    stage.style.removeProperty('--optic-zoom');
   }
 
   function setBreath(amount) {
     breathValue = clamp(amount, -1, 1);
-
-    const brightness = 1 + breathValue * 0.18;
-    const zoom = canvasElement === 'space' ? 1 + breathValue * 0.055 : 1;
-
-    stage.style.setProperty('--breath-brightness', brightness.toFixed(3));
-    stage.style.setProperty('--tactile-zoom', zoom.toFixed(3));
 
     if (sound && sound.breath) {
       const cutoff = breathValue < 0
@@ -506,232 +529,295 @@
     }
   }
 
-  function spawnTactile(point) {
-    if (!trailCtx) return;
+  function behaviorContext(record) {
+    const viewedMs = record && Number.isFinite(record.viewedMs)
+      ? record.viewedMs
+      : Math.max(0, now() - state.viewStart);
+    const resonance = state.longestHoldMs >= 600 || viewedMs >= 12000;
+    const anxiety = record
+      ? record.viewedMs < FAST_VIEW_MS || record.swipeSpeed >= IMPULSIVE_SPEED
+      : engine.fastStreak >= 2 || state.nervousStreak >= 2;
 
-    const element = canvasElement;
-    const ctx = trailCtx;
-    const from = lastTrail || point;
-
-    ctx.save();
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-
-    if (element === 'water') {
-      ctx.globalCompositeOperation = 'source-over';
-      ctx.strokeStyle = 'rgba(155, 210, 255, 0.48)';
-      ctx.lineWidth = 2;
-      ctx.shadowBlur = 10;
-      ctx.shadowColor = 'rgba(120, 190, 255, 0.55)';
-      ctx.beginPath();
-      ctx.moveTo(from.x, from.y);
-      ctx.lineTo(point.x, point.y);
-      ctx.stroke();
-
-      ripples.push({
-        x: point.x,
-        y: point.y,
-        r: 3 + Math.random() * 3,
-        max: 70 + Math.random() * 70,
-        speed: 26 + Math.random() * 20,
-        alpha: 0.45,
-        width: 1.2 + Math.random() * 0.8,
-      });
-
-      for (let i = 0; i < 2; i += 1) {
-        trailParticles.push({
-          x: point.x + (Math.random() - 0.5) * 8,
-          y: point.y + (Math.random() - 0.5) * 8,
-          vx: (Math.random() - 0.5) * 0.5,
-          vy: -0.15 - Math.random() * 0.35,
-          life: 1,
-          decay: 0.018,
-          size: 1.2 + Math.random() * 1.8,
-          color: '155, 210, 255',
-        });
-      }
-    } else if (element === 'fire') {
-      ctx.globalCompositeOperation = 'lighter';
-      ctx.strokeStyle = 'rgba(255, 172, 82, 0.52)';
-      ctx.lineWidth = 2.4;
-      ctx.shadowBlur = 18;
-      ctx.shadowColor = 'rgba(255, 120, 40, 0.55)';
-      ctx.beginPath();
-      ctx.moveTo(from.x, from.y);
-      ctx.lineTo(point.x, point.y);
-      ctx.stroke();
-
-      for (let i = 0; i < 2; i += 1) {
-        trailParticles.push({
-          x: point.x + (Math.random() - 0.5) * 10,
-          y: point.y + (Math.random() - 0.5) * 10,
-          vx: (Math.random() - 0.5) * 0.7,
-          vy: -0.2 - Math.random() * 0.6,
-          life: 1,
-          decay: 0.024,
-          size: 1.6 + Math.random() * 2.4,
-          color: '255, 168, 78',
-        });
-      }
-
-      if (Math.random() < 0.55) {
-        sparks.push({
-          x: point.x + (Math.random() - 0.5) * 14,
-          y: point.y + (Math.random() - 0.5) * 10,
-          vx: (Math.random() - 0.5) * 0.8,
-          vy: -0.6 - Math.random() * 1.1,
-          life: 1,
-          decay: 0.018,
-          size: 0.8 + Math.random() * 1.2,
-        });
-      }
-    } else if (element === 'fog') {
-      ctx.filter = 'blur(14px)';
-      ctx.strokeStyle = 'rgba(226, 232, 242, 0.10)';
-      ctx.lineWidth = 34;
-      ctx.beginPath();
-      ctx.moveTo(from.x, from.y);
-      ctx.lineTo(point.x, point.y);
-      ctx.stroke();
-
-      trailParticles.push({
-        x: point.x + (Math.random() - 0.5) * 18,
-        y: point.y + (Math.random() - 0.5) * 18,
-        vx: (Math.random() - 0.5) * 0.25,
-        vy: -0.05 - Math.random() * 0.18,
-        life: 1,
-        decay: 0.012,
-        size: 26 + Math.random() * 34,
-        color: '220, 228, 240',
-      });
-    } else {
-      ctx.globalCompositeOperation = 'lighter';
-      ctx.strokeStyle = 'rgba(186, 204, 255, 0.34)';
-      ctx.lineWidth = 1.15;
-      ctx.shadowBlur = 8;
-      ctx.shadowColor = 'rgba(150, 180, 255, 0.5)';
-      ctx.beginPath();
-      ctx.moveTo(from.x, from.y);
-      ctx.lineTo(point.x, point.y);
-      ctx.stroke();
-
-      ripples.push({
-        x: point.x,
-        y: point.y,
-        r: 6,
-        max: 150 + Math.random() * 90,
-        speed: 42 + Math.random() * 26,
-        alpha: 0.3,
-        width: 0.7,
-      });
-
-      trailParticles.push({
-        x: point.x + (Math.random() - 0.5) * 10,
-        y: point.y + (Math.random() - 0.5) * 10,
-        vx: (Math.random() - 0.5) * 0.4,
-        vy: -0.1 - Math.random() * 0.25,
-        life: 1,
-        decay: 0.016,
-        size: 1 + Math.random() * 1.2,
-        color: '190, 208, 255',
-      });
+    if (resonance) {
+      return {
+        key: 'resonance',
+        context: 'долгое удержание или долгое созерцание — погружение, резонанс, готовность встретиться с тенью',
+      };
     }
 
-    ctx.restore();
+    if (anxiety) {
+      return {
+        key: 'anxiety',
+        context: 'быстрые свайпы и короткие взгляды — сопротивление, тревога, желание уйти от встречи',
+      };
+    }
 
-    if (ripples.length > 28) ripples.splice(0, ripples.length - 28);
-    if (trailParticles.length > 320) trailParticles.splice(0, trailParticles.length - 320);
-    if (sparks.length > 160) sparks.splice(0, sparks.length - 160);
-
-    lastTrail = point;
+    return {
+      key: 'neutral',
+      context: 'ровное наблюдение, осторожное любопытство, пауза между защитой и интересом',
+    };
   }
 
-  function renderTrail(time) {
-    if (trailCtx) {
-      const dt = lastCanvasFrame
-        ? Math.min(0.05, (time - lastCanvasFrame) / 1000)
-        : 0.016;
-      const step = dt * 60;
-      lastCanvasFrame = time;
+  function captionKey(clip) {
+    return clip.id || `${clip.title || 'untitled'}|${clip.url || ''}`;
+  }
 
-      trailCtx.save();
-      trailCtx.globalCompositeOperation = 'destination-out';
-      trailCtx.fillStyle = 'rgba(0, 0, 0, 0.09)';
-      trailCtx.fillRect(0, 0, canvasW, canvasH);
-      trailCtx.restore();
+  function normalizeCaption(raw) {
+    let text = String(raw || '').trim();
+    if (!text) return '';
 
-      for (let i = ripples.length - 1; i >= 0; i -= 1) {
-        const ripple = ripples[i];
-        ripple.r += ripple.speed * step;
-        ripple.alpha *= 0.986;
+    text = text
+      .replace(/^```[a-z]*\s*/i, '')
+      .replace(/\s*```$/i, '')
+      .replace(/^(фраза|текст|caption)\s*[:—-]\s*/i, '')
+      .replace(/^["«»“”'`]+|["«»“”'`]+$/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
 
-        if (ripple.r > ripple.max || ripple.alpha < 0.02) {
-          ripples.splice(i, 1);
-          continue;
-        }
+    return text;
+  }
 
-        trailCtx.save();
-        trailCtx.globalCompositeOperation = 'lighter';
-        const tint = canvasElement === 'space' ? '182, 202, 255' : '155, 215, 255';
-        trailCtx.strokeStyle = `rgba(${tint}, ${ripple.alpha})`;
-        trailCtx.lineWidth = ripple.width;
-        trailCtx.beginPath();
-        trailCtx.arc(ripple.x, ripple.y, ripple.r, 0, Math.PI * 2);
-        trailCtx.stroke();
-        trailCtx.restore();
+  function countCaptionWords(text) {
+    const matches = text.match(/[\p{L}\p{N}]+(?:[-’'][\p{L}\p{N}]+)*/gu);
+    return matches ? matches.length : 0;
+  }
+
+  function captionIsValid(text) {
+    if (!text) return false;
+
+    const words = countCaptionWords(text);
+    if (words < CAPTION_MIN_WORDS || words > CAPTION_MAX_WORDS) return false;
+    if (!/[А-Яа-яЁё]/.test(text)) return false;
+    if (/[<>]/.test(text)) return false;
+    if (/["«»“”]/.test(text)) return false;
+
+    const sentenceMarks = text.match(/[.!?…]/g) || [];
+    if (sentenceMarks.length > 1) return false;
+
+    if (/(архетип|персон|либидо|юнгиан|психоанализ)/i.test(text)) return false;
+    if (/(сделай|поверь|должен|нужно|попробуй|стань|обещай)/i.test(text)) return false;
+
+    return true;
+  }
+
+  function captionMessages(clip, category, behavior) {
+    const details = [
+      `Категория: ${category.tag}.`,
+      `Видео: «${clip.title || 'без названия'}».`,
+      clip.description ? `Описание: ${clip.description.slice(0, 420)}.` : '',
+      clip.tags && clip.tags.length ? `Теги: ${clip.tags.slice(0, 18).join(', ')}.` : '',
+      `Поведение пользователя: ${behavior.context}.`,
+      'Создай одну новую фразу по правилам. Верни только текст фразы.',
+    ].filter(Boolean);
+
+    return [
+      { role: 'system', content: CAPTION_SYSTEM_PROMPT },
+      { role: 'user', content: details.join('\n') },
+    ];
+  }
+
+  async function callDeepSeek(messages, temperature) {
+    if (captionApiUnavailable) return null;
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), CAPTION_TIMEOUT_MS);
+
+    try {
+      const response = await fetch(DEEPSEEK_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: DEEPSEEK_MODEL,
+          messages,
+          temperature,
+          max_tokens: 60,
+          top_p: 0.95,
+          frequency_penalty: 0.2,
+          presence_penalty: 0.2,
+          stream: false,
+        }),
+        signal: controller.signal,
+        cache: 'no-store',
+      });
+
+      if (response.status === 401 || response.status === 403) {
+        captionApiUnavailable = true;
+        return null;
       }
 
-      trailCtx.save();
-      if (canvasElement === 'fire' || canvasElement === 'space') {
-        trailCtx.globalCompositeOperation = 'lighter';
+      if (!response.ok) return null;
+
+      const payload = await response.json();
+      const content = payload
+        && payload.choices
+        && payload.choices[0]
+        && payload.choices[0].message
+        && payload.choices[0].message.content;
+
+      return typeof content === 'string' ? content : null;
+    } catch (_) {
+      return null;
+    } finally {
+      window.clearTimeout(timer);
+    }
+  }
+
+  function requestCaption(clip, category, behavior) {
+    if (!clip || !category) return Promise.resolve(null);
+
+    const key = captionKey(clip);
+    if (captionCache.has(key)) return Promise.resolve(captionCache.get(key));
+    if (captionPending.has(key)) return captionPending.get(key);
+
+    const promise = (async () => {
+      const messages = captionMessages(clip, category, behavior);
+      let raw = await callDeepSeek(messages, 1.15);
+      let text = normalizeCaption(raw);
+
+      if (raw && (!captionIsValid(text) || captionSeen.has(text.toLowerCase()))) {
+        const words = countCaptionWords(text);
+        const retryMessages = messages.concat([
+          { role: 'assistant', content: raw },
+          {
+            role: 'user',
+            content: `В предыдущей попытке получилось ${words} слов. Нужна ровно одна новая фраза из 8–11 слов, одно законченное предложение, только текст без кавычек и пояснений.`,
+          },
+        ]);
+
+        raw = await callDeepSeek(retryMessages, 0.9);
+        text = normalizeCaption(raw);
       }
-      if (canvasElement === 'fog') {
-        trailCtx.filter = 'blur(10px)';
+
+      if (!captionIsValid(text) || captionSeen.has(text.toLowerCase())) return null;
+
+      captionSeen.add(text.toLowerCase());
+      captionCache.set(key, text);
+      return text;
+    })().finally(() => {
+      captionPending.delete(key);
+    });
+
+    captionPending.set(key, promise);
+    return promise;
+  }
+
+  function prefetchCaption(clip, category, behavior) {
+    if (!clip || !category) return;
+
+    const key = captionKey(clip);
+    if (captionCache.has(key) || captionPending.has(key)) return;
+
+    requestCaption(clip, category, behavior).catch(() => {});
+  }
+
+  function likelyNextCategories() {
+    const current = activeCategory();
+
+    if (engine.phase === 'diagnostic') {
+      if (engine.diagnosticViews.length === 0) {
+        const calm = categoryByTag('Calm');
+        return calm ? [calm] : [];
       }
-
-      for (let i = trailParticles.length - 1; i >= 0; i -= 1) {
-        const particle = trailParticles[i];
-        particle.x += particle.vx * step;
-        particle.y += particle.vy * step;
-        particle.life -= particle.decay * step;
-
-        if (particle.life <= 0) {
-          trailParticles.splice(i, 1);
-          continue;
-        }
-
-        trailCtx.fillStyle = `rgba(${particle.color}, ${particle.life * 0.24})`;
-        trailCtx.beginPath();
-        trailCtx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-        trailCtx.fill();
+      if (engine.diagnosticViews.length === 1) {
+        const abyss = categoryByTag('Abyss');
+        return abyss ? [abyss] : [];
       }
-      trailCtx.restore();
-
-      if (sparks.length) {
-        trailCtx.save();
-        trailCtx.globalCompositeOperation = 'lighter';
-        for (let i = sparks.length - 1; i >= 0; i -= 1) {
-          const spark = sparks[i];
-          spark.x += spark.vx * step;
-          spark.y += spark.vy * step;
-          spark.vy -= 0.012 * step;
-          spark.life -= spark.decay * step;
-
-          if (spark.life <= 0) {
-            sparks.splice(i, 1);
-            continue;
-          }
-
-          trailCtx.fillStyle = `rgba(255, 190, 100, ${spark.life * 0.8})`;
-          trailCtx.beginPath();
-          trailCtx.arc(spark.x, spark.y, spark.size, 0, Math.PI * 2);
-          trailCtx.fill();
-        }
-        trailCtx.restore();
-      }
+      return categories.filter((category) => category.index !== current.index);
     }
 
-    window.requestAnimationFrame(renderTrail);
+    for (const tag of engine.forced) {
+      const forced = categoryByTag(tag);
+      if (forced && forced.index !== current.index) return [forced];
+    }
+
+    if (isDeepEngagement() && engine.sincePath >= engine.pathEvery && current.tag !== 'Path') {
+      const path = categoryByTag('Path');
+      return path ? [path] : [];
+    }
+
+    // The weighted choice is random, so warm every other category's next clip.
+    return categories.filter((category) => category.index !== current.index);
+  }
+
+  function peekNextClip(category) {
+    if (!category || !category.clips.length) return null;
+
+    const available = (index) => {
+      const clip = category.clips[index];
+      return Boolean(clip) && (!clip.id || !sessionUsedVideoIds.has(clip.id));
+    };
+
+    if (category.freshIndex !== null && available(category.freshIndex)) {
+      return category.clips[category.freshIndex];
+    }
+
+    const start = category.lastPlayed === null ? -1 : category.lastPlayed;
+    for (let step = 1; step <= category.clips.length; step += 1) {
+      const index = (start + step + category.clips.length) % category.clips.length;
+      if (available(index)) return category.clips[index];
+    }
+
+    return null;
+  }
+
+  function prefetchNextCaptions(behavior) {
+    for (const category of likelyNextCategories()) {
+      const clip = peekNextClip(category);
+      if (clip) prefetchCaption(clip, category, behavior);
+    }
+  }
+
+  function renderCaptionLines(text) {
+    if (!captionEl) return;
+
+    const words = text.split(/\s+/).filter(Boolean);
+    const middle = Math.ceil(words.length / 2);
+    const first = words.slice(0, middle).join(' ');
+    const second = words.slice(middle).join(' ');
+
+    if (captionLines[0]) captionLines[0].textContent = first;
+    if (captionLines[1]) captionLines[1].textContent = second;
+    captionEl.setAttribute('aria-label', text);
+  }
+
+  function activateCaption(category, clip, behavior) {
+    const token = ++captionSceneToken;
+    window.clearTimeout(captionTimer);
+
+    if (!captionEl) return;
+
+    captionEl.classList.remove('is-visible');
+    captionEl.setAttribute('aria-hidden', 'true');
+
+    if (!clip || !category) return;
+
+    const started = now();
+    const show = (text) => {
+      if (token !== captionSceneToken || !text) return;
+
+      renderCaptionLines(text);
+      captionEl.setAttribute('aria-hidden', 'false');
+
+      const delay = Math.max(0, CAPTION_FADE_MS - (now() - started));
+      window.clearTimeout(captionTimer);
+      captionTimer = window.setTimeout(() => {
+        if (token === captionSceneToken) captionEl.classList.add('is-visible');
+      }, delay);
+    };
+
+    const key = captionKey(clip);
+    const cached = captionCache.get(key);
+
+    if (cached) {
+      show(cached);
+    } else {
+      requestCaption(clip, category, behavior).then(show).catch(() => {});
+    }
+
+    prefetchNextCaptions(behavior);
   }
 
   function markInteraction() {
@@ -1468,6 +1554,8 @@
 
     if (category.index === state.index && category.clips.length && gateOpen) {
       playCategory(category);
+      setSceneElement(activeClip());
+      activateCaption(category, activeClip(), behaviorContext());
     }
   }
 
@@ -1802,13 +1890,13 @@
     return viewedMs < QUICK_VIEW_MS || impulsive ? QUICK_FADE_MS : SLOW_FADE_MS;
   }
 
-  function navigateTo(targetIndex, direction, fadeMs, forcedClipId) {
+  function navigateTo(targetIndex, direction, fadeMs, forcedClipId, behavior) {
     if (targetIndex === null || targetIndex === undefined) return;
     if (!slides[targetIndex]) return;
 
     markInteraction();
     setBreath(0);
-    lastTrail = null;
+    stopOptics();
 
     const fromIndex = state.index;
     const from = slides[fromIndex];
@@ -1842,6 +1930,7 @@
     // Новый кадр и его персональный трек стартуют в одном тике.
     playCategory(category);
     setSceneElement(activeClip());
+    activateCaption(category, activeClip(), behavior || behaviorContext());
     vibrateTap();
     const track = nextTrackFor(category);
     switchSoundtrack(track, duration);
@@ -1897,6 +1986,7 @@
       state.nervousStreak = 0;
       let targetIndex = engine.history[engine.historyPos - 1];
       const record = reportSwipe('down', speed);
+      const behavior = behaviorContext(record);
       engine.historyPos -= 1;
 
       if (!hasUnusedVideo(categories[targetIndex])) {
@@ -1904,11 +1994,18 @@
         if (alternate) targetIndex = alternate.index;
       }
 
-      navigateTo(targetIndex, 'down', fadeDurationFor(record.viewedMs, speed));
+      navigateTo(
+        targetIndex,
+        'down',
+        fadeDurationFor(record.viewedMs, speed),
+        undefined,
+        behavior
+      );
       return;
     }
 
     const record = reportSwipe('up', speed);
+    const behavior = behaviorContext(record);
 
     if (state.nervousStreak >= 3) {
       triggerTricksterPrick();
@@ -1926,7 +2023,8 @@
         syncTarget.category.index,
         'up',
         fadeDurationFor(record.viewedMs, speed),
-        syncTarget.clip.id
+        syncTarget.clip.id,
+        behavior
       );
       return;
     }
@@ -1938,7 +2036,7 @@
     }
 
     if (targetIndex === null || targetIndex === undefined) return;
-    navigateTo(targetIndex, 'up', fadeDurationFor(record.viewedMs, speed));
+    navigateTo(targetIndex, 'up', fadeDurationFor(record.viewedMs, speed), undefined, behavior);
   }
 
   /* ---------------------------------------------------------- удержание */
@@ -1994,7 +2092,7 @@
     }
 
     setBreath(0);
-    lastTrail = null;
+    stopOptics();
     stage.classList.remove('is-held');
   }
 
@@ -2017,7 +2115,7 @@
     gesture = null;
 
     setBreath(0);
-    lastTrail = null;
+    stopOptics();
     markInteraction();
 
     const dx = event.clientX - g.x0;
@@ -2058,11 +2156,10 @@
     if (gateOpen) {
       markInteraction();
       setSceneElement(activeClip());
-      const point = pointForEvent(event);
-      spawnTactile(point);
-      lastTrail = point;
+      startOptics(event);
       setBreath(0);
       rememberAnchor('touch');
+      prefetchNextCaptions(behaviorContext());
     }
 
     gesture = {
@@ -2108,10 +2205,7 @@
     markInteraction();
 
     if (gateOpen) {
-      const point = pointForEvent(event);
-      if (!lastTrail || Math.hypot(point.x - lastTrail.x, point.y - lastTrail.y) > 2) {
-        spawnTactile(point);
-      }
+      updateOptics(event);
 
       const dy = event.clientY - gesture.y0;
       if (Math.abs(dy) > 8) {
@@ -2202,6 +2296,7 @@
       state.hiddenAt = null;
       markInteraction();
       setBreath(0);
+      stopOptics();
       setSceneElement(activeClip());
 
       const category = activeCategory();
@@ -2219,16 +2314,9 @@
     console.warn('[sanctuary] sound library failed:', error);
   }
 
-  trailCanvas = document.getElementById('trail-canvas');
-  if (trailCanvas && trailCanvas.getContext) {
-    trailCtx = trailCanvas.getContext('2d');
-    resizeTrailCanvas();
-    window.addEventListener('resize', resizeTrailCanvas);
-    if ('ResizeObserver' in window) {
-      new window.ResizeObserver(resizeTrailCanvas).observe(stage);
-    }
-    window.requestAnimationFrame(renderTrail);
-  }
+  stage.dataset.element = 'fog';
+  stage.style.setProperty('--optic-x', '50%');
+  stage.style.setProperty('--optic-y', '50%');
 
   stuporMonitor = window.setInterval(checkStupor, 1000);
 
@@ -2254,6 +2342,7 @@
     const category = categories[state.index];
     playCategory(category);
     setSceneElement(activeClip());
+    activateCaption(category, activeClip(), behaviorContext());
     vibrateTap();
     const track = nextTrackFor(category);
     switchSoundtrack(track, SLOW_FADE_MS);
@@ -2279,6 +2368,12 @@
       music,
       categories: categories.map((category) => `${category.tag}: ${category.clips.length}`),
     });
+
+    const firstCategory = categories[state.index];
+    const firstClip = firstCategory && firstCategory.clips[0];
+    if (firstClip) {
+      prefetchCaption(firstClip, firstCategory, behaviorContext());
+    }
   });
 
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {

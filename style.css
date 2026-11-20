@@ -143,10 +143,10 @@ body {
   overflow: hidden;
   transform: scale(var(--stupor-scale, 1));
   transform-origin: center center;
-  filter: brightness(var(--breath-brightness, 1));
+  filter: brightness(1);
   transition:
     transform var(--stupor-ms, 800ms) linear,
-    filter 250ms ease;
+    filter 400ms ease;
   will-change: transform, filter;
   pointer-events: none;
 }
@@ -160,30 +160,193 @@ body {
   background: #000;
   opacity: 0;
   filter: brightness(0.82) saturate(0.9);
-  transform: scale(var(--tactile-zoom, 1)) translateZ(0);
+  transform: scale(var(--optic-zoom, 1)) translateZ(0);
   transition:
     opacity 900ms ease,
-    transform 300ms ease;
+    transform 400ms ease;
   pointer-events: none;
 }
 
 .stage.is-prick .slide.is-active .media {
-  filter: invert(1) brightness(var(--breath-brightness, 1));
-  transition: none;
+  filter: invert(1) !important;
+  transition: none !important;
+  animation: none !important;
 }
 
-.stage.is-prick .trail-canvas {
-  filter: invert(1);
-  transition: none;
-}
+/* ------------------------------------------------------- optical reactions */
 
-.trail-canvas {
+.optic {
   position: absolute;
   inset: 0;
   z-index: 2;
-  width: 100%;
-  height: 100%;
   pointer-events: none;
+}
+
+.optic-haze,
+.optic-water,
+.optic-fire {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.optic-haze {
+  opacity: 0;
+  background: rgba(4, 8, 13, 0.17);
+  -webkit-backdrop-filter: blur(3px) brightness(0.9);
+  backdrop-filter: blur(3px) brightness(0.9);
+  -webkit-mask-image: radial-gradient(
+    circle at var(--optic-x, 50%) var(--optic-y, 50%),
+    transparent 0 var(--optic-hole, 0px),
+    #000 calc(var(--optic-hole, 0px) + 64px)
+  );
+  mask-image: radial-gradient(
+    circle at var(--optic-x, 50%) var(--optic-y, 50%),
+    transparent 0 var(--optic-hole, 0px),
+    #000 calc(var(--optic-hole, 0px) + 64px)
+  );
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  transition:
+    opacity 400ms ease,
+    --optic-hole 400ms ease;
+}
+
+@property --optic-hole {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+.stage[data-element="fog"] .optic-haze {
+  opacity: 1;
+}
+
+.stage[data-element="fog"].is-touching .optic-haze {
+  --optic-hole: 96px;
+}
+
+.optic-water {
+  opacity: 0;
+  background: radial-gradient(
+    ellipse 78% 68% at 50% 50%,
+    transparent 32%,
+    rgba(3, 11, 22, 0.52) 100%
+  );
+  -webkit-backdrop-filter: blur(2px) saturate(0.82);
+  backdrop-filter: blur(2px) saturate(0.82);
+  -webkit-mask-image: radial-gradient(ellipse at center, transparent 0 42%, #000 78%);
+  mask-image: radial-gradient(ellipse at center, transparent 0 42%, #000 78%);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  transition: opacity 400ms ease;
+}
+
+.stage[data-element="water"].is-touching .optic-water {
+  opacity: 1;
+}
+
+.stage[data-element="water"].is-touching {
+  --optic-zoom: 1.03;
+}
+
+.stage[data-element="water"].is-touching .slide.is-active .media {
+  filter: brightness(0.9) contrast(1.12) saturate(0.8);
+}
+
+.optic-fire {
+  opacity: 0;
+  background: radial-gradient(
+    circle at 50% 60%,
+    rgba(255, 145, 64, 0.17),
+    transparent 65%
+  );
+  mix-blend-mode: screen;
+  transition: opacity 400ms ease;
+}
+
+.stage[data-element="fire"].is-touching .optic-fire {
+  opacity: 1;
+}
+
+.stage[data-element="fire"].is-touching .slide.is-active .media {
+  animation: fire-breathe 10s ease-in-out infinite;
+}
+
+@keyframes fire-breathe {
+  0%,
+  100% {
+    filter: brightness(0.98) contrast(1.02);
+  }
+  40% {
+    filter: brightness(1.08) contrast(1.08);
+  }
+}
+
+/* --------------------------------------------------------------- caption */
+
+.caption-shade {
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 3;
+  height: 58%;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(0, 0, 0, 0.08) 32%,
+    rgba(0, 0, 0, 0.52) 100%
+  );
+  pointer-events: none;
+}
+
+.caption {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 22%;
+  z-index: 4;
+  max-width: 84%;
+  margin: 0 auto;
+  color: #f1e9dc;
+  font-family: "Cormorant Garamond", "Playfair Display", Georgia, serif;
+  font-size: clamp(1.1rem, 4.7vw, 1.75rem);
+  font-weight: 300;
+  line-height: 1.38;
+  letter-spacing: 0.03em;
+  text-align: center;
+  text-wrap: balance;
+  opacity: 0;
+  transform: translateY(10px) scale(0.985);
+  transition:
+    opacity 900ms ease,
+    transform 900ms ease;
+  pointer-events: none;
+  text-shadow:
+    0 1px 18px rgba(0, 0, 0, 0.55),
+    0 0 30px rgba(0, 0, 0, 0.25);
+  will-change: opacity, transform;
+}
+
+.caption.is-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.stage.is-held .caption.is-visible {
+  transform: translateY(0) scale(1.04);
+}
+
+.caption-line {
+  display: block;
+  white-space: nowrap;
+}
+
+.caption-line:empty {
+  display: none;
 }
 
 .clip.is-current.is-ready {
