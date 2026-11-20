@@ -1388,6 +1388,21 @@
     return next;
   }
 
+  function hasUnusedVideo(category) {
+    return Boolean(category)
+      && category.clips.some((clip) => !clip.id || !sessionUsedVideoIds.has(clip.id));
+  }
+
+  function unusedCategory(excludeIndex) {
+    const other = categories.find(
+      (category) => category.index !== excludeIndex && hasUnusedVideo(category)
+    );
+    if (other) return other;
+
+    const current = activeCategory();
+    return hasUnusedVideo(current) ? current : null;
+  }
+
   function playCategory(category) {
     if (!category || category.index !== state.index || !category.clips.length) return null;
     const index = nextClipIndex(category);
@@ -1880,9 +1895,15 @@
       if (engine.phase === 'diagnostic' || engine.historyPos <= 0) return;
 
       state.nervousStreak = 0;
-      const targetIndex = engine.history[engine.historyPos - 1];
+      let targetIndex = engine.history[engine.historyPos - 1];
       const record = reportSwipe('down', speed);
       engine.historyPos -= 1;
+
+      if (!hasUnusedVideo(categories[targetIndex])) {
+        const alternate = unusedCategory(state.index);
+        if (alternate) targetIndex = alternate.index;
+      }
+
       navigateTo(targetIndex, 'down', fadeDurationFor(record.viewedMs, speed));
       return;
     }
@@ -1910,8 +1931,14 @@
       return;
     }
 
-    if (defaultTarget === null || defaultTarget === undefined) return;
-    navigateTo(defaultTarget, 'up', fadeDurationFor(record.viewedMs, speed));
+    let targetIndex = defaultTarget;
+    if (!hasUnusedVideo(categories[targetIndex])) {
+      const alternate = unusedCategory(state.index);
+      if (alternate) targetIndex = alternate.index;
+    }
+
+    if (targetIndex === null || targetIndex === undefined) return;
+    navigateTo(targetIndex, 'up', fadeDurationFor(record.viewedMs, speed));
   }
 
   /* ---------------------------------------------------------- удержание */
