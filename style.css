@@ -74,11 +74,8 @@ body {
 }
 
 .slide.is-active {
+  z-index: 2;
   opacity: 1;
-}
-
-.slide.is-leaving {
-  opacity: 0;
 }
 
 /* Real Coverr footage fills the 9:16 frame; the gradient stays underneath

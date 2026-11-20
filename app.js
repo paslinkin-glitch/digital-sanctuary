@@ -2,19 +2,23 @@
  *
  * Silent vertical feed, five Jungian categories. Each category is filled with
  * one or two free clips from the official Coverr REST API, muted, looping and
- * autoplaying. Swipe up/down (touch, mouse or wheel) crosses a slow fade to
- * black. Holding slows the active clip to 0.5x and deepens a Web Audio hum,
- * started on the first touch. Every swipe prints one behaviour record.
+ * autoplaying. Swipe up/down (touch, mouse or wheel) crossfades to the next
+ * engine-selected category; the fade adapts to pace and is never input-blocking.
+ * Holding slows the active clip to 0.5x and deepens a Web Audio hum, started
+ * on the first touch. Every swipe prints one behaviour record.
  */
 (() => {
   'use strict';
 
   /* ------------------------------------------------------------- настройки */
 
-  // Длительность одного fade задаётся в style.css (--fade-duration).
-  const FADE_MS = parseFloat(
+  // Медленный fade — 800 мс из style.css; быстрый — 250 мс для импульсивных свайпов.
+  const SLOW_FADE_MS = parseFloat(
     getComputedStyle(document.documentElement).getPropertyValue('--fade-duration')
   ) || 800;
+  const QUICK_FADE_MS = 250;
+  const QUICK_VIEW_MS = 2500;
+  const IMPULSIVE_SPEED = 1.0;
 
   const HOLD_MS = 260;
   const SWIPE_MIN_RATIO = 0.08;
@@ -208,7 +212,6 @@
 
   const state = {
     index: 0,
-    locked: false,
     viewStart: now(),
     hiddenAt: null,
     holdsInView: 0,
@@ -844,25 +847,36 @@
     return selectFlowTarget();
   }
 
-  function navigateTo(targetIndex, direction) {
-    if (targetIndex === null || targetIndex === undefined || state.locked) return;
+  function fadeDurationFor(viewedMs, speed) {
+    const impulsive = speed >= IMPULSIVE_SPEED;
+    return viewedMs < QUICK_VIEW_MS || impulsive ? QUICK_FADE_MS : SLOW_FADE_MS;
+  }
+
+  function navigateTo(targetIndex, direction, fadeMs) {
+    if (targetIndex === null || targetIndex === undefined) return;
     if (!slides[targetIndex]) return;
 
     const fromIndex = state.index;
     const from = slides[fromIndex];
     const to = slides[targetIndex];
+    const duration = fadeMs || SLOW_FADE_MS;
 
-    state.locked = true;
+    // Меняем длительность до классов: CSS-переход подхватывает новое значение.
+    stage.style.setProperty('--fade-duration', `${duration}ms`);
+
     stage.classList.remove('is-held');
     setActivePlaybackRate(1);
     setHumDepth(false);
     pauseCategory(categories[fromIndex]);
 
+    // Перекрёстное растворение: старый кадр гаснет, новый проявляется сразу.
+    // Никаких таймеров и блокировки — следующий свайп может прервать это в любой момент.
     from.classList.remove('is-active');
-    from.classList.add('is-leaving');
+    to.classList.add('is-active');
 
     state.index = targetIndex;
     state.visits[targetIndex] += 1;
+    resetViewClock();
 
     if (direction === 'up') {
       engine.history = engine.history.slice(0, engine.historyPos + 1);
@@ -870,18 +884,8 @@
       engine.historyPos = engine.history.length - 1;
     }
 
-    // Первая половина: старый кадр уходит в чёрное.
-    window.setTimeout(() => {
-      from.classList.remove('is-leaving');
-      to.classList.add('is-active');
-      resetViewClock();
-      playCategory(categories[targetIndex]);
-
-      // Вторая половина: новый кадр проявляется.
-      window.setTimeout(() => {
-        state.locked = false;
-      }, FADE_MS + 50);
-    }, FADE_MS);
+    // Видео нового кадра запускается немедленно, ещё под растворяющимся затемнением.
+    playCategory(categories[targetIndex]);
   }
 
   /* ------------------------------------------------------------- телеметрия */
@@ -921,22 +925,20 @@
   /* ------------------------------------------------------------- переходы */
 
   function go(direction, speed) {
-    if (state.locked) return;
-
     if (direction === 'down') {
       if (engine.phase === 'diagnostic' || engine.historyPos <= 0) return;
 
       const targetIndex = engine.history[engine.historyPos - 1];
-      reportSwipe('down', speed);
+      const record = reportSwipe('down', speed);
       engine.historyPos -= 1;
-      navigateTo(targetIndex, 'down');
+      navigateTo(targetIndex, 'down', fadeDurationFor(record.viewedMs, speed));
       return;
     }
 
     const record = reportSwipe('up', speed);
     const targetIndex = chooseNext(record);
     if (targetIndex === null || targetIndex === undefined) return;
-    navigateTo(targetIndex, 'up');
+    navigateTo(targetIndex, 'up', fadeDurationFor(record.viewedMs, speed));
   }
 
   /* ---------------------------------------------------------- удержание */
@@ -1009,8 +1011,6 @@
     const g = gesture;
     gesture = null;
 
-    if (state.locked) return;
-
     const dx = event.clientX - g.x0;
     const dy = event.clientY - g.y0;
     const distance = Math.abs(dy);
@@ -1031,7 +1031,7 @@
     enableAmbience();
     wakePlayback();
 
-    if (state.locked || gesture) return;
+    if (gesture) return;
     if (event.pointerType === 'mouse' && event.button !== 0) return;
 
     gesture = {
@@ -1118,7 +1118,7 @@
   stage.addEventListener('wheel', (event) => {
     event.preventDefault();
 
-    if (state.locked || gesture) return;
+    if (gesture) return;
 
     const t = now();
     const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? stage.clientHeight : 1;
