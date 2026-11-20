@@ -55,6 +55,10 @@ body {
   cursor: grabbing;
 }
 
+.stage > * {
+  pointer-events: none;
+}
+
 /* ------------------------------------------------------------- entry veil */
 
 .entry {

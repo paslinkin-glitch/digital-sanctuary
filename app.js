@@ -25,6 +25,7 @@
 
   const HOLD_MS = 260;
   const SWIPE_MIN_RATIO = 0.08;
+  const SWIPE_MIN_PX = 36;
   const SWIPE_MIN_SPEED = 0.32;
   const FLICK_MIN_PX = 28;
   const FLICK_MIN_SPEED = 0.5;
@@ -1720,12 +1721,12 @@
     return score;
   }
 
-  function selectClips(pool, category) {
+  function selectClips(pool, category, allowSeen = false) {
     const unique = [];
     const seen = new Set();
 
     for (const clip of pool) {
-      if (!clip || seen.has(clip.id) || isVideoSeen(clip.id)) continue;
+      if (!clip || seen.has(clip.id) || (!allowSeen && isVideoSeen(clip.id))) continue;
       seen.add(clip.id);
       unique.push(clip);
     }
@@ -1737,7 +1738,7 @@
 
     for (const clip of reserve) {
       if (selected.length >= CLIPS_PER_CATEGORY) break;
-      if (!clip.id || isVideoSeen(clip.id)) continue;
+      if (!clip.id || (!allowSeen && isVideoSeen(clip.id))) continue;
       if (!selected.some((item) => item.id === clip.id)) {
         selected.push({
           ...clip,
@@ -1841,7 +1842,7 @@
     return index;
   }
 
-  function pickStageClips(stage, count, picked) {
+  function pickStageClips(stage, count, picked, allowSeen = false) {
     const stageCategories = categories.filter((category) => stage.categories.includes(category.tag));
     const pools = stageCategories.map((category) => ({
       category,
@@ -1851,7 +1852,7 @@
         && Boolean(clip.el)
         && !pathPicked.has(clip.id)
         && !picked.has(clip.id)
-        && !isVideoSeen(clip.id)
+        && (allowSeen || !isVideoSeen(clip.id))
       ))),
     }));
 
@@ -1878,13 +1879,13 @@
     return picks;
   }
 
-  function appendPathCycle() {
+  function appendPathCycle(allowSeen = false) {
     const picked = new Set();
     const entries = [];
 
     for (const stage of STAGES) {
       const count = 3 + Math.floor(Math.random() * 2);
-      const picks = pickStageClips(stage, count, picked);
+      const picks = pickStageClips(stage, count, picked, allowSeen);
       if (picks.length < 3) return false;
       entries.push(...picks);
     }
@@ -1894,7 +1895,7 @@
     return true;
   }
 
-  function appendFallbackPath() {
+  function appendFallbackPath(allowSeen = false) {
     const entries = [];
 
     for (const stage of STAGES) {
@@ -1902,7 +1903,10 @@
         const category = categories.find((item) => item.tag === tag);
         if (!category) continue;
         const clip = category.clips.find((item) => (
-          item.el && item.id && !pathPicked.has(item.id) && !isVideoSeen(item.id)
+          item.el
+          && item.id
+          && !pathPicked.has(item.id)
+          && (allowSeen || !isVideoSeen(item.id))
         ));
         if (!clip) continue;
         pathPicked.add(clip.id);
@@ -1913,6 +1917,18 @@
     if (!entries.length) return false;
     pathPlan.push(...entries);
     return true;
+  }
+
+  function extendPathPlan() {
+    if (appendPathCycle()) return true;
+    if (appendPathCycle(true)) return true;
+    if (appendFallbackPath(true)) return true;
+
+    // Последний резерв: новых роликов не осталось — снимаем и внутренний
+    // фильтр текущей сессии, иначе очередь закончится и свайпы замолчат.
+    pathPicked.clear();
+    if (appendPathCycle(true)) return true;
+    return appendFallbackPath(true);
   }
 
   function startPathFirst() {
@@ -1932,6 +1948,7 @@
     }
 
     resetViewClock();
+    if (isVideoSeen(entry.clip.id)) sessionUsedVideoIds.delete(entry.clip.id);
     category.freshIndex = index;
     const clipIndex = playCategory(category);
     if (clipIndex === null) return false;
@@ -2050,22 +2067,25 @@
           }
         }
 
-        category.clips = selectClips(pool, category);
+        const unseenSelected = selectClips(pool, category);
+        category.clips = unseenSelected.length >= 3
+          ? unseenSelected
+          : selectClips(pool, category, true);
       } catch (error) {
         console.warn('[sanctuary] Coverr category failed:', category.tag, error);
         category.clips = [];
       }
 
       if (!category.clips.length) {
-        category.clips = (FALLBACK_CLIPS[category.tag] || [])
-          .filter((clip) => !isVideoSeen(clip.id))
-          .slice(0, CLIPS_PER_CATEGORY)
-          .map((clip) => ({
-            ...clip,
-            description: clip.description || '',
-            tags: Array.isArray(clip.tags) ? clip.tags : [],
-            element: clip.element || elementForClip(clip.title, [], category.tag, ''),
-          }));
+        const fallbackClips = (FALLBACK_CLIPS[category.tag] || []).map((clip) => ({
+          ...clip,
+          description: clip.description || '',
+          tags: Array.isArray(clip.tags) ? clip.tags : [],
+          element: clip.element || elementForClip(clip.title, [], category.tag, ''),
+        }));
+        const unseenFallback = fallbackClips.filter((clip) => !isVideoSeen(clip.id));
+        category.clips = (unseenFallback.length ? unseenFallback : fallbackClips)
+          .slice(0, CLIPS_PER_CATEGORY);
       }
 
       mountClips(category);
@@ -2385,6 +2405,7 @@
     if (forcedClipId) {
       const forcedIndex = category.clips.findIndex((clip) => clip.id === forcedClipId);
       if (forcedIndex >= 0) category.freshIndex = forcedIndex;
+      if (isVideoSeen(forcedClipId)) sessionUsedVideoIds.delete(forcedClipId);
     }
 
     // Новый кадр и его персональный трек стартуют в одном тике.
@@ -2440,12 +2461,7 @@
   /* ------------------------------------------------------------- переходы */
 
   function go(direction, speed) {
-    if (direction === 'down') {
-      state.nervousStreak = 0;
-      return;
-    }
-
-    const record = reportSwipe('up', speed);
+    const record = reportSwipe(direction, speed);
     const behavior = behaviorContext(record);
     const sceneContext = sceneContextFor(record, behavior);
 
@@ -2461,7 +2477,7 @@
     if (!pathStarted) return;
 
     if (pathPos + 1 >= pathPlan.length) {
-      if (!appendPathCycle() && !appendFallbackPath()) return;
+      if (!extendPathPlan()) return;
     }
 
     const entry = pathPlan[pathPos + 1];
@@ -2472,7 +2488,7 @@
 
     navigateTo(
       entry.category.index,
-      'up',
+      direction,
       fadeDurationFor(record.viewedMs, speed),
       entry.clip.id,
       sceneContext
@@ -2575,7 +2591,7 @@
       return;
     }
 
-    const isLongEnough = distance >= swipeThreshold() && velocity >= SWIPE_MIN_SPEED;
+    const isLongEnough = distance >= SWIPE_MIN_PX;
     const isFlick = distance >= FLICK_MIN_PX && velocity >= FLICK_MIN_SPEED;
 
     if (isLongEnough || isFlick) {
@@ -2676,7 +2692,7 @@
       resonanceTimer = 0;
     }
 
-    if (gesture.holding && distance > 26) {
+    if (gesture.holding && distance > 35) {
       stopHold();
     }
 
@@ -2818,9 +2834,9 @@
       categories: categories.map((category) => `${category.tag}: ${category.clips.length}`),
     });
 
-    appendPathCycle();
+    extendPathPlan();
 
-    if (!pathPlan.length) appendFallbackPath();
+    if (!pathPlan.length) appendFallbackPath(true);
 
     if (pathPlan.length) {
       const first = pathPlan[0];
