@@ -4,8 +4,9 @@
  * one or two free clips from the official Coverr REST API, muted, looping and
  * autoplaying. Swipe up/down (touch, mouse or wheel) crossfades to the next
  * engine-selected category; the fade adapts to pace and is never input-blocking.
- * Holding slows the active clip to 0.5x and deepens a Web Audio hum, started
- * on the first touch. Every swipe prints one behaviour record.
+ * Holding slows the active clip to 0.5x and filters the Coverr soundtrack
+ * underwater; a soft rain/wind bed covers any audio loading gap. Every swipe
+ * prints one behaviour record.
  */
 (() => {
   'use strict';
@@ -35,6 +36,9 @@
   // this call belongs behind a tiny server-side proxy.
   const API_KEY = 'b1155018766256bd1ea645df7d64e178';
   const API_ENDPOINT = 'https://api.coverr.co/videos';
+  const SOUND_CROSSFADE_S = 1.5;
+  const MUSIC_GAIN = 0.55;
+  const NOISE_GAIN = 0.3;
 
   /* ------------------------------------------------------ клипы на случай,
      если API недоступен: те же ролики Coverr, уже проверенные по API. */
@@ -157,6 +161,45 @@
     },
   };
 
+  // /music из брифа отдаёт 404; официальный эндпоинт Coverr — /audios.
+  // Запросы: Shadow — dark ambient atmospheric, Calm — rain peaceful ambient,
+  // Abyss — deep ambient drone space, Trickster — mystery cinematic dark,
+  // Path — dreamy ambient piano. Для трёх категорий точная фраза давала 0,
+  // и трек взят из близкой выдачи /audios. Ссылки preview.mp3 зафиксированы,
+  // чтобы музыка не зависела от лимита поисковых запросов API.
+  const MUSIC_TRACKS = {
+    Shadow: {
+      id: 'romQsuZqm1',
+      title: 'Dark Entries',
+      duration: 132,
+      url: 'https://cdn.coverr.co/audios/coverr-dark-entries-n4GG3j/preview.mp3',
+    },
+    Trickster: {
+      id: '1gXx49lFvI',
+      title: 'Mysterious',
+      duration: 123.64,
+      url: 'https://cdn.coverr.co/audios/coverr-mysterious-FykdJh/preview.mp3',
+    },
+    Abyss: {
+      id: 'UjcADXXvc8',
+      title: 'deep space',
+      duration: 123.64,
+      url: 'https://cdn.coverr.co/audios/coverr-deep-space-lqfqIj/preview.mp3',
+    },
+    Calm: {
+      id: 'HTzsyicaIT',
+      title: 'crystal rain',
+      duration: 110.4,
+      url: 'https://cdn.coverr.co/audios/coverr-crylstal-rain-uq0tDK/preview.mp3',
+    },
+    Path: {
+      id: 'EX6e6IkDGx',
+      title: 'A Piano For Travel',
+      duration: 132.04,
+      url: 'https://cdn.coverr.co/audios/coverr-a-piano-for-travel-OgNcjz/preview.mp3',
+    },
+  };
+
   /* ------------------------------------------------------------------ DOM */
 
   const stage = document.querySelector('.stage');
@@ -183,6 +226,9 @@
       extendWanted: false,
       extendedLoading: false,
       extendedLoaded: false,
+      music: null,
+      musicLoaded: false,
+      musicFailed: false,
     };
   });
 
@@ -228,8 +274,8 @@
   let gesture = null;
   let holdTimer = 0;
   let resonanceTimer = 0;
-  let ambience = null;
-  let ambienceStarting = false;
+  let sound = null;
+  let soundStarting = false;
 
   function resetViewClock() {
     state.viewStart = now();
@@ -255,83 +301,346 @@
     return categories.find((category) => category.tag === tag) || null;
   }
 
-  /* ------------------------------------------------------- мягкий эмбиент */
+  /* ---------------------------------------------------------- звуковая среда */
 
-  function enableAmbience() {
-    if (ambience) {
-      if (ambience.ctx.state === 'suspended') {
-        ambience.ctx.resume().catch(() => {});
-      }
+  function createPinkNoiseBuffer(ctx, seconds) {
+    const length = Math.max(1, Math.floor(ctx.sampleRate * seconds));
+    const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    let b0 = 0;
+    let b1 = 0;
+    let b2 = 0;
+    let b3 = 0;
+    let b4 = 0;
+    let b5 = 0;
+    let b6 = 0;
+
+    for (let i = 0; i < length; i += 1) {
+      const white = Math.random() * 2 - 1;
+      b0 = 0.99886 * b0 + white * 0.0555179;
+      b1 = 0.99332 * b1 + white * 0.0750759;
+      b2 = 0.96900 * b2 + white * 0.1538520;
+      b3 = 0.86650 * b3 + white * 0.3104856;
+      b4 = 0.55000 * b4 + white * 0.5329522;
+      b5 = -0.7616 * b5 - white * 0.0168980;
+      const pink = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
+      b6 = white * 0.115926;
+      data[i] = pink * 0.11;
+    }
+
+    return buffer;
+  }
+
+  function enableSoundscape() {
+    if (sound) {
+      if (sound.ctx.state === 'suspended') sound.ctx.resume().catch(() => {});
       return;
     }
-    if (ambienceStarting) return;
+    if (soundStarting) return;
 
     const AudioCtor = window.AudioContext || window.webkitAudioContext;
     if (!AudioCtor) return;
 
-    ambienceStarting = true;
+    soundStarting = true;
     try {
       const ctx = new AudioCtor();
+      const bus = ctx.createGain();
+
+      // Инфраниз режем жёстко: корпус телефона не должен вибрировать.
+      const rumbleCut = ctx.createBiquadFilter();
+      rumbleCut.type = 'highpass';
+      rumbleCut.frequency.value = 110;
+      rumbleCut.Q.value = 0.7;
+
+      const depth = ctx.createBiquadFilter();
+      depth.type = 'lowpass';
+      depth.frequency.value = 18000;
+      depth.Q.value = 0.5;
+
+      const compressor = ctx.createDynamicsCompressor();
+      compressor.threshold.value = -20;
+      compressor.knee.value = 16;
+      compressor.ratio.value = 5;
+      compressor.attack.value = 0.006;
+      compressor.release.value = 0.3;
+
       const master = ctx.createGain();
-      master.gain.setValueAtTime(0.0001, ctx.currentTime);
-      master.gain.exponentialRampToValueAtTime(0.055, ctx.currentTime + 5);
+      master.gain.value = 0.72;
 
-      const filter = ctx.createBiquadFilter();
-      filter.type = 'lowpass';
-      filter.frequency.value = 240;
-      filter.Q.value = 0.55;
-
-      const voices = [
-        { frequency: 55, gain: 0.5, detune: -3 },
-        { frequency: 82.5, gain: 0.26, detune: 4 },
-        { frequency: 110, gain: 0.12, detune: -6 },
-        { frequency: 164.81, gain: 0.07, detune: -2 },
-        { frequency: 220, gain: 0.05, detune: 3 },
-      ];
-
-      for (const voice of voices) {
-        const oscillator = ctx.createOscillator();
-        oscillator.type = 'sine';
-        oscillator.frequency.value = voice.frequency;
-        oscillator.detune.value = voice.detune;
-
-        const gain = ctx.createGain();
-        gain.gain.value = voice.gain;
-
-        oscillator.connect(gain);
-        gain.connect(filter);
-        oscillator.start();
-      }
-
-      // Медленное дыхание тембра, а не громкости: без риска уйти в минус.
-      const lfo = ctx.createOscillator();
-      lfo.frequency.value = 0.07;
-      const lfoDepth = ctx.createGain();
-      lfoDepth.gain.value = 40;
-      lfo.connect(lfoDepth);
-      lfoDepth.connect(filter.frequency);
-      lfo.start();
-
-      filter.connect(master);
+      bus.connect(rumbleCut);
+      rumbleCut.connect(depth);
+      depth.connect(compressor);
+      compressor.connect(master);
       master.connect(ctx.destination);
 
-      if (ctx.state === 'suspended') {
-        ctx.resume().catch(() => {});
-      }
+      // Мягкий дождь/ветер: резерв, если музыка временно недоступна.
+      const noise = ctx.createBufferSource();
+      noise.buffer = createPinkNoiseBuffer(ctx, 4);
+      noise.loop = true;
 
-      ambience = { ctx, master, filter };
+      const noiseCut = ctx.createBiquadFilter();
+      noiseCut.type = 'highpass';
+      noiseCut.frequency.value = 180;
+      noiseCut.Q.value = 0.5;
+
+      const noiseTone = ctx.createBiquadFilter();
+      noiseTone.type = 'lowpass';
+      noiseTone.frequency.value = 2400;
+      noiseTone.Q.value = 0.4;
+
+      const noiseGain = ctx.createGain();
+      noiseGain.gain.value = 0;
+
+      noise.connect(noiseCut);
+      noiseCut.connect(noiseTone);
+      noiseTone.connect(noiseGain);
+      noiseGain.connect(bus);
+      noise.start();
+
+      const wind = ctx.createOscillator();
+      wind.frequency.value = 0.07;
+      const windDepth = ctx.createGain();
+      windDepth.gain.value = 420;
+      wind.connect(windDepth);
+      windDepth.connect(noiseTone.frequency);
+      wind.start();
+
+      const container = document.createElement('div');
+      container.setAttribute('aria-hidden', 'true');
+      container.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;pointer-events:none;';
+      document.body.appendChild(container);
+
+      sound = {
+        ctx,
+        bus,
+        rumbleCut,
+        depth,
+        master,
+        noise,
+        noiseGain,
+        container,
+        channels: new Map(),
+        activeTag: null,
+        activeType: null,
+        held: false,
+        token: 0,
+        fadeToken: 0,
+      };
+
+      if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+      switchSoundtrack(activeCategory());
     } catch (_) {
-      // Web Audio недоступен — сцена просто остаётся визуальной.
+      // Web Audio недоступен — остаётся только визуальная сцена.
     } finally {
-      ambienceStarting = false;
+      soundStarting = false;
     }
   }
 
-  function setHumDepth(deep) {
-    if (!ambience) return;
-    const t = ambience.ctx.currentTime;
-    ambience.filter.frequency.setTargetAtTime(deep ? 170 : 240, t, 0.7);
-    ambience.master.gain.setTargetAtTime(deep ? 0.07 : 0.055, t, 2);
+  function ensureSoundChannel(category) {
+    if (!sound || !category || !category.music) return null;
+    if (sound.channels.has(category.tag)) return sound.channels.get(category.tag);
+
+    try {
+      const audio = document.createElement('audio');
+      audio.crossOrigin = 'anonymous';
+      audio.loop = true;
+      audio.preload = 'metadata';
+      audio.setAttribute('playsinline', '');
+      audio.style.display = 'none';
+
+      audio.addEventListener('error', () => {
+        console.warn('[sanctuary] audio unavailable:', category.tag);
+        category.musicFailed = true;
+        if (sound && activeCategory().tag === category.tag) {
+          switchSoundtrack(activeCategory());
+        }
+      });
+
+      audio.src = category.music.url;
+      sound.container.appendChild(audio);
+
+      const source = sound.ctx.createMediaElementSource(audio);
+      const gain = sound.ctx.createGain();
+      gain.gain.value = 0;
+      source.connect(gain);
+      gain.connect(sound.bus);
+
+      const channel = { category, audio, source, gain };
+      sound.channels.set(category.tag, channel);
+      audio.load();
+      return channel;
+    } catch (error) {
+      console.warn('[sanctuary] audio graph failed:', category.tag, error);
+      category.musicFailed = true;
+      return null;
+    }
+  }
+
+  function raiseNoiseBed() {
+    if (!sound) return;
+
+    const now = sound.ctx.currentTime;
+    sound.fadeToken += 1;
+    sound.activeTag = null;
+    sound.activeType = 'noise';
+
+    for (const item of sound.channels.values()) {
+      item.gain.gain.cancelScheduledValues(now);
+      item.gain.gain.setValueAtTime(item.gain.gain.value, now);
+      item.gain.gain.linearRampToValueAtTime(0, now + SOUND_CROSSFADE_S);
+    }
+
+    sound.noiseGain.gain.cancelScheduledValues(now);
+    sound.noiseGain.gain.setValueAtTime(sound.noiseGain.gain.value, now);
+    sound.noiseGain.gain.linearRampToValueAtTime(NOISE_GAIN, now + SOUND_CROSSFADE_S);
+  }
+
+  function switchSoundtrack(category) {
+    if (!sound || !category) return;
+
+    const token = ++sound.token;
+    sound.held = stage.classList.contains('is-held');
+
+    const channel = category.music && !category.musicFailed
+      ? ensureSoundChannel(category)
+      : null;
+
+    if (!channel) {
+      startSoundCrossfade(null);
+      return;
+    }
+
+    channel.audio.playbackRate = sound.held ? SLOW_RATE : 1;
+
+    let begun = false;
+    let timedOut = false;
+
+    const begin = () => {
+      if (begun || timedOut) return;
+      begun = true;
+      if (!sound || token !== sound.token) return;
+
+      const promise = channel.audio.play();
+      if (promise && typeof promise.catch === 'function') {
+        promise.catch(() => {
+          if (!sound || token !== sound.token) return;
+          // Не помечаем трек сломанным: следующий жест сможет запустить его снова.
+          startSoundCrossfade(null);
+        });
+      }
+      startSoundCrossfade(channel);
+    };
+
+    if (channel.audio.readyState >= 2) {
+      begin();
+      return;
+    }
+
+    // Пока трек грузится, не оставляем тишину: если музыка ещё не звучит,
+    // заводим мягкий дождь/ветер и потом растворяем его в трек.
+    const previous = sound.activeTag ? sound.channels.get(sound.activeTag) : null;
+    const previousPlaying = sound.activeType === 'music' && previous && !previous.audio.paused;
+    if (!previousPlaying) {
+      raiseNoiseBed();
+    }
+
+    const onReady = () => {
+      channel.audio.removeEventListener('canplay', onReady);
+      channel.audio.removeEventListener('playing', onReady);
+      begin();
+    };
+
+    channel.audio.addEventListener('canplay', onReady);
+    channel.audio.addEventListener('playing', onReady);
+
+    const promise = channel.audio.play();
+    if (promise && typeof promise.catch === 'function') {
+      promise.catch(() => {
+        if (!sound || token !== sound.token) return;
+        channel.audio.removeEventListener('canplay', onReady);
+        channel.audio.removeEventListener('playing', onReady);
+        startSoundCrossfade(null);
+      });
+    }
+
+    window.setTimeout(() => {
+      if (!sound || token !== sound.token || begun) return;
+      timedOut = true;
+      channel.audio.removeEventListener('canplay', onReady);
+      channel.audio.removeEventListener('playing', onReady);
+      startSoundCrossfade(null);
+    }, 6000);
+  }
+
+  function startSoundCrossfade(channel) {
+    if (!sound) return;
+
+    const now = sound.ctx.currentTime;
+    const targetTag = channel ? channel.category.tag : null;
+    const fadeToken = ++sound.fadeToken;
+
+    sound.activeTag = targetTag;
+    sound.activeType = channel ? 'music' : 'noise';
+
+    for (const [tag, item] of sound.channels) {
+      const target = channel && tag === targetTag ? MUSIC_GAIN : 0;
+      item.gain.gain.cancelScheduledValues(now);
+      item.gain.gain.setValueAtTime(item.gain.gain.value, now);
+      item.gain.gain.linearRampToValueAtTime(target, now + SOUND_CROSSFADE_S);
+    }
+
+    sound.noiseGain.gain.cancelScheduledValues(now);
+    sound.noiseGain.gain.setValueAtTime(sound.noiseGain.gain.value, now);
+    sound.noiseGain.gain.linearRampToValueAtTime(channel ? 0 : NOISE_GAIN, now + SOUND_CROSSFADE_S);
+
+    if (channel) {
+      channel.audio.playbackRate = sound.held ? SLOW_RATE : 1;
+      const promise = channel.audio.play();
+      if (promise && typeof promise.catch === 'function') promise.catch(() => {});
+    }
+
+    window.setTimeout(() => {
+      if (!sound || fadeToken !== sound.fadeToken) return;
+      for (const [tag, item] of sound.channels) {
+        if (!channel || tag !== channel.category.tag) {
+          if (item.gain.gain.value < 0.01) item.audio.pause();
+        }
+      }
+    }, (SOUND_CROSSFADE_S + 0.1) * 1000);
+  }
+
+  function setSoundDepth(deep) {
+    if (!sound) return;
+
+    sound.held = deep;
+    const now = sound.ctx.currentTime;
+    const cutoff = deep ? 750 : 18000;
+
+    sound.depth.frequency.cancelScheduledValues(now);
+    sound.depth.frequency.setValueAtTime(sound.depth.frequency.value, now);
+    sound.depth.frequency.exponentialRampToValueAtTime(cutoff, now + 0.45);
+
+    sound.master.gain.cancelScheduledValues(now);
+    sound.master.gain.setValueAtTime(sound.master.gain.value, now);
+    sound.master.gain.linearRampToValueAtTime(deep ? 0.58 : 0.72, now + 0.4);
+
+    for (const channel of sound.channels.values()) {
+      channel.audio.playbackRate = deep ? SLOW_RATE : 1;
+    }
+  }
+
+  function pauseSound() {
+    if (!sound) return;
+    sound.ctx.suspend().catch(() => {});
+    for (const channel of sound.channels.values()) {
+      channel.audio.pause();
+    }
+  }
+
+  function resumeSound() {
+    if (!sound) return;
+    sound.ctx.resume().catch(() => {});
+    switchSoundtrack(activeCategory());
   }
 
   /* ------------------------------------------------------------- Coverr API */
@@ -362,6 +671,23 @@
       return Array.isArray(payload.hits) ? payload.hits : [];
     } finally {
       window.clearTimeout(timer);
+    }
+  }
+
+  function loadMusicForCategory(category) {
+    if (!category || category.musicLoaded) return;
+
+    const track = MUSIC_TRACKS[category.tag];
+    category.music = track || null;
+    category.musicLoaded = true;
+
+    if (!track) {
+      console.warn('[sanctuary] no ambient track for', category.tag);
+      return;
+    }
+
+    if (sound && categories[state.index].tag === category.tag) {
+      switchSoundtrack(category);
     }
   }
 
@@ -866,7 +1192,7 @@
 
     stage.classList.remove('is-held');
     setActivePlaybackRate(1);
-    setHumDepth(false);
+    setSoundDepth(false);
     pauseCategory(categories[fromIndex]);
 
     // Перекрёстное растворение: старый кадр гаснет, новый проявляется сразу.
@@ -886,6 +1212,7 @@
 
     // Видео нового кадра запускается немедленно, ещё под растворяющимся затемнением.
     playCategory(categories[targetIndex]);
+    switchSoundtrack(categories[targetIndex]);
   }
 
   /* ------------------------------------------------------------- телеметрия */
@@ -958,7 +1285,7 @@
 
     stage.classList.add('is-held');
     setActivePlaybackRate(SLOW_RATE);
-    setHumDepth(true);
+    setSoundDepth(true);
   }
 
   function stopHold() {
@@ -970,7 +1297,7 @@
     state.longestHoldMs = Math.max(state.longestHoldMs, duration);
     stage.classList.remove('is-held');
     setActivePlaybackRate(1);
-    setHumDepth(false);
+    setSoundDepth(false);
   }
 
   function abortGesture() {
@@ -985,7 +1312,7 @@
         state.heldMs += duration;
         state.longestHoldMs = Math.max(state.longestHoldMs, duration);
         setActivePlaybackRate(1);
-        setHumDepth(false);
+        setSoundDepth(false);
       }
       gesture = null;
     }
@@ -1028,7 +1355,7 @@
   }
 
   stage.addEventListener('pointerdown', (event) => {
-    enableAmbience();
+    enableSoundscape();
     wakePlayback();
 
     if (gesture) return;
@@ -1148,24 +1475,31 @@
       state.hiddenAt = now();
       abortGesture();
       pauseCategory(activeCategory());
-      if (ambience) ambience.ctx.suspend().catch(() => {});
+      pauseSound();
     } else if (state.hiddenAt !== null) {
       state.viewStart += now() - state.hiddenAt;
       state.hiddenAt = null;
 
-      if (ambience) ambience.ctx.resume().catch(() => {});
       const category = activeCategory();
       if (category.clips.length) playClip(category, category.activeIndex);
       wakePlayback();
+      resumeSound();
     }
   });
 
   /* ------------------------------------------------------------ инициализация */
 
-  Promise.allSettled(categories.map(loadCategory)).then(() => {
+  const startupTasks = [
+    ...categories.map(loadCategory),
+    ...categories.map(loadMusicForCategory),
+  ];
+
+  Promise.allSettled(startupTasks).then(() => {
     const total = categories.reduce((sum, category) => sum + category.clips.length, 0);
+    const music = categories.filter((category) => category.music).length;
     console.info('[sanctuary] video feed ready:', {
       clips: total,
+      music,
       categories: categories.map((category) => `${category.tag}: ${category.clips.length}`),
     });
   });
