@@ -1,0 +1,643 @@
+/* Generated from videos.json. Fallback catalog for file:// launches. */
+window.VIDEOS_DATA = [
+  {
+    "id": "archive-66aaa0936d08",
+    "stage": "shadow",
+    "archetype": "Тень",
+    "source": "archive",
+    "title": "Heavy rain droplets on cement",
+    "url": "https://archive.org/download/vecteezy_heavy-rain-droplets-hit-the-cement-floor_6855212_304/vecteezy_heavy-rain-droplets-hit-the-cement-floor_6855212_304.ia.mp4"
+  },
+  {
+    "id": "coverr-coverr-nights-in-the-city-9359",
+    "stage": "shadow",
+    "archetype": "Тень",
+    "source": "coverr",
+    "title": "Nights in the city",
+    "url": "https://cdn.coverr.co/videos/coverr-nights-in-the-city-9359/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-silhouette-of-a-girl-at-dusk-9855",
+    "stage": "shadow",
+    "archetype": "Тень",
+    "source": "coverr",
+    "title": "Silhouette of a girl at dusk",
+    "url": "https://cdn.coverr.co/videos/coverr-silhouette-of-a-girl-at-dusk-9855/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-premium-silhouette-of-a-man-as-he-plays-the-ukulele-3932",
+    "stage": "shadow",
+    "archetype": "Тень",
+    "source": "coverr",
+    "title": "Silhouette of a man as he plays the ukulele",
+    "url": "https://cdn.coverr.co/videos/coverr-premium-silhouette-of-a-man-as-he-plays-the-ukulele-3932/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-rain-in-the-city-430",
+    "stage": "shadow",
+    "archetype": "Тень",
+    "source": "coverr",
+    "title": "Rain in the city",
+    "url": "https://cdn.coverr.co/videos/coverr-rain-in-the-city-430/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-asian-man-stands-in-the-street-at-night-5550",
+    "stage": "shadow",
+    "archetype": "Тень",
+    "source": "coverr",
+    "title": "Asian man stands in the street at night",
+    "url": "https://cdn.coverr.co/videos/coverr-asian-man-stands-in-the-street-at-night-5550/720p.mp4"
+  },
+  {
+    "id": "coverr-user-ai-generation-6vmHVDQ8F0",
+    "stage": "shadow",
+    "archetype": "Тень",
+    "source": "coverr",
+    "title": "A rainy city street at night, reflections on the wet asphalt, colorful neon ligh",
+    "url": "https://cdn.coverr.co/videos/user-ai-generation-6vmHVDQ8F0/720p.mp4"
+  },
+  {
+    "id": "coverr-user-ai-generation-EUlJuQpDXVVj",
+    "stage": "shadow",
+    "archetype": "Тень",
+    "source": "coverr",
+    "title": "Solitary Figure on Rainy Neon-Lit City Street, Late Night",
+    "url": "https://cdn.coverr.co/videos/user-ai-generation-EUlJuQpDXVVj/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-temp-idt4gen-3-alpha-3705455674-yellow-smoke-whirls-mp4-9700",
+    "stage": "shadow",
+    "archetype": "Тень",
+    "source": "coverr",
+    "title": "Woman Emerges from Mystical Smoke Swirling in Darkness",
+    "url": "https://cdn.coverr.co/videos/coverr-temp-idt4gen-3-alpha-3705455674-yellow-smoke-whirls-mp4-9700/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-a-shadow-of-a-man-on-the-pavement-3707",
+    "stage": "shadow",
+    "archetype": "Тень",
+    "source": "coverr",
+    "title": "A shadow of a man on the pavement",
+    "url": "https://cdn.coverr.co/videos/coverr-a-shadow-of-a-man-on-the-pavement-3707/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-silhouette-near-a-waterfall-3774",
+    "stage": "shadow",
+    "archetype": "Тень",
+    "source": "coverr",
+    "title": "Silhouette near a waterfall",
+    "url": "https://cdn.coverr.co/videos/coverr-silhouette-near-a-waterfall-3774/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-raindrops-on-the-window-7102",
+    "stage": "shadow",
+    "archetype": "Тень",
+    "source": "coverr",
+    "title": "Raindrops on the window",
+    "url": "https://cdn.coverr.co/videos/coverr-raindrops-on-the-window-7102/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-premium-woman-running-in-the-dark-forest-4889",
+    "stage": "shadow",
+    "archetype": "Тень",
+    "source": "coverr",
+    "title": "Woman running in the dark forest",
+    "url": "https://cdn.coverr.co/videos/coverr-premium-woman-running-in-the-dark-forest-4889/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-dark-forest-1109",
+    "stage": "shadow",
+    "archetype": "Тень",
+    "source": "coverr",
+    "title": "Dark forest",
+    "url": "https://cdn.coverr.co/videos/coverr-dark-forest-1109/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-using-a-lighter-in-the-dark-7305",
+    "stage": "shadow",
+    "archetype": "Тень",
+    "source": "coverr",
+    "title": "Using a lighter in the dark",
+    "url": "https://cdn.coverr.co/videos/coverr-using-a-lighter-in-the-dark-7305/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-walking-up-a-misty-road-5750",
+    "stage": "shadow",
+    "archetype": "Тень",
+    "source": "coverr",
+    "title": "Walking up a misty road",
+    "url": "https://cdn.coverr.co/videos/coverr-walking-up-a-misty-road-5750/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-the-silhouette-of-a-man-who-is-standing-in-a-tunnel-6498",
+    "stage": "shadow",
+    "archetype": "Тень",
+    "source": "coverr",
+    "title": "The silhouette of a man who is standing in a tunnel",
+    "url": "https://cdn.coverr.co/videos/coverr-the-silhouette-of-a-man-who-is-standing-in-a-tunnel-6498/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-rain-falling-on-windshield-6625",
+    "stage": "shadow",
+    "archetype": "Тень",
+    "source": "coverr",
+    "title": "Rain falling on windshield",
+    "url": "https://cdn.coverr.co/videos/coverr-rain-falling-on-windshield-6625/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-man-on-an-empty-island-5689",
+    "stage": "shadow",
+    "archetype": "Тень",
+    "source": "coverr",
+    "title": "Man on an empty island",
+    "url": "https://cdn.coverr.co/videos/coverr-man-on-an-empty-island-5689/720p.mp4"
+  },
+  {
+    "id": "coverr-user-ai-generation-GNEfA9ndkYZV",
+    "stage": "shadow",
+    "archetype": "Тень",
+    "source": "coverr",
+    "title": "Mysterious Figure in Rainy Urban Night",
+    "url": "https://cdn.coverr.co/videos/user-ai-generation-GNEfA9ndkYZV/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-waves-in-the-ocean-9488",
+    "stage": "trickster_abyss",
+    "archetype": "Трикстер и Бездна",
+    "source": "coverr",
+    "title": "Waves in the ocean",
+    "url": "https://cdn.coverr.co/videos/coverr-waves-in-the-ocean-9488/720p.mp4"
+  },
+  {
+    "id": "coverr-user-ai-generation-V7T2O51WMxIq",
+    "stage": "trickster_abyss",
+    "archetype": "Трикстер и Бездна",
+    "source": "coverr",
+    "title": "Graceful orca swimming in deep blue ocean — side profile",
+    "url": "https://cdn.coverr.co/videos/user-ai-generation-V7T2O51WMxIq/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-blurry-lights-at-night-6959",
+    "stage": "trickster_abyss",
+    "archetype": "Трикстер и Бездна",
+    "source": "coverr",
+    "title": "Blurry lights at night",
+    "url": "https://cdn.coverr.co/videos/coverr-blurry-lights-at-night-6959/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-sparks-from-a-bonfire-3727",
+    "stage": "trickster_abyss",
+    "archetype": "Трикстер и Бездна",
+    "source": "coverr",
+    "title": "Sparks from a bonfire",
+    "url": "https://cdn.coverr.co/videos/coverr-sparks-from-a-bonfire-3727/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-bonfire-sparks-9689",
+    "stage": "trickster_abyss",
+    "archetype": "Трикстер и Бездна",
+    "source": "coverr",
+    "title": "Bonfire sparks",
+    "url": "https://cdn.coverr.co/videos/coverr-bonfire-sparks-9689/720p.mp4"
+  },
+  {
+    "id": "coverr-user-ai-generation-UYPbgQTIxKiA",
+    "stage": "trickster_abyss",
+    "archetype": "Трикстер и Бездна",
+    "source": "coverr",
+    "title": "Dramatic Mountain Peak Under Dark Storm Clouds — Epic Sky",
+    "url": "https://cdn.coverr.co/videos/user-ai-generation-UYPbgQTIxKiA/720p.mp4"
+  },
+  {
+    "id": "coverr-user-ai-generation-A2kXSoYHDML0",
+    "stage": "trickster_abyss",
+    "archetype": "Трикстер и Бездна",
+    "source": "coverr",
+    "title": "Majestic Orca Spyhops Through Ocean Spray at Dawn Light",
+    "url": "https://cdn.coverr.co/videos/user-ai-generation-A2kXSoYHDML0/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-large-ocean-wave-5169",
+    "stage": "trickster_abyss",
+    "archetype": "Трикстер и Бездна",
+    "source": "coverr",
+    "title": "Large ocean wave",
+    "url": "https://cdn.coverr.co/videos/coverr-large-ocean-wave-5169/720p.mp4"
+  },
+  {
+    "id": "coverr-user-ai-generation-gTC7iYAR37SD",
+    "stage": "trickster_abyss",
+    "archetype": "Трикстер и Бездна",
+    "source": "coverr",
+    "title": "Caged Boat Hull Slowly Descending Through Deep Blue Water",
+    "url": "https://cdn.coverr.co/videos/user-ai-generation-gTC7iYAR37SD/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-blurred-candles-in-the-dark-5231",
+    "stage": "trickster_abyss",
+    "archetype": "Трикстер и Бездна",
+    "source": "coverr",
+    "title": "Blurred candles in the dark",
+    "url": "https://cdn.coverr.co/videos/coverr-blurred-candles-in-the-dark-5231/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-waves-in-the-ocean-9927",
+    "stage": "trickster_abyss",
+    "archetype": "Трикстер и Бездна",
+    "source": "coverr",
+    "title": "Waves in the ocean",
+    "url": "https://cdn.coverr.co/videos/coverr-waves-in-the-ocean-9927/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-the-incoming-waves-of-the-ocean-gently-splash-onto-the-shore-3079",
+    "stage": "trickster_abyss",
+    "archetype": "Трикстер и Бездна",
+    "source": "coverr",
+    "title": "The incoming waves of the ocean gently splash onto the shore",
+    "url": "https://cdn.coverr.co/videos/coverr-the-incoming-waves-of-the-ocean-gently-splash-onto-the-shore-3079/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-ocean-waves-3983",
+    "stage": "trickster_abyss",
+    "archetype": "Трикстер и Бездна",
+    "source": "coverr",
+    "title": "Ocean waves",
+    "url": "https://cdn.coverr.co/videos/coverr-ocean-waves-3983/720p.mp4"
+  },
+  {
+    "id": "coverr-user-ai-generation-SDeHIq5cWD2F",
+    "stage": "trickster_abyss",
+    "archetype": "Трикстер и Бездна",
+    "source": "coverr",
+    "title": "Symmetrical Bow View: Boat Piercing Deep Blue Water",
+    "url": "https://cdn.coverr.co/videos/user-ai-generation-SDeHIq5cWD2F/720p.mp4"
+  },
+  {
+    "id": "coverr-user-ai-generation-U8HoUwn85JkG",
+    "stage": "trickster_abyss",
+    "archetype": "Трикстер и Бездна",
+    "source": "coverr",
+    "title": "Mystical Woman Underwater with Flowing Red Hair",
+    "url": "https://cdn.coverr.co/videos/user-ai-generation-U8HoUwn85JkG/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-calm-waves-in-an-ocean-gulf-4513",
+    "stage": "trickster_abyss",
+    "archetype": "Трикстер и Бездна",
+    "source": "coverr",
+    "title": "Calm waves in an ocean gulf",
+    "url": "https://cdn.coverr.co/videos/coverr-calm-waves-in-an-ocean-gulf-4513/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-foamy-ocean-waves-at-night-2122",
+    "stage": "trickster_abyss",
+    "archetype": "Трикстер и Бездна",
+    "source": "coverr",
+    "title": "Foamy ocean waves at night",
+    "url": "https://cdn.coverr.co/videos/coverr-foamy-ocean-waves-at-night-2122/720p.mp4"
+  },
+  {
+    "id": "archive-b1f3f7f894c6",
+    "stage": "trickster_abyss",
+    "archetype": "Трикстер и Бездна",
+    "source": "archive",
+    "title": "View from Great Ocean Road",
+    "url": "https://archive.org/download/Gfycat-z1fc9p/embellishedwhoppingdwarfmongoose.ia.mp4"
+  },
+  {
+    "id": "coverr-coverr-candles-in-the-dark-4381",
+    "stage": "trickster_abyss",
+    "archetype": "Трикстер и Бездна",
+    "source": "coverr",
+    "title": "Candles in the dark",
+    "url": "https://cdn.coverr.co/videos/coverr-candles-in-the-dark-4381/720p.mp4"
+  },
+  {
+    "id": "coverr-user-ai-generation-K3isE7RVVj7K",
+    "stage": "trickster_abyss",
+    "archetype": "Трикстер и Бездна",
+    "source": "coverr",
+    "title": "Underwater Low-Angle: Sailboat Hull, Keel and Rudder",
+    "url": "https://cdn.coverr.co/videos/user-ai-generation-K3isE7RVVj7K/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-covering-the-candle-light-9516",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
+    "source": "coverr",
+    "title": "Covering the candle light",
+    "url": "https://cdn.coverr.co/videos/coverr-covering-the-candle-light-9516/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-a-religious-woman-lights-a-candle-7632",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
+    "source": "coverr",
+    "title": "A religious woman lights a candle",
+    "url": "https://cdn.coverr.co/videos/coverr-a-religious-woman-lights-a-candle-7632/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-temp-49981-459802291-mp4-9098",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
+    "source": "coverr",
+    "title": "Sunlight Filtering Through Misty Trees",
+    "url": "https://cdn.coverr.co/videos/coverr-temp-49981-459802291-mp4-9098/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-man-in-a-dark-foggy-forest-7970",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
+    "source": "coverr",
+    "title": "Man in a dark, foggy forest",
+    "url": "https://cdn.coverr.co/videos/coverr-man-in-a-dark-foggy-forest-7970/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-girl-lighting-a-candle-with-a-match-920",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
+    "source": "coverr",
+    "title": "Girl lighting a candle with a match",
+    "url": "https://cdn.coverr.co/videos/coverr-girl-lighting-a-candle-with-a-match-920/720p.mp4"
+  },
+  {
+    "id": "wikimedia-b096c7059770",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
+    "source": "wikimedia",
+    "title": "Blue candle burning in darkness",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/4/4f/Blue_candle_burning.webm"
+  },
+  {
+    "id": "coverr-coverr-foggy-forest-8688",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
+    "source": "coverr",
+    "title": "Foggy forest",
+    "url": "https://cdn.coverr.co/videos/coverr-foggy-forest-8688/720p.mp4"
+  },
+  {
+    "id": "coverr-user-ai-generation-6D0sFxozfPVm",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
+    "source": "coverr",
+    "title": "Enchanting Forest at Dawn with Sunlight and Mist",
+    "url": "https://cdn.coverr.co/videos/user-ai-generation-6D0sFxozfPVm/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-rain-falling-in-the-forest-9275",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
+    "source": "coverr",
+    "title": "Rain falling in the forest",
+    "url": "https://cdn.coverr.co/videos/coverr-rain-falling-in-the-forest-9275/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-trees-in-the-misty-forest-442",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
+    "source": "coverr",
+    "title": "Trees in the misty forest",
+    "url": "https://cdn.coverr.co/videos/coverr-trees-in-the-misty-forest-442/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-woman-lights-a-candle-205",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
+    "source": "coverr",
+    "title": "Woman lights a candle",
+    "url": "https://cdn.coverr.co/videos/coverr-woman-lights-a-candle-205/720p.mp4"
+  },
+  {
+    "id": "coverr-user-ai-generation-Wayth1C2rUCm",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
+    "source": "coverr",
+    "title": "Golden Sunrise Through Autumn Beech Forest — Soft Rays",
+    "url": "https://cdn.coverr.co/videos/user-ai-generation-Wayth1C2rUCm/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-lighting-a-candle-7332",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
+    "source": "coverr",
+    "title": "Lighting a candle",
+    "url": "https://cdn.coverr.co/videos/coverr-lighting-a-candle-7332/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-above-a-misty-forest-518",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
+    "source": "coverr",
+    "title": "Above a misty forest",
+    "url": "https://cdn.coverr.co/videos/coverr-above-a-misty-forest-518/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-crystal-clear-sea-water-894",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
+    "source": "coverr",
+    "title": "Crystal clear sea water",
+    "url": "https://cdn.coverr.co/videos/coverr-crystal-clear-sea-water-894/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-a-woman-lights-a-candle-5282",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
+    "source": "coverr",
+    "title": "A Woman Lights a Candle",
+    "url": "https://cdn.coverr.co/videos/coverr-a-woman-lights-a-candle-5282/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-man-lighting-a-candle-6436",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
+    "source": "coverr",
+    "title": "Man lighting a candle",
+    "url": "https://cdn.coverr.co/videos/coverr-man-lighting-a-candle-6436/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-forest-covered-by-a-thick-fog-3180",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
+    "source": "coverr",
+    "title": "Forest covered by a thick fog",
+    "url": "https://cdn.coverr.co/videos/coverr-forest-covered-by-a-thick-fog-3180/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-lighting-a-candle-4842",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
+    "source": "coverr",
+    "title": "Lighting a candle",
+    "url": "https://cdn.coverr.co/videos/coverr-lighting-a-candle-4842/720p.mp4"
+  },
+  {
+    "id": "coverr-user-ai-generation-7jdxdOWgpVvF",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
+    "source": "coverr",
+    "title": "Golden Sunrise Over Mountain Lake with Calm Reflective Water",
+    "url": "https://cdn.coverr.co/videos/user-ai-generation-7jdxdOWgpVvF/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-empty-highway-3230",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Empty highway",
+    "url": "https://cdn.coverr.co/videos/coverr-empty-highway-3230/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-empty-path-near-the-forest-1425",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Empty path near the forest",
+    "url": "https://cdn.coverr.co/videos/coverr-empty-path-near-the-forest-1425/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-blurred-lights-3400",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Blurred lights",
+    "url": "https://cdn.coverr.co/videos/coverr-blurred-lights-3400/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-sunset-from-a-train-3777",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Sunset from a train",
+    "url": "https://cdn.coverr.co/videos/coverr-sunset-from-a-train-3777/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-empty-spanish-street-3422",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Empty Spanish Street",
+    "url": "https://cdn.coverr.co/videos/coverr-empty-spanish-street-3422/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-bird-flying-over-the-lake-7108",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Bird flying over the lake",
+    "url": "https://cdn.coverr.co/videos/coverr-bird-flying-over-the-lake-7108/720p.mp4"
+  },
+  {
+    "id": "coverr-user-ai-generation-2H06QcYweg",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Serene Nature with Flying Birds and Waterfalls",
+    "url": "https://cdn.coverr.co/videos/user-ai-generation-2H06QcYweg/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-bird-flying-onto-branches-in-the-lake-5009",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Bird flying onto branches in the lake",
+    "url": "https://cdn.coverr.co/videos/coverr-bird-flying-onto-branches-in-the-lake-5009/720p.mp4"
+  },
+  {
+    "id": "archive-9b15a824e523",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "archive",
+    "title": "Birds at dusk",
+    "url": "https://archive.org/download/Flickr-9011357699/Birds_at_dusk-9011357699.mp4"
+  },
+  {
+    "id": "coverr-coverr-empty-roundabout-in-mexico-city-2475",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Empty roundabout in Mexico City",
+    "url": "https://cdn.coverr.co/videos/coverr-empty-roundabout-in-mexico-city-2475/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-birds-in-the-sky-219",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Birds in the sky",
+    "url": "https://cdn.coverr.co/videos/coverr-birds-in-the-sky-219/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-train-going-through-a-tunnel-2526",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Train going through a tunnel",
+    "url": "https://cdn.coverr.co/videos/coverr-train-going-through-a-tunnel-2526/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-flock-of-birds-in-the-sky-5742",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Flock of birds in the sky",
+    "url": "https://cdn.coverr.co/videos/coverr-flock-of-birds-in-the-sky-5742/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-bokeh-lights-at-night-9375",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Bokeh lights at night",
+    "url": "https://cdn.coverr.co/videos/coverr-bokeh-lights-at-night-9375/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-a-bird-sitting-on-a-streetlight-8677",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "A bird sitting on a streetlight",
+    "url": "https://cdn.coverr.co/videos/coverr-a-bird-sitting-on-a-streetlight-8677/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-misty-mountain-road-journey",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Misty Mountain Road Journey",
+    "url": "https://cdn.coverr.co/videos/coverr-misty-mountain-road-journey/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-train-tracks-3223",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Train tracks",
+    "url": "https://cdn.coverr.co/videos/coverr-train-tracks-3223/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-black-bird-in-california-6440",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Black bird in California",
+    "url": "https://cdn.coverr.co/videos/coverr-black-bird-in-california-6440/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-bird-walking-on-the-beach-1715",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Bird walking on the beach",
+    "url": "https://cdn.coverr.co/videos/coverr-bird-walking-on-the-beach-1715/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-bird-flying-in-the-sky-6957",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Bird flying in the sky",
+    "url": "https://cdn.coverr.co/videos/coverr-bird-flying-in-the-sky-6957/720p.mp4"
+  }
+];

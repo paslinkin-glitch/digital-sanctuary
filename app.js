@@ -809,6 +809,7 @@
   }
 
   async function callDeepSeek(messages, temperature) {
+    if (location.protocol === 'file:') return null;
     if (captionApiUnavailable) return null;
 
     const controller = new AbortController();
@@ -2103,14 +2104,30 @@
   };
 
   async function loadVideoCatalog() {
-    const response = await fetch('./videos.json', { cache: 'no-store' });
-    if (!response.ok) {
-      throw new Error(`videos.json HTTP ${response.status}`);
+    const embedded = Array.isArray(window.VIDEOS_DATA) && window.VIDEOS_DATA.length
+      ? window.VIDEOS_DATA
+      : null;
+    let catalog = embedded;
+
+    // file:// cannot fetch local JSON because of the browser CORS policy.
+    // The generated videos-data.js script is loaded before this file and acts
+    // as an instant, error-free fallback in that case.
+    if (location.protocol !== 'file:') {
+      try {
+        const response = await fetch('./videos.json', { cache: 'no-store' });
+        if (response.ok) {
+          const remoteCatalog = await response.json();
+          if (Array.isArray(remoteCatalog) && remoteCatalog.length) {
+            catalog = remoteCatalog;
+          }
+        }
+      } catch (error) {
+        if (!catalog) throw error;
+      }
     }
 
-    const catalog = await response.json();
     if (!Array.isArray(catalog) || !catalog.length) {
-      throw new Error('videos.json is empty or malformed');
+      throw new Error('videos.json / videos-data.js is empty or malformed');
     }
 
     const pools = {
@@ -2543,7 +2560,7 @@
       ? sceneContext.behavior
       : behaviorContext();
     const allowed = captionAllowedForScene(sceneContext);
-    const stage = sceneContext && sceneContext.stage
+    const sceneStage = sceneContext && sceneContext.stage
       ? sceneContext.stage
       : (STAGE_BY_CATEGORY[category.tag] || 1);
 
@@ -2556,7 +2573,7 @@
     // Новый кадр и его персональный трек стартуют в одном тике.
     playCategory(category);
     setSceneElement(activeClip());
-    activateCaption(category, activeClip(), behavior, allowed, stage);
+    activateCaption(category, activeClip(), behavior, allowed, sceneStage);
     vibrateTap();
     const track = nextTrackFor(category);
     switchSoundtrack(track, duration);
