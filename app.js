@@ -888,6 +888,7 @@
     captionTimer = window.setTimeout(() => {
       if (token !== captionSceneToken || !captionHasText) return;
 
+      captionEl.setAttribute('aria-hidden', 'false');
       captionEl.classList.add('is-visible');
       captionRevealed = true;
       if (currentCaption) currentCaption.revealed = true;
@@ -904,6 +905,7 @@
     if (!captionHasText) return;
 
     window.clearTimeout(captionTimer);
+    captionEl.setAttribute('aria-hidden', 'false');
     captionEl.classList.add('is-visible');
     captionRevealed = true;
     if (currentCaption) currentCaption.revealed = true;
@@ -945,7 +947,6 @@
       if (token !== captionSceneToken || !text) return;
 
       renderCaptionLines(text);
-      captionEl.setAttribute('aria-hidden', 'false');
       captionHasText = true;
       currentCaption.text = text;
 

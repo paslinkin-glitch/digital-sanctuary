@@ -476,7 +476,7 @@ body {
   display: none;
 }
 
-@media (min-aspect-ratio: 9 / 16) {
+@media (min-aspect-ratio: 9/16) {
   .caption {
     width: 84%;
     max-width: 84%;
