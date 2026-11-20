@@ -16,6 +16,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -45,6 +46,8 @@
       <div class="optic-water"></div>
       <div class="optic-fire"></div>
     </div>
+    <div class="touch-vignette" aria-hidden="true"></div>
+    <div class="touch-glow" aria-hidden="true"></div>
     <div class="veil" aria-hidden="true"></div>
     <div class="caption-shade" aria-hidden="true"></div>
     <div class="caption" id="caption" aria-live="polite" aria-hidden="true">
@@ -52,8 +55,13 @@
       <span class="caption-line"></span>
     </div>
   </main>
-  <div class="entry" id="entry" aria-hidden="true">
-    <span class="entry-dot"></span>
+  <div class="entry" id="entry" role="dialog" aria-label="Порог убежища">
+    <div class="entry-glow" aria-hidden="true"></div>
+    <div class="entry-copy">
+      <p class="entry-title">Закрытое пространство для тех, кто устал держать маску.</p>
+      <p class="entry-sub">Без оценок, советов и чужого шума. Только диалог с тем, что внутри.</p>
+    </div>
+    <p class="entry-trigger">Коснись экрана, чтобы войти</p>
   </div>
   <script src="app.js"></script>
 </body>

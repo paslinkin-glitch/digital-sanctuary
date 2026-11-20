@@ -28,7 +28,7 @@
   const SWIPE_MIN_SPEED = 0.32;
   const FLICK_MIN_PX = 28;
   const FLICK_MIN_SPEED = 0.5;
-  const SLOW_RATE = 0.5;
+  const SLOW_RATE = 0.45;
   const API_TIMEOUT_MS = 7000;
   const CLIPS_PER_CATEGORY = 15;
   const RESONANCE_HOLD_MS = 500;
@@ -46,14 +46,18 @@
   const DEEPSEEK_ENDPOINT = 'https://api.deepseek.com/chat/completions';
   const DEEPSEEK_MODEL = 'deepseek-chat';
   const CAPTION_FADE_MS = 800;
-  const CAPTION_MIN_WORDS = 8;
-  const CAPTION_MAX_WORDS = 11;
+  const CAPTION_MIN_WORDS = 5;
+  const CAPTION_MAX_WORDS = 9;
+  const CAPTION_LINGER_MS = 3500;
+  const CAPTION_HOLD_REVEAL_MS = 1200;
+  const CAPTION_YOU_LIMIT = 0.2;
   const CAPTION_TIMEOUT_MS = 9000;
-  const CAPTION_SYSTEM_PROMPT = `Ты — голос бессознательного и пространства сновидения. Пиши только по-русски, обращаясь к человеку на «ты».
-Создай одну фразу строго из 8–11 слов. Одно законченное, глубокое предложение; оно должно естественно ложиться на две строки.
-Тон: тихий, гипнотический, психологически точный; говори о скрытом конфликте между внешней маской и внутренней усталостью или правдой.
-Запрещено: банальные мотивационные цитаты, советы и призывы, академические термины («архетип», «персона», «либидо»), кавычки, заголовки, списки, пояснения.
-Не используй шаблонные формулы. Верни только саму фразу, без кавычек и комментариев.`;
+  const CAPTION_SYSTEM_PROMPT = `Ты — голос бессознательного и пространства сновидения. Пиши только по-русски.
+Создай одну фразу строго из 5–9 слов. Одно законченное, глубокое предложение; не более двух строк.
+Тон: тонкое поэтичное наблюдение сновидения — метафоры, безличные образы, медленное кино, парадоксальная аналитическая глубина; без морализаторства, советов и банальных цитат.
+Пиши преимущественно без прямого обращения, безличными образами; «ты» — редко. Не начинай фразу со слов «Ты», «Твой», «Твоя», «Твои»; такие начала допустимы не более чем в 20% случаев.
+Запрещено: академические термины («архетип», «персона», «либидо»), кавычки, заголовки, списки, пояснения, повторение прошлых формулировок.
+Верни только саму фразу, без кавычек и комментариев.`;
   const MUSIC_GAIN = 0.55;
   const NOISE_GAIN = 0.3;
 
@@ -341,6 +345,7 @@
     lastInteraction: now(),
     stupor: false,
     nervousStreak: 0,
+    captionFastStreak: 0,
   };
   state.visits[0] = 1;
 
@@ -363,6 +368,19 @@
   let captionSceneToken = 0;
   let captionTimer = 0;
   let captionApiUnavailable = false;
+  let sceneOrdinal = 0;
+  let captionAllow = false;
+  let captionSuppressed = false;
+  let captionHoldReady = false;
+  let captionHasText = false;
+  let captionRevealed = false;
+  let currentCaption = null;
+  let captionMemoryTimer = 0;
+  let captionRevealTimer = 0;
+  let captionAcceptedCount = 0;
+  let captionYouStartCount = 0;
+  let resonanceMemoryVersion = 0;
+  const resonanceMemory = [];
   const captionCache = new Map();
   const captionPending = new Map();
   const captionSeen = new Set();
@@ -558,8 +576,25 @@
     };
   }
 
+  function sceneContextFor(record, behavior) {
+    const fast = record.viewedMs < FAST_VIEW_MS || record.swipeSpeed >= IMPULSIVE_SPEED;
+    const linger = record.viewedMs >= CAPTION_LINGER_MS
+      || record.heldMs > 0
+      || state.longestHoldMs >= 200;
+
+    state.captionFastStreak = fast && !linger
+      ? state.captionFastStreak + 1
+      : 0;
+
+    return {
+      behavior,
+      linger,
+      fastStreak: state.captionFastStreak,
+    };
+  }
+
   function captionKey(clip) {
-    return clip.id || `${clip.title || 'untitled'}|${clip.url || ''}`;
+    return `${clip.id || `${clip.title || 'untitled'}|${clip.url || ''}`}|${resonanceMemoryVersion}`;
   }
 
   function normalizeCaption(raw) {
@@ -582,6 +617,18 @@
     return matches ? matches.length : 0;
   }
 
+  function captionStartsWithYou(text) {
+    return /^(ты|твой|твоя|твои)(?=\s|$|[,.;:!?…—–-])/iu.test(text);
+  }
+
+  function captionVoiceAllowed(text) {
+    if (!captionStartsWithYou(text)) return true;
+
+    const nextTotal = captionAcceptedCount + 1;
+    const nextYou = captionYouStartCount + 1;
+    return nextYou / nextTotal <= CAPTION_YOU_LIMIT + 1e-9;
+  }
+
   function captionIsValid(text) {
     if (!text) return false;
 
@@ -600,6 +647,16 @@
     return true;
   }
 
+  function memoryPrompt() {
+    if (!resonanceMemory.length) return '';
+
+    const events = resonanceMemory
+      .map((event, index) => `${index + 1}. ${event.category}; образ: «${event.image}»; фраза: «${event.phrase}»`)
+      .join('\n');
+
+    return `\n\nПамять последних резонансных событий (от старого к новому):\n${events}\nНовая фраза должна логически или ассоциативно развивать, углублять либо парадоксально откликаться на последнюю мысль из этой памяти через визуал нового видео. Не повторяй прошлые формулировки.`;
+  }
+
   function captionMessages(clip, category, behavior) {
     const details = [
       `Категория: ${category.tag}.`,
@@ -611,7 +668,7 @@
     ].filter(Boolean);
 
     return [
-      { role: 'system', content: CAPTION_SYSTEM_PROMPT },
+      { role: 'system', content: `${CAPTION_SYSTEM_PROMPT}${memoryPrompt()}` },
       { role: 'user', content: details.join('\n') },
     ];
   }
@@ -677,13 +734,17 @@
       let raw = await callDeepSeek(messages, 1.15);
       let text = normalizeCaption(raw);
 
-      if (raw && (!captionIsValid(text) || captionSeen.has(text.toLowerCase()))) {
+      if (raw && (
+        !captionIsValid(text)
+        || captionSeen.has(text.toLowerCase())
+        || !captionVoiceAllowed(text)
+      )) {
         const words = countCaptionWords(text);
         const retryMessages = messages.concat([
           { role: 'assistant', content: raw },
           {
             role: 'user',
-            content: `В предыдущей попытке получилось ${words} слов. Нужна ровно одна новая фраза из 8–11 слов, одно законченное предложение, только текст без кавычек и пояснений.`,
+            content: `В предыдущей попытке получилось ${words} слов. Нужна ровно одна новая фраза из 5–9 слов, не более двух строк, только текст без кавычек и пояснений. Соблюдай лимит начал с «Ты/Твой/Твоя/Твои» и не повторяй прошлые формулировки.`,
           },
         ]);
 
@@ -691,8 +752,17 @@
         text = normalizeCaption(raw);
       }
 
-      if (!captionIsValid(text) || captionSeen.has(text.toLowerCase())) return null;
+      if (
+        !captionIsValid(text)
+        || captionSeen.has(text.toLowerCase())
+        || !captionVoiceAllowed(text)
+      ) {
+        return null;
+      }
 
+      const startsWithYou = captionStartsWithYou(text);
+      captionAcceptedCount += 1;
+      if (startsWithYou) captionYouStartCount += 1;
       captionSeen.add(text.toLowerCase());
       captionCache.set(key, text);
       return text;
@@ -738,7 +808,6 @@
       return path ? [path] : [];
     }
 
-    // The weighted choice is random, so warm every other category's next clip.
     return categories.filter((category) => category.index !== current.index);
   }
 
@@ -783,9 +852,76 @@
     captionEl.setAttribute('aria-label', text);
   }
 
-  function activateCaption(category, clip, behavior) {
+  function captionAllowedForScene(context) {
+    if (sceneOrdinal <= 1) return false;
+    if (context && context.linger) return true;
+    if (sceneOrdinal % 3 === 0) return false;
+    if (context && context.fastStreak >= 2) return false;
+    return true;
+  }
+
+  function maybeRecordResonance() {
+    if (!currentCaption || !currentCaption.text || !currentCaption.revealed) return;
+    if (currentCaption.recorded) return;
+
+    const lingering = now() - state.viewStart >= CAPTION_LINGER_MS;
+    const held = currentCaption.held || (gesture && gesture.holding);
+    if (!lingering && !held) return;
+
+    currentCaption.recorded = true;
+    resonanceMemory.push({
+      category: currentCaption.category.tag,
+      image: currentCaption.clip.title || 'без названия',
+      phrase: currentCaption.text,
+    });
+    if (resonanceMemory.length > 4) resonanceMemory.shift();
+
+    resonanceMemoryVersion += 1;
+    prefetchNextCaptions(behaviorContext());
+  }
+
+  function scheduleCaptionVisible(started, token, immediate) {
+    if (!captionEl || !captionHasText || token !== captionSceneToken) return;
+
+    const delay = immediate ? 0 : Math.max(0, CAPTION_FADE_MS - (now() - started));
+    window.clearTimeout(captionTimer);
+    captionTimer = window.setTimeout(() => {
+      if (token !== captionSceneToken || !captionHasText) return;
+
+      captionEl.classList.add('is-visible');
+      captionRevealed = true;
+      if (currentCaption) currentCaption.revealed = true;
+      maybeRecordResonance();
+    }, delay);
+  }
+
+  function revealCaptionForHold() {
+    if (!captionSuppressed || captionHoldReady) return;
+    if (!gesture || !gesture.holding) return;
+
+    captionHoldReady = true;
+    if (currentCaption) currentCaption.held = true;
+    if (!captionHasText) return;
+
+    window.clearTimeout(captionTimer);
+    captionEl.classList.add('is-visible');
+    captionRevealed = true;
+    if (currentCaption) currentCaption.revealed = true;
+    maybeRecordResonance();
+  }
+
+  function activateCaption(category, clip, behavior, allowed) {
     const token = ++captionSceneToken;
     window.clearTimeout(captionTimer);
+    window.clearTimeout(captionMemoryTimer);
+    window.clearTimeout(captionRevealTimer);
+
+    captionAllow = Boolean(allowed);
+    captionSuppressed = !captionAllow;
+    captionHoldReady = false;
+    captionHasText = false;
+    captionRevealed = false;
+    currentCaption = null;
 
     if (!captionEl) return;
 
@@ -794,30 +930,48 @@
 
     if (!clip || !category) return;
 
+    currentCaption = {
+      category,
+      clip,
+      text: '',
+      revealed: false,
+      held: false,
+      recorded: false,
+      token,
+    };
+
     const started = now();
-    const show = (text) => {
+    const applyText = (text) => {
       if (token !== captionSceneToken || !text) return;
 
       renderCaptionLines(text);
       captionEl.setAttribute('aria-hidden', 'false');
+      captionHasText = true;
+      currentCaption.text = text;
 
-      const delay = Math.max(0, CAPTION_FADE_MS - (now() - started));
-      window.clearTimeout(captionTimer);
-      captionTimer = window.setTimeout(() => {
-        if (token === captionSceneToken) captionEl.classList.add('is-visible');
-      }, delay);
+      if (captionAllow) {
+        scheduleCaptionVisible(started, token, false);
+      } else if (captionHoldReady) {
+        scheduleCaptionVisible(started, token, true);
+      }
+
+      maybeRecordResonance();
     };
 
     const key = captionKey(clip);
     const cached = captionCache.get(key);
 
     if (cached) {
-      show(cached);
+      applyText(cached);
     } else {
-      requestCaption(clip, category, behavior).then(show).catch(() => {});
+      requestCaption(clip, category, behavior).then(applyText).catch(() => {});
     }
 
     prefetchNextCaptions(behavior);
+
+    captionMemoryTimer = window.setTimeout(() => {
+      if (token === captionSceneToken) maybeRecordResonance();
+    }, CAPTION_LINGER_MS);
   }
 
   function markInteraction() {
@@ -1553,9 +1707,10 @@
     });
 
     if (category.index === state.index && category.clips.length && gateOpen) {
+      if (!sceneOrdinal) sceneOrdinal = 1;
       playCategory(category);
       setSceneElement(activeClip());
-      activateCaption(category, activeClip(), behaviorContext());
+      activateCaption(category, activeClip(), behaviorContext(), false);
     }
   }
 
@@ -1890,13 +2045,15 @@
     return viewedMs < QUICK_VIEW_MS || impulsive ? QUICK_FADE_MS : SLOW_FADE_MS;
   }
 
-  function navigateTo(targetIndex, direction, fadeMs, forcedClipId, behavior) {
+  function navigateTo(targetIndex, direction, fadeMs, forcedClipId, sceneContext) {
     if (targetIndex === null || targetIndex === undefined) return;
     if (!slides[targetIndex]) return;
 
+    maybeRecordResonance();
     markInteraction();
     setBreath(0);
     stopOptics();
+    window.clearTimeout(captionRevealTimer);
 
     const fromIndex = state.index;
     const from = slides[fromIndex];
@@ -1920,7 +2077,14 @@
     state.visits[targetIndex] += 1;
     resetViewClock();
 
+    if (!sceneOrdinal) sceneOrdinal = 1;
+    sceneOrdinal += 1;
+
     const category = categories[targetIndex];
+    const behavior = sceneContext && sceneContext.behavior
+      ? sceneContext.behavior
+      : behaviorContext();
+    const allowed = captionAllowedForScene(sceneContext);
 
     if (forcedClipId) {
       const forcedIndex = category.clips.findIndex((clip) => clip.id === forcedClipId);
@@ -1930,7 +2094,7 @@
     // Новый кадр и его персональный трек стартуют в одном тике.
     playCategory(category);
     setSceneElement(activeClip());
-    activateCaption(category, activeClip(), behavior || behaviorContext());
+    activateCaption(category, activeClip(), behavior, allowed);
     vibrateTap();
     const track = nextTrackFor(category);
     switchSoundtrack(track, duration);
@@ -1987,6 +2151,7 @@
       let targetIndex = engine.history[engine.historyPos - 1];
       const record = reportSwipe('down', speed);
       const behavior = behaviorContext(record);
+      const sceneContext = sceneContextFor(record, behavior);
       engine.historyPos -= 1;
 
       if (!hasUnusedVideo(categories[targetIndex])) {
@@ -1999,13 +2164,14 @@
         'down',
         fadeDurationFor(record.viewedMs, speed),
         undefined,
-        behavior
+        sceneContext
       );
       return;
     }
 
     const record = reportSwipe('up', speed);
     const behavior = behaviorContext(record);
+    const sceneContext = sceneContextFor(record, behavior);
 
     if (state.nervousStreak >= 3) {
       triggerTricksterPrick();
@@ -2024,7 +2190,7 @@
         'up',
         fadeDurationFor(record.viewedMs, speed),
         syncTarget.clip.id,
-        behavior
+        sceneContext
       );
       return;
     }
@@ -2036,7 +2202,7 @@
     }
 
     if (targetIndex === null || targetIndex === undefined) return;
-    navigateTo(targetIndex, 'up', fadeDurationFor(record.viewedMs, speed), undefined, behavior);
+    navigateTo(targetIndex, 'up', fadeDurationFor(record.viewedMs, speed), undefined, sceneContext);
   }
 
   /* ---------------------------------------------------------- удержание */
@@ -2054,10 +2220,12 @@
       state.totalHolds += 1;
     }
 
+    if (currentCaption) currentCaption.held = true;
     stage.classList.add('is-held');
     setActivePlaybackRate(SLOW_RATE);
     setSoundDepth(true);
     vibrateTap();
+    maybeRecordResonance();
   }
 
   function stopHold() {
@@ -2069,15 +2237,16 @@
     state.longestHoldMs = Math.max(state.longestHoldMs, duration);
     if (duration >= 600) rememberAnchor('hold');
     stage.classList.remove('is-held');
-    setActivePlaybackRate(1);
     setSoundDepth(false);
   }
 
   function abortGesture() {
     window.clearTimeout(holdTimer);
     window.clearTimeout(resonanceTimer);
+    window.clearTimeout(captionRevealTimer);
     holdTimer = 0;
     resonanceTimer = 0;
+    captionRevealTimer = 0;
 
     if (gesture) {
       if (gesture.holding) {
@@ -2085,12 +2254,12 @@
         state.heldMs += duration;
         state.longestHoldMs = Math.max(state.longestHoldMs, duration);
         if (duration >= 600) rememberAnchor('hold');
-        setActivePlaybackRate(1);
         setSoundDepth(false);
       }
       gesture = null;
     }
 
+    setActivePlaybackRate(1);
     setBreath(0);
     stopOptics();
     stage.classList.remove('is-held');
@@ -2107,13 +2276,16 @@
 
     window.clearTimeout(holdTimer);
     window.clearTimeout(resonanceTimer);
+    window.clearTimeout(captionRevealTimer);
     holdTimer = 0;
     resonanceTimer = 0;
+    captionRevealTimer = 0;
     stopHold();
 
     const g = gesture;
     gesture = null;
 
+    setActivePlaybackRate(1);
     setBreath(0);
     stopOptics();
     markInteraction();
@@ -2157,9 +2329,18 @@
       markInteraction();
       setSceneElement(activeClip());
       startOptics(event);
+      setActivePlaybackRate(SLOW_RATE);
       setBreath(0);
       rememberAnchor('touch');
       prefetchNextCaptions(behaviorContext());
+
+      if (captionSuppressed && currentCaption) {
+        window.clearTimeout(captionRevealTimer);
+        captionRevealTimer = window.setTimeout(() => {
+          captionRevealTimer = 0;
+          revealCaptionForHold();
+        }, CAPTION_HOLD_REVEAL_MS);
+      }
     }
 
     gesture = {
@@ -2334,15 +2515,16 @@
       entryGate.setAttribute('aria-hidden', 'true');
       window.setTimeout(() => {
         entryGate.hidden = true;
-      }, 850);
+      }, 1100);
     }
 
     enableSoundscape();
 
     const category = categories[state.index];
+    if (!sceneOrdinal) sceneOrdinal = 1;
     playCategory(category);
     setSceneElement(activeClip());
-    activateCaption(category, activeClip(), behaviorContext());
+    activateCaption(category, activeClip(), behaviorContext(), false);
     vibrateTap();
     const track = nextTrackFor(category);
     switchSoundtrack(track, SLOW_FADE_MS);
