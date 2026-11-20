@@ -23,6 +23,9 @@
   const SLOW_RATE = 0.5;
   const API_TIMEOUT_MS = 7000;
   const CLIPS_PER_CATEGORY = 2;
+  const RESONANCE_HOLD_MS = 500;
+  const FAST_VIEW_MS = 2000;
+  const MAX_WEIGHT = 6;
 
   // Demo key from the brief. A static prototype must expose it; for production
   // this call belongs behind a tiny server-side proxy.
@@ -111,6 +114,7 @@
     Shadow: {
       query: 'dark fog night',
       fallbackQuery: 'fog forest',
+      extendedQuery: 'dark shadow fog mist forest night mystery',
       keywords: ['fog', 'mist', 'dark', 'night', 'forest', 'gloomy', 'mysterious', 'haze', 'tree', 'shadow'],
       blocked: ['coffin', 'cemetery', 'halloween', 'zombie', 'skull', 'horror'],
       preferred: ['VC1PStUKzq', 'Jl07Anu9ty'],
@@ -118,6 +122,7 @@
     Trickster: {
       query: 'smoke fire dark',
       fallbackQuery: 'fire',
+      extendedQuery: 'trickster chaos smoke fire sparks dark',
       keywords: ['smoke', 'fire', 'flame', 'sparks', 'match', 'lighter', 'burning', 'dark', 'night', 'inferno'],
       blocked: ['sausage', 'cooking', 'food', 'barbecue'],
       preferred: ['ZNfyKwAM8L', 'mGv4TVmkZo'],
@@ -125,6 +130,7 @@
     Abyss: {
       query: 'underwater dark ocean',
       fallbackQuery: 'underwater',
+      extendedQuery: 'abyss deep underwater ocean dark submerged',
       keywords: ['underwater', 'deep', 'ocean', 'sea', 'blue', 'submerged', 'dark', 'wreck', 'jellyfish', 'whale', 'boat'],
       blocked: ['child', 'goldfish'],
       preferred: ['ni2blF5Md9', '8KyLPpPmVA'],
@@ -132,6 +138,7 @@
     Calm: {
       query: 'rain window dark',
       fallbackQuery: 'rain window',
+      extendedQuery: 'calm rain window night cozy warm',
       keywords: ['rain', 'window', 'raindrops', 'cozy', 'calm', 'peaceful', 'warm', 'evening', 'lamp', 'coffee', 'dark', 'glass'],
       blocked: [],
       preferred: ['aMlApWfzYF', 'oEw7PbASZW'],
@@ -139,6 +146,7 @@
     Path: {
       query: 'empty road night',
       fallbackQuery: 'night road',
+      extendedQuery: 'path empty road night journey headlights',
       keywords: ['road', 'night', 'empty', 'street', 'driving', 'car', 'lights', 'city', 'journey', 'highway'],
       blocked: ['halloween', 'makeup', 'zombie', 'skull'],
       preferred: ['KK342MfQEX', 'fwwKKUlRGF'],
@@ -159,13 +167,40 @@
       el: slide,
       query: config.query || tag,
       fallbackQuery: config.fallbackQuery || '',
+      extendedQuery: config.extendedQuery || config.fallbackQuery || tag,
       keywords: config.keywords || [],
       blocked: config.blocked || [],
       preferred: config.preferred || [],
       clips: [],
       activeIndex: 0,
+      lastPlayed: null,
+      freshIndex: null,
+      loading: false,
+      extendWanted: false,
+      extendedLoading: false,
+      extendedLoaded: false,
     };
   });
+
+  const engine = {
+    phase: 'diagnostic',       // 'diagnostic' | 'flow'
+    diagnosticViews: [],       // первые 3 просмотра: Shadow / Calm / Abyss
+    averagePaceMs: 0,
+    recentViews: [],
+    weights: categories.reduce((map, category) => {
+      map[category.tag] = 1;
+      return map;
+    }, {}),
+    resonanceTotal: 0,
+    fastStreak: 0,
+    forced: [],                // экстренный маршрут Trickster -> Calm
+    history: [0],
+    historyPos: 0,
+    swipes: 0,
+    sincePath: 0,
+    pathEvery: 5,
+    lastDecision: 'start',
+  };
 
   function now() {
     return performance.now();
@@ -178,15 +213,18 @@
     hiddenAt: null,
     holdsInView: 0,
     heldMs: 0,
+    longestHoldMs: 0,
     totalHolds: 0,
     visits: slides.map(() => 0),
     loopsInView: 0,
     totalLoops: 0,
+    resonanceAwarded: false,
   };
   state.visits[0] = 1;
 
   let gesture = null;
   let holdTimer = 0;
+  let resonanceTimer = 0;
   let ambience = null;
   let ambienceStarting = false;
 
@@ -194,7 +232,9 @@
     state.viewStart = now();
     state.holdsInView = 0;
     state.heldMs = 0;
+    state.longestHoldMs = 0;
     state.loopsInView = 0;
+    state.resonanceAwarded = false;
   }
 
   function activeCategory() {
@@ -206,6 +246,10 @@
     return category && category.clips[category.activeIndex]
       ? category.clips[category.activeIndex]
       : null;
+  }
+
+  function categoryByTag(tag) {
+    return categories.find((category) => category.tag === tag) || null;
   }
 
   /* ------------------------------------------------------- мягкий эмбиент */
@@ -402,93 +446,188 @@
     return selected;
   }
 
+  function nextClipIndex(category) {
+    if (!category.clips.length) return 0;
+
+    if (category.freshIndex !== null && category.clips[category.freshIndex]) {
+      const fresh = category.freshIndex;
+      category.freshIndex = null;
+      category.lastPlayed = fresh;
+      return fresh;
+    }
+
+    if (category.lastPlayed === null) {
+      category.lastPlayed = 0;
+      return 0;
+    }
+
+    const next = (category.lastPlayed + 1) % category.clips.length;
+    category.lastPlayed = next;
+    return next;
+  }
+
+  function playCategory(category) {
+    if (!category || category.index !== state.index || !category.clips.length) return;
+    playClip(category, nextClipIndex(category));
+  }
+
+  function attachVideo(category, clip, index) {
+    const media = category.el.querySelector('.media');
+    if (!media) return null;
+
+    const video = document.createElement('video');
+    const playUrl = clip.playUrl || playbackUrl(clip.url);
+    let triedOriginal = false;
+
+    clip.playUrl = playUrl;
+    video.className = 'clip';
+    video.muted = true;
+    video.defaultMuted = true;
+    video.loop = true;
+    video.playsInline = true;
+    video.controls = false;
+    video.disablePictureInPicture = true;
+    video.preload = category.index === state.index && index === 0 ? 'auto' : 'metadata';
+    video.setAttribute('muted', '');
+    video.setAttribute('playsinline', '');
+    video.setAttribute('webkit-playsinline', '');
+    video.setAttribute('aria-hidden', 'true');
+
+    video.addEventListener('canplay', () => video.classList.add('is-ready'));
+    video.addEventListener('playing', () => video.classList.add('is-ready'));
+    video.addEventListener('timeupdate', () => handleLoop(category, index, video));
+    video.addEventListener('error', () => {
+      if (!triedOriginal && playUrl !== clip.url) {
+        triedOriginal = true;
+        video.classList.remove('is-ready');
+        video.src = clip.url;
+        video.load();
+        if (category.index === state.index && category.activeIndex === index) {
+          const promise = video.play();
+          if (promise && typeof promise.catch === 'function') promise.catch(() => {});
+        }
+        return;
+      }
+      console.warn('[sanctuary] video unavailable:', clip.title);
+    });
+
+    video.src = playUrl;
+    clip.el = video;
+    clip.lastTime = 0;
+    media.appendChild(video);
+    return video;
+  }
+
   function mountClips(category) {
     const media = category.el.querySelector('.media');
     if (!media) return;
 
     media.textContent = '';
     category.clips.forEach((clip, index) => {
-      const video = document.createElement('video');
-      const playUrl = clip.playUrl || playbackUrl(clip.url);
-      let triedOriginal = false;
-
-      clip.playUrl = playUrl;
-      video.className = 'clip';
-      video.muted = true;
-      video.defaultMuted = true;
-      video.loop = true;
-      video.playsInline = true;
-      video.controls = false;
-      video.disablePictureInPicture = true;
-      video.preload = category.index === state.index && index === 0 ? 'auto' : 'metadata';
-      video.setAttribute('muted', '');
-      video.setAttribute('playsinline', '');
-      video.setAttribute('webkit-playsinline', '');
-      video.setAttribute('aria-hidden', 'true');
-
-      video.addEventListener('canplay', () => video.classList.add('is-ready'));
-      video.addEventListener('playing', () => video.classList.add('is-ready'));
-      video.addEventListener('timeupdate', () => handleLoop(category, index, video));
-      video.addEventListener('error', () => {
-        if (!triedOriginal && playUrl !== clip.url) {
-          triedOriginal = true;
-          video.classList.remove('is-ready');
-          video.src = clip.url;
-          video.load();
-          if (category.index === state.index && category.activeIndex === index) {
-            const promise = video.play();
-            if (promise && typeof promise.catch === 'function') promise.catch(() => {});
-          }
-          return;
-        }
-        console.warn('[sanctuary] video unavailable:', clip.title);
-      });
-
-      video.src = playUrl;
-      clip.el = video;
-      clip.lastTime = 0;
-      media.appendChild(video);
+      attachVideo(category, clip, index);
     });
 
     if (category.index === state.index && category.clips.length) {
-      const index = Math.max(0, state.visits[state.index] - 1) % category.clips.length;
-      playClip(category, index);
+      playCategory(category);
     }
   }
 
+  function appendClips(category, clips) {
+    if (!clips.length) return;
+
+    const media = category.el.querySelector('.media');
+    if (!media) return;
+
+    const firstNew = category.clips.length;
+    clips.forEach((clip) => {
+      const index = category.clips.length;
+      category.clips.push(clip);
+      attachVideo(category, clip, index);
+    });
+
+    category.freshIndex = firstNew;
+  }
+
   async function loadCategory(category) {
+    category.loading = true;
     const queries = [category.query];
     if (category.fallbackQuery && category.fallbackQuery !== category.query) {
       queries.push(category.fallbackQuery);
     }
 
     try {
-      const results = await Promise.allSettled(queries.map((query) => searchVideos(query)));
-      const pool = [];
+      try {
+        const results = await Promise.allSettled(queries.map((query) => searchVideos(query)));
+        const pool = [];
 
-      for (let i = 0; i < results.length; i += 1) {
-        const result = results[i];
-        if (result.status !== 'fulfilled') {
-          console.warn(`[sanctuary] Coverr query failed: "${queries[i]}"`, result.reason);
-          continue;
+        for (let i = 0; i < results.length; i += 1) {
+          const result = results[i];
+          if (result.status !== 'fulfilled') {
+            console.warn(`[sanctuary] Coverr query failed: "${queries[i]}"`, result.reason);
+            continue;
+          }
+          for (const hit of result.value) {
+            const clip = normalizeClip(hit, category);
+            if (clip) pool.push(clip);
+          }
         }
-        for (const hit of result.value) {
-          const clip = normalizeClip(hit, category);
-          if (clip) pool.push(clip);
-        }
+
+        category.clips = selectClips(pool, category);
+      } catch (error) {
+        console.warn('[sanctuary] Coverr category failed:', category.tag, error);
+        category.clips = [];
       }
 
-      category.clips = selectClips(pool, category);
+      if (!category.clips.length) {
+        category.clips = (FALLBACK_CLIPS[category.tag] || []).slice(0, CLIPS_PER_CATEGORY);
+      }
+
+      mountClips(category);
+    } finally {
+      category.loading = false;
+    }
+
+    if (category.extendWanted) {
+      category.extendWanted = false;
+      expandCategory(category);
+    }
+  }
+
+  async function expandCategory(category) {
+    if (!category || category.extendedLoaded || category.extendedLoading) return;
+    if (category.loading) {
+      category.extendWanted = true;
+      return;
+    }
+
+    category.extendedLoading = true;
+    try {
+      const hits = await searchVideos(category.extendedQuery);
+      const existing = new Set(category.clips.map((clip) => clip.id));
+      const seen = new Set();
+      const fresh = [];
+
+      for (const hit of hits) {
+        const clip = normalizeClip(hit, category);
+        if (!clip || existing.has(clip.id) || seen.has(clip.id)) continue;
+        seen.add(clip.id);
+        fresh.push(clip);
+      }
+
+      fresh.sort((a, b) => scoreClip(b, category) - scoreClip(a, category));
+      const selected = fresh.slice(0, 2);
+
+      if (selected.length) {
+        appendClips(category, selected);
+        console.info('[sanctuary] resonance expanded', category.tag, selected.map((clip) => clip.title));
+      }
+
+      category.extendedLoaded = true;
     } catch (error) {
-      console.warn('[sanctuary] Coverr category failed:', category.tag, error);
-      category.clips = [];
+      console.warn('[sanctuary] extended Coverr query failed:', category.tag, error);
+    } finally {
+      category.extendedLoading = false;
     }
-
-    if (!category.clips.length) {
-      category.clips = (FALLBACK_CLIPS[category.tag] || []).slice(0, CLIPS_PER_CATEGORY);
-    }
-
-    mountClips(category);
   }
 
   function handleLoop(category, clipIndex, video) {
@@ -503,6 +642,10 @@
       state.totalLoops += 1;
     }
     clip.lastTime = current;
+
+    if (state.loopsInView >= 2) {
+      rewardCategory(category, 'loops');
+    }
   }
 
   /* ---------------------------------------------------------- воспроизведение */
@@ -558,6 +701,189 @@
     if (promise && typeof promise.catch === 'function') promise.catch(() => {});
   }
 
+  /* -------------------------------------------------- юнгианский движок */
+
+  function rewardCategory(category, reason) {
+    if (!category || engine.phase !== 'flow' || state.resonanceAwarded) return;
+
+    state.resonanceAwarded = true;
+    const nextWeight = Math.min(MAX_WEIGHT, (engine.weights[category.tag] || 1) + 1);
+    engine.weights[category.tag] = nextWeight;
+    engine.resonanceTotal += 1;
+
+    console.info('[sanctuary] resonance', {
+      category: category.tag,
+      reason,
+      weight: nextWeight,
+    });
+
+    expandCategory(category);
+  }
+
+  function isDeepEngagement() {
+    if (engine.resonanceTotal >= 2) return true;
+    if (engine.averagePaceMs >= 6000 && engine.recentViews.length >= 2) return true;
+
+    const recent = engine.recentViews.slice(-4);
+    if (recent.length < 2) return false;
+
+    const average = recent.reduce((sum, value) => sum + value, 0) / recent.length;
+    return average >= 4500;
+  }
+
+  function weightedNext(excludeIndex) {
+    const pool = categories.filter((category) => category.index !== excludeIndex);
+    if (!pool.length) return null;
+
+    const previous = engine.history[engine.historyPos - 1];
+    const weights = pool.map((category) => {
+      let weight = Math.max(0.1, engine.weights[category.tag] || 1);
+      if (category.index === previous) weight *= 0.7;
+      return weight;
+    });
+
+    const total = weights.reduce((sum, weight) => sum + weight, 0);
+    let roll = Math.random() * total;
+
+    for (let i = 0; i < pool.length; i += 1) {
+      roll -= weights[i];
+      if (roll <= 0) return pool[i].index;
+    }
+
+    return pool[pool.length - 1].index;
+  }
+
+  function registerBehavior(record) {
+    const category = categories[state.index];
+    if (!category || engine.phase !== 'flow') return;
+
+    if (!state.resonanceAwarded && (state.longestHoldMs >= RESONANCE_HOLD_MS || record.loopCount >= 2)) {
+      rewardCategory(
+        category,
+        state.longestHoldMs >= RESONANCE_HOLD_MS ? 'hold' : 'loops'
+      );
+    }
+
+    if (record.viewedMs < FAST_VIEW_MS) {
+      engine.fastStreak += 1;
+      engine.weights[category.tag] = Math.max(0.5, (engine.weights[category.tag] || 1) - 0.25);
+
+      if (!engine.forced.length) {
+        if (category.tag === 'Trickster') {
+          engine.forced = ['Calm'];
+        } else if (category.tag !== 'Calm') {
+          engine.forced = ['Trickster', 'Calm'];
+        }
+      }
+    } else {
+      engine.fastStreak = 0;
+    }
+  }
+
+  function selectFlowTarget() {
+    const current = categories[state.index];
+    engine.swipes += 1;
+    engine.sincePath += 1;
+
+    if (current.tag === 'Path') {
+      engine.sincePath = 0;
+    }
+
+    while (engine.forced.length) {
+      const forced = categoryByTag(engine.forced.shift());
+      if (forced && forced.index !== current.index) {
+        engine.lastDecision = `forced:${forced.tag}`;
+        return forced.index;
+      }
+    }
+
+    if (isDeepEngagement() && engine.sincePath >= engine.pathEvery && current.tag !== 'Path') {
+      engine.sincePath = 0;
+      engine.pathEvery = 5 + Math.floor(Math.random() * 2);
+      engine.lastDecision = 'path:gestalt';
+      return categoryByTag('Path').index;
+    }
+
+    const target = weightedNext(current.index);
+    if (target !== null) {
+      engine.lastDecision = `weighted:${categories[target].tag}`;
+      if (categories[target].tag === 'Path') engine.sincePath = 0;
+    }
+    return target;
+  }
+
+  function chooseNext(record) {
+    if (engine.phase === 'diagnostic') {
+      engine.diagnosticViews.push(record.viewedMs);
+      engine.recentViews.push(record.viewedMs);
+      if (engine.recentViews.length > 6) engine.recentViews.shift();
+
+      if (engine.diagnosticViews.length === 1) {
+        engine.lastDecision = 'diagnostic:calm';
+        return categoryByTag('Calm').index;
+      }
+
+      if (engine.diagnosticViews.length === 2) {
+        engine.lastDecision = 'diagnostic:abyss';
+        return categoryByTag('Abyss').index;
+      }
+
+      engine.averagePaceMs = Math.round(
+        engine.diagnosticViews.reduce((sum, value) => sum + value, 0) /
+          engine.diagnosticViews.length
+      );
+      engine.phase = 'flow';
+      engine.lastDecision = 'diagnostic:complete';
+      registerBehavior(record);
+      return selectFlowTarget();
+    }
+
+    engine.recentViews.push(record.viewedMs);
+    if (engine.recentViews.length > 6) engine.recentViews.shift();
+    registerBehavior(record);
+    return selectFlowTarget();
+  }
+
+  function navigateTo(targetIndex, direction) {
+    if (targetIndex === null || targetIndex === undefined || state.locked) return;
+    if (!slides[targetIndex]) return;
+
+    const fromIndex = state.index;
+    const from = slides[fromIndex];
+    const to = slides[targetIndex];
+
+    state.locked = true;
+    stage.classList.remove('is-held');
+    setActivePlaybackRate(1);
+    setHumDepth(false);
+    pauseCategory(categories[fromIndex]);
+
+    from.classList.remove('is-active');
+    from.classList.add('is-leaving');
+
+    state.index = targetIndex;
+    state.visits[targetIndex] += 1;
+
+    if (direction === 'up') {
+      engine.history = engine.history.slice(0, engine.historyPos + 1);
+      engine.history.push(targetIndex);
+      engine.historyPos = engine.history.length - 1;
+    }
+
+    // Первая половина: старый кадр уходит в чёрное.
+    window.setTimeout(() => {
+      from.classList.remove('is-leaving');
+      to.classList.add('is-active');
+      resetViewClock();
+      playCategory(categories[targetIndex]);
+
+      // Вторая половина: новый кадр проявляется.
+      window.setTimeout(() => {
+        state.locked = false;
+      }, FADE_MS + 50);
+    }, FADE_MS);
+  }
+
   /* ------------------------------------------------------------- телеметрия */
 
   function reportSwipe(direction, speed) {
@@ -580,7 +906,11 @@
       visitCount: visits,
       holdCount: state.holdsInView,
       heldMs: Math.round(state.heldMs),
+      longestHoldMs: Math.round(state.longestHoldMs),
       totalHoldCount: state.totalHolds,
+      phase: engine.phase,
+      weight: Math.round((engine.weights[category.tag] || 1) * 100) / 100,
+      averagePaceMs: engine.averagePaceMs,
       loggedAt: new Date().toISOString(),
     };
 
@@ -593,43 +923,20 @@
   function go(direction, speed) {
     if (state.locked) return;
 
-    const step = direction === 'up' ? 1 : -1;
-    const fromIndex = state.index;
-    const toIndex = (fromIndex + step + slides.length) % slides.length;
-    const from = slides[fromIndex];
-    const to = slides[toIndex];
+    if (direction === 'down') {
+      if (engine.phase === 'diagnostic' || engine.historyPos <= 0) return;
 
-    reportSwipe(direction, speed);
+      const targetIndex = engine.history[engine.historyPos - 1];
+      reportSwipe('down', speed);
+      engine.historyPos -= 1;
+      navigateTo(targetIndex, 'down');
+      return;
+    }
 
-    state.locked = true;
-    stage.classList.remove('is-held');
-    setActivePlaybackRate(1);
-    setHumDepth(false);
-    pauseCategory(categories[fromIndex]);
-
-    from.classList.remove('is-active');
-    from.classList.add('is-leaving');
-
-    state.index = toIndex;
-    state.visits[toIndex] += 1;
-
-    // Первая половина: старый кадр уходит в чёрное.
-    window.setTimeout(() => {
-      from.classList.remove('is-leaving');
-      to.classList.add('is-active');
-      resetViewClock();
-
-      const category = categories[toIndex];
-      if (category.clips.length) {
-        const index = (state.visits[toIndex] - 1) % category.clips.length;
-        playClip(category, index);
-      }
-
-      // Вторая половина: новый кадр проявляется.
-      window.setTimeout(() => {
-        state.locked = false;
-      }, FADE_MS + 50);
-    }, FADE_MS);
+    const record = reportSwipe('up', speed);
+    const targetIndex = chooseNext(record);
+    if (targetIndex === null || targetIndex === undefined) return;
+    navigateTo(targetIndex, 'up');
   }
 
   /* ---------------------------------------------------------- удержание */
@@ -656,7 +963,9 @@
     if (!gesture || !gesture.holding) return;
 
     gesture.holding = false;
-    state.heldMs += now() - gesture.holdStart;
+    const duration = now() - gesture.holdStart;
+    state.heldMs += duration;
+    state.longestHoldMs = Math.max(state.longestHoldMs, duration);
     stage.classList.remove('is-held');
     setActivePlaybackRate(1);
     setHumDepth(false);
@@ -664,11 +973,15 @@
 
   function abortGesture() {
     window.clearTimeout(holdTimer);
+    window.clearTimeout(resonanceTimer);
     holdTimer = 0;
+    resonanceTimer = 0;
 
     if (gesture) {
       if (gesture.holding) {
-        state.heldMs += now() - gesture.holdStart;
+        const duration = now() - gesture.holdStart;
+        state.heldMs += duration;
+        state.longestHoldMs = Math.max(state.longestHoldMs, duration);
         setActivePlaybackRate(1);
         setHumDepth(false);
       }
@@ -688,7 +1001,9 @@
     if (!gesture || event.pointerId !== gesture.id) return;
 
     window.clearTimeout(holdTimer);
+    window.clearTimeout(resonanceTimer);
     holdTimer = 0;
+    resonanceTimer = 0;
     stopHold();
 
     const g = gesture;
@@ -741,6 +1056,11 @@
     }
 
     holdTimer = window.setTimeout(startHold, HOLD_MS);
+    resonanceTimer = window.setTimeout(() => {
+      if (gesture && !gesture.moved) {
+        rewardCategory(activeCategory(), 'hold');
+      }
+    }, RESONANCE_HOLD_MS);
   });
 
   stage.addEventListener('pointermove', (event) => {
@@ -757,7 +1077,9 @@
     if (!gesture.moved && distance > 10) {
       gesture.moved = true;
       window.clearTimeout(holdTimer);
+      window.clearTimeout(resonanceTimer);
       holdTimer = 0;
+      resonanceTimer = 0;
     }
 
     if (gesture.holding && distance > 26) {
@@ -847,4 +1169,12 @@
       categories: categories.map((category) => `${category.tag}: ${category.clips.length}`),
     });
   });
+
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch((error) => {
+        console.warn('[sanctuary] service worker registration failed', error);
+      });
+    });
+  }
 })();
