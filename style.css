@@ -603,6 +603,27 @@ body {
   animation-play-state: paused;
 }
 
+.debug-status {
+  position: fixed;
+  left: 50%;
+  bottom: 5px;
+  z-index: 25;
+  pointer-events: none;
+  transform: translateX(-50%);
+  max-width: 92vw;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.35);
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 300;
+  line-height: 1.35;
+  letter-spacing: 0.04em;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.9);
+}
+
 /* Cinematic vignette; also hides any rounding at the edges of the stage. */
 .stage::after {
   content: "";

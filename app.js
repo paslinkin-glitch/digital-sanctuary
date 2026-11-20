@@ -25,7 +25,7 @@
 
   const HOLD_MS = 260;
   const SWIPE_MIN_RATIO = 0.08;
-  const SWIPE_MIN_PX = 36;
+  const SWIPE_MIN_PX = 30;
   const SWIPE_MIN_SPEED = 0.32;
   const FLICK_MIN_PX = 28;
   const FLICK_MIN_SPEED = 0.5;
@@ -322,6 +322,43 @@
     return;
   }
 
+  const debugStatusEl = document.createElement('div');
+  debugStatusEl.className = 'debug-status';
+  debugStatusEl.id = 'debug-status';
+  debugStatusEl.setAttribute('aria-hidden', 'true');
+  debugStatusEl.textContent = '0 / 0';
+  document.body.appendChild(debugStatusEl);
+
+  let lastDebugError = '';
+
+  function updateDebugStatus() {
+    let current = 0;
+    let total = 0;
+
+    try {
+      total = pathPlan.length;
+      current = pathStarted ? Math.min(pathPos + 1, total) : 0;
+    } catch (_) {
+      /* path ещё не инициализирован */
+    }
+
+    debugStatusEl.textContent = `${current} / ${total}${lastDebugError ? ` · ${lastDebugError}` : ''}`;
+  }
+
+  function setDebugError(message) {
+    lastDebugError = message ? String(message).replace(/\s+/g, ' ').slice(0, 90) : '';
+    updateDebugStatus();
+  }
+
+  window.addEventListener('error', (event) => {
+    if (event.error || event.message) setDebugError(event.message || 'JS error');
+  });
+
+  window.addEventListener('unhandledrejection', (event) => {
+    const reason = event.reason && (event.reason.message || event.reason);
+    setDebugError(reason || 'promise rejection');
+  });
+
   const categories = slides.map((slide, index) => {
     const tag = slide.dataset.tag;
     const config = CATEGORY_CONFIG[tag] || {};
@@ -468,6 +505,8 @@
 
   let gesture = null;
   let holdTimer = 0;
+  let lastSwipeAt = 0;
+  let lastBottomTapAt = 0;
   let resonanceTimer = 0;
   let sound = null;
   let soundStarting = false;
@@ -1607,16 +1646,17 @@
 
     try {
       hits = await fetchVideoPage(query, apiPage);
-    } catch (_) {
+    } catch (error) {
       hits = [];
+      setDebugError(`Coverr: ${error.message || error}`);
     }
 
     if (hits.length < 8) {
       try {
         const firstPage = await fetchVideoPage(query, 0);
         hits = hits.concat(firstPage);
-      } catch (_) {
-        /* остаётся случайная страница или пустой результат */
+      } catch (error) {
+        setDebugError(`Coverr: ${error.message || error}`);
       }
     } else {
       const unseenOnPage = hits.filter((hit) => {
@@ -1628,19 +1668,22 @@
         try {
           const firstPage = await fetchVideoPage(query, 0);
           hits = hits.concat(firstPage);
-        } catch (_) {
-          /* страница 1 могла не ответить */
+        } catch (error) {
+          setDebugError(`Coverr: ${error.message || error}`);
         }
       }
     }
 
     const seen = new Set();
-    return shuffleArray(hits.filter((hit) => {
+    const result = shuffleArray(hits.filter((hit) => {
       const id = hit && (hit.video_id || hit.id || hit.objectID);
       if (!id || seen.has(id)) return false;
       seen.add(id);
       return true;
     }));
+
+    if (!result.length) setDebugError(`Coverr: empty "${query}"`);
+    return result;
   }
 
   function normalizeClip(hit, category) {
@@ -1927,6 +1970,44 @@
     }
   }
 
+  function forceNextAvailableScene(direction) {
+    ensureFallbackCategories();
+
+    const playable = categories.filter((category) => (
+      category.clips.some((clip) => clip.el)
+    ));
+    if (!playable.length) {
+      setDebugError('no playable video');
+      return false;
+    }
+
+    const current = activeCategory();
+    const ordered = playable
+      .filter((category) => category !== current)
+      .concat(playable.includes(current) ? [current] : []);
+
+    for (const category of ordered) {
+      const clip = category.clips.find((item) => item.el && !isVideoSeen(item.id))
+        || category.clips.find((item) => item.el);
+
+      if (!clip) continue;
+
+      navigateTo(
+        category.index,
+        direction,
+        SLOW_FADE_MS,
+        clip.id,
+        {
+          behavior: behaviorContext(),
+          stage: STAGE_BY_CATEGORY[category.tag] || 1,
+        }
+      );
+      return true;
+    }
+
+    return false;
+  }
+
   function extendPathPlan() {
     if (appendPathCycle()) return true;
     if (appendPathCycle(true)) return true;
@@ -1964,6 +2045,7 @@
     pathPos = 0;
     pathStarted = true;
     pathStartPending = false;
+    updateDebugStatus();
     setSceneElement(activeClip());
     activateCaption(category, activeClip(), behaviorContext(), false, entry.stage);
     vibrateTap();
@@ -2012,6 +2094,7 @@
         return;
       }
       console.warn('[sanctuary] video unavailable:', clip.title);
+      setDebugError(`video: ${clip.title}`);
     });
 
     video.src = playUrl;
@@ -2424,6 +2507,7 @@
     const track = nextTrackFor(category);
     switchSoundtrack(track, duration);
     preloadNextTrack(category);
+    updateDebugStatus();
 
     if (direction === 'up') {
       engine.history = engine.history.slice(0, engine.historyPos + 1);
@@ -2469,6 +2553,8 @@
   /* ------------------------------------------------------------- переходы */
 
   function go(direction, speed) {
+    if (!gateOpen) return;
+    lastSwipeAt = now();
     const record = reportSwipe(direction, speed);
     const behavior = behaviorContext(record);
     const sceneContext = sceneContextFor(record, behavior);
@@ -2482,10 +2568,33 @@
         : 0;
     }
 
-    if (!pathStarted) return;
+    if (!pathStarted) {
+      try {
+        if (startPathFirst()) {
+          updateDebugStatus();
+          return;
+        }
+      } catch (error) {
+        setDebugError(`start: ${error.message || error}`);
+      }
+
+      if (forceNextAvailableScene(direction)) {
+        updateDebugStatus();
+      } else {
+        setDebugError('queue is empty');
+      }
+      return;
+    }
 
     if (pathPos + 1 >= pathPlan.length) {
-      if (!extendPathPlan()) return;
+      if (!extendPathPlan()) {
+        if (forceNextAvailableScene(direction)) {
+          updateDebugStatus();
+        } else {
+          setDebugError('queue is empty');
+        }
+        return;
+      }
     }
 
     const entry = pathPlan[pathPos + 1];
@@ -2620,7 +2729,10 @@
       preloadNextTrack(category);
     }
 
-    if (gesture) return;
+    if (gesture) {
+      if (gesture.id === event.pointerId) return;
+      abortGesture();
+    }
     if (event.pointerType === 'mouse' && event.button !== 0) return;
 
     if (gateOpen) {
@@ -2700,7 +2812,7 @@
       resonanceTimer = 0;
     }
 
-    if (gesture.holding && distance > 35) {
+    if (gesture.holding && distance > 30) {
       stopHold();
     }
 
@@ -2784,6 +2896,22 @@
     rememberAnchor('key');
     setBreath(0);
     go(key === 'ArrowUp' || key === 'PageUp' ? 'up' : 'down', 1);
+  });
+
+  stage.addEventListener('click', (event) => {
+    if (!gateOpen) return;
+    if (now() - lastSwipeAt < 450) return;
+    if (event.clientY < window.innerHeight * 0.6) return;
+
+    const t = now();
+    if (t - lastBottomTapAt < 450) {
+      lastBottomTapAt = 0;
+      event.preventDefault();
+      markInteraction();
+      go('up', 1);
+    } else {
+      lastBottomTapAt = t;
+    }
   });
 
   document.addEventListener('visibilitychange', () => {
@@ -2874,6 +3002,7 @@
         extendPathPlan();
       } catch (error) {
         console.error('[sanctuary] path build failed:', error);
+        setDebugError(`path: ${error.message || error}`);
       }
 
       if (!pathPlan.length) {
@@ -2882,11 +3011,15 @@
           extendPathPlan();
         } catch (error) {
           console.error('[sanctuary] fallback path failed:', error);
+          setDebugError(`fallback: ${error.message || error}`);
         }
       }
 
+      updateDebugStatus();
+
       if (!pathPlan.length) {
         console.error('[sanctuary] no video clips available after all fallbacks');
+        setDebugError('no video clips');
         return;
       }
 
@@ -2902,6 +3035,7 @@
           startPathFirst();
         } catch (error) {
           console.error('[sanctuary] first scene failed:', error);
+          setDebugError(`start: ${error.message || error}`);
         }
       }
     } catch (error) {
