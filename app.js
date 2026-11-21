@@ -2394,7 +2394,7 @@
 
     stage.classList.add('is-finalizing');
     hideInstallCard();
-    if (stageLabelEl) stageLabelEl.textContent = '40 // SESSION COMPLETE';
+    if (stageLabelEl) stageLabelEl.textContent = '40 // СЕССИЯ ЗАВЕРШЕНА';
     setSessionLock();
     updateSessionProgress();
 
