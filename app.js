@@ -57,19 +57,20 @@
   const DEEPSEEK_API_KEY = ['sk-32ca928f', '00e6474e', 'beb4741f', '35e7f8c3'].join('');
   const DEEPSEEK_ENDPOINT = 'https://api.deepseek.com/chat/completions';
   const DEEPSEEK_MODEL = 'deepseek-chat';
-  const CAPTION_FADE_MS = 800;
-  const CAPTION_MIN_WORDS = 5;
-  const CAPTION_MAX_WORDS = 9;
+  const CAPTION_START_DELAY_MS = 2200;
+  const CAPTION_MIN_WORDS = 4;
+  const CAPTION_MAX_WORDS = 7;
+  const CAPTION_MAX_RATIO = 0.4;
+  const EARLY_SWIPE_RATIO = 0.55;
   const CAPTION_LINGER_MS = 3500;
   const CAPTION_HOLD_REVEAL_MS = 1200;
   const CAPTION_YOU_LIMIT = 0.2;
   const CAPTION_TIMEOUT_MS = 9000;
-  const CAPTION_SYSTEM_PROMPT = `Ты — голос бессознательного и пространства сновидения. Пиши только по-русски.
-Создай одну фразу строго из 5–9 слов. Одно законченное, глубокое предложение; не более двух строк.
-Тон: тонкое поэтичное наблюдение сновидения — метафоры, безличные образы, медленное кино, парадоксальная аналитическая глубина; без морализаторства, советов и банальных цитат.
-Пиши преимущественно без прямого обращения, безличными образами; «ты» — редко. Не начинай фразу со слов «Ты», «Твой», «Твоя», «Твои»; такие начала допустимы не более чем в 20% случаев.
-Запрещено: академические термины («архетип», «персона», «либидо»), кавычки, заголовки, списки, пояснения, повторение прошлых формулировок.
-Верни только саму фразу, без кавычек и комментариев.`;
+  const CAPTION_SYSTEM_PROMPT = `Ты — спокойный голос, который помогает заметить простое. Пиши только по-русски.
+Создай одну короткую фразу строго из 4–7 простых разговорных слов. Одна или две короткие строки; без поэзии, метафор, загадок и сложных образов.
+Фраза должна быть понятна с первого взгляда и звучать по-человечески.
+Запрещены слова «Тень», «Трикстер», «Бездна», «Архетип», «слой», «глубина», академические термины, кавычки, заголовки, списки, советы и мораль.
+Верни только саму фразу без пояснений.`;
   const MUSIC_GAIN = 0.55;
   const NOISE_GAIN = 0.3;
 
@@ -550,6 +551,10 @@
   let sessionStage = 1;
   let sessionAccounted = 0;
   let lastSessionProgressAt = 0;
+  let userAvgWatchTime = 0;
+  let sessionTextFrames = 0;
+  let quietSinceText = 0;
+  let quietRequired = 1;
   let sessionFinalTimer = 0;
   let activeHapticStage = 0;
   let holdPulseTimer = 0;
@@ -761,40 +766,60 @@
     }
   }
 
+  function updateUserAverage(viewedMs) {
+    if (!Number.isFinite(viewedMs) || viewedMs <= 0) return;
+    userAvgWatchTime = userAvgWatchTime
+      ? userAvgWatchTime * 0.8 + viewedMs * 0.2
+      : viewedMs;
+  }
+
   function behaviorContext(record) {
     const viewedMs = record && Number.isFinite(record.viewedMs)
       ? record.viewedMs
       : Math.max(0, now() - state.viewStart);
-    const resonance = state.longestHoldMs >= 600 || viewedMs >= 12000;
-    const anxiety = record
-      ? record.viewedMs < FAST_VIEW_MS || record.swipeSpeed >= IMPULSIVE_SPEED
+    const held = (record && record.heldMs > 0)
+      || state.longestHoldMs >= 600
+      || Boolean(gesture && gesture.holding);
+    const looped = Boolean(record && record.loopCount > 0);
+    const resonance = held || looped;
+    const early = record
+      ? (userAvgWatchTime > 0
+        ? record.viewedMs < userAvgWatchTime * EARLY_SWIPE_RATIO
+        : record.viewedMs < FAST_VIEW_MS)
       : engine.fastStreak >= 2 || state.nervousStreak >= 2;
+    const anxiety = early || (record && record.swipeSpeed >= IMPULSIVE_SPEED);
 
     if (resonance) {
       return {
         key: 'resonance',
-        context: 'долгое удержание или долгое созерцание — погружение, резонанс, готовность встретиться с тенью',
+        context: 'удержание или повторный круг — реальное погружение, а не обычный просмотр',
       };
     }
 
     if (anxiety) {
       return {
         key: 'anxiety',
-        context: 'быстрые свайпы и короткие взгляды — сопротивление, тревога, желание уйти от встречи',
+        context: 'досрочный уход — скрытое сопротивление, слишком быстрый пропуск',
       };
     }
 
     return {
       key: 'neutral',
-      context: 'ровное наблюдение, осторожное любопытство, пауза между защитой и интересом',
+      context: 'спокойный просмотр без выраженного удержания',
     };
   }
 
   function sceneContextFor(record, behavior) {
     const fast = record.viewedMs < FAST_VIEW_MS || record.swipeSpeed >= IMPULSIVE_SPEED;
+    const held = record.heldMs > 0
+      || record.longestHoldMs >= 600
+      || state.longestHoldMs >= 600;
+    const looped = record.loopCount > 0;
+    const early = userAvgWatchTime > 0
+      ? record.viewedMs < userAvgWatchTime * EARLY_SWIPE_RATIO
+      : record.viewedMs < FAST_VIEW_MS;
     const linger = record.viewedMs >= CAPTION_LINGER_MS
-      || record.heldMs > 0
-      || state.longestHoldMs >= 200;
+      || held;
 
     state.captionFastStreak = fast && !linger
       ? state.captionFastStreak + 1
@@ -804,6 +829,10 @@
       behavior,
       linger,
       fastStreak: state.captionFastStreak,
+      held,
+      looped,
+      early,
+      viewedMs: record.viewedMs,
     };
   }
 
@@ -856,6 +885,7 @@
     if (sentenceMarks.length > 1) return false;
 
     if (/(архетип|персон|либидо|юнгиан|психоанализ)/i.test(text)) return false;
+    if (/(тень|трикстер|бездна|архетип|персон|либидо|слой|глубин)/iu.test(text)) return false;
     if (/(сделай|поверь|должен|нужно|попробуй|стань|обещай)/i.test(text)) return false;
 
     return true;
@@ -1093,22 +1123,52 @@
     captionEl.setAttribute('aria-label', text);
   }
 
-  function captionAllowedForScene(context) {
-    if (sceneOrdinal <= 1) return true;
-    if (context && context.linger) return true;
-    if (context && context.fastStreak >= 2) return false;
+  function registerCaptionFrame() {
+    sessionTextFrames = Math.min(
+      Math.max(1, Math.floor(SESSION_LENGTH * CAPTION_MAX_RATIO)),
+      sessionTextFrames + 1
+    );
+    quietSinceText = 0;
+    quietRequired = 1 + Math.floor(Math.random() * 2);
+  }
 
-    // Непредсказуемое подкрепление: примерно 65% кадров получают текст.
-    return Math.random() < 0.65;
+  function captionAllowedForScene(context) {
+    const cap = Math.max(1, Math.floor(SESSION_LENGTH * CAPTION_MAX_RATIO));
+    if (sceneOrdinal <= 1) return true;
+    if (sessionTextFrames >= cap) return false;
+
+    const resonance = context && (context.held || context.looped);
+    if (resonance) {
+      registerCaptionFrame();
+      return true;
+    }
+
+    if (quietSinceText < quietRequired) {
+      quietSinceText += 1;
+      return false;
+    }
+
+    if (Math.random() < 0.55) {
+      registerCaptionFrame();
+      return true;
+    }
+
+    quietSinceText += 1;
+    return false;
   }
 
   function maybeRecordResonance() {
     if (!currentCaption || !currentCaption.text || !currentCaption.revealed) return;
     if (currentCaption.recorded) return;
 
-    const lingering = now() - state.viewStart >= CAPTION_LINGER_MS;
     const held = currentCaption.held || (gesture && gesture.holding);
-    if (!lingering && !held) return;
+    const video = currentCaption.clip && currentCaption.clip.el;
+    const durationMs = video && Number.isFinite(video.duration) && video.duration > 0
+      ? video.duration * 1000
+      : (currentCaption.clip.duration || 10) * 1000;
+    const looped = state.loopsInView > 0
+      || (now() - state.viewStart) > durationMs * 1.2;
+    if (!held && !looped) return;
 
     currentCaption.recorded = true;
     resonanceMemory.push({
@@ -1125,7 +1185,7 @@
   function scheduleCaptionVisible(started, token, immediate) {
     if (!captionEl || !captionHasText || token !== captionSceneToken) return;
 
-    const delay = immediate ? 0 : Math.max(0, CAPTION_FADE_MS - (now() - started));
+    const delay = immediate ? 0 : Math.max(0, CAPTION_START_DELAY_MS - (now() - started));
     window.clearTimeout(captionTimer);
     captionTimer = window.setTimeout(() => {
       if (token !== captionSceneToken || !captionHasText) return;
@@ -1221,7 +1281,7 @@
     const fallbackFirst = () => {
       if (sceneOrdinal > 1) return;
       const time = localTimeContext();
-      applyText(`В ${time.label} тень уже смотрит в ответ.`);
+      applyText(`В этот час лучше просто дышать.`);
     };
 
     if (cached) {
@@ -1972,17 +2032,22 @@
 
   function pickStageClips(stage, count, picked, allowSeen = false) {
     const stageCategories = categories.filter((category) => stage.categories.includes(category.tag));
-    const pools = stageCategories.map((category) => ({
-      category,
-      clips: shuffleArray(category.clips.filter((clip) => (
+    const pools = stageCategories.map((category) => {
+      const filtered = category.clips.filter((clip) => (
         Boolean(clip)
         && Boolean(clip.id)
         && Boolean(clip.el)
         && !pathPicked.has(clip.id)
         && !picked.has(clip.id)
         && (allowSeen || !isVideoSeen(clip.id))
-      ))),
-    }));
+      ));
+
+      const ordered = (category.tag === 'Calm' || category.tag === 'Path')
+        ? filtered.slice().sort((a, b) => (b.lightPriority || 0) - (a.lightPriority || 0))
+        : shuffleArray(filtered);
+
+      return { category, clips: ordered };
+    });
 
     const picks = [];
     let guard = 0;
@@ -2136,10 +2201,10 @@
   }
 
   function stageLabelFor(stageId) {
-    if (stageId === 1) return '01 // SHADOW';
-    if (stageId === 2) return '02 // TRICKSTER / ABYSS';
-    if (stageId === 3) return '03 // CALM';
-    return '04 // PATH';
+    if (stageId === 1) return '01 // НАЧАЛО';
+    if (stageId === 2) return '02 // ГЛУБИНА';
+    if (stageId === 3) return '03 // ТИШИНА';
+    return '04 // ВЫХОД';
   }
 
   function updateStageLabel(stageId) {
@@ -2156,9 +2221,19 @@
     sessionStage = 1;
     sessionAccounted = 0;
     lastSessionProgressAt = Date.now();
+    userAvgWatchTime = 0;
+    sessionTextFrames = 1;
+    quietSinceText = 0;
+    quietRequired = 1 + Math.floor(Math.random() * 2);
     activeHapticStage = 0;
     portraitText = '';
     portraitRequestId += 1;
+
+    if (copySnapshotButton) copySnapshotButton.textContent = 'Скопировать разбор';
+    if (notifyReturnButton) {
+      notifyReturnButton.disabled = false;
+      notifyReturnButton.textContent = 'Уведомить через 2 часа';
+    }
 
     if (finaleEl) {
       finaleEl.hidden = true;
@@ -2208,7 +2283,7 @@
       if (remaining > 0) {
         if (entryTrigger) {
           entryTrigger.disabled = true;
-          entryTrigger.textContent = `Следующий слой через ${text}`;
+          entryTrigger.textContent = `Продолжение через ${text}`;
         }
       } else {
         if (entryTrigger) {
@@ -2264,6 +2339,9 @@
     const swipeSpeed = record && Number.isFinite(record.swipeSpeed) ? record.swipeSpeed : 0;
     const direction = record && record.swipeDirection ? record.swipeDirection : 'time';
     const counted = viewedMs >= 800 || (Date.now() - lastSessionProgressAt >= 1500);
+    const early = userAvgWatchTime > 0
+      ? viewedMs < userAvgWatchTime * EARLY_SWIPE_RATIO
+      : viewedMs < FAST_VIEW_MS;
 
     if (counted) {
       sessionAccounted = Math.min(SESSION_LENGTH, sessionAccounted + 1);
@@ -2284,6 +2362,7 @@
       lingered: viewedMs >= CAPTION_LINGER_MS || heldMs > 0,
       held: heldMs >= 800,
       fast: viewedMs < FAST_VIEW_MS || swipeSpeed > 2.2,
+      early,
       counted,
     });
 
@@ -2374,6 +2453,7 @@
       'ваш', 'ваша', 'ваше', 'ваши', 'вашего', 'вашему', 'вашим',
       'вашей', 'ваших', 'вашу', 'вами', 'вас', 'вам',
     ]);
+    if (/(тень|трикстер|бездна|архетип|персон|либидо|слой|глубин)/iu.test(text)) return false;
     return !tokens.some((token) => banned.has(token));
   }
 
@@ -2415,16 +2495,19 @@
       seconds: Math.round(event.viewedMs / 100) / 10,
       heldSeconds: Math.round(event.heldMs / 100) / 10,
       fast: event.fast,
+      early: event.early,
       lingered: event.lingered,
       direction: event.direction,
     }));
 
     const system = [
-      'Ты — холодный аналитик наблюдения, не психотерапевт.',
-      'По 40 кадрам поведения создай финальный слепок: ровно 3 короткие рубленые строки.',
+      'Ты — спокойный наблюдатель, не психотерапевт.',
+      'По 40 кадрам поведения создай короткий разбор: ровно 3 короткие рубленые строки.',
       'Жёсткий лимит: всего 20–30 слов во всех трёх строках. Никаких длинных абзацев.',
       'Полный запрет на слова «Ты», «Твой», «Твоя», «Твои» и любые формы второго лица.',
-      'Пиши от третьего лица или безлично, как холодное точное досье наблюдения.',
+      'Пиши от третьего лица или безлично, как короткая точная заметка наблюдения.',
+      'Пиши простым, ясным человеческим языком: без вычурности, метафор и терминов.',
+      'Редкие досрочные свайпы — главный маркер скрытого сопротивления.',
       'Третья строка — крючок: главный триггер скрыт, разбор откроется через два часа.',
       'Без заголовков, списков, кавычек, диагнозов и пояснений. Верни только 3 строки.',
     ].join('\n');
@@ -2497,11 +2580,11 @@ ${JSON.stringify(events, null, 2)}
       area.remove();
     }
 
-    if (copySnapshotButton) copySnapshotButton.textContent = 'Слепок скопирован';
+    if (copySnapshotButton) copySnapshotButton.textContent = 'Разбор скопирован';
   }
 
   function scheduleReturnNotification(unlockAt) {
-    const body = 'Следующий слой глубины открыт. Вернись, чтобы узнать продолжение.';
+    const body = 'Продолжение открыто. Вернись, чтобы узнать, что дальше.';
     const delay = Math.max(0, unlockAt - Date.now());
 
     window.clearTimeout(returnNotificationTimer);
@@ -2769,6 +2852,20 @@ ${JSON.stringify(events, null, 2)}
     path: ['Path'],
   };
 
+  function lightPriorityFor(title) {
+    const text = String(title || '').toLowerCase();
+    const bright = [
+      'sun', 'sunrise', 'dawn', 'morning', 'light', 'bright', 'cloud', 'sky',
+      'mist', 'fog', 'water', 'sea', 'ocean', 'horizon', 'bird', 'glow',
+      'beam', 'reflection', 'moon', 'white', 'clear', 'open', 'field', 'snow',
+    ];
+    const dark = ['black', 'dark', 'night', 'cave', 'underground', 'shadow'];
+    let score = 0;
+    for (const word of bright) if (text.includes(word)) score += 1;
+    for (const word of dark) if (text.includes(word)) score -= 0.7;
+    return score;
+  }
+
   async function loadVideoCatalog() {
     const embedded = Array.isArray(window.VIDEOS_DATA) && window.VIDEOS_DATA.length
       ? window.VIDEOS_DATA
@@ -2844,6 +2941,7 @@ ${JSON.stringify(events, null, 2)}
         archetype,
         stage: stageKey,
         source: item.source || 'catalog',
+        lightPriority: lightPriorityFor(title),
       };
 
       pools[tag].push(clip);
@@ -3299,6 +3397,7 @@ ${JSON.stringify(events, null, 2)}
     if (!gateOpen || sessionComplete) return;
     lastSwipeAt = now();
     const record = reportSwipe(direction, speed);
+    updateUserAverage(record.viewedMs);
     const behavior = behaviorContext(record);
     const sceneContext = sceneContextFor(record, behavior);
 

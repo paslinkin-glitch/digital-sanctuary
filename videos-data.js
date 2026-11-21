@@ -297,6 +297,22 @@ window.VIDEOS_DATA = [
     "url": "https://cdn.coverr.co/videos/user-ai-generation-K3isE7RVVj7K/1080p.mp4"
   },
   {
+    "id": "coverr-user-ai-generation-6D0sFxozfPVm",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
+    "source": "coverr",
+    "title": "Enchanting Forest at Dawn with Sunlight and Mist",
+    "url": "https://cdn.coverr.co/videos/user-ai-generation-6D0sFxozfPVm/1080p.mp4"
+  },
+  {
+    "id": "coverr-coverr-crystal-clear-sea-water-894",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
+    "source": "coverr",
+    "title": "Crystal clear sea water",
+    "url": "https://cdn.coverr.co/videos/coverr-crystal-clear-sea-water-894/1080p.mp4"
+  },
+  {
     "id": "coverr-coverr-covering-the-candle-light-9516",
     "stage": "calm",
     "archetype": "Покой / Анима",
@@ -313,14 +329,6 @@ window.VIDEOS_DATA = [
     "url": "https://cdn.coverr.co/videos/coverr-a-religious-woman-lights-a-candle-7632/1080p.mp4"
   },
   {
-    "id": "coverr-coverr-man-in-a-dark-foggy-forest-7970",
-    "stage": "calm",
-    "archetype": "Покой / Анима",
-    "source": "coverr",
-    "title": "Man in a dark, foggy forest",
-    "url": "https://cdn.coverr.co/videos/coverr-man-in-a-dark-foggy-forest-7970/1080p.mp4"
-  },
-  {
     "id": "coverr-coverr-girl-lighting-a-candle-with-a-match-920",
     "stage": "calm",
     "archetype": "Покой / Анима",
@@ -335,22 +343,6 @@ window.VIDEOS_DATA = [
     "source": "coverr",
     "title": "Foggy forest",
     "url": "https://cdn.coverr.co/videos/coverr-foggy-forest-8688/1080p.mp4"
-  },
-  {
-    "id": "coverr-user-ai-generation-6D0sFxozfPVm",
-    "stage": "calm",
-    "archetype": "Покой / Анима",
-    "source": "coverr",
-    "title": "Enchanting Forest at Dawn with Sunlight and Mist",
-    "url": "https://cdn.coverr.co/videos/user-ai-generation-6D0sFxozfPVm/1080p.mp4"
-  },
-  {
-    "id": "coverr-coverr-rain-falling-in-the-forest-9275",
-    "stage": "calm",
-    "archetype": "Покой / Анима",
-    "source": "coverr",
-    "title": "Rain falling in the forest",
-    "url": "https://cdn.coverr.co/videos/coverr-rain-falling-in-the-forest-9275/1080p.mp4"
   },
   {
     "id": "coverr-coverr-trees-in-the-misty-forest-442",
@@ -385,14 +377,6 @@ window.VIDEOS_DATA = [
     "url": "https://cdn.coverr.co/videos/coverr-above-a-misty-forest-518/1080p.mp4"
   },
   {
-    "id": "coverr-coverr-crystal-clear-sea-water-894",
-    "stage": "calm",
-    "archetype": "Покой / Анима",
-    "source": "coverr",
-    "title": "Crystal clear sea water",
-    "url": "https://cdn.coverr.co/videos/coverr-crystal-clear-sea-water-894/1080p.mp4"
-  },
-  {
     "id": "coverr-coverr-a-woman-lights-a-candle-5282",
     "stage": "calm",
     "archetype": "Покой / Анима",
@@ -425,20 +409,60 @@ window.VIDEOS_DATA = [
     "url": "https://cdn.coverr.co/videos/coverr-lighting-a-candle-4842/720p.mp4"
   },
   {
-    "id": "coverr-coverr-empty-highway-3230",
-    "stage": "path",
-    "archetype": "Путь / Самость",
+    "id": "coverr-coverr-man-in-a-dark-foggy-forest-7970",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
     "source": "coverr",
-    "title": "Empty highway",
-    "url": "https://cdn.coverr.co/videos/coverr-empty-highway-3230/1080p.mp4"
+    "title": "Man in a dark, foggy forest",
+    "url": "https://cdn.coverr.co/videos/coverr-man-in-a-dark-foggy-forest-7970/1080p.mp4"
   },
   {
-    "id": "coverr-coverr-empty-path-near-the-forest-1425",
+    "id": "coverr-coverr-rain-falling-in-the-forest-9275",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
+    "source": "coverr",
+    "title": "Rain falling in the forest",
+    "url": "https://cdn.coverr.co/videos/coverr-rain-falling-in-the-forest-9275/1080p.mp4"
+  },
+  {
+    "id": "coverr-user-ai-generation-2H06QcYweg",
     "stage": "path",
     "archetype": "Путь / Самость",
     "source": "coverr",
-    "title": "Empty path near the forest",
-    "url": "https://cdn.coverr.co/videos/coverr-empty-path-near-the-forest-1425/1080p.mp4"
+    "title": "Serene Nature with Flying Birds and Waterfalls",
+    "url": "https://cdn.coverr.co/videos/user-ai-generation-2H06QcYweg/1080p.mp4"
+  },
+  {
+    "id": "coverr-coverr-birds-in-the-sky-219",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Birds in the sky",
+    "url": "https://cdn.coverr.co/videos/coverr-birds-in-the-sky-219/1080p.mp4"
+  },
+  {
+    "id": "coverr-coverr-flock-of-birds-in-the-sky-5742",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Flock of birds in the sky",
+    "url": "https://cdn.coverr.co/videos/coverr-flock-of-birds-in-the-sky-5742/1080p.mp4"
+  },
+  {
+    "id": "coverr-coverr-a-bird-sitting-on-a-streetlight-8677",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "A bird sitting on a streetlight",
+    "url": "https://cdn.coverr.co/videos/coverr-a-bird-sitting-on-a-streetlight-8677/1080p.mp4"
+  },
+  {
+    "id": "coverr-coverr-bird-flying-in-the-sky-6957",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Bird flying in the sky",
+    "url": "https://cdn.coverr.co/videos/coverr-bird-flying-in-the-sky-6957/1080p.mp4"
   },
   {
     "id": "coverr-coverr-blurred-lights-3400",
@@ -457,28 +481,12 @@ window.VIDEOS_DATA = [
     "url": "https://cdn.coverr.co/videos/coverr-sunset-from-a-train-3777/1080p.mp4"
   },
   {
-    "id": "coverr-coverr-empty-spanish-street-3422",
-    "stage": "path",
-    "archetype": "Путь / Самость",
-    "source": "coverr",
-    "title": "Empty Spanish Street",
-    "url": "https://cdn.coverr.co/videos/coverr-empty-spanish-street-3422/1080p.mp4"
-  },
-  {
     "id": "coverr-coverr-bird-flying-over-the-lake-7108",
     "stage": "path",
     "archetype": "Путь / Самость",
     "source": "coverr",
     "title": "Bird flying over the lake",
     "url": "https://cdn.coverr.co/videos/coverr-bird-flying-over-the-lake-7108/720p.mp4"
-  },
-  {
-    "id": "coverr-user-ai-generation-2H06QcYweg",
-    "stage": "path",
-    "archetype": "Путь / Самость",
-    "source": "coverr",
-    "title": "Serene Nature with Flying Birds and Waterfalls",
-    "url": "https://cdn.coverr.co/videos/user-ai-generation-2H06QcYweg/1080p.mp4"
   },
   {
     "id": "coverr-coverr-bird-flying-onto-branches-in-the-lake-5009",
@@ -489,76 +497,12 @@ window.VIDEOS_DATA = [
     "url": "https://cdn.coverr.co/videos/coverr-bird-flying-onto-branches-in-the-lake-5009/1080p.mp4"
   },
   {
-    "id": "coverr-coverr-empty-roundabout-in-mexico-city-2475",
-    "stage": "path",
-    "archetype": "Путь / Самость",
-    "source": "coverr",
-    "title": "Empty roundabout in Mexico City",
-    "url": "https://cdn.coverr.co/videos/coverr-empty-roundabout-in-mexico-city-2475/720p.mp4"
-  },
-  {
-    "id": "coverr-coverr-birds-in-the-sky-219",
-    "stage": "path",
-    "archetype": "Путь / Самость",
-    "source": "coverr",
-    "title": "Birds in the sky",
-    "url": "https://cdn.coverr.co/videos/coverr-birds-in-the-sky-219/1080p.mp4"
-  },
-  {
-    "id": "coverr-coverr-train-going-through-a-tunnel-2526",
-    "stage": "path",
-    "archetype": "Путь / Самость",
-    "source": "coverr",
-    "title": "Train going through a tunnel",
-    "url": "https://cdn.coverr.co/videos/coverr-train-going-through-a-tunnel-2526/720p.mp4"
-  },
-  {
-    "id": "coverr-coverr-flock-of-birds-in-the-sky-5742",
-    "stage": "path",
-    "archetype": "Путь / Самость",
-    "source": "coverr",
-    "title": "Flock of birds in the sky",
-    "url": "https://cdn.coverr.co/videos/coverr-flock-of-birds-in-the-sky-5742/1080p.mp4"
-  },
-  {
-    "id": "coverr-coverr-bokeh-lights-at-night-9375",
-    "stage": "path",
-    "archetype": "Путь / Самость",
-    "source": "coverr",
-    "title": "Bokeh lights at night",
-    "url": "https://cdn.coverr.co/videos/coverr-bokeh-lights-at-night-9375/1080p.mp4"
-  },
-  {
-    "id": "coverr-coverr-a-bird-sitting-on-a-streetlight-8677",
-    "stage": "path",
-    "archetype": "Путь / Самость",
-    "source": "coverr",
-    "title": "A bird sitting on a streetlight",
-    "url": "https://cdn.coverr.co/videos/coverr-a-bird-sitting-on-a-streetlight-8677/1080p.mp4"
-  },
-  {
     "id": "coverr-coverr-misty-mountain-road-journey",
     "stage": "path",
     "archetype": "Путь / Самость",
     "source": "coverr",
     "title": "Misty Mountain Road Journey",
     "url": "https://cdn.coverr.co/videos/coverr-misty-mountain-road-journey/1080p.mp4"
-  },
-  {
-    "id": "coverr-coverr-train-tracks-3223",
-    "stage": "path",
-    "archetype": "Путь / Самость",
-    "source": "coverr",
-    "title": "Train tracks",
-    "url": "https://cdn.coverr.co/videos/coverr-train-tracks-3223/1080p.mp4"
-  },
-  {
-    "id": "coverr-coverr-black-bird-in-california-6440",
-    "stage": "path",
-    "archetype": "Путь / Самость",
-    "source": "coverr",
-    "title": "Black bird in California",
-    "url": "https://cdn.coverr.co/videos/coverr-black-bird-in-california-6440/1080p.mp4"
   },
   {
     "id": "coverr-coverr-bird-walking-on-the-beach-1715",
@@ -569,11 +513,67 @@ window.VIDEOS_DATA = [
     "url": "https://cdn.coverr.co/videos/coverr-bird-walking-on-the-beach-1715/1080p.mp4"
   },
   {
-    "id": "coverr-coverr-bird-flying-in-the-sky-6957",
+    "id": "coverr-coverr-bokeh-lights-at-night-9375",
     "stage": "path",
     "archetype": "Путь / Самость",
     "source": "coverr",
-    "title": "Bird flying in the sky",
-    "url": "https://cdn.coverr.co/videos/coverr-bird-flying-in-the-sky-6957/1080p.mp4"
+    "title": "Bokeh lights at night",
+    "url": "https://cdn.coverr.co/videos/coverr-bokeh-lights-at-night-9375/1080p.mp4"
+  },
+  {
+    "id": "coverr-coverr-black-bird-in-california-6440",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Black bird in California",
+    "url": "https://cdn.coverr.co/videos/coverr-black-bird-in-california-6440/1080p.mp4"
+  },
+  {
+    "id": "coverr-coverr-empty-highway-3230",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Empty highway",
+    "url": "https://cdn.coverr.co/videos/coverr-empty-highway-3230/1080p.mp4"
+  },
+  {
+    "id": "coverr-coverr-empty-path-near-the-forest-1425",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Empty path near the forest",
+    "url": "https://cdn.coverr.co/videos/coverr-empty-path-near-the-forest-1425/1080p.mp4"
+  },
+  {
+    "id": "coverr-coverr-empty-spanish-street-3422",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Empty Spanish Street",
+    "url": "https://cdn.coverr.co/videos/coverr-empty-spanish-street-3422/1080p.mp4"
+  },
+  {
+    "id": "coverr-coverr-empty-roundabout-in-mexico-city-2475",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Empty roundabout in Mexico City",
+    "url": "https://cdn.coverr.co/videos/coverr-empty-roundabout-in-mexico-city-2475/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-train-going-through-a-tunnel-2526",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Train going through a tunnel",
+    "url": "https://cdn.coverr.co/videos/coverr-train-going-through-a-tunnel-2526/720p.mp4"
+  },
+  {
+    "id": "coverr-coverr-train-tracks-3223",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Train tracks",
+    "url": "https://cdn.coverr.co/videos/coverr-train-tracks-3223/1080p.mp4"
   }
 ];

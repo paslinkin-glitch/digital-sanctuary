@@ -3,7 +3,7 @@
  * the cache is only a fallback for offline launches. Coverr API and video
  * CDN requests are cross-origin and deliberately pass through untouched.
  */
-const CACHE = 'sanctuary-shell-v7';
+const CACHE = 'sanctuary-shell-v8';
 const ASSETS = [
   './',
   './index.html',
@@ -71,7 +71,7 @@ self.addEventListener('message', (event) => {
 
   const deliverAt = Number(data.deliverAt) || (Date.now() + 2 * 60 * 60 * 1000);
   const title = data.title || 'Digital Sanctuary';
-  const body = data.body || 'Следующий слой глубины открыт. Вернись, чтобы узнать продолжение.';
+  const body = data.body || 'Продолжение открыто. Вернись, чтобы узнать, что дальше.';
   const delay = Math.max(0, deliverAt - Date.now());
   const options = {
     body,
