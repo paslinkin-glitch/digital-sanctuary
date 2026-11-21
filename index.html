@@ -57,6 +57,10 @@
       <span class="caption-line"></span>
       <span class="caption-line"></span>
     </div>
+    <div class="swipe-hint" id="swipe-hint" hidden aria-hidden="true">
+      <span class="swipe-hint-arrow">↑</span>
+      <span class="swipe-hint-label">СВАЙП ВВЕРХ</span>
+    </div>
   </main>
 
   <div class="entry" id="entry" role="dialog" aria-label="Порог эксперимента">
@@ -70,9 +74,12 @@
       <h1 class="entry-title">Это не медитация и не социальная сеть.</h1>
       <p class="entry-sub">Алгоритмы считывают твоё состояние без единого вопроса. Зажми экран, если кадр попал в точку.</p>
     </div>
-    <button class="entry-trigger" id="entry-trigger" type="button">Войти в эксперимент</button>
-    <button class="entry-install" id="entry-install" type="button" hidden>Установить приложение на экран</button>
-    <p class="entry-install-hint" id="entry-install-hint" hidden>Нажмите «Поделиться» → «На экран Домой»</p>
+    <div class="entry-actions">
+      <button class="entry-trigger" id="entry-trigger" type="button">Войти в эксперимент</button>
+      <p class="entry-nav-hint">Листай вверх, как ленту · Зажимай кадр, если попал в точку</p>
+      <button class="entry-install" id="entry-install" type="button" hidden>Установить приложение на экран</button>
+      <p class="entry-install-hint" id="entry-install-hint" hidden>Нажмите «Поделиться» → «На экран Домой»</p>
+    </div>
   </div>
 
   <aside class="install-card" id="install-card" hidden aria-live="polite">

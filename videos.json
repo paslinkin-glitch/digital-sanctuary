@@ -51,15 +51,6 @@
     "vertical": false
   },
   {
-    "id": "coverr-coverr-premium-silhouette-of-a-man-as-he-plays-the-ukulele-3932",
-    "stage": "shadow",
-    "archetype": "Тень",
-    "source": "coverr",
-    "title": "Silhouette of a man as he plays the ukulele",
-    "url": "https://cdn.coverr.co/videos/coverr-premium-silhouette-of-a-man-as-he-plays-the-ukulele-3932/1080p.mp4",
-    "vertical": false
-  },
-  {
     "id": "coverr-coverr-rain-in-the-city-430",
     "stage": "shadow",
     "archetype": "Тень",
@@ -102,15 +93,6 @@
     "source": "coverr",
     "title": "Raindrops on the window",
     "url": "https://cdn.coverr.co/videos/coverr-raindrops-on-the-window-7102/1080p.mp4",
-    "vertical": false
-  },
-  {
-    "id": "coverr-coverr-premium-woman-running-in-the-dark-forest-4889",
-    "stage": "shadow",
-    "archetype": "Тень",
-    "source": "coverr",
-    "title": "Woman running in the dark forest",
-    "url": "https://cdn.coverr.co/videos/coverr-premium-woman-running-in-the-dark-forest-4889/1080p.mp4",
     "vertical": false
   },
   {
@@ -324,19 +306,6 @@
     "size": 13304444
   },
   {
-    "id": "coverr:HroOw0gySy",
-    "title": "Mosque at night",
-    "description": "Timelapse of a lit-up mosque at night, with cars lighting up the rest of the city.",
-    "url": "https://cdn.coverr.co/videos/coverr-mosque-at-night-6699/720p.mp4",
-    "stage": "shadow",
-    "source": "coverr",
-    "vertical": false,
-    "width": 1920,
-    "height": 1080,
-    "duration": 10,
-    "size": 9383480
-  },
-  {
     "id": "wikimedia:194225647",
     "title": "Rainfall in East Legon 02",
     "description": "",
@@ -523,19 +492,6 @@
     "size": 5733152
   },
   {
-    "id": "coverr:V2KDR7GAF6",
-    "title": "Cooking sausages over fire",
-    "description": "Still shot of sausages being cooked over the bonfire.",
-    "url": "https://cdn.coverr.co/videos/coverr-cooking-sausages-over-fire-5043/1080p.mp4",
-    "stage": "trickster_abyss",
-    "source": "coverr",
-    "vertical": false,
-    "width": 1920,
-    "height": 1080,
-    "duration": 10,
-    "size": 8428017
-  },
-  {
     "id": "coverr:XqrXhQBw8W",
     "title": "Indian fire ceremony",
     "description": "Still shot of an Indian fire ceremony at night.",
@@ -573,19 +529,6 @@
     "height": 1080,
     "duration": 10,
     "size": 6572936
-  },
-  {
-    "id": "coverr:azy1Cd1ZeQ",
-    "title": "Science experiment",
-    "description": "Close-up shot of a chemist experimenting with a glass test tube and fire.",
-    "url": "https://cdn.coverr.co/videos/coverr-science-experiment-6978/1080p.mp4",
-    "stage": "trickster_abyss",
-    "source": "coverr",
-    "vertical": false,
-    "width": 1920,
-    "height": 1080,
-    "duration": 10,
-    "size": 7564976
   },
   {
     "id": "coverr:SseVqevlcp",
@@ -803,15 +746,6 @@
     "source": "coverr",
     "title": "Covering the candle light",
     "url": "https://cdn.coverr.co/videos/coverr-covering-the-candle-light-9516/1080p.mp4",
-    "vertical": false
-  },
-  {
-    "id": "coverr-coverr-a-religious-woman-lights-a-candle-7632",
-    "stage": "calm",
-    "archetype": "Покой / Анима",
-    "source": "coverr",
-    "title": "A religious woman lights a candle",
-    "url": "https://cdn.coverr.co/videos/coverr-a-religious-woman-lights-a-candle-7632/1080p.mp4",
     "vertical": false
   },
   {
@@ -1268,32 +1202,6 @@
     "size": 7579877
   },
   {
-    "id": "coverr:k9x6aQZjNc",
-    "title": "Duck on a rock",
-    "description": "Close-up shot of a duck sitting on a rock by the water.",
-    "url": "https://cdn.coverr.co/videos/coverr-duck-on-a-rock-6886/1080p.mp4",
-    "stage": "path",
-    "source": "coverr",
-    "vertical": false,
-    "width": 1920,
-    "height": 1080,
-    "duration": 10,
-    "size": 8702370
-  },
-  {
-    "id": "coverr:aFBKPgqbnO",
-    "title": "Ducks in the lake",
-    "description": "Mid shot of two ducks enjoying their time in a lake.",
-    "url": "https://cdn.coverr.co/videos/coverr-ducks-in-the-lake-8476/1080p.mp4",
-    "stage": "path",
-    "source": "coverr",
-    "vertical": false,
-    "width": 1920,
-    "height": 1080,
-    "duration": 10,
-    "size": 8809924
-  },
-  {
     "id": "coverr:TFvSHUlwvU",
     "title": "Pigeons flying away",
     "description": "A still shot of pigeons flying away.",
@@ -1305,31 +1213,5 @@
     "height": 2160,
     "duration": 10,
     "size": 8767534
-  },
-  {
-    "id": "coverr:sdJXRwkC1Q",
-    "title": "Pigeon in a playground",
-    "description": "Close-up shot of a pigeon next to a playground.",
-    "url": "https://cdn.coverr.co/videos/coverr-pigeon-in-a-playground-7149/1080p.mp4",
-    "stage": "path",
-    "source": "coverr",
-    "vertical": false,
-    "width": 1920,
-    "height": 1080,
-    "duration": 10,
-    "size": 7845397
-  },
-  {
-    "id": "coverr:uWncxwkEJ3",
-    "title": "Christmas tree decor",
-    "description": "A close-up shot of Christmas tree decor.",
-    "url": "https://cdn.coverr.co/videos/coverr-christmas-tree-decor-2239/1080p.mp4",
-    "stage": "path",
-    "source": "coverr",
-    "vertical": false,
-    "width": 1920,
-    "height": 1080,
-    "duration": 10,
-    "size": 11335121
   }
 ]

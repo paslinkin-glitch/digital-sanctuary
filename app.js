@@ -340,6 +340,7 @@
 
   const progressFill = document.getElementById('session-progress-fill');
   const stageLabelEl = document.getElementById('stage-label');
+  let swipeHint = document.getElementById('swipe-hint');
   const entryTrigger = document.getElementById('entry-trigger');
   const entryInstallButton = document.getElementById('entry-install');
   const entryInstallHint = document.getElementById('entry-install-hint');
@@ -554,6 +555,8 @@
   let holdTimer = 0;
   let lastSwipeAt = 0;
   let lastBottomTapAt = 0;
+  let swipeHintTimer = 0;
+  let hasSwiped = false;
   let resonanceTimer = 0;
   let sound = null;
   let soundStarting = false;
@@ -1064,7 +1067,7 @@
           { role: 'assistant', content: raw },
           {
             role: 'user',
-            content: `В предыдущей попытке получилось ${words} слов. Нужна ровно одна новая фраза из 5–9 слов, не более двух строк, только текст без кавычек и пояснений. Соблюдай лимит начал с «Ты/Твой/Твоя/Твои» и не повторяй прошлые формулировки.`,
+            content: `В предыдущей попытке получилось ${words} слов. Нужна ровно одна новая фраза строго из 4–7 слов, не более двух строк, только текст без кавычек и пояснений. Соблюдай лимит и не начинай фразу со слов «Ты/Твой/Твоя/Твои»; не повторяй прошлые формулировки.`,
           },
         ]);
 
@@ -2085,7 +2088,6 @@
       const filtered = category.clips.filter((clip) => (
         Boolean(clip)
         && Boolean(clip.id)
-        && Boolean(clip.el)
         && !pathPicked.has(clip.id)
         && !picked.has(clip.id)
         && (allowSeen || !isVideoSeen(clip.id))
@@ -2143,8 +2145,7 @@
         const category = categories.find((item) => item.tag === tag);
         if (!category) continue;
         const clip = category.clips.find((item) => (
-          item.el
-          && item.id
+          item.id
           && !pathPicked.has(item.id)
           && (allowSeen || !isVideoSeen(item.id))
         ));
@@ -2179,9 +2180,7 @@
   function forceNextAvailableScene(direction) {
     ensureFallbackCategories();
 
-    const playable = categories.filter((category) => (
-      category.clips.some((clip) => clip.el)
-    ));
+    const playable = categories.filter((category) => category.clips.length);
     if (!playable.length) {
       return false;
     }
@@ -2192,8 +2191,8 @@
       .concat(playable.includes(current) ? [current] : []);
 
     for (const category of ordered) {
-      const clip = category.clips.find((item) => item.el && !isVideoSeen(item.id))
-        || category.clips.find((item) => item.el);
+      const clip = category.clips.find((item) => !isVideoSeen(item.id))
+        || category.clips[0];
 
       if (!clip) continue;
 
@@ -2807,6 +2806,38 @@ ${JSON.stringify(events, null, 2)}
     return appendFallbackPath(true);
   }
 
+  function dismissSwipeHint(removeElement = false) {
+    window.clearTimeout(swipeHintTimer);
+    swipeHintTimer = 0;
+    if (!swipeHint) return;
+
+    swipeHint.classList.remove('is-visible');
+    if (removeElement) {
+      swipeHint.remove();
+      swipeHint = null;
+    } else {
+      swipeHint.hidden = true;
+    }
+  }
+
+  function armSwipeHint() {
+    if (!swipeHint || hasSwiped) return;
+
+    window.clearTimeout(swipeHintTimer);
+    swipeHint.hidden = false;
+    swipeHint.classList.remove('is-visible');
+    swipeHintTimer = window.setTimeout(() => {
+      if (!swipeHint || hasSwiped) return;
+      swipeHint.classList.add('is-visible');
+    }, 1200);
+  }
+
+  function markFirstSwipe() {
+    if (hasSwiped) return;
+    hasSwiped = true;
+    dismissSwipeHint(true);
+  }
+
   function startPathFirst() {
     if (pathStarted || !pathPlan.length) return false;
 
@@ -2827,6 +2858,7 @@ ${JSON.stringify(events, null, 2)}
     resetViewClock();
     if (isVideoSeen(entry.clip.id)) sessionUsedVideoIds.delete(entry.clip.id);
     category.freshIndex = index;
+    preparePlaybackWindow(entry, pathPlan[1]);
     const clipIndex = playCategory(category);
     if (clipIndex === null) return false;
 
@@ -2843,6 +2875,7 @@ ${JSON.stringify(events, null, 2)}
     const track = nextTrackFor(category);
     switchSoundtrack(track, SLOW_FADE_MS);
     preloadNextTrack(category);
+    armSwipeHint();
     return true;
   }
 
@@ -2887,6 +2920,7 @@ ${JSON.stringify(events, null, 2)}
     });
 
     video.src = playUrl;
+    video.dataset.clipId = clip.id || '';
     clip.el = video;
     clip.lastTime = 0;
     media.appendChild(video);
@@ -2897,10 +2931,75 @@ ${JSON.stringify(events, null, 2)}
     const media = category.el.querySelector('.media');
     if (!media) return;
 
-    media.textContent = '';
-    category.clips.forEach((clip, index) => {
-      attachVideo(category, clip, index);
+    category.clips.forEach((clip) => {
+      if (clip.el) releaseClipVideo(clip);
+      clip.el = null;
     });
+    media.textContent = '';
+  }
+
+  function releaseClipVideo(clip) {
+    if (!clip || !clip.el) return;
+    const video = clip.el;
+    try {
+      video.pause();
+      video.removeAttribute('src');
+      video.load();
+      video.remove();
+    } catch (_) {
+      /* видео могло быть уже выгружено */
+    }
+    clip.el = null;
+    clip.lastTime = 0;
+  }
+
+  function ensureClipVideo(category, clip) {
+    if (!category || !clip) return null;
+    if (clip.el) return clip.el;
+    const index = category.clips.findIndex((item) => item.id === clip.id);
+    if (index < 0) return null;
+    return attachVideo(category, clip, index);
+  }
+
+  function prunePlaybackVideos(keepIds) {
+    for (const category of categories) {
+      for (const clip of category.clips) {
+        if (clip.el && !keepIds.has(clip.id)) releaseClipVideo(clip);
+      }
+      const media = category.el.querySelector('.media');
+      if (!media) continue;
+      media.querySelectorAll('video').forEach((video) => {
+        if (!keepIds.has(video.dataset.clipId)) {
+          try {
+            video.pause();
+            video.removeAttribute('src');
+            video.load();
+            video.remove();
+          } catch (_) {
+            /* уже удалено */
+          }
+        }
+      });
+    }
+  }
+
+  function preparePlaybackWindow(currentEntry, nextEntry) {
+    const current = currentEntry || pathPlan[Math.max(0, pathPos)] || pathPlan[0];
+    const next = nextEntry || pathPlan[pathPos + 1] || pathPlan[1];
+    const keep = new Set();
+
+    if (current && current.clip) {
+      keep.add(current.clip.id);
+      ensureClipVideo(current.category, current.clip);
+    }
+    if (next && next.clip) {
+      keep.add(next.clip.id);
+      ensureClipVideo(next.category, next.clip);
+    }
+
+    prunePlaybackVideos(keep);
+    if (current && current.clip && current.clip.el) current.clip.el.preload = 'auto';
+    if (next && next.clip && next.clip.el) next.clip.el.preload = 'auto';
   }
 
   function appendClips(category, clips) {
@@ -2915,9 +3014,7 @@ ${JSON.stringify(events, null, 2)}
     const incoming = clips.slice(0, room);
     const firstNew = category.clips.length;
     incoming.forEach((clip) => {
-      const index = category.clips.length;
       category.clips.push(clip);
-      attachVideo(category, clip, index);
     });
 
     category.freshIndex = firstNew;
@@ -3172,7 +3269,9 @@ ${JSON.stringify(events, null, 2)}
     if (!category || category.index !== state.index) return;
     if (!gateOpen) return;
     const selected = category.clips[index];
-    if (!selected || !selected.el) return;
+    if (!selected) return;
+    ensureClipVideo(category, selected);
+    if (!selected.el) return;
 
     if (selected.id) markVideoViewed(selected.id);
     category.activeIndex = index;
@@ -3429,6 +3528,13 @@ ${JSON.stringify(events, null, 2)}
     }
 
     // Новый кадр и его персональный трек стартуют в одном тике.
+    const planned = pathPlan[pathPos];
+    if (!forcedClipId && planned && planned.category === category) {
+      const plannedIndex = category.clips.findIndex((clip) => clip.id === planned.clip.id);
+      if (plannedIndex >= 0) category.freshIndex = plannedIndex;
+    }
+    preparePlaybackWindow(planned, pathPlan[pathPos + 1]);
+
     playCategory(category);
     setSceneElement(activeClip());
     activateCaption(category, activeClip(), behavior, allowed, sceneStage);
@@ -3481,6 +3587,7 @@ ${JSON.stringify(events, null, 2)}
 
   function go(direction, speed) {
     if (!gateOpen || sessionComplete) return;
+    markFirstSwipe();
     lastSwipeAt = now();
     const record = reportSwipe(direction, speed);
     updateUserAverage(record.viewedMs);
