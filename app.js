@@ -47,7 +47,7 @@
   const SESSION_LOCK_KEY = 'sanctuary-unlock-at';
   const HAPTIC_COOLDOWN_MS = 180;
   const SWIPE_HAPTIC_COOLDOWN_MS = 600;
-  const HOLD_HEARTBEAT_MS = 1600;
+  const HOLD_HEARTBEAT_MS = 1800;
   const PORTRAIT_TIMEOUT_MS = 18000;
 
   // Demo key from the brief. A static prototype must expose it; for production
@@ -746,10 +746,10 @@
 
   function startHoldPulse() {
     stopHoldPulse();
-    safeVibrate(40, HAPTIC_COOLDOWN_MS);
+    safeVibrate(22, HAPTIC_COOLDOWN_MS);
     holdPulseTimer = window.setInterval(() => {
       if (gesture && gesture.holding) {
-        safeVibrate(40, HOLD_HEARTBEAT_MS - 200);
+        safeVibrate(22, HOLD_HEARTBEAT_MS - 200);
       }
     }, HOLD_HEARTBEAT_MS);
   }
@@ -759,10 +759,6 @@
     window.clearInterval(holdPulseTimer);
     holdPulseTimer = 0;
     if (wasHolding) stopHaptics();
-  }
-
-  function vibrateTap() {
-    safeVibrate(10, SWIPE_HAPTIC_COOLDOWN_MS);
   }
 
   function pointForEvent(event) {
@@ -1262,7 +1258,7 @@
         currentCaption.revealed = true;
         if (!currentCaption.haptic) {
           currentCaption.haptic = true;
-          safeVibrate([18, 55, 18], 300);
+          safeVibrate([10, 60, 10], 4000);
         }
       }
       maybeRecordResonance();
@@ -1285,7 +1281,7 @@
       currentCaption.revealed = true;
       if (!currentCaption.haptic) {
         currentCaption.haptic = true;
-        safeVibrate([18, 55, 18], 300);
+        safeVibrate([10, 60, 10], 4000);
       }
     }
     maybeRecordResonance();
@@ -2898,7 +2894,6 @@ ${JSON.stringify(events, null, 2)}
     updateStageLabel(entry.stage);
     activeHapticStage = entry.stage;
     trackStageReached(entry.stage);
-    safeVibrate(110, 300);
     updateSessionProgress();
     setSceneElement(activeClip());
     activateCaption(category, activeClip(), behaviorContext(), true, entry.stage);
@@ -3548,7 +3543,7 @@ ${JSON.stringify(events, null, 2)}
     if (activeHapticStage !== sceneStage) {
       activeHapticStage = sceneStage;
       trackStageReached(sceneStage);
-      safeVibrate(110, 300);
+      safeVibrate(35, 1000);
     }
     updateStageLabel(sceneStage);
     updateSessionProgress();
@@ -3892,7 +3887,6 @@ ${JSON.stringify(events, null, 2)}
 
     if (!gesture.thresholdFelt && distance >= SWIPE_MIN_PX) {
       gesture.thresholdFelt = true;
-      safeVibrate(35);
     }
 
     if (stepY > 0) {
