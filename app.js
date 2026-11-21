@@ -54,9 +54,7 @@
   // this call belongs behind a tiny server-side proxy.
   const API_KEY = 'b1155018766256bd1ea645df7d64e178';
   const API_ENDPOINT = 'https://api.coverr.co/videos';
-  const DEEPSEEK_API_KEY = ['sk-32ca928f', '00e6474e', 'beb4741f', '35e7f8c3'].join('');
-  const DEEPSEEK_ENDPOINT = 'https://api.deepseek.com/chat/completions';
-  const DEEPSEEK_MODEL = 'deepseek-chat';
+  const DEEPSEEK_PROXY_ENDPOINT = '/api/deepseek';
   const CAPTION_START_DELAY_MS = 2200;
   const CAPTION_MIN_WORDS = 4;
   const CAPTION_MAX_WORDS = 7;
@@ -1012,21 +1010,15 @@
     const timer = window.setTimeout(() => controller.abort(), CAPTION_TIMEOUT_MS);
 
     try {
-      const response = await fetch(DEEPSEEK_ENDPOINT, {
+      const response = await fetch(DEEPSEEK_PROXY_ENDPOINT, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
         },
         body: JSON.stringify({
-          model: DEEPSEEK_MODEL,
           messages,
           temperature,
           max_tokens: 60,
-          top_p: 0.95,
-          frequency_penalty: 0.2,
-          presence_penalty: 0.2,
-          stream: false,
         }),
         signal: controller.signal,
         cache: 'no-store',
@@ -2617,22 +2609,18 @@ ${JSON.stringify(events, null, 2)}
     const timer = window.setTimeout(() => controller.abort(), PORTRAIT_TIMEOUT_MS);
 
     try {
-      const response = await fetch(DEEPSEEK_ENDPOINT, {
+      const response = await fetch(DEEPSEEK_PROXY_ENDPOINT, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
         },
         body: JSON.stringify({
-          model: DEEPSEEK_MODEL,
           messages: [
             { role: 'system', content: system },
             { role: 'user', content: user },
           ],
           temperature: 0.86,
           max_tokens: 170,
-          top_p: 0.9,
-          stream: false,
         }),
         signal: controller.signal,
         cache: 'no-store',
