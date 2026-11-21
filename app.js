@@ -28,7 +28,7 @@
   const FLICK_MIN_SPEED = 0.5;
   const SLOW_RATE = 0.45;
   const API_TIMEOUT_MS = 7000;
-  const CLIPS_PER_CATEGORY = 30;
+  const CLIPS_PER_CATEGORY = 40;
   const RESONANCE_HOLD_MS = 500;
   const FAST_VIEW_MS = 2000;
   const NERVOUS_VIEW_MS = 1500;
@@ -385,7 +385,8 @@
   });
 
   const VIEWED_STORAGE_KEY = 'sanctuary-viewed-video-ids-v1';
-  const MAX_VIEWED_IDS = 500;
+  const VIEWED_ALL_KEY = 'sanctuary-viewed-all-v1';
+  const MAX_VIEWED_IDS = 100;
 
   function readViewedVideoIds() {
     try {
@@ -401,6 +402,25 @@
 
   let viewedVideoIds = readViewedVideoIds();
 
+  function readAllViewedVideoIds() {
+    try {
+      const raw = localStorage.getItem(VIEWED_ALL_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed)
+        ? parsed.filter((id) => typeof id === 'string' && id)
+        : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  let allViewedVideoIds = new Set(readAllViewedVideoIds());
+  let catalogVideoIds = new Set();
+
+  if (!allViewedVideoIds.size) {
+    for (const id of viewedVideoIds) allViewedVideoIds.add(id);
+  }
+
   function persistViewedVideoIds() {
     try {
       localStorage.setItem(VIEWED_STORAGE_KEY, JSON.stringify(viewedVideoIds));
@@ -409,12 +429,39 @@
     }
   }
 
-  const sessionUsedVideoIds = new Set(viewedVideoIds);
+  function persistAllViewedVideoIds() {
+    try {
+      localStorage.setItem(VIEWED_ALL_KEY, JSON.stringify([...allViewedVideoIds]));
+    } catch (_) {
+      /* localStorage может быть недоступен */
+    }
+  }
+
+  const sessionUsedVideoIds = new Set(allViewedVideoIds);
+
+  function resetViewedCycleIfComplete() {
+    if (!catalogVideoIds.size) return false;
+    for (const id of catalogVideoIds) {
+      if (!allViewedVideoIds.has(id)) return false;
+    }
+
+    allViewedVideoIds.clear();
+    viewedVideoIds = [];
+    sessionUsedVideoIds.clear();
+    try {
+      localStorage.removeItem(VIEWED_ALL_KEY);
+      localStorage.removeItem(VIEWED_STORAGE_KEY);
+    } catch (_) {
+      /* localStorage может быть недоступен */
+    }
+    return true;
+  }
 
   function markVideoViewed(id) {
     if (!id) return;
 
     sessionUsedVideoIds.add(id);
+    allViewedVideoIds.add(id);
     const previous = viewedVideoIds.indexOf(id);
     if (previous >= 0) viewedVideoIds.splice(previous, 1);
     viewedVideoIds.push(id);
@@ -422,6 +469,7 @@
       viewedVideoIds = viewedVideoIds.slice(-MAX_VIEWED_IDS);
     }
     persistViewedVideoIds();
+    persistAllViewedVideoIds();
   }
 
   function isVideoSeen(id) {
@@ -2043,12 +2091,7 @@
         && (allowSeen || !isVideoSeen(clip.id))
       ));
 
-      const ordered = (category.tag === 'Calm' || category.tag === 'Path')
-        ? filtered.slice().sort((a, b) => (
-          (a.vertical ? 0 : 2) - (b.vertical ? 0 : 2)
-          || (b.lightPriority || 0) - (a.lightPriority || 0)
-        ))
-        : shuffleArray(filtered).sort((a, b) => (a.vertical ? 0 : 2) - (b.vertical ? 0 : 2));
+      const ordered = shuffleArray(filtered);
 
       return { category, clips: ordered };
     });
@@ -2171,6 +2214,7 @@
   }
 
   function buildSessionPlan() {
+    resetViewedCycleIfComplete();
     const attempt = (allowSeen) => {
       const picked = new Set();
       const entries = [];
@@ -2993,6 +3037,14 @@ ${JSON.stringify(events, null, 2)}
       category.freshIndex = null;
       mountClips(category);
     }
+
+    catalogVideoIds = new Set();
+    for (const category of categories) {
+      for (const clip of category.clips) {
+        if (clip && clip.id) catalogVideoIds.add(clip.id);
+      }
+    }
+    resetViewedCycleIfComplete();
 
     console.info('[sanctuary] catalog loaded:', {
       videos: loaded,

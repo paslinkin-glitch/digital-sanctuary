@@ -1,4 +1,4 @@
-/* Generated from videos.json. Fallback catalog for file:// launches. */
+/* Generated from videos.json. Multi-source HD catalog. */
 window.VIDEOS_DATA = [
   {
     "id": "g9re0sRUYA",
@@ -21,12 +21,34 @@ window.VIDEOS_DATA = [
     "vertical": true
   },
   {
+    "id": "wikimedia:93689411",
+    "title": "Rain water",
+    "description": "",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/2/23/Rain_water.webm",
+    "stage": "shadow",
+    "source": "wikimedia",
+    "vertical": true,
+    "width": 720,
+    "height": 1280,
+    "duration": 10,
+    "size": 14106235
+  },
+  {
     "id": "coverr-coverr-nights-in-the-city-9359",
     "stage": "shadow",
     "archetype": "Тень",
     "source": "coverr",
     "title": "Nights in the city",
     "url": "https://cdn.coverr.co/videos/coverr-nights-in-the-city-9359/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-silhouette-of-a-girl-at-dusk-9855",
+    "stage": "shadow",
+    "archetype": "Тень",
+    "source": "coverr",
+    "title": "Silhouette of a girl at dusk",
+    "url": "https://cdn.coverr.co/videos/coverr-silhouette-of-a-girl-at-dusk-9855/1080p.mp4",
     "vertical": false
   },
   {
@@ -57,15 +79,6 @@ window.VIDEOS_DATA = [
     "vertical": false
   },
   {
-    "id": "coverr-user-ai-generation-6vmHVDQ8F0",
-    "stage": "shadow",
-    "archetype": "Тень",
-    "source": "coverr",
-    "title": "A rainy city street at night, reflections on the wet asphalt, colorful neon ligh",
-    "url": "https://cdn.coverr.co/videos/user-ai-generation-6vmHVDQ8F0/1080p.mp4",
-    "vertical": false
-  },
-  {
     "id": "coverr-coverr-a-shadow-of-a-man-on-the-pavement-3707",
     "stage": "shadow",
     "archetype": "Тень",
@@ -75,13 +88,280 @@ window.VIDEOS_DATA = [
     "vertical": false
   },
   {
-    "id": "archive-b1f3f7f894c6",
-    "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
-    "source": "archive",
-    "title": "View from Great Ocean Road",
-    "url": "https://archive.org/download/Gfycat-z1fc9p/embellishedwhoppingdwarfmongoose.ia.mp4",
-    "vertical": true
+    "id": "coverr-coverr-silhouette-near-a-waterfall-3774",
+    "stage": "shadow",
+    "archetype": "Тень",
+    "source": "coverr",
+    "title": "Silhouette near a waterfall",
+    "url": "https://cdn.coverr.co/videos/coverr-silhouette-near-a-waterfall-3774/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-raindrops-on-the-window-7102",
+    "stage": "shadow",
+    "archetype": "Тень",
+    "source": "coverr",
+    "title": "Raindrops on the window",
+    "url": "https://cdn.coverr.co/videos/coverr-raindrops-on-the-window-7102/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-premium-woman-running-in-the-dark-forest-4889",
+    "stage": "shadow",
+    "archetype": "Тень",
+    "source": "coverr",
+    "title": "Woman running in the dark forest",
+    "url": "https://cdn.coverr.co/videos/coverr-premium-woman-running-in-the-dark-forest-4889/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-dark-forest-1109",
+    "stage": "shadow",
+    "archetype": "Тень",
+    "source": "coverr",
+    "title": "Dark forest",
+    "url": "https://cdn.coverr.co/videos/coverr-dark-forest-1109/720p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-using-a-lighter-in-the-dark-7305",
+    "stage": "shadow",
+    "archetype": "Тень",
+    "source": "coverr",
+    "title": "Using a lighter in the dark",
+    "url": "https://cdn.coverr.co/videos/coverr-using-a-lighter-in-the-dark-7305/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-walking-up-a-misty-road-5750",
+    "stage": "shadow",
+    "archetype": "Тень",
+    "source": "coverr",
+    "title": "Walking up a misty road",
+    "url": "https://cdn.coverr.co/videos/coverr-walking-up-a-misty-road-5750/720p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-the-silhouette-of-a-man-who-is-standing-in-a-tunnel-6498",
+    "stage": "shadow",
+    "archetype": "Тень",
+    "source": "coverr",
+    "title": "The silhouette of a man who is standing in a tunnel",
+    "url": "https://cdn.coverr.co/videos/coverr-the-silhouette-of-a-man-who-is-standing-in-a-tunnel-6498/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-rain-falling-on-windshield-6625",
+    "stage": "shadow",
+    "archetype": "Тень",
+    "source": "coverr",
+    "title": "Rain falling on windshield",
+    "url": "https://cdn.coverr.co/videos/coverr-rain-falling-on-windshield-6625/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-man-on-an-empty-island-5689",
+    "stage": "shadow",
+    "archetype": "Тень",
+    "source": "coverr",
+    "title": "Man on an empty island",
+    "url": "https://cdn.coverr.co/videos/coverr-man-on-an-empty-island-5689/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr:AGTsRkDwp9",
+    "title": "Woman Exits Elevator Into Mysterious Nighttime Hallway",
+    "description": "A woman arrives in an elevator and steps out into a dimly lit, mysterious hallway at night. The scene exudes suspense and intrigue, perfect for themes of mystery and urban exploration.",
+    "url": "https://cdn.coverr.co/videos/coverr-mysterious-doorway-at-night/1080p.mp4",
+    "stage": "shadow",
+    "source": "coverr",
+    "vertical": false,
+    "width": 3840,
+    "height": 2160,
+    "duration": 10,
+    "size": 7764947
+  },
+  {
+    "id": "coverr:s8LBJi2rxr",
+    "title": "Silhouette of a man by the balcony",
+    "description": "Still shot of the silhouette of a man standing by his window and balcony.",
+    "url": "https://cdn.coverr.co/videos/coverr-silhouette-of-a-man-by-the-balcony-2834/1080p.mp4",
+    "stage": "shadow",
+    "source": "coverr",
+    "vertical": false,
+    "width": 3840,
+    "height": 2160,
+    "duration": 10,
+    "size": 6221054
+  },
+  {
+    "id": "coverr:4b8J4LClqJ",
+    "title": "Open trunk of a car",
+    "description": "Cinematic shot of a car with an open trunk in the mist.",
+    "url": "https://cdn.coverr.co/videos/coverr-open-trunk-of-a-car-9127/1080p.mp4",
+    "stage": "shadow",
+    "source": "coverr",
+    "vertical": false,
+    "width": 3840,
+    "height": 2160,
+    "duration": 10,
+    "size": 14171080
+  },
+  {
+    "id": "coverr:6A7b7FBpGE",
+    "title": "Woman running in a dark forest",
+    "description": "A traveling shot of a woman running in a dark forest.",
+    "url": "https://cdn.coverr.co/videos/coverr-woman-running-in-a-dark-forest-2929/1080p.mp4",
+    "stage": "shadow",
+    "source": "coverr",
+    "vertical": false,
+    "width": 3840,
+    "height": 2160,
+    "duration": 10,
+    "size": 9148631
+  },
+  {
+    "id": "coverr:2FQl41Kv9c",
+    "title": "Blurry Brooklyn bridge",
+    "description": "Blurred shot of the Brooklyn bridge at night.",
+    "url": "https://cdn.coverr.co/videos/coverr-blurry-brooklyn-bridge-6196/1080p.mp4",
+    "stage": "shadow",
+    "source": "coverr",
+    "vertical": false,
+    "width": 1920,
+    "height": 1080,
+    "duration": 10,
+    "size": 6960936
+  },
+  {
+    "id": "coverr:PNYfnGJTqa",
+    "title": "A man walking down a hill",
+    "description": "Still shot of a man walking down a hill in the forest.",
+    "url": "https://cdn.coverr.co/videos/coverr-a-man-walking-down-a-hill-8728/1080p.mp4",
+    "stage": "shadow",
+    "source": "coverr",
+    "vertical": false,
+    "width": 3840,
+    "height": 2160,
+    "duration": 10,
+    "size": 5585567
+  },
+  {
+    "id": "coverr:xkxvtEEUGS",
+    "title": "Storm in Vilnius, Lithuania",
+    "description": "A still shot of a storm in Vilnius, Lithuania.",
+    "url": "https://cdn.coverr.co/videos/coverr-storm-in-vilnius-lithuania-5273/1080p.mp4",
+    "stage": "shadow",
+    "source": "coverr",
+    "vertical": false,
+    "width": 4096,
+    "height": 2160,
+    "duration": 10,
+    "size": 11400313
+  },
+  {
+    "id": "coverr:MDxdJCU8X9",
+    "title": "Light bulb turning on and off",
+    "description": "Close-up shot of a light bulb turning on and off in a dark room.",
+    "url": "https://cdn.coverr.co/videos/coverr-light-bulb-turning-on-and-off-5654/1080p.mp4",
+    "stage": "shadow",
+    "source": "coverr",
+    "vertical": false,
+    "width": 1920,
+    "height": 1080,
+    "duration": 10,
+    "size": 7543123
+  },
+  {
+    "id": "coverr:iHfhxW86cA",
+    "title": "Garage door closing",
+    "description": "Still shot of a rainy alleyway with a car driving past and the garage door closing.",
+    "url": "https://cdn.coverr.co/videos/coverr-garage-door-closing-5485/1080p.mp4",
+    "stage": "shadow",
+    "source": "coverr",
+    "vertical": false,
+    "width": 3840,
+    "height": 2160,
+    "duration": 10,
+    "size": 14917007
+  },
+  {
+    "id": "coverr:f7eTFXQbvz",
+    "title": "A city at night",
+    "description": "Still shot of a beautiful city at night.",
+    "url": "https://cdn.coverr.co/videos/coverr-a-city-at-night-8720/1080p.mp4",
+    "stage": "shadow",
+    "source": "coverr",
+    "vertical": false,
+    "width": 1920,
+    "height": 1080,
+    "duration": 10,
+    "size": 14855506
+  },
+  {
+    "id": "coverr:NDxc9OuhzQ",
+    "title": "Asian man drinking water",
+    "description": "Medium close-up shot of an Asian man drinking water at night.",
+    "url": "https://cdn.coverr.co/videos/coverr-asian-man-drinking-water-1136/1080p.mp4",
+    "stage": "shadow",
+    "source": "coverr",
+    "vertical": false,
+    "width": 3840,
+    "height": 2160,
+    "duration": 10,
+    "size": 9631885
+  },
+  {
+    "id": "coverr:fwwKKUlRGF",
+    "title": "Night city from a moving car",
+    "description": "Shot from inside a moving car, showing the city at night.",
+    "url": "https://cdn.coverr.co/videos/coverr-night-city-from-a-moving-car-6550/1080p.mp4",
+    "stage": "shadow",
+    "source": "coverr",
+    "vertical": false,
+    "width": 3840,
+    "height": 2160,
+    "duration": 10,
+    "size": 13304444
+  },
+  {
+    "id": "coverr:HroOw0gySy",
+    "title": "Mosque at night",
+    "description": "Timelapse of a lit-up mosque at night, with cars lighting up the rest of the city.",
+    "url": "https://cdn.coverr.co/videos/coverr-mosque-at-night-6699/720p.mp4",
+    "stage": "shadow",
+    "source": "coverr",
+    "vertical": false,
+    "width": 1920,
+    "height": 1080,
+    "duration": 10,
+    "size": 9383480
+  },
+  {
+    "id": "wikimedia:194225647",
+    "title": "Rainfall in East Legon 02",
+    "description": "",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/a/ae/Rainfall_in_East_Legon_02.webm",
+    "stage": "shadow",
+    "source": "wikimedia",
+    "vertical": false,
+    "width": 1920,
+    "height": 1080,
+    "duration": 10,
+    "size": 12587566
+  },
+  {
+    "id": "wikimedia:194225653",
+    "title": "Rainfall in East Legon 04",
+    "description": "",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/4/4f/Rainfall_in_East_Legon_04.webm",
+    "stage": "shadow",
+    "source": "wikimedia",
+    "vertical": false,
+    "width": 1920,
+    "height": 1080,
+    "duration": 10,
+    "size": 10609523
   },
   {
     "id": "coverr-coverr-waves-in-the-ocean-9488",
@@ -90,15 +370,6 @@ window.VIDEOS_DATA = [
     "source": "coverr",
     "title": "Waves in the ocean",
     "url": "https://cdn.coverr.co/videos/coverr-waves-in-the-ocean-9488/1080p.mp4",
-    "vertical": false
-  },
-  {
-    "id": "coverr-user-ai-generation-V7T2O51WMxIq",
-    "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
-    "source": "coverr",
-    "title": "Graceful orca swimming in deep blue ocean — side profile",
-    "url": "https://cdn.coverr.co/videos/user-ai-generation-V7T2O51WMxIq/1080p.mp4",
     "vertical": false
   },
   {
@@ -129,13 +400,310 @@ window.VIDEOS_DATA = [
     "vertical": false
   },
   {
-    "id": "coverr-user-ai-generation-A2kXSoYHDML0",
+    "id": "coverr-coverr-large-ocean-wave-5169",
     "stage": "trickster_abyss",
     "archetype": "Трикстер и Бездна",
     "source": "coverr",
-    "title": "Majestic Orca Spyhops Through Ocean Spray at Dawn Light",
-    "url": "https://cdn.coverr.co/videos/user-ai-generation-A2kXSoYHDML0/1080p.mp4",
+    "title": "Large ocean wave",
+    "url": "https://cdn.coverr.co/videos/coverr-large-ocean-wave-5169/1080p.mp4",
     "vertical": false
+  },
+  {
+    "id": "coverr-coverr-waves-in-the-ocean-9927",
+    "stage": "trickster_abyss",
+    "archetype": "Трикстер и Бездна",
+    "source": "coverr",
+    "title": "Waves in the ocean",
+    "url": "https://cdn.coverr.co/videos/coverr-waves-in-the-ocean-9927/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-the-incoming-waves-of-the-ocean-gently-splash-onto-the-shore-3079",
+    "stage": "trickster_abyss",
+    "archetype": "Трикстер и Бездна",
+    "source": "coverr",
+    "title": "The incoming waves of the ocean gently splash onto the shore",
+    "url": "https://cdn.coverr.co/videos/coverr-the-incoming-waves-of-the-ocean-gently-splash-onto-the-shore-3079/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-ocean-waves-3983",
+    "stage": "trickster_abyss",
+    "archetype": "Трикстер и Бездна",
+    "source": "coverr",
+    "title": "Ocean waves",
+    "url": "https://cdn.coverr.co/videos/coverr-ocean-waves-3983/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-calm-waves-in-an-ocean-gulf-4513",
+    "stage": "trickster_abyss",
+    "archetype": "Трикстер и Бездна",
+    "source": "coverr",
+    "title": "Calm waves in an ocean gulf",
+    "url": "https://cdn.coverr.co/videos/coverr-calm-waves-in-an-ocean-gulf-4513/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-foamy-ocean-waves-at-night-2122",
+    "stage": "trickster_abyss",
+    "archetype": "Трикстер и Бездна",
+    "source": "coverr",
+    "title": "Foamy ocean waves at night",
+    "url": "https://cdn.coverr.co/videos/coverr-foamy-ocean-waves-at-night-2122/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "archive-b1f3f7f894c6",
+    "stage": "trickster_abyss",
+    "archetype": "Трикстер и Бездна",
+    "source": "archive",
+    "title": "View from Great Ocean Road",
+    "url": "https://archive.org/download/Gfycat-z1fc9p/embellishedwhoppingdwarfmongoose.ia.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-candles-in-the-dark-4381",
+    "stage": "trickster_abyss",
+    "archetype": "Трикстер и Бездна",
+    "source": "coverr",
+    "title": "Candles in the dark",
+    "url": "https://cdn.coverr.co/videos/coverr-candles-in-the-dark-4381/720p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr:KtPuGCuEQB",
+    "title": "Bonfire",
+    "description": "Close-up shot of a bonfire on a grass field.",
+    "url": "https://cdn.coverr.co/videos/coverr-bonfire-376/1080p.mp4",
+    "stage": "trickster_abyss",
+    "source": "coverr",
+    "vertical": false,
+    "width": 1920,
+    "height": 1080,
+    "duration": 10,
+    "size": 5716028
+  },
+  {
+    "id": "coverr:N7qwMxthd8",
+    "title": "Playing with fire",
+    "description": "Close-up shot of someone prodding a fire with a block of wood.",
+    "url": "https://cdn.coverr.co/videos/coverr-playing-with-fire-9936/1080p.mp4",
+    "stage": "trickster_abyss",
+    "source": "coverr",
+    "vertical": false,
+    "width": 1920,
+    "height": 1080,
+    "duration": 10,
+    "size": 5788820
+  },
+  {
+    "id": "coverr:WHvGHGKNU6",
+    "title": "A roaring fire",
+    "description": "Close-up, spinning shot of a roaring fire.",
+    "url": "https://cdn.coverr.co/videos/coverr-a-roaring-fire-6465/1080p.mp4",
+    "stage": "trickster_abyss",
+    "source": "coverr",
+    "vertical": false,
+    "width": 1920,
+    "height": 1080,
+    "duration": 10,
+    "size": 6202433
+  },
+  {
+    "id": "coverr:IyTDjoKbDg",
+    "title": "Blue fire",
+    "description": "Close-up shot of a blue fire.",
+    "url": "https://cdn.coverr.co/videos/coverr-blue-fire-6189/1080p.mp4",
+    "stage": "trickster_abyss",
+    "source": "coverr",
+    "vertical": false,
+    "width": 1920,
+    "height": 1080,
+    "duration": 10,
+    "size": 5733152
+  },
+  {
+    "id": "coverr:V2KDR7GAF6",
+    "title": "Cooking sausages over fire",
+    "description": "Still shot of sausages being cooked over the bonfire.",
+    "url": "https://cdn.coverr.co/videos/coverr-cooking-sausages-over-fire-5043/1080p.mp4",
+    "stage": "trickster_abyss",
+    "source": "coverr",
+    "vertical": false,
+    "width": 1920,
+    "height": 1080,
+    "duration": 10,
+    "size": 8428017
+  },
+  {
+    "id": "coverr:XqrXhQBw8W",
+    "title": "Indian fire ceremony",
+    "description": "Still shot of an Indian fire ceremony at night.",
+    "url": "https://cdn.coverr.co/videos/coverr-indian-fire-ceremony-9024/1080p.mp4",
+    "stage": "trickster_abyss",
+    "source": "coverr",
+    "vertical": false,
+    "width": 1920,
+    "height": 1080,
+    "duration": 10,
+    "size": 6862303
+  },
+  {
+    "id": "coverr:LLTaHT34D2",
+    "title": "Warming up by the fire",
+    "description": "Traveling shot of someone warming their hands up by the fire.",
+    "url": "https://cdn.coverr.co/videos/coverr-warming-up-by-the-fire-1408/1080p.mp4",
+    "stage": "trickster_abyss",
+    "source": "coverr",
+    "vertical": false,
+    "width": 1920,
+    "height": 1080,
+    "duration": 10,
+    "size": 5297224
+  },
+  {
+    "id": "coverr:xMf37G9t8x",
+    "title": "Wood burning in a fire",
+    "description": "A close-up shot of some wood burning in a fireplace.",
+    "url": "https://cdn.coverr.co/videos/coverr-wood-burning-in-a-fire-9488/1080p.mp4",
+    "stage": "trickster_abyss",
+    "source": "coverr",
+    "vertical": false,
+    "width": 1920,
+    "height": 1080,
+    "duration": 10,
+    "size": 6572936
+  },
+  {
+    "id": "coverr:azy1Cd1ZeQ",
+    "title": "Science experiment",
+    "description": "Close-up shot of a chemist experimenting with a glass test tube and fire.",
+    "url": "https://cdn.coverr.co/videos/coverr-science-experiment-6978/1080p.mp4",
+    "stage": "trickster_abyss",
+    "source": "coverr",
+    "vertical": false,
+    "width": 1920,
+    "height": 1080,
+    "duration": 10,
+    "size": 7564976
+  },
+  {
+    "id": "coverr:SseVqevlcp",
+    "title": "Bokeh lit candle",
+    "description": "Bokeh effect of a lit candle.",
+    "url": "https://cdn.coverr.co/videos/coverr-bokeh-lit-candle-2345/720p.mp4",
+    "stage": "trickster_abyss",
+    "source": "coverr",
+    "vertical": false,
+    "width": 1920,
+    "height": 1080,
+    "duration": 10,
+    "size": 12891909
+  },
+  {
+    "id": "coverr:cbvM521zPT",
+    "title": "Blurred candles in the dark",
+    "description": "A blurred, bokeh shot of lit candles in the dark.",
+    "url": "https://cdn.coverr.co/videos/coverr-blurred-candles-in-the-dark-5231/720p.mp4",
+    "stage": "trickster_abyss",
+    "source": "coverr",
+    "vertical": false,
+    "width": 1920,
+    "height": 1080,
+    "duration": 10,
+    "size": 12018088
+  },
+  {
+    "id": "coverr:i1yZBtUcPT",
+    "title": "Waves crashing together",
+    "description": "Cinematic shot of waves crashing together in the ocean.",
+    "url": "https://cdn.coverr.co/videos/coverr-waves-crashing-together-6456/1080p.mp4",
+    "stage": "trickster_abyss",
+    "source": "coverr",
+    "vertical": false,
+    "width": 1920,
+    "height": 1080,
+    "duration": 10,
+    "size": 5957420
+  },
+  {
+    "id": "coverr:tqHNrOv78e",
+    "title": "Back View of Man Skipping Rocks into the Ocean",
+    "description": "From a back view, a man skips rocks into the ocean, with the calm waves and distant horizon enhancing the peaceful scene. The focus is on his relaxed posture and the gentle waves crashing in the background.",
+    "url": "https://cdn.coverr.co/videos/coverr-man-skips-rocks/1080p.mp4",
+    "stage": "trickster_abyss",
+    "source": "coverr",
+    "vertical": false,
+    "width": 3840,
+    "height": 2160,
+    "duration": 10,
+    "size": 6124958
+  },
+  {
+    "id": "coverr:jOlwnczJML",
+    "title": "Ocean waves",
+    "description": "Aerial shot of the beautiful ocean waves.",
+    "url": "https://cdn.coverr.co/videos/coverr-ocean-waves-3953/720p.mp4",
+    "stage": "trickster_abyss",
+    "source": "coverr",
+    "vertical": false,
+    "width": 1920,
+    "height": 1080,
+    "duration": 10,
+    "size": 8580613
+  },
+  {
+    "id": "coverr:k2PyrY9cxl",
+    "title": "Panorama of the ocean",
+    "description": "Aerial shot showing the ocean and the greenery surrounding it.",
+    "url": "https://cdn.coverr.co/videos/coverr-panorama-of-the-ocean-2593/1080p.mp4",
+    "stage": "trickster_abyss",
+    "source": "coverr",
+    "vertical": false,
+    "width": 1920,
+    "height": 1080,
+    "duration": 10,
+    "size": 6296976
+  },
+  {
+    "id": "coverr:ioJB4yG3QA",
+    "title": "Sunset by the ocean",
+    "description": "A long shot of the sun setting by the ocean.",
+    "url": "https://cdn.coverr.co/videos/coverr-sunset-by-the-ocean-809/1080p.mp4",
+    "stage": "trickster_abyss",
+    "source": "coverr",
+    "vertical": false,
+    "width": 1920,
+    "height": 1080,
+    "duration": 10,
+    "size": 6377558
+  },
+  {
+    "id": "coverr:h8Jyr51Vmq",
+    "title": "Woman Films Surfer in Ocean from Rocky Shore with Video Camera",
+    "description": "A woman stands on a rock with a video camera, capturing footage of a surfer riding the waves in the ocean. The scene highlights the serene and dynamic interaction between the filmmaker and the surfer.",
+    "url": "https://cdn.coverr.co/videos/coverr-solitary-silhouette-on-the-rocky-shore/1080p.mp4",
+    "stage": "trickster_abyss",
+    "source": "coverr",
+    "vertical": false,
+    "width": 3840,
+    "height": 2160,
+    "duration": 10,
+    "size": 6691927
+  },
+  {
+    "id": "coverr:PGL2Kg8vy3",
+    "title": "Walking along the beach",
+    "description": "Close-up shot of someone walking along the beach, leaving footprints in the sand behind them.",
+    "url": "https://cdn.coverr.co/videos/coverr-walking-along-the-beach-373/1080p.mp4",
+    "stage": "trickster_abyss",
+    "source": "coverr",
+    "vertical": false,
+    "width": 1920,
+    "height": 1080,
+    "duration": 10,
+    "size": 6509724
   },
   {
     "id": "055ZCWp14T",
@@ -155,16 +723,6 @@ window.VIDEOS_DATA = [
     "stage": "calm",
     "source": "coverr",
     "duration": 15.249,
-    "vertical": true
-  },
-  {
-    "id": "eq54uTB0v7",
-    "title": "Vertical shot of flowers",
-    "url": "https://cdn.coverr.co/videos/coverr-vertical-shot-of-flowers-7549/1080p.mp4",
-    "description": "Close-up, vertical shot of white flowers swaying in the wind.",
-    "stage": "calm",
-    "source": "coverr",
-    "duration": 15.24,
     "vertical": true
   },
   {
@@ -218,6 +776,258 @@ window.VIDEOS_DATA = [
     "vertical": true
   },
   {
+    "id": "wikimedia:175524396",
+    "title": "Cloud September 2025",
+    "description": "",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/0/06/Cloud_September_2025.webm",
+    "stage": "calm",
+    "source": "wikimedia",
+    "vertical": true,
+    "width": 720,
+    "height": 1280,
+    "duration": 10,
+    "size": 5487210
+  },
+  {
+    "id": "coverr-coverr-crystal-clear-sea-water-894",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
+    "source": "coverr",
+    "title": "Crystal clear sea water",
+    "url": "https://cdn.coverr.co/videos/coverr-crystal-clear-sea-water-894/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-covering-the-candle-light-9516",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
+    "source": "coverr",
+    "title": "Covering the candle light",
+    "url": "https://cdn.coverr.co/videos/coverr-covering-the-candle-light-9516/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-a-religious-woman-lights-a-candle-7632",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
+    "source": "coverr",
+    "title": "A religious woman lights a candle",
+    "url": "https://cdn.coverr.co/videos/coverr-a-religious-woman-lights-a-candle-7632/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-girl-lighting-a-candle-with-a-match-920",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
+    "source": "coverr",
+    "title": "Girl lighting a candle with a match",
+    "url": "https://cdn.coverr.co/videos/coverr-girl-lighting-a-candle-with-a-match-920/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-foggy-forest-8688",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
+    "source": "coverr",
+    "title": "Foggy forest",
+    "url": "https://cdn.coverr.co/videos/coverr-foggy-forest-8688/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-trees-in-the-misty-forest-442",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
+    "source": "coverr",
+    "title": "Trees in the misty forest",
+    "url": "https://cdn.coverr.co/videos/coverr-trees-in-the-misty-forest-442/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-woman-lights-a-candle-205",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
+    "source": "coverr",
+    "title": "Woman lights a candle",
+    "url": "https://cdn.coverr.co/videos/coverr-woman-lights-a-candle-205/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-lighting-a-candle-7332",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
+    "source": "coverr",
+    "title": "Lighting a candle",
+    "url": "https://cdn.coverr.co/videos/coverr-lighting-a-candle-7332/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-above-a-misty-forest-518",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
+    "source": "coverr",
+    "title": "Above a misty forest",
+    "url": "https://cdn.coverr.co/videos/coverr-above-a-misty-forest-518/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-a-woman-lights-a-candle-5282",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
+    "source": "coverr",
+    "title": "A Woman Lights a Candle",
+    "url": "https://cdn.coverr.co/videos/coverr-a-woman-lights-a-candle-5282/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-man-lighting-a-candle-6436",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
+    "source": "coverr",
+    "title": "Man lighting a candle",
+    "url": "https://cdn.coverr.co/videos/coverr-man-lighting-a-candle-6436/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-forest-covered-by-a-thick-fog-3180",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
+    "source": "coverr",
+    "title": "Forest covered by a thick fog",
+    "url": "https://cdn.coverr.co/videos/coverr-forest-covered-by-a-thick-fog-3180/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-lighting-a-candle-4842",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
+    "source": "coverr",
+    "title": "Lighting a candle",
+    "url": "https://cdn.coverr.co/videos/coverr-lighting-a-candle-4842/720p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-man-in-a-dark-foggy-forest-7970",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
+    "source": "coverr",
+    "title": "Man in a dark, foggy forest",
+    "url": "https://cdn.coverr.co/videos/coverr-man-in-a-dark-foggy-forest-7970/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-rain-falling-in-the-forest-9275",
+    "stage": "calm",
+    "archetype": "Покой / Анима",
+    "source": "coverr",
+    "title": "Rain falling in the forest",
+    "url": "https://cdn.coverr.co/videos/coverr-rain-falling-in-the-forest-9275/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr:repqMqE80B",
+    "title": "Water droplets on a branch",
+    "description": "Still shot of water droplets on a branch.",
+    "url": "https://cdn.coverr.co/videos/coverr-water-droplets-on-a-branch-7524/1080p.mp4",
+    "stage": "calm",
+    "source": "coverr",
+    "vertical": false,
+    "width": 3840,
+    "height": 2160,
+    "duration": 10,
+    "size": 12012218
+  },
+  {
+    "id": "coverr:psqADz0GbU",
+    "title": "Sun rays coming through the branches",
+    "description": "Still shot of the sun rays coming through the branches in the forest.",
+    "url": "https://cdn.coverr.co/videos/coverr-sun-rays-coming-through-the-branches-1767/1080p.mp4",
+    "stage": "calm",
+    "source": "coverr",
+    "vertical": false,
+    "width": 3840,
+    "height": 2160,
+    "duration": 10,
+    "size": 12080795
+  },
+  {
+    "id": "coverr:3EincHZjB2",
+    "title": "Snow-covered forest in Tierra Del Fuego Argentina",
+    "description": "Aerial shot of a snow-covered forest in Tierra Del Fuego Argentina.",
+    "url": "https://cdn.coverr.co/videos/coverr-snow-covered-forest-in-tierra-del-fuego-argentina-1704/1080p.mp4",
+    "stage": "calm",
+    "source": "coverr",
+    "vertical": false,
+    "width": 3840,
+    "height": 2160,
+    "duration": 10,
+    "size": 9219617
+  },
+  {
+    "id": "coverr:qnzW1WE2og",
+    "title": "Branch covered in moss",
+    "description": "Panning shot of a branch covered in moss.",
+    "url": "https://cdn.coverr.co/videos/coverr-branch-covered-in-moss-5495/1080p.mp4",
+    "stage": "calm",
+    "source": "coverr",
+    "vertical": false,
+    "width": 3840,
+    "height": 2160,
+    "duration": 10,
+    "size": 7862078
+  },
+  {
+    "id": "coverr:xDlVY6yAKy",
+    "title": "POV crossing a bridge",
+    "description": "POV footage of someone crossing a bridge in a forest.",
+    "url": "https://cdn.coverr.co/videos/coverr-pov-crossing-a-bridge-4438/1080p.mp4",
+    "stage": "calm",
+    "source": "coverr",
+    "vertical": false,
+    "width": 1920,
+    "height": 1080,
+    "duration": 10,
+    "size": 5716516
+  },
+  {
+    "id": "coverr:cRQMHI7L2E",
+    "title": "Green grass in the forest",
+    "description": "Panning shot of the green grass in the forest.",
+    "url": "https://cdn.coverr.co/videos/coverr-green-grass-in-the-forest-1378/1080p.mp4",
+    "stage": "calm",
+    "source": "coverr",
+    "vertical": false,
+    "width": 3840,
+    "height": 2160,
+    "duration": 10,
+    "size": 11688878
+  },
+  {
+    "id": "coverr:Q4T1VNZQ7a",
+    "title": "Coniferous forest",
+    "description": "Still shot of a coiferous forest.",
+    "url": "https://cdn.coverr.co/videos/coverr-coniferous-forest-9381/1080p.mp4",
+    "stage": "calm",
+    "source": "coverr",
+    "vertical": false,
+    "width": 3840,
+    "height": 2160,
+    "duration": 10,
+    "size": 7929869
+  },
+  {
+    "id": "coverr:C489AFCzyT",
+    "title": "Man and woman walking down a road",
+    "description": "Long shot of a man and woman walking down a road.",
+    "url": "https://cdn.coverr.co/videos/coverr-man-and-woman-walking-down-a-road-1439/1080p.mp4",
+    "stage": "calm",
+    "source": "coverr",
+    "vertical": false,
+    "width": 3840,
+    "height": 2160,
+    "duration": 10,
+    "size": 11581759
+  },
+  {
     "id": "PiBfpdhVOX",
     "title": "Castle on the mountain",
     "url": "https://cdn.coverr.co/videos/coverr-castle-on-the-mountain-238/1080p.mp4",
@@ -258,15 +1068,6 @@ window.VIDEOS_DATA = [
     "vertical": true
   },
   {
-    "id": "coverr-user-ai-generation-2H06QcYweg",
-    "stage": "path",
-    "archetype": "Путь / Самость",
-    "source": "coverr",
-    "title": "Serene Nature with Flying Birds and Waterfalls",
-    "url": "https://cdn.coverr.co/videos/user-ai-generation-2H06QcYweg/1080p.mp4",
-    "vertical": false
-  },
-  {
     "id": "coverr-coverr-birds-in-the-sky-219",
     "stage": "path",
     "archetype": "Путь / Самость",
@@ -283,5 +1084,253 @@ window.VIDEOS_DATA = [
     "title": "Flock of birds in the sky",
     "url": "https://cdn.coverr.co/videos/coverr-flock-of-birds-in-the-sky-5742/1080p.mp4",
     "vertical": false
+  },
+  {
+    "id": "coverr-coverr-a-bird-sitting-on-a-streetlight-8677",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "A bird sitting on a streetlight",
+    "url": "https://cdn.coverr.co/videos/coverr-a-bird-sitting-on-a-streetlight-8677/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-bird-flying-in-the-sky-6957",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Bird flying in the sky",
+    "url": "https://cdn.coverr.co/videos/coverr-bird-flying-in-the-sky-6957/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-blurred-lights-3400",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Blurred lights",
+    "url": "https://cdn.coverr.co/videos/coverr-blurred-lights-3400/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-sunset-from-a-train-3777",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Sunset from a train",
+    "url": "https://cdn.coverr.co/videos/coverr-sunset-from-a-train-3777/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-bird-flying-over-the-lake-7108",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Bird flying over the lake",
+    "url": "https://cdn.coverr.co/videos/coverr-bird-flying-over-the-lake-7108/720p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-bird-flying-onto-branches-in-the-lake-5009",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Bird flying onto branches in the lake",
+    "url": "https://cdn.coverr.co/videos/coverr-bird-flying-onto-branches-in-the-lake-5009/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-misty-mountain-road-journey",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Misty Mountain Road Journey",
+    "url": "https://cdn.coverr.co/videos/coverr-misty-mountain-road-journey/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-bird-walking-on-the-beach-1715",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Bird walking on the beach",
+    "url": "https://cdn.coverr.co/videos/coverr-bird-walking-on-the-beach-1715/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-bokeh-lights-at-night-9375",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Bokeh lights at night",
+    "url": "https://cdn.coverr.co/videos/coverr-bokeh-lights-at-night-9375/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-black-bird-in-california-6440",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Black bird in California",
+    "url": "https://cdn.coverr.co/videos/coverr-black-bird-in-california-6440/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-empty-highway-3230",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Empty highway",
+    "url": "https://cdn.coverr.co/videos/coverr-empty-highway-3230/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-empty-path-near-the-forest-1425",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Empty path near the forest",
+    "url": "https://cdn.coverr.co/videos/coverr-empty-path-near-the-forest-1425/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-empty-spanish-street-3422",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Empty Spanish Street",
+    "url": "https://cdn.coverr.co/videos/coverr-empty-spanish-street-3422/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-empty-roundabout-in-mexico-city-2475",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Empty roundabout in Mexico City",
+    "url": "https://cdn.coverr.co/videos/coverr-empty-roundabout-in-mexico-city-2475/720p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-train-going-through-a-tunnel-2526",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Train going through a tunnel",
+    "url": "https://cdn.coverr.co/videos/coverr-train-going-through-a-tunnel-2526/720p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr-coverr-train-tracks-3223",
+    "stage": "path",
+    "archetype": "Путь / Самость",
+    "source": "coverr",
+    "title": "Train tracks",
+    "url": "https://cdn.coverr.co/videos/coverr-train-tracks-3223/1080p.mp4",
+    "vertical": false
+  },
+  {
+    "id": "coverr:xuu2MmsCE8",
+    "title": "Peaceful landscape",
+    "description": "Cinematic shot of a peaceful landscape, with birds flying in the background.",
+    "url": "https://cdn.coverr.co/videos/coverr-peaceful-landscape-6162/1080p.mp4",
+    "stage": "path",
+    "source": "coverr",
+    "vertical": false,
+    "width": 1920,
+    "height": 1080,
+    "duration": 10,
+    "size": 8713734
+  },
+  {
+    "id": "coverr:gOxH13Qbdq",
+    "title": "Bird catching",
+    "description": "Black and white shot of three men on top of a building trying to catch some birds.",
+    "url": "https://cdn.coverr.co/videos/coverr-bird-catching-8769/1080p.mp4",
+    "stage": "path",
+    "source": "coverr",
+    "vertical": false,
+    "width": 1920,
+    "height": 1080,
+    "duration": 10,
+    "size": 7204699
+  },
+  {
+    "id": "coverr:MPpqcccjlf",
+    "title": "Flying birds animation",
+    "description": "Animation of birds flying in the sky on a sunny day.",
+    "url": "https://cdn.coverr.co/videos/coverr-flying-birds-animation-6922/1080p.mp4",
+    "stage": "path",
+    "source": "coverr",
+    "vertical": false,
+    "width": 1280,
+    "height": 720,
+    "duration": 10,
+    "size": 7579877
+  },
+  {
+    "id": "coverr:k9x6aQZjNc",
+    "title": "Duck on a rock",
+    "description": "Close-up shot of a duck sitting on a rock by the water.",
+    "url": "https://cdn.coverr.co/videos/coverr-duck-on-a-rock-6886/1080p.mp4",
+    "stage": "path",
+    "source": "coverr",
+    "vertical": false,
+    "width": 1920,
+    "height": 1080,
+    "duration": 10,
+    "size": 8702370
+  },
+  {
+    "id": "coverr:aFBKPgqbnO",
+    "title": "Ducks in the lake",
+    "description": "Mid shot of two ducks enjoying their time in a lake.",
+    "url": "https://cdn.coverr.co/videos/coverr-ducks-in-the-lake-8476/1080p.mp4",
+    "stage": "path",
+    "source": "coverr",
+    "vertical": false,
+    "width": 1920,
+    "height": 1080,
+    "duration": 10,
+    "size": 8809924
+  },
+  {
+    "id": "coverr:TFvSHUlwvU",
+    "title": "Pigeons flying away",
+    "description": "A still shot of pigeons flying away.",
+    "url": "https://cdn.coverr.co/videos/coverr-pigeons-flying-away-3261/1080p.mp4",
+    "stage": "path",
+    "source": "coverr",
+    "vertical": false,
+    "width": 3840,
+    "height": 2160,
+    "duration": 10,
+    "size": 8767534
+  },
+  {
+    "id": "coverr:sdJXRwkC1Q",
+    "title": "Pigeon in a playground",
+    "description": "Close-up shot of a pigeon next to a playground.",
+    "url": "https://cdn.coverr.co/videos/coverr-pigeon-in-a-playground-7149/1080p.mp4",
+    "stage": "path",
+    "source": "coverr",
+    "vertical": false,
+    "width": 1920,
+    "height": 1080,
+    "duration": 10,
+    "size": 7845397
+  },
+  {
+    "id": "coverr:uWncxwkEJ3",
+    "title": "Christmas tree decor",
+    "description": "A close-up shot of Christmas tree decor.",
+    "url": "https://cdn.coverr.co/videos/coverr-christmas-tree-decor-2239/1080p.mp4",
+    "stage": "path",
+    "source": "coverr",
+    "vertical": false,
+    "width": 1920,
+    "height": 1080,
+    "duration": 10,
+    "size": 11335121
   }
 ];
