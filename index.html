@@ -69,6 +69,8 @@
       <p class="entry-sub">Алгоритмы считывают твоё состояние без единого вопроса.<br>Зажми экран, если кадр попал в точку.</p>
     </div>
     <button class="entry-trigger" id="entry-trigger" type="button">Войти в эксперимент</button>
+    <button class="entry-install" id="entry-install" type="button" hidden>Установить приложение на экран</button>
+    <p class="entry-install-hint" id="entry-install-hint" hidden>Нажмите «Поделиться» → «На экран Домой»</p>
     <p class="entry-lock-note" id="entry-lock-note" hidden></p>
   </div>
 
@@ -94,6 +96,13 @@
     </div>
   </section>
 
+  <script>
+    window.__deferredInstallPrompt = null;
+    window.addEventListener('beforeinstallprompt', function (event) {
+      event.preventDefault();
+      window.__deferredInstallPrompt = event;
+    });
+  </script>
   <script src="videos-data.js"></script>
   <script src="app.js"></script>
 </body>

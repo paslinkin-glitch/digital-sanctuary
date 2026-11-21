@@ -30,7 +30,7 @@ window.VIDEOS_DATA = [
     "archetype": "Тень",
     "source": "coverr",
     "title": "Silhouette of a man as he plays the ukulele",
-    "url": "https://cdn.coverr.co/videos/coverr-premium-silhouette-of-a-man-as-he-plays-the-ukulele-3932/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-premium-silhouette-of-a-man-as-he-plays-the-ukulele-3932/1080p.mp4"
   },
   {
     "id": "coverr-coverr-rain-in-the-city-430",
@@ -55,14 +55,6 @@ window.VIDEOS_DATA = [
     "source": "coverr",
     "title": "A rainy city street at night, reflections on the wet asphalt, colorful neon ligh",
     "url": "https://cdn.coverr.co/videos/user-ai-generation-6vmHVDQ8F0/1080p.mp4"
-  },
-  {
-    "id": "coverr-user-ai-generation-EUlJuQpDXVVj",
-    "stage": "shadow",
-    "archetype": "Тень",
-    "source": "coverr",
-    "title": "Solitary Figure on Rainy Neon-Lit City Street, Late Night",
-    "url": "https://cdn.coverr.co/videos/user-ai-generation-EUlJuQpDXVVj/1080p.mp4"
   },
   {
     "id": "coverr-coverr-temp-idt4gen-3-alpha-3705455674-yellow-smoke-whirls-mp4-9700",
@@ -201,14 +193,6 @@ window.VIDEOS_DATA = [
     "url": "https://cdn.coverr.co/videos/coverr-bonfire-sparks-9689/1080p.mp4"
   },
   {
-    "id": "coverr-user-ai-generation-UYPbgQTIxKiA",
-    "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
-    "source": "coverr",
-    "title": "Dramatic Mountain Peak Under Dark Storm Clouds — Epic Sky",
-    "url": "https://cdn.coverr.co/videos/user-ai-generation-UYPbgQTIxKiA/1080p.mp4"
-  },
-  {
     "id": "coverr-user-ai-generation-A2kXSoYHDML0",
     "stage": "trickster_abyss",
     "archetype": "Трикстер и Бездна",
@@ -246,7 +230,7 @@ window.VIDEOS_DATA = [
     "archetype": "Трикстер и Бездна",
     "source": "coverr",
     "title": "The incoming waves of the ocean gently splash onto the shore",
-    "url": "https://cdn.coverr.co/videos/coverr-the-incoming-waves-of-the-ocean-gently-splash-onto-the-shore-3079/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-the-incoming-waves-of-the-ocean-gently-splash-onto-the-shore-3079/1080p.mp4"
   },
   {
     "id": "coverr-coverr-ocean-waves-3983",
@@ -286,7 +270,7 @@ window.VIDEOS_DATA = [
     "archetype": "Трикстер и Бездна",
     "source": "coverr",
     "title": "Foamy ocean waves at night",
-    "url": "https://cdn.coverr.co/videos/coverr-foamy-ocean-waves-at-night-2122/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-foamy-ocean-waves-at-night-2122/1080p.mp4"
   },
   {
     "id": "archive-b1f3f7f894c6",
@@ -382,15 +366,7 @@ window.VIDEOS_DATA = [
     "archetype": "Покой / Анима",
     "source": "coverr",
     "title": "Woman lights a candle",
-    "url": "https://cdn.coverr.co/videos/coverr-woman-lights-a-candle-205/720p.mp4"
-  },
-  {
-    "id": "coverr-user-ai-generation-Wayth1C2rUCm",
-    "stage": "calm",
-    "archetype": "Покой / Анима",
-    "source": "coverr",
-    "title": "Golden Sunrise Through Autumn Beech Forest — Soft Rays",
-    "url": "https://cdn.coverr.co/videos/user-ai-generation-Wayth1C2rUCm/1080p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-woman-lights-a-candle-205/1080p.mp4"
   },
   {
     "id": "coverr-coverr-lighting-a-candle-7332",
@@ -398,7 +374,7 @@ window.VIDEOS_DATA = [
     "archetype": "Покой / Анима",
     "source": "coverr",
     "title": "Lighting a candle",
-    "url": "https://cdn.coverr.co/videos/coverr-lighting-a-candle-7332/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-lighting-a-candle-7332/1080p.mp4"
   },
   {
     "id": "coverr-coverr-above-a-misty-forest-518",
@@ -449,20 +425,12 @@ window.VIDEOS_DATA = [
     "url": "https://cdn.coverr.co/videos/coverr-lighting-a-candle-4842/720p.mp4"
   },
   {
-    "id": "coverr-user-ai-generation-7jdxdOWgpVvF",
-    "stage": "calm",
-    "archetype": "Покой / Анима",
-    "source": "coverr",
-    "title": "Golden Sunrise Over Mountain Lake with Calm Reflective Water",
-    "url": "https://cdn.coverr.co/videos/user-ai-generation-7jdxdOWgpVvF/1080p.mp4"
-  },
-  {
     "id": "coverr-coverr-empty-highway-3230",
     "stage": "path",
     "archetype": "Путь / Самость",
     "source": "coverr",
     "title": "Empty highway",
-    "url": "https://cdn.coverr.co/videos/coverr-empty-highway-3230/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-empty-highway-3230/1080p.mp4"
   },
   {
     "id": "coverr-coverr-empty-path-near-the-forest-1425",
@@ -518,15 +486,7 @@ window.VIDEOS_DATA = [
     "archetype": "Путь / Самость",
     "source": "coverr",
     "title": "Bird flying onto branches in the lake",
-    "url": "https://cdn.coverr.co/videos/coverr-bird-flying-onto-branches-in-the-lake-5009/720p.mp4"
-  },
-  {
-    "id": "archive-9b15a824e523",
-    "stage": "path",
-    "archetype": "Путь / Самость",
-    "source": "archive",
-    "title": "Birds at dusk",
-    "url": "https://archive.org/download/Flickr-9011357699/Birds_at_dusk-9011357699.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-bird-flying-onto-branches-in-the-lake-5009/1080p.mp4"
   },
   {
     "id": "coverr-coverr-empty-roundabout-in-mexico-city-2475",
@@ -582,7 +542,7 @@ window.VIDEOS_DATA = [
     "archetype": "Путь / Самость",
     "source": "coverr",
     "title": "Misty Mountain Road Journey",
-    "url": "https://cdn.coverr.co/videos/coverr-misty-mountain-road-journey/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-misty-mountain-road-journey/1080p.mp4"
   },
   {
     "id": "coverr-coverr-train-tracks-3223",
@@ -590,7 +550,7 @@ window.VIDEOS_DATA = [
     "archetype": "Путь / Самость",
     "source": "coverr",
     "title": "Train tracks",
-    "url": "https://cdn.coverr.co/videos/coverr-train-tracks-3223/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-train-tracks-3223/1080p.mp4"
   },
   {
     "id": "coverr-coverr-black-bird-in-california-6440",
@@ -614,6 +574,6 @@ window.VIDEOS_DATA = [
     "archetype": "Путь / Самость",
     "source": "coverr",
     "title": "Bird flying in the sky",
-    "url": "https://cdn.coverr.co/videos/coverr-bird-flying-in-the-sky-6957/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-bird-flying-in-the-sky-6957/1080p.mp4"
   }
 ];

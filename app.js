@@ -35,19 +35,19 @@
   const STUPOR_IDLE_MS = 20000;
   const ANCHOR_WATCH_MS = 12000;
   const MAX_WEIGHT = 6;
-  const SESSION_LENGTH = 10;
+  const SESSION_LENGTH = 18;
   const SESSION_STAGES = [
-    { id: 1, count: 3 },
-    { id: 2, count: 3 },
-    { id: 3, count: 2 },
-    { id: 4, count: 2 },
+    { id: 1, count: 5 },
+    { id: 2, count: 5 },
+    { id: 3, count: 4 },
+    { id: 4, count: 4 },
   ];
   const SESSION_FINALE_DELAY_MS = 3400;
   const SESSION_LOCK_MS = 2 * 60 * 60 * 1000;
   const SESSION_LOCK_KEY = 'sanctuary-unlock-at';
   const HAPTIC_COOLDOWN_MS = 180;
   const SWIPE_HAPTIC_COOLDOWN_MS = 600;
-  const HOLD_HEARTBEAT_MS = 1800;
+  const HOLD_HEARTBEAT_MS = 1600;
   const PORTRAIT_TIMEOUT_MS = 18000;
 
   // Demo key from the brief. A static prototype must expose it; for production
@@ -340,6 +340,8 @@
   const progressFill = document.getElementById('session-progress-fill');
   const stageLabelEl = document.getElementById('stage-label');
   const entryTrigger = document.getElementById('entry-trigger');
+  const entryInstallButton = document.getElementById('entry-install');
+  const entryInstallHint = document.getElementById('entry-install-hint');
   const entryLockNote = document.getElementById('entry-lock-note');
   const finaleEl = document.getElementById('finale');
   const finalePortraitEl = document.getElementById('finale-portrait');
@@ -543,6 +545,8 @@
   let sessionStartedAt = 0;
   let sessionComplete = false;
   let sessionStage = 1;
+  let sessionAccounted = 0;
+  let lastSessionProgressAt = 0;
   let sessionFinalTimer = 0;
   let activeHapticStage = 0;
   let holdPulseTimer = 0;
@@ -554,6 +558,8 @@
   let returnNotificationTimer = 0;
   let lockTapCount = 0;
   let lockTapTimer = 0;
+  let deferredPrompt = null;
+  let installHintTimer = 0;
 
   function resetViewClock() {
     state.viewStart = now();
@@ -668,10 +674,10 @@
 
   function startHoldPulse() {
     stopHoldPulse();
-    safeVibrate(18, HAPTIC_COOLDOWN_MS);
+    safeVibrate(40, HAPTIC_COOLDOWN_MS);
     holdPulseTimer = window.setInterval(() => {
       if (gesture && gesture.holding) {
-        safeVibrate(18, HOLD_HEARTBEAT_MS - 200);
+        safeVibrate(40, HOLD_HEARTBEAT_MS - 200);
       }
     }, HOLD_HEARTBEAT_MS);
   }
@@ -1129,7 +1135,7 @@
         currentCaption.revealed = true;
         if (!currentCaption.haptic) {
           currentCaption.haptic = true;
-          safeVibrate([10, 40, 10], 300);
+          safeVibrate([18, 55, 18], 300);
         }
       }
       maybeRecordResonance();
@@ -1152,7 +1158,7 @@
       currentCaption.revealed = true;
       if (!currentCaption.haptic) {
         currentCaption.haptic = true;
-        safeVibrate([10, 40, 10], 300);
+        safeVibrate([18, 55, 18], 300);
       }
     }
     maybeRecordResonance();
@@ -2123,7 +2129,7 @@
 
     const completed = sessionComplete
       ? SESSION_LENGTH
-      : (pathStarted ? Math.min(SESSION_LENGTH, pathPos + 1) : 0);
+      : sessionAccounted;
     progressFill.style.width = `${(completed / SESSION_LENGTH) * 100}%`;
   }
 
@@ -2146,6 +2152,8 @@
     sessionStartedAt = now();
     sessionComplete = false;
     sessionStage = 1;
+    sessionAccounted = 0;
+    lastSessionProgressAt = Date.now();
     activeHapticStage = 0;
     portraitText = '';
     portraitRequestId += 1;
@@ -2248,12 +2256,12 @@
   }
 
   function recordSessionEvent(record) {
-    if (sessionComplete) return;
-    if (sessionEvents.length > pathPos) return;
+    if (sessionComplete) return false;
+    if (sessionEvents.length > pathPos) return false;
 
     const category = activeCategory();
     const clip = activeClip();
-    if (!category || !clip) return;
+    if (!category || !clip) return false;
 
     const viewedMs = record && Number.isFinite(record.viewedMs)
       ? record.viewedMs
@@ -2261,6 +2269,12 @@
     const heldMs = record && Number.isFinite(record.heldMs) ? record.heldMs : state.heldMs;
     const swipeSpeed = record && Number.isFinite(record.swipeSpeed) ? record.swipeSpeed : 0;
     const direction = record && record.swipeDirection ? record.swipeDirection : 'time';
+    const counted = viewedMs >= 800 || (Date.now() - lastSessionProgressAt >= 1500);
+
+    if (counted) {
+      sessionAccounted = Math.min(SESSION_LENGTH, sessionAccounted + 1);
+      lastSessionProgressAt = Date.now();
+    }
 
     sessionEvents.push({
       frame: sessionEvents.length + 1,
@@ -2276,7 +2290,11 @@
       lingered: viewedMs >= CAPTION_LINGER_MS || heldMs > 0,
       held: heldMs >= 800,
       fast: viewedMs < FAST_VIEW_MS || swipeSpeed > 2.2,
+      counted,
     });
+
+    updateSessionProgress();
+    return counted;
   }
 
   function scheduleSessionFinale() {
@@ -2293,7 +2311,6 @@
 
     window.clearTimeout(sessionFinalTimer);
     sessionFinalTimer = 0;
-    if (sessionEvents.length < SESSION_LENGTH) recordSessionEvent(null);
     sessionComplete = true;
     stopHoldPulse();
     if (gesture) stopHold();
@@ -2320,35 +2337,16 @@
     return stageFor(stageId).name;
   }
 
+  function countedSessionEvents() {
+    const counted = sessionEvents.filter((event) => event.counted);
+    return counted.length ? counted : sessionEvents;
+  }
+
   function fallbackSessionPortrait() {
-    const lingering = [...sessionEvents]
-      .sort((a, b) => (b.viewedMs + b.heldMs * 2) - (a.viewedMs + a.heldMs * 2))[0];
-    const fastest = [...sessionEvents]
-      .sort((a, b) => (a.viewedMs + a.heldMs) - (b.viewedMs + b.heldMs))[0];
-    const time = localTimeContext();
-
-    if (!lingering) {
-      return [
-        'Ты прошёл десять кадров, не позволив им назвать тебя.',
-        'Внешне это выглядело как контроль, но тень уже выбрала паузу.',
-        `Сейчас, в ${time.clock}, это всё ещё легче отрицать, чем признать.`,
-        'Но главный конфликт, который ты прячешь за контролем, система раскроет только в следующем слое...',
-      ];
-    }
-
-    const stageName = stageNameFor(lingering.stage);
-    const held = lingering.heldMs > 0
-      ? 'Именно там палец не отпускал экран дольше, чем требовал ритуал.'
-      : 'Именно там взгляд остался после того, как кадр уже сменился.';
-    const fastLine = fastest && fastest.frame !== lingering.frame
-      ? `Быстрее всего ты ушёл от «${fastest.title}» — и это тоже ответ.`
-      : 'Быстрые кадры ты не смотрел, а проверял, где ещё можно спрятаться.';
-
     return [
-      `Ты дольше всего оставался в стадии «${stageName}», рядом с «${lingering.title}».`,
-      held,
-      fastLine,
-      'Но главный конфликт, который ты прячешь за контролем, система раскроет только в следующем слое...',
+      'Защита через скорость: пауза сбрасывается за полсекунды.',
+      'Внимание замирает только там, где есть холод и пустота.',
+      'Главный триггер — привычка держать лицо; разбор откроется через два часа.',
     ];
   }
 
@@ -2364,7 +2362,24 @@
       lines = cleaned.split(/(?<=[.!?…])\s+/).map((line) => line.trim()).filter(Boolean);
     }
 
-    return lines.slice(0, 5);
+    return lines.slice(0, 3);
+  }
+
+  function isPortraitValid(lines) {
+    if (!Array.isArray(lines) || lines.length !== 3) return false;
+
+    const text = lines.join(' ').trim();
+    const words = text.split(/\s+/).filter(Boolean);
+    if (words.length < 20 || words.length > 30) return false;
+
+    const tokens = text.toLowerCase().split(/[^а-яёa-z]+/i).filter(Boolean);
+    const banned = new Set([
+      'ты', 'твой', 'твоя', 'твои', 'твоего', 'твоему', 'твоим',
+      'твоей', 'твоих', 'твою', 'тобой', 'тебя', 'тебе',
+      'ваш', 'ваша', 'ваше', 'ваши', 'вашего', 'вашему', 'вашим',
+      'вашей', 'ваших', 'вашу', 'вами', 'вас', 'вам',
+    ]);
+    return !tokens.some((token) => banned.has(token));
   }
 
   function renderSessionPortrait(lines) {
@@ -2396,8 +2411,8 @@
     }
 
     const time = localTimeContext();
-    const events = sessionEvents.map((event) => ({
-      frame: event.frame,
+    const counted = countedSessionEvents().slice(-SESSION_LENGTH);
+    const events = counted.map((event) => ({
       stage: event.stage,
       archetype: event.archetype,
       category: event.category,
@@ -2410,15 +2425,20 @@
     }));
 
     const system = [
-      'Ты — тонкий юнгианский аналитик и автор психологических портретов.',
-      'По десяти кадрам поведения человека создай точный, бьющий в точку портрет-разоблачение.',
-      'Пиши по-русски, на «ты», без диагнозов, морали, банальностей и утешений.',
-      'Сначала 3–4 короткие строки портрета. Последняя строка — отдельная заинтригующая фраза-крючок, оборванная на самом интересном месте многоточием.',
-      'Не используй заголовки, списки, кавычки и пояснения. Не повторяй дословно названия роликов.',
-      'Портрет должен связывать задержки, удержания и быстрые уходы с тенью, контролем и желанием вернуться.',
+      'Ты — холодный аналитик наблюдения, не психотерапевт.',
+      'По 18 кадрам поведения создай финальный слепок: ровно 3 короткие рубленые строки.',
+      'Жёсткий лимит: всего 20–30 слов во всех трёх строках. Никаких длинных абзацев.',
+      'Полный запрет на слова «Ты», «Твой», «Твоя», «Твои» и любые формы второго лица.',
+      'Пиши от третьего лица или безлично, как холодное точное досье наблюдения.',
+      'Третья строка — крючок: главный триггер скрыт, разбор откроется через два часа.',
+      'Без заголовков, списков, кавычек, диагнозов и пояснений. Верни только 3 строки.',
     ].join('\n');
 
-    const user = `Локальное время: ${time.clock}, ${time.label}.\nСобытия сессии:\n${JSON.stringify(events, null, 2)}\n\nВерни только текст портрета: 3–4 строки и финальную строку-крючок.`;
+    const user = `Локальное время: ${time.clock}, ${time.label}.
+События 18 учтённых кадров:
+${JSON.stringify(events, null, 2)}
+
+Верни ровно 3 строки, 20–30 слов, без второго лица.`;
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), PORTRAIT_TIMEOUT_MS);
 
@@ -2435,9 +2455,9 @@
             { role: 'system', content: system },
             { role: 'user', content: user },
           ],
-          temperature: 0.92,
-          max_tokens: 320,
-          top_p: 0.95,
+          temperature: 0.86,
+          max_tokens: 170,
+          top_p: 0.9,
           stream: false,
         }),
         signal: controller.signal,
@@ -2457,7 +2477,7 @@
         && payload.choices[0].message.content;
       const lines = parsePortraitLines(content);
       if (requestId !== portraitRequestId) return;
-      renderSessionPortrait(lines.length >= 3 ? lines : fallback);
+      renderSessionPortrait(isPortraitValid(lines) ? lines : fallback);
     } catch (_) {
       if (requestId === portraitRequestId) renderSessionPortrait(fallback);
     } finally {
@@ -2594,7 +2614,7 @@
     pathStartPending = false;
     updateStageLabel(entry.stage);
     activeHapticStage = entry.stage;
-    safeVibrate(45, 300);
+    safeVibrate(110, 300);
     updateSessionProgress();
     setSceneElement(activeClip());
     activateCaption(category, activeClip(), behaviorContext(), true, entry.stage);
@@ -3153,7 +3173,7 @@
 
     if (activeHapticStage !== sceneStage) {
       activeHapticStage = sceneStage;
-      safeVibrate(45, 300);
+      safeVibrate(110, 300);
     }
     updateStageLabel(sceneStage);
     updateSessionProgress();
@@ -3244,13 +3264,17 @@
       return;
     }
 
-    if (pathPos + 1 >= pathPlan.length || pathPos + 1 >= SESSION_LENGTH) {
-      recordSessionEvent(record);
+    recordSessionEvent(record);
+
+    if (sessionAccounted >= SESSION_LENGTH) {
       finishSession();
       return;
     }
 
-    recordSessionEvent(record);
+    if (pathPos + 1 >= pathPlan.length && !extendPathPlan()) {
+      finishSession();
+      return;
+    }
 
     const entry = pathPlan[pathPos + 1];
     if (!entry) {
@@ -3268,10 +3292,6 @@
       entry.clip.id,
       sceneContext
     );
-
-    if (pathPos === SESSION_LENGTH - 1) {
-      scheduleSessionFinale();
-    }
   }
 
   /* ---------------------------------------------------------- удержание */
@@ -3484,7 +3504,7 @@
 
     if (!gesture.thresholdFelt && distance >= SWIPE_MIN_PX) {
       gesture.thresholdFelt = true;
-      safeVibrate(10, SWIPE_HAPTIC_COOLDOWN_MS);
+      safeVibrate(35);
     }
 
     if (stepY > 0) {
@@ -3621,6 +3641,85 @@
   stuporMonitor = window.setInterval(checkStupor, 1000);
 
   const entryGate = document.querySelector('.entry');
+
+  function isStandaloneMode() {
+    return window.matchMedia('(display-mode: standalone)').matches
+      || window.navigator.standalone === true;
+  }
+
+  function isIosDevice() {
+    return /iphone|ipad|ipod/i.test(navigator.userAgent)
+      || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  }
+
+  function syncInstallButton() {
+    if (!entryInstallButton) return;
+    const available = !isStandaloneMode() && (Boolean(deferredPrompt) || isIosDevice());
+    entryInstallButton.hidden = !available;
+    if (!available && entryInstallHint) {
+      entryInstallHint.hidden = true;
+    }
+  }
+
+  function showIosInstallHint() {
+    if (!entryInstallHint) return;
+    window.clearTimeout(installHintTimer);
+    entryInstallHint.hidden = false;
+    installHintTimer = window.setTimeout(() => {
+      entryInstallHint.hidden = true;
+    }, 4000);
+  }
+
+  async function handleInstallClick(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (deferredPrompt) {
+      const prompt = deferredPrompt;
+      deferredPrompt = null;
+      try {
+        await prompt.prompt();
+        const choice = await prompt.userChoice;
+        if (choice && choice.outcome === 'accepted') {
+          if (entryInstallButton) entryInstallButton.hidden = true;
+        }
+      } catch (_) {
+        /* установка может быть отменена системой */
+      }
+      syncInstallButton();
+      return;
+    }
+
+    if (isIosDevice()) showIosInstallHint();
+  }
+
+  window.addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault();
+    deferredPrompt = event;
+    syncInstallButton();
+  });
+
+  deferredPrompt = window.__deferredInstallPrompt || deferredPrompt;
+
+  window.addEventListener('appinstalled', () => {
+    deferredPrompt = null;
+    if (entryInstallButton) entryInstallButton.hidden = true;
+    if (entryInstallHint) entryInstallHint.hidden = true;
+  });
+
+  const displayModeQuery = window.matchMedia('(display-mode: standalone)');
+  if (typeof displayModeQuery.addEventListener === 'function') {
+    displayModeQuery.addEventListener('change', syncInstallButton);
+  } else if (typeof displayModeQuery.addListener === 'function') {
+    displayModeQuery.addListener(syncInstallButton);
+  }
+
+  if (entryInstallButton) {
+    entryInstallButton.addEventListener('pointerdown', (event) => event.stopPropagation());
+    entryInstallButton.addEventListener('click', handleInstallClick);
+  }
+
+  syncInstallButton();
 
   function unlockExperience() {
     if (gateOpen) return;
