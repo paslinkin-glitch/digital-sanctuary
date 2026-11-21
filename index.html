@@ -61,6 +61,11 @@
 
   <div class="entry" id="entry" role="dialog" aria-label="Порог эксперимента">
     <div class="entry-glow" aria-hidden="true"></div>
+    <div class="ambient-mesh ambient-mesh--entry" aria-hidden="true">
+      <span class="ambient-orb ambient-orb--indigo"></span>
+      <span class="ambient-orb ambient-orb--amber"></span>
+      <span class="ambient-orb ambient-orb--smoke"></span>
+    </div>
     <div class="entry-copy">
       <p class="entry-kicker">СЕССИЯ 01 // ЗЕРКАЛО ПОВЕДЕНИЯ</p>
       <h1 class="entry-title">Это не медитация и не социальная сеть.</h1>
@@ -72,16 +77,21 @@
   </div>
 
   <aside class="install-card" id="install-card" hidden aria-live="polite">
-    <p class="install-card-kicker">ПОЛНЫЙ ЭКРАН</p>
-    <p class="install-card-title">Для полного погружения без рамок браузера</p>
-    <div class="install-card-actions">
-      <button class="install-card-btn install-card-btn--primary" id="install-card-install" type="button">Установить</button>
-      <button class="install-card-btn" id="install-card-later" type="button">Позже</button>
+    <div class="install-card-copy">
+      <p class="install-card-title">Открывать как приложение без рамок</p>
+      <p class="install-card-hint" id="install-card-hint" hidden>Поделиться → На экран Домой</p>
     </div>
-    <p class="install-card-hint" id="install-card-hint" hidden>Поделиться → На экран Домой</p>
+    <button class="install-card-btn" id="install-card-install" type="button">Установить</button>
+    <button class="install-card-close" id="install-card-later" type="button" aria-label="Закрыть">×</button>
   </aside>
 
   <section class="finale" id="finale" hidden aria-labelledby="finale-title">
+    <video class="finale-session-video" id="finale-session-video" muted loop playsinline preload="metadata" disablepictureinpicture aria-hidden="true"></video>
+    <div class="ambient-mesh ambient-mesh--finale" aria-hidden="true">
+      <span class="ambient-orb ambient-orb--indigo"></span>
+      <span class="ambient-orb ambient-orb--amber"></span>
+      <span class="ambient-orb ambient-orb--smoke"></span>
+    </div>
     <div class="finale-glow" aria-hidden="true"></div>
     <div class="finale-shell">
       <p class="finale-kicker">СЕССИЯ // РАЗБОР</p>

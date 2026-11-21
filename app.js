@@ -348,6 +348,7 @@
   const installCardLater = document.getElementById('install-card-later');
   const installCardHint = document.getElementById('install-card-hint');
   const finaleEl = document.getElementById('finale');
+  const finaleSessionVideo = document.getElementById('finale-session-video');
   const finalePortraitEl = document.getElementById('finale-portrait');
   const finaleCountdownEl = document.getElementById('finale-countdown');
   const finaleLockInlineEl = document.getElementById('finale-lock-inline');
@@ -2212,6 +2213,33 @@
     if (stageLabelEl) stageLabelEl.textContent = stageLabelFor(sessionStage);
   }
 
+  function stopFinaleSessionVideo() {
+    if (!finaleSessionVideo) return;
+    try {
+      finaleSessionVideo.pause();
+      finaleSessionVideo.removeAttribute('src');
+      finaleSessionVideo.load();
+    } catch (_) {
+      /* видео могло быть уже выгружено */
+    }
+  }
+
+  function syncFinaleSessionVideo() {
+    if (!finaleSessionVideo) return;
+
+    const activeVideo = document.querySelector('.slide.is-active video');
+    const source = activeVideo && (activeVideo.currentSrc || activeVideo.getAttribute('src') || activeVideo.src);
+    if (!source) return;
+
+    if (finaleSessionVideo.getAttribute('src') !== source) {
+      finaleSessionVideo.src = source;
+      finaleSessionVideo.load();
+    }
+    finaleSessionVideo.muted = true;
+    const promise = finaleSessionVideo.play();
+    if (promise && typeof promise.catch === 'function') promise.catch(() => {});
+  }
+
   function beginSession() {
     window.clearTimeout(sessionFinalTimer);
     sessionFinalTimer = 0;
@@ -2240,6 +2268,7 @@
       finaleEl.classList.remove('is-visible');
       finaleEl.setAttribute('aria-hidden', 'true');
     }
+    stopFinaleSessionVideo();
     stage.classList.remove('is-finalizing');
     updateStageLabel(1);
     updateSessionProgress();
@@ -2401,6 +2430,7 @@
     if (finaleEl) {
       finaleEl.hidden = false;
       finaleEl.setAttribute('aria-hidden', 'false');
+      syncFinaleSessionVideo();
       window.requestAnimationFrame(() => finaleEl.classList.add('is-visible'));
     }
 
@@ -2662,6 +2692,7 @@ ${JSON.stringify(events, null, 2)}
       finaleEl.classList.remove('is-visible');
       finaleEl.setAttribute('aria-hidden', 'true');
     }
+    stopFinaleSessionVideo();
     stage.classList.remove('is-finalizing');
 
     if (!buildSessionPlan()) appendFallbackPath(true);
