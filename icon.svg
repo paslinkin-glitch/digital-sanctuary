@@ -1,21 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="sanctuary-icon-title">
   <title id="sanctuary-icon-title">Digital Sanctuary</title>
   <defs>
-    <radialGradient id="bg" cx="50%" cy="42%" r="68%">
-      <stop offset="0%" stop-color="#171120"/>
-      <stop offset="55%" stop-color="#08060c"/>
-      <stop offset="100%" stop-color="#000000"/>
-    </radialGradient>
-    <radialGradient id="halo" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#a08cc2" stop-opacity="0.22"/>
-      <stop offset="70%" stop-color="#6f5d8a" stop-opacity="0.06"/>
-      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    <radialGradient id="aura" cx="50%" cy="48%" r="62%">
+      <stop offset="0%" stop-color="#8a7464" stop-opacity="0.32"/>
+      <stop offset="42%" stop-color="#4d4a70" stop-opacity="0.18"/>
+      <stop offset="72%" stop-color="#232235" stop-opacity="0.07"/>
+      <stop offset="100%" stop-color="#050507" stop-opacity="0"/>
     </radialGradient>
   </defs>
-  <rect width="512" height="512" fill="#000000"/>
-  <rect width="512" height="512" fill="url(#bg)"/>
-  <circle cx="256" cy="256" r="168" fill="url(#halo)"/>
-  <circle cx="256" cy="256" r="132" fill="none" stroke="#8b78a8" stroke-opacity="0.5" stroke-width="2"/>
-  <circle cx="256" cy="256" r="86" fill="#07060a" stroke="#bda9da" stroke-opacity="0.3" stroke-width="1.5"/>
-  <circle cx="256" cy="256" r="4.5" fill="#d9c9f0" fill-opacity="0.55"/>
+  <rect width="512" height="512" fill="#050507"/>
+  <rect width="512" height="512" fill="url(#aura)"/>
 </svg>

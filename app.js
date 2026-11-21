@@ -2044,8 +2044,11 @@
       ));
 
       const ordered = (category.tag === 'Calm' || category.tag === 'Path')
-        ? filtered.slice().sort((a, b) => (b.lightPriority || 0) - (a.lightPriority || 0))
-        : shuffleArray(filtered);
+        ? filtered.slice().sort((a, b) => (
+          (a.vertical ? 0 : 2) - (b.vertical ? 0 : 2)
+          || (b.lightPriority || 0) - (a.lightPriority || 0)
+        ))
+        : shuffleArray(filtered).sort((a, b) => (a.vertical ? 0 : 2) - (b.vertical ? 0 : 2));
 
       return { category, clips: ordered };
     });
@@ -2967,7 +2970,7 @@ ${JSON.stringify(events, null, 2)}
         duration: Number.isFinite(Number(item.duration)) ? Number(item.duration) : 10,
         description: archetype,
         tags: [stageKey, archetype],
-        vertical: true,
+        vertical: Boolean(item.vertical),
         element: elementForClip(title, [stageKey, archetype], tag, archetype),
         archetype,
         stage: stageKey,
