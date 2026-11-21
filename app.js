@@ -28,7 +28,7 @@
   const FLICK_MIN_SPEED = 0.5;
   const SLOW_RATE = 0.45;
   const API_TIMEOUT_MS = 7000;
-  const CLIPS_PER_CATEGORY = 40;
+  const CLIPS_PER_CATEGORY = 55;
   const RESONANCE_HOLD_MS = 500;
   const FAST_VIEW_MS = 2000;
   const NERVOUS_VIEW_MS = 1500;
