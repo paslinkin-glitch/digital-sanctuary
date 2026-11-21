@@ -35,12 +35,12 @@
   const STUPOR_IDLE_MS = 20000;
   const ANCHOR_WATCH_MS = 12000;
   const MAX_WEIGHT = 6;
-  const SESSION_LENGTH = 18;
+  const SESSION_LENGTH = 40;
   const SESSION_STAGES = [
-    { id: 1, count: 5 },
-    { id: 2, count: 5 },
-    { id: 3, count: 4 },
-    { id: 4, count: 4 },
+    { id: 1, count: 10 },
+    { id: 2, count: 10 },
+    { id: 3, count: 10 },
+    { id: 4, count: 10 },
   ];
   const SESSION_FINALE_DELAY_MS = 3400;
   const SESSION_LOCK_MS = 2 * 60 * 60 * 1000;
@@ -342,7 +342,10 @@
   const entryTrigger = document.getElementById('entry-trigger');
   const entryInstallButton = document.getElementById('entry-install');
   const entryInstallHint = document.getElementById('entry-install-hint');
-  const entryLockNote = document.getElementById('entry-lock-note');
+  const installCard = document.getElementById('install-card');
+  const installCardInstall = document.getElementById('install-card-install');
+  const installCardLater = document.getElementById('install-card-later');
+  const installCardHint = document.getElementById('install-card-hint');
   const finaleEl = document.getElementById('finale');
   const finalePortraitEl = document.getElementById('finale-portrait');
   const finaleCountdownEl = document.getElementById('finale-countdown');
@@ -556,10 +559,9 @@
   let portraitText = '';
   let portraitRequestId = 0;
   let returnNotificationTimer = 0;
-  let lockTapCount = 0;
-  let lockTapTimer = 0;
   let deferredPrompt = null;
   let installHintTimer = 0;
+  let installCardDismissed = false;
 
   function resetViewClock() {
     state.viewStart = now();
@@ -2208,18 +2210,10 @@
           entryTrigger.disabled = true;
           entryTrigger.textContent = `Следующий слой через ${text}`;
         }
-        if (entryLockNote) {
-          entryLockNote.hidden = false;
-          entryLockNote.textContent = `Следующий слой глубины откроется через ${text}`;
-        }
       } else {
         if (entryTrigger) {
           entryTrigger.disabled = false;
           entryTrigger.textContent = 'Войти в эксперимент';
-        }
-        if (entryLockNote) {
-          entryLockNote.hidden = true;
-          entryLockNote.textContent = '';
         }
       }
     }
@@ -2320,7 +2314,8 @@
     pauseSound();
 
     stage.classList.add('is-finalizing');
-    if (stageLabelEl) stageLabelEl.textContent = '10 // SESSION COMPLETE';
+    hideInstallCard();
+    if (stageLabelEl) stageLabelEl.textContent = '40 // SESSION COMPLETE';
     setSessionLock();
     updateSessionProgress();
 
@@ -2426,7 +2421,7 @@
 
     const system = [
       'Ты — холодный аналитик наблюдения, не психотерапевт.',
-      'По 18 кадрам поведения создай финальный слепок: ровно 3 короткие рубленые строки.',
+      'По 40 кадрам поведения создай финальный слепок: ровно 3 короткие рубленые строки.',
       'Жёсткий лимит: всего 20–30 слов во всех трёх строках. Никаких длинных абзацев.',
       'Полный запрет на слова «Ты», «Твой», «Твоя», «Твои» и любые формы второго лица.',
       'Пиши от третьего лица или безлично, как холодное точное досье наблюдения.',
@@ -2435,7 +2430,7 @@
     ].join('\n');
 
     const user = `Локальное время: ${time.clock}, ${time.label}.
-События 18 учтённых кадров:
+События 40 учтённых кадров:
 ${JSON.stringify(events, null, 2)}
 
 Верни ровно 3 строки, 20–30 слов, без второго лица.`;
@@ -2565,13 +2560,78 @@ ${JSON.stringify(events, null, 2)}
     }
   }
 
-  function resetSessionLockByCheat() {
+  function startNewSessionAfterUnlock() {
     clearSessionLock();
-    if (finaleLockLabel) finaleLockLabel.textContent = 'СЛЕДУЮЩИЙ СЛОЙ // ДОСТУП ОТКРЫТ';
-    if (notifyReturnButton) {
-      notifyReturnButton.disabled = false;
-      notifyReturnButton.textContent = 'Уведомить через 2 часа';
+    hideInstallCard();
+    window.clearTimeout(sessionFinalTimer);
+    sessionFinalTimer = 0;
+    sessionComplete = false;
+    sessionEvents = [];
+    sessionAccounted = 0;
+    lastSessionProgressAt = Date.now();
+    pathPlan = [];
+    pathPicked = new Set();
+    pathPos = -1;
+    pathStarted = false;
+
+    if (finaleEl) {
+      finaleEl.hidden = true;
+      finaleEl.classList.remove('is-visible');
+      finaleEl.setAttribute('aria-hidden', 'true');
     }
+    stage.classList.remove('is-finalizing');
+
+    if (!buildSessionPlan()) appendFallbackPath(true);
+
+    if (!pathPlan.length) {
+      gateOpen = false;
+      if (entryGate) {
+        entryGate.hidden = false;
+        entryGate.classList.remove('is-open');
+        entryGate.setAttribute('aria-hidden', 'false');
+      }
+      updateSessionLockUI();
+      return;
+    }
+
+    gateOpen = true;
+    if (!startPathFirst()) {
+      gateOpen = false;
+      if (entryGate) {
+        entryGate.hidden = false;
+        entryGate.classList.remove('is-open');
+        entryGate.setAttribute('aria-hidden', 'false');
+      }
+      updateSessionLockUI();
+    }
+  }
+
+  function attachLockSwipe(surface, onSwipe) {
+    if (!surface) return;
+    let start = null;
+
+    surface.addEventListener('pointerdown', (event) => {
+      if (event.target.closest('button')) {
+        start = null;
+        return;
+      }
+      start = { id: event.pointerId, x: event.clientX, y: event.clientY };
+    }, { passive: true });
+
+    surface.addEventListener('pointerup', (event) => {
+      if (!start || event.pointerId !== start.id) {
+        start = null;
+        return;
+      }
+      const dx = event.clientX - start.x;
+      const dy = event.clientY - start.y;
+      start = null;
+      if (dx > 80 && dx > Math.abs(dy) * 1.2) onSwipe();
+    });
+
+    surface.addEventListener('pointercancel', () => {
+      start = null;
+    });
   }
 
   function extendPathPlan() {
@@ -3655,18 +3715,35 @@ ${JSON.stringify(events, null, 2)}
   function syncInstallButton() {
     if (!entryInstallButton) return;
     const available = !isStandaloneMode() && (Boolean(deferredPrompt) || isIosDevice());
-    entryInstallButton.hidden = !available;
+    const cardVisible = installCard && !installCard.hidden;
+    entryInstallButton.hidden = !available || cardVisible;
     if (!available && entryInstallHint) {
       entryInstallHint.hidden = true;
     }
   }
 
+  function showInstallCard() {
+    if (!installCard || installCardDismissed || isStandaloneMode() || gateOpen) return;
+    installCard.hidden = false;
+    syncInstallButton();
+  }
+
+  function hideInstallCard() {
+    if (installCard) installCard.hidden = true;
+    if (installCardHint) installCardHint.hidden = true;
+    syncInstallButton();
+  }
+
   function showIosInstallHint() {
-    if (!entryInstallHint) return;
+    const target = installCard && !installCard.hidden
+      ? installCardHint
+      : entryInstallHint;
+    if (!target) return;
+
     window.clearTimeout(installHintTimer);
-    entryInstallHint.hidden = false;
+    target.hidden = false;
     installHintTimer = window.setTimeout(() => {
-      entryInstallHint.hidden = true;
+      target.hidden = true;
     }, 4000);
   }
 
@@ -3682,10 +3759,13 @@ ${JSON.stringify(events, null, 2)}
         const choice = await prompt.userChoice;
         if (choice && choice.outcome === 'accepted') {
           if (entryInstallButton) entryInstallButton.hidden = true;
+          hideInstallCard();
+          installCardDismissed = true;
         }
       } catch (_) {
         /* установка может быть отменена системой */
       }
+      if (!isIosDevice()) hideInstallCard();
       syncInstallButton();
       return;
     }
@@ -3696,13 +3776,15 @@ ${JSON.stringify(events, null, 2)}
   window.addEventListener('beforeinstallprompt', (event) => {
     event.preventDefault();
     deferredPrompt = event;
-    syncInstallButton();
+    showInstallCard();
   });
 
   deferredPrompt = window.__deferredInstallPrompt || deferredPrompt;
 
   window.addEventListener('appinstalled', () => {
     deferredPrompt = null;
+    installCardDismissed = true;
+    hideInstallCard();
     if (entryInstallButton) entryInstallButton.hidden = true;
     if (entryInstallHint) entryInstallHint.hidden = true;
   });
@@ -3719,6 +3801,16 @@ ${JSON.stringify(events, null, 2)}
     entryInstallButton.addEventListener('click', handleInstallClick);
   }
 
+  if (installCardInstall) installCardInstall.addEventListener('click', handleInstallClick);
+  if (installCardLater) {
+    installCardLater.addEventListener('click', () => {
+      installCardDismissed = true;
+      hideInstallCard();
+    });
+  }
+
+  if (isIosDevice()) showInstallCard();
+  else if (deferredPrompt) showInstallCard();
   syncInstallButton();
 
   function unlockExperience() {
@@ -3728,6 +3820,7 @@ ${JSON.stringify(events, null, 2)}
       return;
     }
     gateOpen = true;
+    hideInstallCard();
     resetViewClock();
     markInteraction();
     setBreath(0);
@@ -3771,19 +3864,16 @@ ${JSON.stringify(events, null, 2)}
     notifyReturnButton.addEventListener('click', enableReturnNotification);
   }
 
-  const handleLockCheatTap = () => {
-    const time = Date.now();
-    if (time - lockTapTimer > 900) lockTapCount = 0;
-    lockTapTimer = time;
-    lockTapCount += 1;
-    if (lockTapCount >= 3) {
-      lockTapCount = 0;
-      resetSessionLockByCheat();
-    }
-  };
+  attachLockSwipe(entryGate, () => {
+    if (!isSessionLocked()) return;
+    clearSessionLock();
+    unlockExperience();
+  });
 
-  if (finaleLockLabel) finaleLockLabel.addEventListener('click', handleLockCheatTap);
-  if (finaleCountdownEl) finaleCountdownEl.addEventListener('click', handleLockCheatTap);
+  attachLockSwipe(finaleEl, () => {
+    if (!isSessionLocked()) return;
+    startNewSessionAfterUnlock();
+  });
 
   const startupTasks = [loadVideoCatalog()];
 

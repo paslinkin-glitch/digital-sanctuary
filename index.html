@@ -71,8 +71,17 @@
     <button class="entry-trigger" id="entry-trigger" type="button">Войти в эксперимент</button>
     <button class="entry-install" id="entry-install" type="button" hidden>Установить приложение на экран</button>
     <p class="entry-install-hint" id="entry-install-hint" hidden>Нажмите «Поделиться» → «На экран Домой»</p>
-    <p class="entry-lock-note" id="entry-lock-note" hidden></p>
   </div>
+
+  <aside class="install-card" id="install-card" hidden aria-live="polite">
+    <p class="install-card-kicker">FULLSCREEN EXPERIENCE</p>
+    <p class="install-card-title">Для полного погружения без рамок браузера</p>
+    <div class="install-card-actions">
+      <button class="install-card-btn install-card-btn--primary" id="install-card-install" type="button">Установить</button>
+      <button class="install-card-btn" id="install-card-later" type="button">Позже</button>
+    </div>
+    <p class="install-card-hint" id="install-card-hint" hidden>Поделиться → На экран Домой</p>
+  </aside>
 
   <section class="finale" id="finale" hidden aria-labelledby="finale-title">
     <div class="finale-glow" aria-hidden="true"></div>

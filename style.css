@@ -312,20 +312,99 @@ body {
   text-transform: uppercase;
 }
 
-.entry-lock-note {
-  position: absolute;
+.install-card {
+  position: fixed;
   left: 50%;
-  bottom: clamp(0.65rem, 2vh, 1.2rem);
-  width: min(84vw, 34rem);
+  bottom: max(1.1rem, env(safe-area-inset-bottom));
+  z-index: 35;
+  width: min(90vw, 26rem);
   margin: 0;
+  padding: 1rem 1rem 0.9rem;
   transform: translateX(-50%);
-  color: rgba(244, 240, 234, 0.38);
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+  background: rgba(13, 13, 18, 0.66);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.015) inset,
+    0 18px 60px rgba(0, 0, 0, 0.5);
+  -webkit-backdrop-filter: blur(26px) saturate(0.8);
+  backdrop-filter: blur(26px) saturate(0.8);
+  pointer-events: auto;
+}
+
+.install-card[hidden] {
+  display: none;
+}
+
+.install-card-kicker {
+  margin: 0 0 0.55rem;
+  color: rgba(244, 240, 234, 0.4);
   font-family: var(--mono);
-  font-size: 10px;
-  line-height: 1.5;
-  letter-spacing: 0.1em;
+  font-size: 9px;
+  font-weight: 300;
+  line-height: 1.4;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.install-card-title {
+  margin: 0;
+  color: rgba(244, 240, 234, 0.86);
+  font-family: var(--serif);
+  font-size: clamp(1.05rem, 4.6vw, 1.32rem);
+  font-weight: 300;
+  line-height: 1.28;
+}
+
+.install-card-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.55rem;
+  margin-top: 0.9rem;
+}
+
+.install-card-btn {
+  min-height: 2.55rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--hairline);
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.025);
+  color: rgba(244, 240, 234, 0.64);
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 300;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 400ms var(--organic), border-color 400ms var(--organic), color 400ms var(--organic);
+}
+
+.install-card-btn--primary {
+  border-color: rgba(255, 255, 255, 0.13);
+  color: var(--pearl);
+}
+
+.install-card-btn:hover,
+.install-card-btn:focus-visible {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--pearl);
+  outline: none;
+}
+
+.install-card-hint {
+  margin: 0.65rem 0 0;
+  color: rgba(244, 240, 234, 0.5);
+  font-family: var(--mono);
+  font-size: 9px;
+  line-height: 1.45;
+  letter-spacing: 0.08em;
   text-align: center;
   text-transform: uppercase;
+}
+
+.install-card-hint[hidden] {
+  display: none;
 }
 
 @keyframes entry-copy-in {
