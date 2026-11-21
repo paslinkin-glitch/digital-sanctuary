@@ -3,7 +3,7 @@
  * the cache is only a fallback for offline launches. Coverr API and video
  * CDN requests are cross-origin and deliberately pass through untouched.
  */
-const CACHE = 'sanctuary-shell-v6';
+const CACHE = 'sanctuary-shell-v7';
 const ASSETS = [
   './',
   './index.html',
@@ -63,4 +63,58 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return;
 
   event.respondWith(networkFirst(request));
+});
+
+self.addEventListener('message', (event) => {
+  const data = event.data || {};
+  if (data.type !== 'schedule-return') return;
+
+  const deliverAt = Number(data.deliverAt) || (Date.now() + 2 * 60 * 60 * 1000);
+  const title = data.title || 'Digital Sanctuary';
+  const body = data.body || 'Следующий слой глубины открыт. Вернись, чтобы узнать продолжение.';
+  const delay = Math.max(0, deliverAt - Date.now());
+  const options = {
+    body,
+    icon: './icon-192.png',
+    badge: './icon-192.png',
+    tag: 'sanctuary-return',
+    data: { url: './' },
+    renotify: false,
+  };
+
+  if ('TimestampTrigger' in self && delay > 0) {
+    try {
+      self.registration.showNotification(title, {
+        ...options,
+        showTrigger: new self.TimestampTrigger(deliverAt),
+      });
+      return;
+    } catch (_) {
+      /* TimestampTrigger может быть недоступен */
+    }
+  }
+
+  if (delay <= 0) {
+    self.registration.showNotification(title, options);
+    return;
+  }
+
+  // Service-worker timers are best-effort; the page also keeps a fallback timer.
+  setTimeout(() => {
+    self.registration.showNotification(title, options);
+  }, Math.min(delay, 2147483647));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil((async () => {
+    const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of windows) {
+      if ('focus' in client) {
+        await client.focus();
+        return;
+      }
+    }
+    await self.clients.openWindow('./');
+  })());
 });

@@ -3,20 +3,20 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
-  <meta name="theme-color" content="#000000">
+  <meta name="theme-color" content="#050507">
   <meta name="color-scheme" content="dark">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Digital Sanctuary">
-  <title>Digital Sanctuary</title>
+  <title>Digital Sanctuary — Behavioral Mirror</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -41,6 +41,10 @@
       <div class="media" aria-hidden="true"></div>
       <span class="tag">Path</span>
     </section>
+    <div class="session-progress" aria-hidden="true">
+      <span class="session-progress-fill" id="session-progress-fill"></span>
+    </div>
+    <p class="stage-label" id="stage-label" aria-hidden="true">01 // SHADOW</p>
     <div class="optic" aria-hidden="true">
       <div class="optic-haze"></div>
       <div class="optic-water"></div>
@@ -54,15 +58,42 @@
       <span class="caption-line"></span>
       <span class="caption-line"></span>
     </div>
+    <div class="grain" aria-hidden="true"></div>
   </main>
-  <div class="entry" id="entry" role="dialog" aria-label="Порог убежища">
+
+  <div class="entry" id="entry" role="dialog" aria-label="Порог эксперимента">
     <div class="entry-glow" aria-hidden="true"></div>
     <div class="entry-copy">
-      <p class="entry-title">Закрытое пространство для тех, кто устал держать маску.</p>
-      <p class="entry-sub">Без оценок, советов и чужого шума. Только диалог с тем, что внутри.</p>
+      <p class="entry-kicker">SESSION 01 // BEHAVIORAL MIRROR</p>
+      <h1 class="entry-title">Это не медитация<br>и не социальная сеть.</h1>
+      <p class="entry-sub">Алгоритмы считывают твоё состояние без единого вопроса.<br>Зажми экран, если кадр попал в точку.</p>
     </div>
-    <p class="entry-trigger">Коснись экрана, чтобы войти</p>
+    <button class="entry-trigger" id="entry-trigger" type="button">Войти в эксперимент</button>
+    <p class="entry-lock-note" id="entry-lock-note" hidden></p>
   </div>
+
+  <section class="finale" id="finale" hidden aria-labelledby="finale-title">
+    <div class="finale-glow" aria-hidden="true"></div>
+    <div class="finale-shell">
+      <p class="finale-kicker">SESSION 01 // SHADOW SNAPSHOT</p>
+      <h2 class="finale-title" id="finale-title">СЛЕПОК ТЕНИ</h2>
+      <p class="finale-sub">ПРОФИЛЬ СЕССИИ</p>
+      <div class="finale-rule" aria-hidden="true"></div>
+      <div class="finale-portrait" id="finale-portrait" aria-live="polite">
+        <p class="finale-loading">СБОРКА СЛЕПКА...</p>
+      </div>
+      <div class="finale-actions">
+        <button class="finale-btn" id="copy-snapshot" type="button">Скопировать слепок</button>
+        <button class="finale-btn" id="notify-return" type="button">Уведомить через 2 часа</button>
+      </div>
+      <div class="finale-lock">
+        <p class="finale-lock-label" id="finale-lock-label">СЛЕДУЮЩИЙ СЛОЙ</p>
+        <p class="finale-countdown" id="finale-countdown">02:00:00</p>
+        <p class="finale-lock-note">Следующий слой глубины откроется через <span id="finale-lock-inline">02:00:00</span></p>
+      </div>
+    </div>
+  </section>
+
   <script src="videos-data.js"></script>
   <script src="app.js"></script>
 </body>

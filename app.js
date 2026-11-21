@@ -35,6 +35,20 @@
   const STUPOR_IDLE_MS = 20000;
   const ANCHOR_WATCH_MS = 12000;
   const MAX_WEIGHT = 6;
+  const SESSION_LENGTH = 10;
+  const SESSION_STAGES = [
+    { id: 1, count: 3 },
+    { id: 2, count: 3 },
+    { id: 3, count: 2 },
+    { id: 4, count: 2 },
+  ];
+  const SESSION_FINALE_DELAY_MS = 3400;
+  const SESSION_LOCK_MS = 2 * 60 * 60 * 1000;
+  const SESSION_LOCK_KEY = 'sanctuary-unlock-at';
+  const HAPTIC_COOLDOWN_MS = 180;
+  const SWIPE_HAPTIC_COOLDOWN_MS = 600;
+  const HOLD_HEARTBEAT_MS = 1800;
+  const PORTRAIT_TIMEOUT_MS = 18000;
 
   // Demo key from the brief. A static prototype must expose it; for production
   // this call belongs behind a tiny server-side proxy.
@@ -323,6 +337,18 @@
     return;
   }
 
+  const progressFill = document.getElementById('session-progress-fill');
+  const stageLabelEl = document.getElementById('stage-label');
+  const entryTrigger = document.getElementById('entry-trigger');
+  const entryLockNote = document.getElementById('entry-lock-note');
+  const finaleEl = document.getElementById('finale');
+  const finalePortraitEl = document.getElementById('finale-portrait');
+  const finaleCountdownEl = document.getElementById('finale-countdown');
+  const finaleLockInlineEl = document.getElementById('finale-lock-inline');
+  const finaleLockLabel = document.getElementById('finale-lock-label');
+  const copySnapshotButton = document.getElementById('copy-snapshot');
+  const notifyReturnButton = document.getElementById('notify-return');
+
 
 
   const categories = slides.map((slide, index) => {
@@ -513,6 +539,22 @@
   let pathStarted = false;
   let pathStartPending = false;
 
+  let sessionEvents = [];
+  let sessionStartedAt = 0;
+  let sessionComplete = false;
+  let sessionStage = 1;
+  let sessionFinalTimer = 0;
+  let activeHapticStage = 0;
+  let holdPulseTimer = 0;
+  let lastHapticAt = 0;
+  let sessionLockAt = 0;
+  let lockTicker = 0;
+  let portraitText = '';
+  let portraitRequestId = 0;
+  let returnNotificationTimer = 0;
+  let lockTapCount = 0;
+  let lockTapTimer = 0;
+
   function resetViewClock() {
     state.viewStart = now();
     state.holdsInView = 0;
@@ -599,14 +641,50 @@
     return Math.min(max, Math.max(min, value));
   }
 
-  function vibrateTap() {
+  function safeVibrate(pattern = 10, cooldown = HAPTIC_COOLDOWN_MS) {
+    if (typeof navigator.vibrate !== 'function') return false;
+
+    const time = now();
+    if (time - lastHapticAt < cooldown) return false;
+    lastHapticAt = time;
+
+    try {
+      navigator.vibrate(pattern);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function stopHaptics() {
     if (typeof navigator.vibrate === 'function') {
       try {
-        navigator.vibrate(12);
+        navigator.vibrate(0);
       } catch (_) {
         /* вибрация не критична */
       }
     }
+  }
+
+  function startHoldPulse() {
+    stopHoldPulse();
+    safeVibrate(18, HAPTIC_COOLDOWN_MS);
+    holdPulseTimer = window.setInterval(() => {
+      if (gesture && gesture.holding) {
+        safeVibrate(18, HOLD_HEARTBEAT_MS - 200);
+      }
+    }, HOLD_HEARTBEAT_MS);
+  }
+
+  function stopHoldPulse() {
+    const wasHolding = Boolean(holdPulseTimer);
+    window.clearInterval(holdPulseTimer);
+    holdPulseTimer = 0;
+    if (wasHolding) stopHaptics();
+  }
+
+  function vibrateTap() {
+    safeVibrate(10, SWIPE_HAPTIC_COOLDOWN_MS);
   }
 
   function pointForEvent(event) {
@@ -785,13 +863,32 @@
     return `\n\nПамять последних резонансных событий (от старого к новому):\n${events}\nНовая фраза должна логически или ассоциативно развивать, углублять либо парадоксально откликаться на последнюю мысль из этой памяти через визуал нового видео. Не повторяй прошлые формулировки.`;
   }
 
+  function localTimeContext() {
+    const date = new Date();
+    const hour = date.getHours();
+    let label = 'глубокая ночь';
+
+    if (hour >= 5 && hour < 8) label = 'раннее утро';
+    else if (hour >= 8 && hour < 12) label = 'утро';
+    else if (hour >= 12 && hour < 17) label = 'день';
+    else if (hour >= 17 && hour < 21) label = 'вечер';
+    else if (hour >= 21) label = 'поздний вечер';
+
+    return {
+      clock: `${String(hour).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`,
+      label,
+    };
+  }
+
   function captionMessages(clip, category, behavior, stageId) {
     const stage = stageFor(stageId || STAGE_BY_CATEGORY[category.tag] || 1);
     const archetype = clip.archetype || stage.archetype || stage.name;
+    const time = localTimeContext();
     const details = [
       `Архетип: ${archetype}.`,
       `Категория: ${category.tag}.`,
       `Стадия: ${stage.id} — ${stage.name}.`,
+      `Локальное время пользователя: ${time.clock}, ${time.label}.`,
       `Видео: «${clip.title || 'без названия'}».`,
       clip.description ? `Описание: ${clip.description.slice(0, 420)}.` : '',
       clip.tags && clip.tags.length ? `Теги: ${clip.tags.slice(0, 18).join(', ')}.` : '',
@@ -989,11 +1086,12 @@
   }
 
   function captionAllowedForScene(context) {
-    if (sceneOrdinal <= 1) return false;
+    if (sceneOrdinal <= 1) return true;
     if (context && context.linger) return true;
-    if (sceneOrdinal % 3 === 0) return false;
     if (context && context.fastStreak >= 2) return false;
-    return true;
+
+    // Непредсказуемое подкрепление: примерно 65% кадров получают текст.
+    return Math.random() < 0.65;
   }
 
   function maybeRecordResonance() {
@@ -1027,7 +1125,13 @@
       captionEl.setAttribute('aria-hidden', 'false');
       captionEl.classList.add('is-visible');
       captionRevealed = true;
-      if (currentCaption) currentCaption.revealed = true;
+      if (currentCaption) {
+        currentCaption.revealed = true;
+        if (!currentCaption.haptic) {
+          currentCaption.haptic = true;
+          safeVibrate([10, 40, 10], 300);
+        }
+      }
       maybeRecordResonance();
     }, delay);
   }
@@ -1044,7 +1148,13 @@
     captionEl.setAttribute('aria-hidden', 'false');
     captionEl.classList.add('is-visible');
     captionRevealed = true;
-    if (currentCaption) currentCaption.revealed = true;
+    if (currentCaption) {
+      currentCaption.revealed = true;
+      if (!currentCaption.haptic) {
+        currentCaption.haptic = true;
+        safeVibrate([10, 40, 10], 300);
+      }
+    }
     maybeRecordResonance();
   }
 
@@ -1077,6 +1187,7 @@
       revealed: false,
       held: false,
       recorded: false,
+      haptic: false,
       token,
     };
 
@@ -1099,11 +1210,21 @@
 
     const key = captionKey(clip);
     const cached = captionCache.get(key);
+    const fallbackFirst = () => {
+      if (sceneOrdinal > 1) return;
+      const time = localTimeContext();
+      applyText(`В ${time.label} тень уже смотрит в ответ.`);
+    };
 
     if (cached) {
       applyText(cached);
     } else {
-      requestCaption(clip, category, behavior, stage).then(applyText).catch(() => {});
+      requestCaption(clip, category, behavior, stage)
+        .then((text) => {
+          if (text) applyText(text);
+          else fallbackFirst();
+        })
+        .catch(() => fallbackFirst());
     }
 
     prefetchNextCaptions(behavior);
@@ -1972,6 +2093,467 @@
     return false;
   }
 
+  function buildSessionPlan() {
+    const attempt = (allowSeen) => {
+      const picked = new Set();
+      const entries = [];
+
+      for (const spec of SESSION_STAGES) {
+        const stage = stageFor(spec.id);
+        const picks = pickStageClips(stage, spec.count, picked, allowSeen);
+        if (picks.length < spec.count) return null;
+        entries.push(...picks);
+      }
+
+      return entries;
+    };
+
+    const entries = attempt(false) || attempt(true);
+    if (!entries || entries.length !== SESSION_LENGTH) return false;
+
+    pathPlan = entries;
+    pathPicked = new Set(entries.map((entry) => entry.clip.id));
+    pathPos = -1;
+    pathStarted = false;
+    return true;
+  }
+
+  function updateSessionProgress() {
+    if (!progressFill) return;
+
+    const completed = sessionComplete
+      ? SESSION_LENGTH
+      : (pathStarted ? Math.min(SESSION_LENGTH, pathPos + 1) : 0);
+    progressFill.style.width = `${(completed / SESSION_LENGTH) * 100}%`;
+  }
+
+  function stageLabelFor(stageId) {
+    if (stageId === 1) return '01 // SHADOW';
+    if (stageId === 2) return '02 // TRICKSTER / ABYSS';
+    if (stageId === 3) return '03 // CALM';
+    return '04 // PATH';
+  }
+
+  function updateStageLabel(stageId) {
+    sessionStage = stageId || sessionStage;
+    if (stageLabelEl) stageLabelEl.textContent = stageLabelFor(sessionStage);
+  }
+
+  function beginSession() {
+    window.clearTimeout(sessionFinalTimer);
+    sessionFinalTimer = 0;
+    sessionEvents = [];
+    sessionStartedAt = now();
+    sessionComplete = false;
+    sessionStage = 1;
+    activeHapticStage = 0;
+    portraitText = '';
+    portraitRequestId += 1;
+
+    if (finaleEl) {
+      finaleEl.hidden = true;
+      finaleEl.classList.remove('is-visible');
+      finaleEl.setAttribute('aria-hidden', 'true');
+    }
+    stage.classList.remove('is-finalizing');
+    updateStageLabel(1);
+    updateSessionProgress();
+  }
+
+  function readSessionLock() {
+    try {
+      const value = Number(localStorage.getItem(SESSION_LOCK_KEY));
+      return Number.isFinite(value) ? value : 0;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  function writeSessionLock(value) {
+    sessionLockAt = value;
+    try {
+      if (value) localStorage.setItem(SESSION_LOCK_KEY, String(value));
+      else localStorage.removeItem(SESSION_LOCK_KEY);
+    } catch (_) {
+      /* localStorage может быть недоступен */
+    }
+  }
+
+  function formatSessionCountdown(ms) {
+    const total = Math.max(0, Math.ceil(ms / 1000));
+    const hours = Math.floor(total / 3600);
+    const minutes = Math.floor((total % 3600) / 60);
+    const seconds = total % 60;
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
+
+  function updateSessionLockUI() {
+    const remaining = sessionLockAt ? Math.max(0, sessionLockAt - Date.now()) : 0;
+    const text = formatSessionCountdown(remaining);
+
+    if (finaleCountdownEl) finaleCountdownEl.textContent = text;
+    if (finaleLockInlineEl) finaleLockInlineEl.textContent = text;
+
+    if (!gateOpen) {
+      if (remaining > 0) {
+        if (entryTrigger) {
+          entryTrigger.disabled = true;
+          entryTrigger.textContent = `Следующий слой через ${text}`;
+        }
+        if (entryLockNote) {
+          entryLockNote.hidden = false;
+          entryLockNote.textContent = `Следующий слой глубины откроется через ${text}`;
+        }
+      } else {
+        if (entryTrigger) {
+          entryTrigger.disabled = false;
+          entryTrigger.textContent = 'Войти в эксперимент';
+        }
+        if (entryLockNote) {
+          entryLockNote.hidden = true;
+          entryLockNote.textContent = '';
+        }
+      }
+    }
+
+    if (sessionLockAt && remaining <= 0) {
+      writeSessionLock(0);
+      window.clearInterval(lockTicker);
+      lockTicker = 0;
+    }
+  }
+
+  function startSessionLockTicker() {
+    window.clearInterval(lockTicker);
+    updateSessionLockUI();
+    lockTicker = window.setInterval(updateSessionLockUI, 1000);
+  }
+
+  function setSessionLock() {
+    writeSessionLock(Date.now() + SESSION_LOCK_MS);
+    startSessionLockTicker();
+  }
+
+  function clearSessionLock() {
+    writeSessionLock(0);
+    if (lockTicker) {
+      window.clearInterval(lockTicker);
+      lockTicker = 0;
+    }
+    updateSessionLockUI();
+  }
+
+  function isSessionLocked() {
+    return Boolean(sessionLockAt && sessionLockAt > Date.now());
+  }
+
+  function recordSessionEvent(record) {
+    if (sessionComplete) return;
+    if (sessionEvents.length > pathPos) return;
+
+    const category = activeCategory();
+    const clip = activeClip();
+    if (!category || !clip) return;
+
+    const viewedMs = record && Number.isFinite(record.viewedMs)
+      ? record.viewedMs
+      : Math.max(0, Math.round(now() - state.viewStart));
+    const heldMs = record && Number.isFinite(record.heldMs) ? record.heldMs : state.heldMs;
+    const swipeSpeed = record && Number.isFinite(record.swipeSpeed) ? record.swipeSpeed : 0;
+    const direction = record && record.swipeDirection ? record.swipeDirection : 'time';
+
+    sessionEvents.push({
+      frame: sessionEvents.length + 1,
+      stage: sessionStage,
+      archetype: stageFor(sessionStage).archetype,
+      category: category.tag,
+      title: clip.title || 'без названия',
+      viewedMs: Math.round(viewedMs),
+      heldMs: Math.round(heldMs),
+      longestHoldMs: Math.round(record && record.longestHoldMs || state.longestHoldMs),
+      swipeSpeed,
+      direction,
+      lingered: viewedMs >= CAPTION_LINGER_MS || heldMs > 0,
+      held: heldMs >= 800,
+      fast: viewedMs < FAST_VIEW_MS || swipeSpeed > 2.2,
+    });
+  }
+
+  function scheduleSessionFinale() {
+    window.clearTimeout(sessionFinalTimer);
+    sessionFinalTimer = window.setTimeout(() => {
+      sessionFinalTimer = 0;
+      recordSessionEvent(null);
+      finishSession();
+    }, SESSION_FINALE_DELAY_MS);
+  }
+
+  function finishSession() {
+    if (sessionComplete) return;
+
+    window.clearTimeout(sessionFinalTimer);
+    sessionFinalTimer = 0;
+    if (sessionEvents.length < SESSION_LENGTH) recordSessionEvent(null);
+    sessionComplete = true;
+    stopHoldPulse();
+    if (gesture) stopHold();
+
+    const category = activeCategory();
+    if (category) pauseCategory(category);
+    pauseSound();
+
+    stage.classList.add('is-finalizing');
+    if (stageLabelEl) stageLabelEl.textContent = '10 // SESSION COMPLETE';
+    setSessionLock();
+    updateSessionProgress();
+
+    if (finaleEl) {
+      finaleEl.hidden = false;
+      finaleEl.setAttribute('aria-hidden', 'false');
+      window.requestAnimationFrame(() => finaleEl.classList.add('is-visible'));
+    }
+
+    requestSessionPortrait();
+  }
+
+  function stageNameFor(stageId) {
+    return stageFor(stageId).name;
+  }
+
+  function fallbackSessionPortrait() {
+    const lingering = [...sessionEvents]
+      .sort((a, b) => (b.viewedMs + b.heldMs * 2) - (a.viewedMs + a.heldMs * 2))[0];
+    const fastest = [...sessionEvents]
+      .sort((a, b) => (a.viewedMs + a.heldMs) - (b.viewedMs + b.heldMs))[0];
+    const time = localTimeContext();
+
+    if (!lingering) {
+      return [
+        'Ты прошёл десять кадров, не позволив им назвать тебя.',
+        'Внешне это выглядело как контроль, но тень уже выбрала паузу.',
+        `Сейчас, в ${time.clock}, это всё ещё легче отрицать, чем признать.`,
+        'Но главный конфликт, который ты прячешь за контролем, система раскроет только в следующем слое...',
+      ];
+    }
+
+    const stageName = stageNameFor(lingering.stage);
+    const held = lingering.heldMs > 0
+      ? 'Именно там палец не отпускал экран дольше, чем требовал ритуал.'
+      : 'Именно там взгляд остался после того, как кадр уже сменился.';
+    const fastLine = fastest && fastest.frame !== lingering.frame
+      ? `Быстрее всего ты ушёл от «${fastest.title}» — и это тоже ответ.`
+      : 'Быстрые кадры ты не смотрел, а проверял, где ещё можно спрятаться.';
+
+    return [
+      `Ты дольше всего оставался в стадии «${stageName}», рядом с «${lingering.title}».`,
+      held,
+      fastLine,
+      'Но главный конфликт, который ты прячешь за контролем, система раскроет только в следующем слое...',
+    ];
+  }
+
+  function parsePortraitLines(raw) {
+    const cleaned = String(raw || '')
+      .replace(/^["«]+|["»]+$/g, '')
+      .replace(/^\s*[-–—]\s*/gm, '')
+      .trim();
+    if (!cleaned) return [];
+
+    let lines = cleaned.split(/\n+/).map((line) => line.trim()).filter(Boolean);
+    if (lines.length < 3) {
+      lines = cleaned.split(/(?<=[.!?…])\s+/).map((line) => line.trim()).filter(Boolean);
+    }
+
+    return lines.slice(0, 5);
+  }
+
+  function renderSessionPortrait(lines) {
+    if (!finalePortraitEl) return;
+    const safeLines = Array.isArray(lines) && lines.length
+      ? lines
+      : fallbackSessionPortrait();
+    portraitText = safeLines.join('\n');
+    finalePortraitEl.textContent = '';
+
+    safeLines.forEach((line, index) => {
+      const paragraph = document.createElement('p');
+      paragraph.textContent = line;
+      if (index === safeLines.length - 1) paragraph.classList.add('is-hook');
+      finalePortraitEl.appendChild(paragraph);
+    });
+  }
+
+  async function requestSessionPortrait() {
+    const requestId = ++portraitRequestId;
+    if (finalePortraitEl) {
+      finalePortraitEl.innerHTML = '<p class="finale-loading">СБОРКА СЛЕПКА...</p>';
+    }
+
+    const fallback = fallbackSessionPortrait();
+    if (location.protocol === 'file:') {
+      renderSessionPortrait(fallback);
+      return;
+    }
+
+    const time = localTimeContext();
+    const events = sessionEvents.map((event) => ({
+      frame: event.frame,
+      stage: event.stage,
+      archetype: event.archetype,
+      category: event.category,
+      title: event.title,
+      seconds: Math.round(event.viewedMs / 100) / 10,
+      heldSeconds: Math.round(event.heldMs / 100) / 10,
+      fast: event.fast,
+      lingered: event.lingered,
+      direction: event.direction,
+    }));
+
+    const system = [
+      'Ты — тонкий юнгианский аналитик и автор психологических портретов.',
+      'По десяти кадрам поведения человека создай точный, бьющий в точку портрет-разоблачение.',
+      'Пиши по-русски, на «ты», без диагнозов, морали, банальностей и утешений.',
+      'Сначала 3–4 короткие строки портрета. Последняя строка — отдельная заинтригующая фраза-крючок, оборванная на самом интересном месте многоточием.',
+      'Не используй заголовки, списки, кавычки и пояснения. Не повторяй дословно названия роликов.',
+      'Портрет должен связывать задержки, удержания и быстрые уходы с тенью, контролем и желанием вернуться.',
+    ].join('\n');
+
+    const user = `Локальное время: ${time.clock}, ${time.label}.\nСобытия сессии:\n${JSON.stringify(events, null, 2)}\n\nВерни только текст портрета: 3–4 строки и финальную строку-крючок.`;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), PORTRAIT_TIMEOUT_MS);
+
+    try {
+      const response = await fetch(DEEPSEEK_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: DEEPSEEK_MODEL,
+          messages: [
+            { role: 'system', content: system },
+            { role: 'user', content: user },
+          ],
+          temperature: 0.92,
+          max_tokens: 320,
+          top_p: 0.95,
+          stream: false,
+        }),
+        signal: controller.signal,
+        cache: 'no-store',
+      });
+
+      if (!response.ok) {
+        renderSessionPortrait(fallback);
+        return;
+      }
+
+      const payload = await response.json();
+      const content = payload
+        && payload.choices
+        && payload.choices[0]
+        && payload.choices[0].message
+        && payload.choices[0].message.content;
+      const lines = parsePortraitLines(content);
+      if (requestId !== portraitRequestId) return;
+      renderSessionPortrait(lines.length >= 3 ? lines : fallback);
+    } catch (_) {
+      if (requestId === portraitRequestId) renderSessionPortrait(fallback);
+    } finally {
+      window.clearTimeout(timer);
+    }
+  }
+
+  async function copySessionPortrait() {
+    const text = portraitText || (finalePortraitEl ? finalePortraitEl.innerText : '');
+    if (!text) return;
+
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch (_) {
+      const area = document.createElement('textarea');
+      area.value = text;
+      area.style.position = 'fixed';
+      area.style.opacity = '0';
+      document.body.appendChild(area);
+      area.select();
+      try { document.execCommand('copy'); } catch (_) { /* clipboard недоступен */ }
+      area.remove();
+    }
+
+    if (copySnapshotButton) copySnapshotButton.textContent = 'Слепок скопирован';
+  }
+
+  function scheduleReturnNotification(unlockAt) {
+    const body = 'Следующий слой глубины открыт. Вернись, чтобы узнать продолжение.';
+    const delay = Math.max(0, unlockAt - Date.now());
+
+    window.clearTimeout(returnNotificationTimer);
+    returnNotificationTimer = window.setTimeout(() => {
+      if (!('Notification' in window) || Notification.permission !== 'granted') return;
+      try {
+        new Notification('Digital Sanctuary', {
+          body,
+          icon: './icon-192.png',
+          tag: 'sanctuary-return',
+        });
+      } catch (_) {
+        /* системное уведомление может быть недоступно */
+      }
+    }, delay);
+
+    if (!('serviceWorker' in navigator)) return;
+    navigator.serviceWorker.ready.then((registration) => {
+      const worker = registration.active || navigator.serviceWorker.controller;
+      if (worker) {
+        worker.postMessage({
+          type: 'schedule-return',
+          deliverAt: unlockAt,
+          title: 'Digital Sanctuary',
+          body,
+        });
+      }
+    }).catch(() => {});
+  }
+
+  async function enableReturnNotification() {
+    if (!('Notification' in window)) {
+      if (notifyReturnButton) notifyReturnButton.textContent = 'Уведомления недоступны';
+      return;
+    }
+
+    let permission = Notification.permission;
+    if (permission === 'default') {
+      try {
+        permission = await Notification.requestPermission();
+      } catch (_) {
+        permission = 'denied';
+      }
+    }
+
+    if (permission !== 'granted') {
+      if (notifyReturnButton) notifyReturnButton.textContent = 'Уведомления отключены';
+      return;
+    }
+
+    const unlockAt = sessionLockAt || (Date.now() + SESSION_LOCK_MS);
+    scheduleReturnNotification(unlockAt);
+    if (notifyReturnButton) {
+      notifyReturnButton.textContent = 'Уведомление поставлено';
+      notifyReturnButton.disabled = true;
+    }
+  }
+
+  function resetSessionLockByCheat() {
+    clearSessionLock();
+    if (finaleLockLabel) finaleLockLabel.textContent = 'СЛЕДУЮЩИЙ СЛОЙ // ДОСТУП ОТКРЫТ';
+    if (notifyReturnButton) {
+      notifyReturnButton.disabled = false;
+      notifyReturnButton.textContent = 'Уведомить через 2 часа';
+    }
+  }
+
   function extendPathPlan() {
     if (appendPathCycle()) return true;
     if (appendPathCycle(true)) return true;
@@ -1987,6 +2569,7 @@
   function startPathFirst() {
     if (pathStarted || !pathPlan.length) return false;
 
+    beginSession();
     if (!sceneOrdinal) sceneOrdinal = 1;
     const entry = pathPlan[0];
     const category = entry.category;
@@ -2009,9 +2592,12 @@
     pathPos = 0;
     pathStarted = true;
     pathStartPending = false;
+    updateStageLabel(entry.stage);
+    activeHapticStage = entry.stage;
+    safeVibrate(45, 300);
+    updateSessionProgress();
     setSceneElement(activeClip());
-    activateCaption(category, activeClip(), behaviorContext(), false, entry.stage);
-    vibrateTap();
+    activateCaption(category, activeClip(), behaviorContext(), true, entry.stage);
 
     const track = nextTrackFor(category);
     switchSoundtrack(track, SLOW_FADE_MS);
@@ -2539,6 +3125,7 @@
     stage.style.setProperty('--fade-duration', `${duration}ms`);
 
     stage.classList.remove('is-held');
+    stopHoldPulse();
     setActivePlaybackRate(1);
     setSoundDepth(false);
     pauseCategory(categories[fromIndex]);
@@ -2564,6 +3151,13 @@
       ? sceneContext.stage
       : (STAGE_BY_CATEGORY[category.tag] || 1);
 
+    if (activeHapticStage !== sceneStage) {
+      activeHapticStage = sceneStage;
+      safeVibrate(45, 300);
+    }
+    updateStageLabel(sceneStage);
+    updateSessionProgress();
+
     if (forcedClipId) {
       const forcedIndex = category.clips.findIndex((clip) => clip.id === forcedClipId);
       if (forcedIndex >= 0) category.freshIndex = forcedIndex;
@@ -2574,7 +3168,6 @@
     playCategory(category);
     setSceneElement(activeClip());
     activateCaption(category, activeClip(), behavior, allowed, sceneStage);
-    vibrateTap();
     const track = nextTrackFor(category);
     switchSoundtrack(track, duration);
     preloadNextTrack(category);
@@ -2623,7 +3216,7 @@
   /* ------------------------------------------------------------- переходы */
 
   function go(direction, speed) {
-    if (!gateOpen) return;
+    if (!gateOpen || sessionComplete) return;
     lastSwipeAt = now();
     const record = reportSwipe(direction, speed);
     const behavior = behaviorContext(record);
@@ -2644,21 +3237,26 @@
           return;
         }
       } catch (error) {
+        /* fall through to a playable scene */
       }
 
       forceNextAvailableScene(direction);
       return;
     }
 
-    if (pathPos + 1 >= pathPlan.length) {
-      if (!extendPathPlan()) {
-        forceNextAvailableScene(direction);
-        return;
-      }
+    if (pathPos + 1 >= pathPlan.length || pathPos + 1 >= SESSION_LENGTH) {
+      recordSessionEvent(record);
+      finishSession();
+      return;
     }
 
+    recordSessionEvent(record);
+
     const entry = pathPlan[pathPos + 1];
-    if (!entry) return;
+    if (!entry) {
+      finishSession();
+      return;
+    }
 
     pathPos += 1;
     sceneContext.stage = entry.stage;
@@ -2670,6 +3268,10 @@
       entry.clip.id,
       sceneContext
     );
+
+    if (pathPos === SESSION_LENGTH - 1) {
+      scheduleSessionFinale();
+    }
   }
 
   /* ---------------------------------------------------------- удержание */
@@ -2691,7 +3293,7 @@
     stage.classList.add('is-held');
     setActivePlaybackRate(SLOW_RATE);
     setSoundDepth(true);
-    vibrateTap();
+    startHoldPulse();
     maybeRecordResonance();
   }
 
@@ -2705,6 +3307,7 @@
     if (duration >= 600) rememberAnchor('hold');
     stage.classList.remove('is-held');
     setSoundDepth(false);
+    stopHoldPulse();
   }
 
   function abortGesture() {
@@ -2726,6 +3329,7 @@
       gesture = null;
     }
 
+    stopHoldPulse();
     setActivePlaybackRate(1);
     setBreath(0);
     stopOptics();
@@ -2751,6 +3355,7 @@
 
     const g = gesture;
     gesture = null;
+    stopHoldPulse();
 
     setActivePlaybackRate(1);
     setBreath(0);
@@ -2825,6 +3430,7 @@
       holding: false,
       holdStart: 0,
       holdCounted: false,
+      thresholdFelt: false,
       peakSpeed: 0,
     };
 
@@ -2874,6 +3480,11 @@
 
     if (gesture.holding && distance > 30) {
       stopHold();
+    }
+
+    if (!gesture.thresholdFelt && distance >= SWIPE_MIN_PX) {
+      gesture.thresholdFelt = true;
+      safeVibrate(10, SWIPE_HAPTIC_COOLDOWN_MS);
     }
 
     if (stepY > 0) {
@@ -3013,6 +3624,10 @@
 
   function unlockExperience() {
     if (gateOpen) return;
+    if (isSessionLocked()) {
+      updateSessionLockUI();
+      return;
+    }
     gateOpen = true;
     resetViewClock();
     markInteraction();
@@ -3046,6 +3661,31 @@
     gateOpen = true;
   }
 
+  sessionLockAt = readSessionLock();
+  startSessionLockTicker();
+
+  if (copySnapshotButton) {
+    copySnapshotButton.addEventListener('click', copySessionPortrait);
+  }
+
+  if (notifyReturnButton) {
+    notifyReturnButton.addEventListener('click', enableReturnNotification);
+  }
+
+  const handleLockCheatTap = () => {
+    const time = Date.now();
+    if (time - lockTapTimer > 900) lockTapCount = 0;
+    lockTapTimer = time;
+    lockTapCount += 1;
+    if (lockTapCount >= 3) {
+      lockTapCount = 0;
+      resetSessionLockByCheat();
+    }
+  };
+
+  if (finaleLockLabel) finaleLockLabel.addEventListener('click', handleLockCheatTap);
+  if (finaleCountdownEl) finaleCountdownEl.addEventListener('click', handleLockCheatTap);
+
   const startupTasks = [loadVideoCatalog()];
 
   Promise.allSettled(startupTasks).then(() => {
@@ -3059,17 +3699,17 @@
       });
 
       try {
-        extendPathPlan();
+        if (!buildSessionPlan()) appendFallbackPath(true);
       } catch (error) {
-        console.error('[sanctuary] path build failed:', error);
+        console.error('[sanctuary] session plan failed:', error);
       }
 
       if (!pathPlan.length) {
         ensureFallbackCategories();
         try {
-          extendPathPlan();
+          buildSessionPlan();
         } catch (error) {
-          console.error('[sanctuary] fallback path failed:', error);
+          console.error('[sanctuary] fallback session failed:', error);
         }
       }
 

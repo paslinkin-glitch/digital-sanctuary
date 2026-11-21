@@ -14,7 +14,7 @@ window.VIDEOS_DATA = [
     "archetype": "Тень",
     "source": "coverr",
     "title": "Nights in the city",
-    "url": "https://cdn.coverr.co/videos/coverr-nights-in-the-city-9359/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-nights-in-the-city-9359/1080p.mp4"
   },
   {
     "id": "coverr-coverr-silhouette-of-a-girl-at-dusk-9855",
@@ -22,7 +22,7 @@ window.VIDEOS_DATA = [
     "archetype": "Тень",
     "source": "coverr",
     "title": "Silhouette of a girl at dusk",
-    "url": "https://cdn.coverr.co/videos/coverr-silhouette-of-a-girl-at-dusk-9855/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-silhouette-of-a-girl-at-dusk-9855/1080p.mp4"
   },
   {
     "id": "coverr-coverr-premium-silhouette-of-a-man-as-he-plays-the-ukulele-3932",
@@ -38,7 +38,7 @@ window.VIDEOS_DATA = [
     "archetype": "Тень",
     "source": "coverr",
     "title": "Rain in the city",
-    "url": "https://cdn.coverr.co/videos/coverr-rain-in-the-city-430/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-rain-in-the-city-430/1080p.mp4"
   },
   {
     "id": "coverr-coverr-asian-man-stands-in-the-street-at-night-5550",
@@ -46,7 +46,7 @@ window.VIDEOS_DATA = [
     "archetype": "Тень",
     "source": "coverr",
     "title": "Asian man stands in the street at night",
-    "url": "https://cdn.coverr.co/videos/coverr-asian-man-stands-in-the-street-at-night-5550/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-asian-man-stands-in-the-street-at-night-5550/1080p.mp4"
   },
   {
     "id": "coverr-user-ai-generation-6vmHVDQ8F0",
@@ -54,7 +54,7 @@ window.VIDEOS_DATA = [
     "archetype": "Тень",
     "source": "coverr",
     "title": "A rainy city street at night, reflections on the wet asphalt, colorful neon ligh",
-    "url": "https://cdn.coverr.co/videos/user-ai-generation-6vmHVDQ8F0/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/user-ai-generation-6vmHVDQ8F0/1080p.mp4"
   },
   {
     "id": "coverr-user-ai-generation-EUlJuQpDXVVj",
@@ -62,7 +62,7 @@ window.VIDEOS_DATA = [
     "archetype": "Тень",
     "source": "coverr",
     "title": "Solitary Figure on Rainy Neon-Lit City Street, Late Night",
-    "url": "https://cdn.coverr.co/videos/user-ai-generation-EUlJuQpDXVVj/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/user-ai-generation-EUlJuQpDXVVj/1080p.mp4"
   },
   {
     "id": "coverr-coverr-temp-idt4gen-3-alpha-3705455674-yellow-smoke-whirls-mp4-9700",
@@ -70,7 +70,7 @@ window.VIDEOS_DATA = [
     "archetype": "Тень",
     "source": "coverr",
     "title": "Woman Emerges from Mystical Smoke Swirling in Darkness",
-    "url": "https://cdn.coverr.co/videos/coverr-temp-idt4gen-3-alpha-3705455674-yellow-smoke-whirls-mp4-9700/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-temp-idt4gen-3-alpha-3705455674-yellow-smoke-whirls-mp4-9700/1080p.mp4"
   },
   {
     "id": "coverr-coverr-a-shadow-of-a-man-on-the-pavement-3707",
@@ -78,7 +78,7 @@ window.VIDEOS_DATA = [
     "archetype": "Тень",
     "source": "coverr",
     "title": "A shadow of a man on the pavement",
-    "url": "https://cdn.coverr.co/videos/coverr-a-shadow-of-a-man-on-the-pavement-3707/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-a-shadow-of-a-man-on-the-pavement-3707/1080p.mp4"
   },
   {
     "id": "coverr-coverr-silhouette-near-a-waterfall-3774",
@@ -86,7 +86,7 @@ window.VIDEOS_DATA = [
     "archetype": "Тень",
     "source": "coverr",
     "title": "Silhouette near a waterfall",
-    "url": "https://cdn.coverr.co/videos/coverr-silhouette-near-a-waterfall-3774/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-silhouette-near-a-waterfall-3774/1080p.mp4"
   },
   {
     "id": "coverr-coverr-raindrops-on-the-window-7102",
@@ -94,7 +94,7 @@ window.VIDEOS_DATA = [
     "archetype": "Тень",
     "source": "coverr",
     "title": "Raindrops on the window",
-    "url": "https://cdn.coverr.co/videos/coverr-raindrops-on-the-window-7102/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-raindrops-on-the-window-7102/1080p.mp4"
   },
   {
     "id": "coverr-coverr-premium-woman-running-in-the-dark-forest-4889",
@@ -102,7 +102,7 @@ window.VIDEOS_DATA = [
     "archetype": "Тень",
     "source": "coverr",
     "title": "Woman running in the dark forest",
-    "url": "https://cdn.coverr.co/videos/coverr-premium-woman-running-in-the-dark-forest-4889/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-premium-woman-running-in-the-dark-forest-4889/1080p.mp4"
   },
   {
     "id": "coverr-coverr-dark-forest-1109",
@@ -118,7 +118,7 @@ window.VIDEOS_DATA = [
     "archetype": "Тень",
     "source": "coverr",
     "title": "Using a lighter in the dark",
-    "url": "https://cdn.coverr.co/videos/coverr-using-a-lighter-in-the-dark-7305/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-using-a-lighter-in-the-dark-7305/1080p.mp4"
   },
   {
     "id": "coverr-coverr-walking-up-a-misty-road-5750",
@@ -134,7 +134,7 @@ window.VIDEOS_DATA = [
     "archetype": "Тень",
     "source": "coverr",
     "title": "The silhouette of a man who is standing in a tunnel",
-    "url": "https://cdn.coverr.co/videos/coverr-the-silhouette-of-a-man-who-is-standing-in-a-tunnel-6498/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-the-silhouette-of-a-man-who-is-standing-in-a-tunnel-6498/1080p.mp4"
   },
   {
     "id": "coverr-coverr-rain-falling-on-windshield-6625",
@@ -142,7 +142,7 @@ window.VIDEOS_DATA = [
     "archetype": "Тень",
     "source": "coverr",
     "title": "Rain falling on windshield",
-    "url": "https://cdn.coverr.co/videos/coverr-rain-falling-on-windshield-6625/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-rain-falling-on-windshield-6625/1080p.mp4"
   },
   {
     "id": "coverr-coverr-man-on-an-empty-island-5689",
@@ -150,7 +150,7 @@ window.VIDEOS_DATA = [
     "archetype": "Тень",
     "source": "coverr",
     "title": "Man on an empty island",
-    "url": "https://cdn.coverr.co/videos/coverr-man-on-an-empty-island-5689/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-man-on-an-empty-island-5689/1080p.mp4"
   },
   {
     "id": "coverr-user-ai-generation-GNEfA9ndkYZV",
@@ -158,7 +158,7 @@ window.VIDEOS_DATA = [
     "archetype": "Тень",
     "source": "coverr",
     "title": "Mysterious Figure in Rainy Urban Night",
-    "url": "https://cdn.coverr.co/videos/user-ai-generation-GNEfA9ndkYZV/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/user-ai-generation-GNEfA9ndkYZV/1080p.mp4"
   },
   {
     "id": "coverr-coverr-waves-in-the-ocean-9488",
@@ -166,7 +166,7 @@ window.VIDEOS_DATA = [
     "archetype": "Трикстер и Бездна",
     "source": "coverr",
     "title": "Waves in the ocean",
-    "url": "https://cdn.coverr.co/videos/coverr-waves-in-the-ocean-9488/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-waves-in-the-ocean-9488/1080p.mp4"
   },
   {
     "id": "coverr-user-ai-generation-V7T2O51WMxIq",
@@ -174,7 +174,7 @@ window.VIDEOS_DATA = [
     "archetype": "Трикстер и Бездна",
     "source": "coverr",
     "title": "Graceful orca swimming in deep blue ocean — side profile",
-    "url": "https://cdn.coverr.co/videos/user-ai-generation-V7T2O51WMxIq/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/user-ai-generation-V7T2O51WMxIq/1080p.mp4"
   },
   {
     "id": "coverr-coverr-blurry-lights-at-night-6959",
@@ -182,7 +182,7 @@ window.VIDEOS_DATA = [
     "archetype": "Трикстер и Бездна",
     "source": "coverr",
     "title": "Blurry lights at night",
-    "url": "https://cdn.coverr.co/videos/coverr-blurry-lights-at-night-6959/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-blurry-lights-at-night-6959/1080p.mp4"
   },
   {
     "id": "coverr-coverr-sparks-from-a-bonfire-3727",
@@ -190,7 +190,7 @@ window.VIDEOS_DATA = [
     "archetype": "Трикстер и Бездна",
     "source": "coverr",
     "title": "Sparks from a bonfire",
-    "url": "https://cdn.coverr.co/videos/coverr-sparks-from-a-bonfire-3727/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-sparks-from-a-bonfire-3727/1080p.mp4"
   },
   {
     "id": "coverr-coverr-bonfire-sparks-9689",
@@ -198,7 +198,7 @@ window.VIDEOS_DATA = [
     "archetype": "Трикстер и Бездна",
     "source": "coverr",
     "title": "Bonfire sparks",
-    "url": "https://cdn.coverr.co/videos/coverr-bonfire-sparks-9689/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-bonfire-sparks-9689/1080p.mp4"
   },
   {
     "id": "coverr-user-ai-generation-UYPbgQTIxKiA",
@@ -206,7 +206,7 @@ window.VIDEOS_DATA = [
     "archetype": "Трикстер и Бездна",
     "source": "coverr",
     "title": "Dramatic Mountain Peak Under Dark Storm Clouds — Epic Sky",
-    "url": "https://cdn.coverr.co/videos/user-ai-generation-UYPbgQTIxKiA/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/user-ai-generation-UYPbgQTIxKiA/1080p.mp4"
   },
   {
     "id": "coverr-user-ai-generation-A2kXSoYHDML0",
@@ -214,7 +214,7 @@ window.VIDEOS_DATA = [
     "archetype": "Трикстер и Бездна",
     "source": "coverr",
     "title": "Majestic Orca Spyhops Through Ocean Spray at Dawn Light",
-    "url": "https://cdn.coverr.co/videos/user-ai-generation-A2kXSoYHDML0/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/user-ai-generation-A2kXSoYHDML0/1080p.mp4"
   },
   {
     "id": "coverr-coverr-large-ocean-wave-5169",
@@ -222,7 +222,7 @@ window.VIDEOS_DATA = [
     "archetype": "Трикстер и Бездна",
     "source": "coverr",
     "title": "Large ocean wave",
-    "url": "https://cdn.coverr.co/videos/coverr-large-ocean-wave-5169/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-large-ocean-wave-5169/1080p.mp4"
   },
   {
     "id": "coverr-user-ai-generation-gTC7iYAR37SD",
@@ -230,15 +230,7 @@ window.VIDEOS_DATA = [
     "archetype": "Трикстер и Бездна",
     "source": "coverr",
     "title": "Caged Boat Hull Slowly Descending Through Deep Blue Water",
-    "url": "https://cdn.coverr.co/videos/user-ai-generation-gTC7iYAR37SD/720p.mp4"
-  },
-  {
-    "id": "coverr-coverr-blurred-candles-in-the-dark-5231",
-    "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
-    "source": "coverr",
-    "title": "Blurred candles in the dark",
-    "url": "https://cdn.coverr.co/videos/coverr-blurred-candles-in-the-dark-5231/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/user-ai-generation-gTC7iYAR37SD/1080p.mp4"
   },
   {
     "id": "coverr-coverr-waves-in-the-ocean-9927",
@@ -246,7 +238,7 @@ window.VIDEOS_DATA = [
     "archetype": "Трикстер и Бездна",
     "source": "coverr",
     "title": "Waves in the ocean",
-    "url": "https://cdn.coverr.co/videos/coverr-waves-in-the-ocean-9927/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-waves-in-the-ocean-9927/1080p.mp4"
   },
   {
     "id": "coverr-coverr-the-incoming-waves-of-the-ocean-gently-splash-onto-the-shore-3079",
@@ -262,7 +254,7 @@ window.VIDEOS_DATA = [
     "archetype": "Трикстер и Бездна",
     "source": "coverr",
     "title": "Ocean waves",
-    "url": "https://cdn.coverr.co/videos/coverr-ocean-waves-3983/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-ocean-waves-3983/1080p.mp4"
   },
   {
     "id": "coverr-user-ai-generation-SDeHIq5cWD2F",
@@ -270,7 +262,7 @@ window.VIDEOS_DATA = [
     "archetype": "Трикстер и Бездна",
     "source": "coverr",
     "title": "Symmetrical Bow View: Boat Piercing Deep Blue Water",
-    "url": "https://cdn.coverr.co/videos/user-ai-generation-SDeHIq5cWD2F/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/user-ai-generation-SDeHIq5cWD2F/1080p.mp4"
   },
   {
     "id": "coverr-user-ai-generation-U8HoUwn85JkG",
@@ -278,7 +270,7 @@ window.VIDEOS_DATA = [
     "archetype": "Трикстер и Бездна",
     "source": "coverr",
     "title": "Mystical Woman Underwater with Flowing Red Hair",
-    "url": "https://cdn.coverr.co/videos/user-ai-generation-U8HoUwn85JkG/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/user-ai-generation-U8HoUwn85JkG/1080p.mp4"
   },
   {
     "id": "coverr-coverr-calm-waves-in-an-ocean-gulf-4513",
@@ -286,7 +278,7 @@ window.VIDEOS_DATA = [
     "archetype": "Трикстер и Бездна",
     "source": "coverr",
     "title": "Calm waves in an ocean gulf",
-    "url": "https://cdn.coverr.co/videos/coverr-calm-waves-in-an-ocean-gulf-4513/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-calm-waves-in-an-ocean-gulf-4513/1080p.mp4"
   },
   {
     "id": "coverr-coverr-foamy-ocean-waves-at-night-2122",
@@ -318,7 +310,7 @@ window.VIDEOS_DATA = [
     "archetype": "Трикстер и Бездна",
     "source": "coverr",
     "title": "Underwater Low-Angle: Sailboat Hull, Keel and Rudder",
-    "url": "https://cdn.coverr.co/videos/user-ai-generation-K3isE7RVVj7K/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/user-ai-generation-K3isE7RVVj7K/1080p.mp4"
   },
   {
     "id": "coverr-coverr-covering-the-candle-light-9516",
@@ -326,7 +318,7 @@ window.VIDEOS_DATA = [
     "archetype": "Покой / Анима",
     "source": "coverr",
     "title": "Covering the candle light",
-    "url": "https://cdn.coverr.co/videos/coverr-covering-the-candle-light-9516/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-covering-the-candle-light-9516/1080p.mp4"
   },
   {
     "id": "coverr-coverr-a-religious-woman-lights-a-candle-7632",
@@ -334,15 +326,7 @@ window.VIDEOS_DATA = [
     "archetype": "Покой / Анима",
     "source": "coverr",
     "title": "A religious woman lights a candle",
-    "url": "https://cdn.coverr.co/videos/coverr-a-religious-woman-lights-a-candle-7632/720p.mp4"
-  },
-  {
-    "id": "coverr-coverr-temp-49981-459802291-mp4-9098",
-    "stage": "calm",
-    "archetype": "Покой / Анима",
-    "source": "coverr",
-    "title": "Sunlight Filtering Through Misty Trees",
-    "url": "https://cdn.coverr.co/videos/coverr-temp-49981-459802291-mp4-9098/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-a-religious-woman-lights-a-candle-7632/1080p.mp4"
   },
   {
     "id": "coverr-coverr-man-in-a-dark-foggy-forest-7970",
@@ -350,7 +334,7 @@ window.VIDEOS_DATA = [
     "archetype": "Покой / Анима",
     "source": "coverr",
     "title": "Man in a dark, foggy forest",
-    "url": "https://cdn.coverr.co/videos/coverr-man-in-a-dark-foggy-forest-7970/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-man-in-a-dark-foggy-forest-7970/1080p.mp4"
   },
   {
     "id": "coverr-coverr-girl-lighting-a-candle-with-a-match-920",
@@ -358,15 +342,7 @@ window.VIDEOS_DATA = [
     "archetype": "Покой / Анима",
     "source": "coverr",
     "title": "Girl lighting a candle with a match",
-    "url": "https://cdn.coverr.co/videos/coverr-girl-lighting-a-candle-with-a-match-920/720p.mp4"
-  },
-  {
-    "id": "wikimedia-b096c7059770",
-    "stage": "calm",
-    "archetype": "Покой / Анима",
-    "source": "wikimedia",
-    "title": "Blue candle burning in darkness",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/4/4f/Blue_candle_burning.webm"
+    "url": "https://cdn.coverr.co/videos/coverr-girl-lighting-a-candle-with-a-match-920/1080p.mp4"
   },
   {
     "id": "coverr-coverr-foggy-forest-8688",
@@ -374,7 +350,7 @@ window.VIDEOS_DATA = [
     "archetype": "Покой / Анима",
     "source": "coverr",
     "title": "Foggy forest",
-    "url": "https://cdn.coverr.co/videos/coverr-foggy-forest-8688/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-foggy-forest-8688/1080p.mp4"
   },
   {
     "id": "coverr-user-ai-generation-6D0sFxozfPVm",
@@ -382,7 +358,7 @@ window.VIDEOS_DATA = [
     "archetype": "Покой / Анима",
     "source": "coverr",
     "title": "Enchanting Forest at Dawn with Sunlight and Mist",
-    "url": "https://cdn.coverr.co/videos/user-ai-generation-6D0sFxozfPVm/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/user-ai-generation-6D0sFxozfPVm/1080p.mp4"
   },
   {
     "id": "coverr-coverr-rain-falling-in-the-forest-9275",
@@ -390,7 +366,7 @@ window.VIDEOS_DATA = [
     "archetype": "Покой / Анима",
     "source": "coverr",
     "title": "Rain falling in the forest",
-    "url": "https://cdn.coverr.co/videos/coverr-rain-falling-in-the-forest-9275/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-rain-falling-in-the-forest-9275/1080p.mp4"
   },
   {
     "id": "coverr-coverr-trees-in-the-misty-forest-442",
@@ -398,7 +374,7 @@ window.VIDEOS_DATA = [
     "archetype": "Покой / Анима",
     "source": "coverr",
     "title": "Trees in the misty forest",
-    "url": "https://cdn.coverr.co/videos/coverr-trees-in-the-misty-forest-442/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-trees-in-the-misty-forest-442/1080p.mp4"
   },
   {
     "id": "coverr-coverr-woman-lights-a-candle-205",
@@ -414,7 +390,7 @@ window.VIDEOS_DATA = [
     "archetype": "Покой / Анима",
     "source": "coverr",
     "title": "Golden Sunrise Through Autumn Beech Forest — Soft Rays",
-    "url": "https://cdn.coverr.co/videos/user-ai-generation-Wayth1C2rUCm/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/user-ai-generation-Wayth1C2rUCm/1080p.mp4"
   },
   {
     "id": "coverr-coverr-lighting-a-candle-7332",
@@ -430,7 +406,7 @@ window.VIDEOS_DATA = [
     "archetype": "Покой / Анима",
     "source": "coverr",
     "title": "Above a misty forest",
-    "url": "https://cdn.coverr.co/videos/coverr-above-a-misty-forest-518/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-above-a-misty-forest-518/1080p.mp4"
   },
   {
     "id": "coverr-coverr-crystal-clear-sea-water-894",
@@ -438,7 +414,7 @@ window.VIDEOS_DATA = [
     "archetype": "Покой / Анима",
     "source": "coverr",
     "title": "Crystal clear sea water",
-    "url": "https://cdn.coverr.co/videos/coverr-crystal-clear-sea-water-894/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-crystal-clear-sea-water-894/1080p.mp4"
   },
   {
     "id": "coverr-coverr-a-woman-lights-a-candle-5282",
@@ -446,7 +422,7 @@ window.VIDEOS_DATA = [
     "archetype": "Покой / Анима",
     "source": "coverr",
     "title": "A Woman Lights a Candle",
-    "url": "https://cdn.coverr.co/videos/coverr-a-woman-lights-a-candle-5282/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-a-woman-lights-a-candle-5282/1080p.mp4"
   },
   {
     "id": "coverr-coverr-man-lighting-a-candle-6436",
@@ -454,7 +430,7 @@ window.VIDEOS_DATA = [
     "archetype": "Покой / Анима",
     "source": "coverr",
     "title": "Man lighting a candle",
-    "url": "https://cdn.coverr.co/videos/coverr-man-lighting-a-candle-6436/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-man-lighting-a-candle-6436/1080p.mp4"
   },
   {
     "id": "coverr-coverr-forest-covered-by-a-thick-fog-3180",
@@ -462,7 +438,7 @@ window.VIDEOS_DATA = [
     "archetype": "Покой / Анима",
     "source": "coverr",
     "title": "Forest covered by a thick fog",
-    "url": "https://cdn.coverr.co/videos/coverr-forest-covered-by-a-thick-fog-3180/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-forest-covered-by-a-thick-fog-3180/1080p.mp4"
   },
   {
     "id": "coverr-coverr-lighting-a-candle-4842",
@@ -478,7 +454,7 @@ window.VIDEOS_DATA = [
     "archetype": "Покой / Анима",
     "source": "coverr",
     "title": "Golden Sunrise Over Mountain Lake with Calm Reflective Water",
-    "url": "https://cdn.coverr.co/videos/user-ai-generation-7jdxdOWgpVvF/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/user-ai-generation-7jdxdOWgpVvF/1080p.mp4"
   },
   {
     "id": "coverr-coverr-empty-highway-3230",
@@ -494,7 +470,7 @@ window.VIDEOS_DATA = [
     "archetype": "Путь / Самость",
     "source": "coverr",
     "title": "Empty path near the forest",
-    "url": "https://cdn.coverr.co/videos/coverr-empty-path-near-the-forest-1425/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-empty-path-near-the-forest-1425/1080p.mp4"
   },
   {
     "id": "coverr-coverr-blurred-lights-3400",
@@ -502,7 +478,7 @@ window.VIDEOS_DATA = [
     "archetype": "Путь / Самость",
     "source": "coverr",
     "title": "Blurred lights",
-    "url": "https://cdn.coverr.co/videos/coverr-blurred-lights-3400/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-blurred-lights-3400/1080p.mp4"
   },
   {
     "id": "coverr-coverr-sunset-from-a-train-3777",
@@ -510,7 +486,7 @@ window.VIDEOS_DATA = [
     "archetype": "Путь / Самость",
     "source": "coverr",
     "title": "Sunset from a train",
-    "url": "https://cdn.coverr.co/videos/coverr-sunset-from-a-train-3777/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-sunset-from-a-train-3777/1080p.mp4"
   },
   {
     "id": "coverr-coverr-empty-spanish-street-3422",
@@ -518,7 +494,7 @@ window.VIDEOS_DATA = [
     "archetype": "Путь / Самость",
     "source": "coverr",
     "title": "Empty Spanish Street",
-    "url": "https://cdn.coverr.co/videos/coverr-empty-spanish-street-3422/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-empty-spanish-street-3422/1080p.mp4"
   },
   {
     "id": "coverr-coverr-bird-flying-over-the-lake-7108",
@@ -534,7 +510,7 @@ window.VIDEOS_DATA = [
     "archetype": "Путь / Самость",
     "source": "coverr",
     "title": "Serene Nature with Flying Birds and Waterfalls",
-    "url": "https://cdn.coverr.co/videos/user-ai-generation-2H06QcYweg/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/user-ai-generation-2H06QcYweg/1080p.mp4"
   },
   {
     "id": "coverr-coverr-bird-flying-onto-branches-in-the-lake-5009",
@@ -566,7 +542,7 @@ window.VIDEOS_DATA = [
     "archetype": "Путь / Самость",
     "source": "coverr",
     "title": "Birds in the sky",
-    "url": "https://cdn.coverr.co/videos/coverr-birds-in-the-sky-219/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-birds-in-the-sky-219/1080p.mp4"
   },
   {
     "id": "coverr-coverr-train-going-through-a-tunnel-2526",
@@ -582,7 +558,7 @@ window.VIDEOS_DATA = [
     "archetype": "Путь / Самость",
     "source": "coverr",
     "title": "Flock of birds in the sky",
-    "url": "https://cdn.coverr.co/videos/coverr-flock-of-birds-in-the-sky-5742/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-flock-of-birds-in-the-sky-5742/1080p.mp4"
   },
   {
     "id": "coverr-coverr-bokeh-lights-at-night-9375",
@@ -590,7 +566,7 @@ window.VIDEOS_DATA = [
     "archetype": "Путь / Самость",
     "source": "coverr",
     "title": "Bokeh lights at night",
-    "url": "https://cdn.coverr.co/videos/coverr-bokeh-lights-at-night-9375/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-bokeh-lights-at-night-9375/1080p.mp4"
   },
   {
     "id": "coverr-coverr-a-bird-sitting-on-a-streetlight-8677",
@@ -598,7 +574,7 @@ window.VIDEOS_DATA = [
     "archetype": "Путь / Самость",
     "source": "coverr",
     "title": "A bird sitting on a streetlight",
-    "url": "https://cdn.coverr.co/videos/coverr-a-bird-sitting-on-a-streetlight-8677/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-a-bird-sitting-on-a-streetlight-8677/1080p.mp4"
   },
   {
     "id": "coverr-coverr-misty-mountain-road-journey",
@@ -622,7 +598,7 @@ window.VIDEOS_DATA = [
     "archetype": "Путь / Самость",
     "source": "coverr",
     "title": "Black bird in California",
-    "url": "https://cdn.coverr.co/videos/coverr-black-bird-in-california-6440/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-black-bird-in-california-6440/1080p.mp4"
   },
   {
     "id": "coverr-coverr-bird-walking-on-the-beach-1715",
@@ -630,7 +606,7 @@ window.VIDEOS_DATA = [
     "archetype": "Путь / Самость",
     "source": "coverr",
     "title": "Bird walking on the beach",
-    "url": "https://cdn.coverr.co/videos/coverr-bird-walking-on-the-beach-1715/720p.mp4"
+    "url": "https://cdn.coverr.co/videos/coverr-bird-walking-on-the-beach-1715/1080p.mp4"
   },
   {
     "id": "coverr-coverr-bird-flying-in-the-sky-6957",
