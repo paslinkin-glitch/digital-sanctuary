@@ -74,7 +74,7 @@ body {
   left: 0;
   right: 0;
   z-index: 14;
-  height: 1.5px;
+  height: 1px;
   background: rgba(255, 255, 255, 0.07);
 }
 
@@ -82,25 +82,9 @@ body {
   display: block;
   width: 0;
   height: 100%;
-  background: linear-gradient(90deg, rgba(244, 240, 234, 0.22), rgba(244, 240, 234, 0.85));
-  box-shadow: 0 0 14px rgba(244, 240, 234, 0.18);
+  background: rgba(255, 255, 255, 0.25);
+  box-shadow: none;
   transition: width 1s var(--organic);
-}
-
-.stage-label {
-  position: absolute;
-  top: max(20px, env(safe-area-inset-top));
-  left: max(18px, env(safe-area-inset-left));
-  z-index: 8;
-  margin: 0;
-  color: rgba(244, 240, 234, 0.42);
-  font-family: var(--mono);
-  font-size: 10px;
-  font-weight: 300;
-  line-height: 1;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.9);
 }
 
 /* ------------------------------------------------------------------ entry */

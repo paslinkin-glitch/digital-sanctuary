@@ -28,7 +28,7 @@
   const FLICK_MIN_SPEED = 0.5;
   const SLOW_RATE = 0.45;
   const API_TIMEOUT_MS = 7000;
-  const CLIPS_PER_CATEGORY = 55;
+  const CLIPS_PER_CATEGORY = 65;
   const RESONANCE_HOLD_MS = 500;
   const FAST_VIEW_MS = 2000;
   const NERVOUS_VIEW_MS = 1500;
@@ -73,6 +73,16 @@
 Верни только саму фразу без пояснений.`;
   const MUSIC_GAIN = 0.55;
   const NOISE_GAIN = 0.3;
+
+  function trackEvent(eventName, props = {}) {
+    try {
+      if (window.umami && typeof window.umami.track === 'function') {
+        window.umami.track(eventName, props);
+      }
+    } catch (_) {
+      /* аналитика не должна влиять на работу сцены */
+    }
+  }
 
   /* ------------------------------------------------------ клипы на случай,
      если API недоступен: те же ролики Coverr, уже проверенные по API. */
@@ -613,6 +623,9 @@
   let lastHapticAt = 0;
   let sessionLockAt = 0;
   let lockTicker = 0;
+  let returnAfterLock = false;
+  let lastTrackedStage = 0;
+  let lastHoldTrackedFrame = -1;
   let portraitText = '';
   let portraitRequestId = 0;
   let returnNotificationTimer = 0;
@@ -1933,7 +1946,7 @@
   // 720p — тот же ролик Coverr, но легче для мобильного автозапуска.
   // Если варианта нет, обработчик ошибки вернётся к исходному 1080p.
   function playbackUrl(url) {
-    return url.replace(/\/1080p\.mp4$/i, '/720p.mp4');
+    return url;
   }
 
   function scoreClip(clip, category) {
@@ -2259,6 +2272,13 @@
     if (stageLabelEl) stageLabelEl.textContent = stageLabelFor(sessionStage);
   }
 
+  function trackStageReached(stageId) {
+    const stage = Number(stageId);
+    if (!stage || stage === lastTrackedStage) return;
+    lastTrackedStage = stage;
+    trackEvent('stage_reached', { stage });
+  }
+
   function stopFinaleSessionVideo() {
     if (!finaleSessionVideo) return;
     try {
@@ -2300,6 +2320,8 @@
     quietSinceText = 0;
     quietRequired = 1 + Math.floor(Math.random() * 2);
     activeHapticStage = 0;
+    lastTrackedStage = 0;
+    lastHoldTrackedFrame = -1;
     portraitText = '';
     portraitRequestId += 1;
 
@@ -2369,6 +2391,7 @@
     }
 
     if (sessionLockAt && remaining <= 0) {
+      returnAfterLock = true;
       writeSessionLock(0);
       window.clearInterval(lockTicker);
       lockTicker = 0;
@@ -2460,6 +2483,7 @@
     window.clearTimeout(sessionFinalTimer);
     sessionFinalTimer = 0;
     sessionComplete = true;
+    trackEvent('session_complete', { total_holds: state.totalHolds });
     stopHoldPulse();
     if (gesture) stopHold();
 
@@ -2657,6 +2681,7 @@ ${JSON.stringify(events, null, 2)}
     }
 
     if (copySnapshotButton) copySnapshotButton.textContent = 'Разбор скопирован';
+    trackEvent('copy_verdict');
   }
 
   function scheduleReturnNotification(unlockAt) {
@@ -2692,6 +2717,7 @@ ${JSON.stringify(events, null, 2)}
   }
 
   async function enableReturnNotification() {
+    trackEvent('notify_enable');
     if (!('Notification' in window)) {
       if (notifyReturnButton) notifyReturnButton.textContent = 'Уведомления недоступны';
       return;
@@ -2721,6 +2747,10 @@ ${JSON.stringify(events, null, 2)}
 
   function startNewSessionAfterUnlock() {
     clearSessionLock();
+    if (returnAfterLock) {
+      trackEvent('session_return');
+      returnAfterLock = false;
+    }
     hideInstallCard();
     window.clearTimeout(sessionFinalTimer);
     sessionFinalTimer = 0;
@@ -2867,6 +2897,7 @@ ${JSON.stringify(events, null, 2)}
     pathStartPending = false;
     updateStageLabel(entry.stage);
     activeHapticStage = entry.stage;
+    trackStageReached(entry.stage);
     safeVibrate(110, 300);
     updateSessionProgress();
     setSceneElement(activeClip());
@@ -3516,6 +3547,7 @@ ${JSON.stringify(events, null, 2)}
 
     if (activeHapticStage !== sceneStage) {
       activeHapticStage = sceneStage;
+      trackStageReached(sceneStage);
       safeVibrate(110, 300);
     }
     updateStageLabel(sceneStage);
@@ -3659,6 +3691,10 @@ ${JSON.stringify(events, null, 2)}
       gesture.holdCounted = true;
       state.holdsInView += 1;
       state.totalHolds += 1;
+      if (lastHoldTrackedFrame !== sceneOrdinal) {
+        lastHoldTrackedFrame = sceneOrdinal;
+        trackEvent('deep_hold', { frame: sceneOrdinal, stage: sessionStage });
+      }
     }
 
     if (currentCaption) currentCaption.held = true;
@@ -4042,6 +4078,7 @@ ${JSON.stringify(events, null, 2)}
   async function handleInstallClick(event) {
     event.preventDefault();
     event.stopPropagation();
+    trackEvent('install_prompt_accepted');
 
     if (deferredPrompt) {
       const prompt = deferredPrompt;
@@ -4112,6 +4149,11 @@ ${JSON.stringify(events, null, 2)}
       return;
     }
     gateOpen = true;
+    trackEvent('session_start', { local_hour: new Date().getHours() });
+    if (returnAfterLock) {
+      trackEvent('session_return');
+      returnAfterLock = false;
+    }
     hideInstallCard();
     resetViewClock();
     markInteraction();
@@ -4146,7 +4188,9 @@ ${JSON.stringify(events, null, 2)}
   }
 
   sessionLockAt = readSessionLock();
+  returnAfterLock = Boolean(sessionLockAt && sessionLockAt <= Date.now());
   startSessionLockTicker();
+  window.addEventListener('load', () => trackEvent('threshold_open'), { once: true });
 
   if (copySnapshotButton) {
     copySnapshotButton.addEventListener('click', copySessionPortrait);
