@@ -241,22 +241,6 @@ window.VIDEOS_DATA = [
     "title_ru": "Трикстер 03"
   },
   {
-    "id": "coverr:vwBbpkVmA0",
-    "title": "A guy is fishing on the rocks by the sea",
-    "description": "Multiple vertical shots of a happy guy fishing while waves crash on the rocks and splash on him.",
-    "url": "https://cdn.coverr.co/videos/coverr-a-guy-is-fishing-on-the-rocks-by-the-sea-7522/1080p.mp4",
-    "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
-    "is_finale": false,
-    "source": "coverr",
-    "vertical": true,
-    "width": 1152,
-    "height": 2048,
-    "duration": 21.271,
-    "size": 12340279,
-    "title_ru": "Трикстер 04"
-  },
-  {
     "id": "coverr:t9MmfvMoau",
     "title": "Door covered in graffiti",
     "description": "A vertical shot of a door covered in graffiti, in Lviv.",
@@ -289,22 +273,6 @@ window.VIDEOS_DATA = [
     "title_ru": "Трикстер 06"
   },
   {
-    "id": "coverr:s73ov6lXzt",
-    "title": "Canadian airplane flying",
-    "description": "Vertical shot of a Canadian airplane wing flying over the ocean and land.",
-    "url": "https://cdn.coverr.co/videos/coverr-canadian-airplane-flying-8789/1080p.mp4",
-    "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
-    "is_finale": false,
-    "source": "coverr",
-    "vertical": true,
-    "width": 1080,
-    "height": 1920,
-    "duration": 12.8,
-    "size": 7322864,
-    "title_ru": "Трикстер 07"
-  },
-  {
     "id": "vecteezy:50636732",
     "title": "Movement of ocean waves seen from above by drone.",
     "description": "Movement of ocean waves seen from above by drone.",
@@ -319,22 +287,6 @@ window.VIDEOS_DATA = [
     "duration": 17.984,
     "size": 10086016,
     "title_ru": "Трикстер 08"
-  },
-  {
-    "id": "coverr:JpCOUuHrLa",
-    "title": "Vertical shot of a balloon",
-    "description": "A vertical shot of a balloon tied to a post, blowing in the wind, whilst people sit at an outside restaurant and enjoy their food.",
-    "url": "https://cdn.coverr.co/videos/coverr-vertical-shot-of-a-balloon-7225/1080p.mp4",
-    "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
-    "is_finale": false,
-    "source": "coverr",
-    "vertical": true,
-    "width": 1080,
-    "height": 1920,
-    "duration": 10.112,
-    "size": 5671108,
-    "title_ru": "Трикстер 09"
   },
   {
     "id": "2bfiRK705y",

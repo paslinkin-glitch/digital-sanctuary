@@ -2804,7 +2804,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const heldFrames = sessionEvents.filter((event) => event.held || event.heldMs > 0).length;
     const fastFrames = sessionEvents.filter((event) => event.fast || event.early).length;
     const pauses = sessionEvents.filter((event) => event.lingered).length;
-    const user = `За 24 кадра: удержаний — ${heldFrames}, быстрых свайпов — ${fastFrames}, пауз — ${pauses}. Всего удержаний за сессию — ${state.totalHolds || 0}.
+    const user = `За 30 кадров: удержаний — ${heldFrames}, быстрых свайпов — ${fastFrames}, пауз — ${pauses}. Всего удержаний за сессию — ${state.totalHolds || 0}.
 Напиши ровно 2 коротких предложения на русском. Без цифр, терминов, названий роликов, англицизмов и советов.`;
 
     const controller = new AbortController();
@@ -2859,7 +2859,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
 
     stage.classList.add('is-finalizing');
     hideInstallCard();
-    if (stageLabelEl) stageLabelEl.textContent = '24 // ТИШИНА';
+    if (stageLabelEl) stageLabelEl.textContent = '30 // ТИШИНА';
     setSessionLock();
     updateSessionProgress();
     updateSessionLockUI();
@@ -3320,7 +3320,7 @@ ${JSON.stringify(events, null, 2)}`;
   }
 
   function extendPathPlan() {
-    for (const allowSeen of (false, true)) {
+    for (const allowSeen of [false, true]) {
       const entries = makeCycleEntries(allowSeen);
       if (!entries) continue;
       for (const entry of entries) pathPicked.add(entry.clip.id);
