@@ -35,11 +35,11 @@
   const STUPOR_IDLE_MS = 20000;
   const ANCHOR_WATCH_MS = 12000;
   const MAX_WEIGHT = 6;
-  const CYCLE_LENGTH = 12;
-  const SESSION_LENGTH = 24;
-  const SESSION_STAGES = [
-    { id: 1, count: 3 },
-    { id: 2, count: 3 },
+  const CYCLE_LENGTH = 15;
+  const SESSION_LENGTH = 30;
+  const CYCLE_STAGES = [
+    { id: 1, count: 5 },
+    { id: 2, count: 4 },
     { id: 3, count: 3 },
     { id: 4, count: 3 },
   ];
@@ -2313,7 +2313,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const entries = [];
 
     for (const stage of STAGES) {
-      const count = 3;
+      const spec = CYCLE_STAGES.find((item) => item.id === stage.id);
+      const count = spec ? spec.count : 3;
       const picks = pickStageClips(stage, count, picked, allowSeen);
       if (picks.length < 3) return false;
       entries.push(...picks);
@@ -2446,36 +2447,58 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
 
   function buildSessionPlan() {
     resetViewedCycleIfComplete();
+    pathPicked = new Set();
+
     const attempt = (allowSeen) => {
       const picked = new Set();
       const entries = [];
 
-      for (const spec of SESSION_STAGES) {
-        const stage = stageFor(spec.id);
-        const picks = pickStageClips(stage, spec.count, picked, allowSeen);
-        if (picks.length < spec.count) return null;
-        entries.push(...picks);
-      }
-
-      const last = entries[entries.length - 1];
-      if (last && last.stage === 4 && !last.clip.is_finale) {
-        const used = new Set(entries.map((entry) => entry.clip.id));
-        const pathStage = stageFor(4);
-        const finalCategory = categories.find((category) => pathStage.categories.includes(category.tag));
-        const finalClip = finalCategory && finalCategory.clips.find((clip) => (
-          clip.is_finale && !clip.invalid && !used.has(clip.id)
-        ));
-        if (finalClip) {
-          last.clip = finalClip;
-          last.category = finalCategory;
+      for (let cycle = 0; cycle < 2; cycle += 1) {
+        const cycleEntries = [];
+        for (const spec of CYCLE_STAGES) {
+          const stage = stageFor(spec.id);
+          const picks = pickStageClips(stage, spec.count, picked, allowSeen);
+          if (picks.length < spec.count) return null;
+          cycleEntries.push(...picks);
         }
+        if (cycleEntries.length !== CYCLE_LENGTH) return null;
+
+        const last = cycleEntries[cycleEntries.length - 1];
+        if (last && last.stage === 4 && !last.clip.is_finale) {
+          const used = new Set(cycleEntries.map((entry) => entry.clip.id));
+          const pathStage = stageFor(4);
+          const pathCategories = categories.filter((category) => pathStage.categories.includes(category.tag));
+          const final = pathCategories
+            .flatMap((category) => category.clips.map((clip) => ({ category, clip })))
+            .find(({ category, clip }) => (
+              clip.is_finale
+              && !clip.invalid
+              && !used.has(clip.id)
+              && !picked.has(clip.id)
+              && (allowSeen || !isVideoSeen(clip.id))
+            ));
+          if (final) {
+            last.clip = final.clip;
+            last.category = final.category;
+          }
+        }
+
+        for (const entry of cycleEntries) picked.add(entry.clip.id);
+        entries.push(...cycleEntries);
       }
 
       return entries;
     };
 
-    const entries = attempt(false) || attempt(true);
-    if (!entries || entries.length !== CYCLE_LENGTH || !sessionPlanIsUnique(entries)) return false;
+    let entries = attempt(false);
+    if (!entries || entries.length !== SESSION_LENGTH || !sessionPlanIsUnique(entries)) {
+      allViewedVideoIds.clear();
+      sessionUsedVideoIds.clear();
+      persistAllViewedVideoIds();
+      entries = attempt(false) || attempt(true);
+    }
+
+    if (!entries || entries.length !== SESSION_LENGTH || !sessionPlanIsUnique(entries)) return false;
 
     pathPlan = entries;
     pathPicked = new Set(entries.map((entry) => entry.clip.id));
@@ -3258,7 +3281,7 @@ ${JSON.stringify(events, null, 2)}`;
     const picked = new Set(pathPicked);
     const entries = [];
 
-    for (const spec of SESSION_STAGES) {
+    for (const spec of CYCLE_STAGES) {
       const stage = stageFor(spec.id);
       const picks = pickStageClips(stage, spec.count, picked, allowSeen);
       if (picks.length < spec.count) return null;
@@ -3413,7 +3436,7 @@ ${JSON.stringify(events, null, 2)}`;
       clip.invalid = true;
       console.warn('[sanctuary] low-quality clip skipped:', clip.title, video.videoWidth, video.videoHeight);
       if (category.index === state.index && category.activeIndex === index) {
-        window.setTimeout(() => forceNextAvailableScene('up'), 0);
+        window.setTimeout(() => go('up', 0.5), 0);
       }
     });
 
@@ -4176,7 +4199,7 @@ ${JSON.stringify(events, null, 2)}`;
     if (isCycleBoundary) {
       const completedCycle = cycleNumber;
       cycleNumber += 1;
-      sessionAccounted = 1;
+      sessionAccounted = 2;
       sessionTextFrames = 1;
       quietSinceText = 0;
       quietRequired = 0;
