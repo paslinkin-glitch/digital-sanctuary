@@ -3482,7 +3482,6 @@ ${JSON.stringify(events, null, 2)}`;
 
     const video = document.createElement('video');
     const playUrl = clip.playUrl || playbackUrl(clip.url);
-    let triedOriginal = false;
 
     clip.playUrl = playUrl;
     video.className = 'clip';
@@ -3499,42 +3498,36 @@ ${JSON.stringify(events, null, 2)}`;
     video.setAttribute('aria-hidden', 'true');
 
     video.addEventListener('loadedmetadata', () => {
-      if (clip.skipped) return;
-      const bad = video.videoWidth < 1080
-        || video.videoHeight < 1920
-        || video.videoWidth >= video.videoHeight;
-      if (!bad) return;
-      clip.invalid = true;
-      clip.skipped = true;
-      console.warn('[sanctuary] low-quality clip skipped:', clip.title, video.videoWidth, video.videoHeight);
-      if (category.index === state.index && category.activeIndex === index) {
-        window.setTimeout(() => go('up', 0.5), 0);
+      // Never move the feed from metadata. Keep the current frame and only
+      // mark portrait media ready; portrait/non-portrait is not a reason to swipe.
+      if (video.videoWidth > 0 && video.videoHeight > video.videoWidth) {
+        video.classList.add('is-ready');
       }
     });
 
     video.addEventListener('canplay', () => video.classList.add('is-ready'));
     video.addEventListener('playing', () => video.classList.add('is-ready'));
     video.addEventListener('timeupdate', () => handleLoop(category, index, video));
+    let fallbackCursor = 0;
     video.addEventListener('error', () => {
-      if (!triedOriginal && playUrl !== clip.url && !clip.skipped) {
-        triedOriginal = true;
-        video.classList.remove('is-ready');
-        video.src = clip.url;
-        video.load();
-        if (category.index === state.index && category.activeIndex === index) {
-          const promise = video.play();
-          if (promise && typeof promise.catch === 'function') promise.catch(() => {});
-        }
-        return;
+      // Replace the source inside this same <video>. Never call go() or
+      // navigateTo() from a media event: the feed only moves on user input.
+      const alternatives = category.clips.filter((candidate) => (
+        candidate !== clip && candidate.url && !candidate.invalid
+      ));
+      if (!alternatives.length) return;
+      const replacement = alternatives[fallbackCursor % alternatives.length];
+      fallbackCursor += 1;
+      const nextUrl = replacement.playUrl || playbackUrl(replacement.url);
+      const current = video.currentSrc || video.src || '';
+      if (current === nextUrl && video.readyState >= 1) return;
+      video.classList.remove('is-ready');
+      video.src = nextUrl;
+      if (video.readyState < 1) video.load();
+      if (category.index === state.index && category.activeIndex === index) {
+        const promise = video.play();
+        if (promise && typeof promise.catch === 'function') promise.catch(() => {});
       }
-      if (clip.skipped) return;
-      if (category.index !== state.index || category.activeIndex !== index) {
-        console.warn('[sanctuary] video unavailable:', clip.title);
-        return;
-      }
-      clip.skipped = true;
-      console.warn('[sanctuary] fatal video error, advancing:', clip.title);
-      go('up', 0.5);
     });
 
     video.src = playUrl;
