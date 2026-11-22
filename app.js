@@ -3721,8 +3721,8 @@ ${JSON.stringify(events, null, 2)}`;
       const itemBitrate = itemSize * 8 / Math.max(1, itemDuration);
       if (
         !itemSize || !itemWidth || !itemHeight
-        || itemSize < 4_500_000
-        || itemSize > 12_500_000
+        || itemSize < 3_500_000
+        || itemSize > 10_500_000
         || itemWidth !== 1080
         || itemHeight !== 1920
         || itemBitrate < 2_500_000
