@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Digital Sanctuary">
-  <title>Digital Sanctuary — интерактивное убежище</title>
+  <title>Digital Sanctuary — an interactive sanctuary</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,23 +23,23 @@
   <main class="stage" id="stage">
     <section class="slide is-active" data-tag="Shadow">
       <div class="media" aria-hidden="true"></div>
-      <span class="tag">01 / НАЧАЛО</span>
+      <span class="tag">01 / BEGINNING</span>
     </section>
     <section class="slide" data-tag="Trickster">
       <div class="media" aria-hidden="true"></div>
-      <span class="tag">02 / ГЛУБИНА</span>
+      <span class="tag">02 / DEPTH</span>
     </section>
     <section class="slide" data-tag="Abyss">
       <div class="media" aria-hidden="true"></div>
-      <span class="tag">02 / ГЛУБИНА</span>
+      <span class="tag">02 / DEPTH</span>
     </section>
     <section class="slide" data-tag="Calm">
       <div class="media" aria-hidden="true"></div>
-      <span class="tag">03 / ТИШИНА</span>
+      <span class="tag">03 / SILENCE</span>
     </section>
     <section class="slide" data-tag="Path">
       <div class="media" aria-hidden="true"></div>
-      <span class="tag">04 / ВЫХОД</span>
+      <span class="tag">04 / EXIT</span>
     </section>
     <div class="session-progress" aria-hidden="true">
       <span class="session-progress-fill" id="session-progress-fill"></span>
@@ -66,11 +66,11 @@
     </div>
     <div class="swipe-hint" id="swipe-hint" hidden aria-hidden="true">
       <span class="swipe-hint-arrow">↑</span>
-      <span class="swipe-hint-label">СВАЙП ВВЕРХ</span>
+      <span class="swipe-hint-label">SWIPE UP</span>
     </div>
   </main>
 
-  <div class="entry" id="entry" role="dialog" aria-label="Порог эксперимента">
+  <div class="entry" id="entry" role="dialog" aria-label="Entrance to the sanctuary">
     <div class="ambient-mesh ambient-mesh--entry" aria-hidden="true">
       <span class="ambient-orb ambient-orb--indigo"></span>
       <span class="ambient-orb ambient-orb--amber"></span>
@@ -83,25 +83,25 @@
       <button class="lang-switch-btn" type="button" data-lang="en">EN</button>
     </div>
     <div class="entry-copy">
-      <p class="entry-kicker">ЦИФРОВОЕ УБЕЖИЩЕ</p>
-      <h1 class="entry-title">Закрытое пространство<br>тишины и созерцания</h1>
-      <p class="entry-sub">Без слов, оценок и попыток<br>тебя исправить</p>
+      <p class="entry-kicker">DIGITAL SANCTUARY</p>
+      <h1 class="entry-title">A private space<br>of silence and stillness</h1>
+      <p class="entry-sub">No words, no judgments,<br>no attempts to fix you</p>
     </div>
     <div class="entry-actions">
-      <button class="entry-trigger" id="entry-trigger" type="button">Войти в сон</button>
-      <p class="entry-nav-hint">Листай вверх как сон · Задержи палец, если кадр отзывается</p>
-      <button class="entry-install" id="entry-install" type="button" hidden>Установить приложение на экран</button>
-      <p class="entry-install-hint" id="entry-install-hint" hidden>Нажмите «Поделиться» → «На экран Домой»</p>
+      <button class="entry-trigger" id="entry-trigger" type="button">Enter the dream</button>
+      <p class="entry-nav-hint">Swipe up like a dream · Hold when a frame resonates</p>
+      <button class="entry-install" id="entry-install" type="button" hidden>Add the app to your screen</button>
+      <p class="entry-install-hint" id="entry-install-hint" hidden>Tap Share → Add to Home Screen</p>
     </div>
   </div>
 
   <aside class="install-card" id="install-card" hidden aria-live="polite">
     <div class="install-card-copy">
-      <p class="install-card-title">Открывать как приложение без рамок</p>
-      <p class="install-card-hint" id="install-card-hint" hidden>Поделиться → На экран Домой</p>
+      <p class="install-card-title">Open it as an app, no browser frame</p>
+      <p class="install-card-hint" id="install-card-hint" hidden>Share → Add to Home Screen</p>
     </div>
-    <button class="install-card-btn" id="install-card-install" type="button">Установить</button>
-    <button class="install-card-close" id="install-card-later" type="button" aria-label="Закрыть">×</button>
+    <button class="install-card-btn" id="install-card-install" type="button">Install</button>
+    <button class="install-card-close" id="install-card-later" type="button" aria-label="Close">×</button>
   </aside>
 
   <section class="finale" id="finale" hidden aria-labelledby="finale-title">
@@ -113,17 +113,17 @@
     </div>
     <div class="finale-glow" aria-hidden="true"></div>
     <div class="finale-shell">
-      <p class="finale-kicker">ТИШИНА</p>
-      <h2 class="finale-title" id="finale-title">Сон завершён</h2>
-      <p class="finale-sub">ПРОСТРАНСТВО РЯДОМ</p>
+      <p class="finale-kicker">SILENCE</p>
+      <h2 class="finale-title" id="finale-title">The dream is complete</h2>
+      <p class="finale-sub">THE SPACE BESIDE YOU</p>
       <div class="finale-rule" aria-hidden="true"></div>
-      <p class="finale-reflection" id="finale-reflection" aria-live="polite">Ты замирал там, где взгляд обычно скользит мимо. Пространство запомнило этот отклик — продолжение откроется через два часа, когда тишина уляжется.</p>
+      <p class="finale-reflection" id="finale-reflection" aria-live="polite">You lingered where the gaze usually slips past. The space remembered that response — the door will open again in two hours, when the silence settles.</p>
       <div class="finale-timer">
-        <p class="finale-lock-label" id="finale-lock-label">ПРОДОЛЖЕНИЕ ЧЕРЕЗ</p>
+        <p class="finale-lock-label" id="finale-lock-label">CONTINUATION IN</p>
         <p class="finale-countdown" id="finale-countdown">02:00:00</p>
       </div>
       <div class="finale-actions">
-        <button class="finale-btn finale-btn--glass" id="notify-return" type="button">Уведомить через 2 часа</button>
+        <button class="finale-btn finale-btn--glass" id="notify-return" type="button">Notify me in 2 hours</button>
       </div>
     </div>
   </section>

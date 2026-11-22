@@ -229,9 +229,27 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     } catch (_) {
       /* localStorage может быть недоступен */
     }
-    const browser = String((navigator && navigator.language) || '').toLowerCase();
-    return browser.startsWith('ru') ? 'ru' : 'en';
+    // International launch defaults to English until the visitor explicitly
+    // chooses Russian in the language switch.
+    return 'en';
   }
+
+  function detectDeviceTier() {
+    const nav = navigator || {};
+    const memory = Number(nav.deviceMemory || 8);
+    const cores = Number(nav.hardwareConcurrency || 8);
+    const connection = nav.connection || nav.mozConnection || nav.webkitConnection || null;
+    const network = connection && connection.effectiveType ? connection.effectiveType : '';
+    const saveData = Boolean(connection && connection.saveData);
+    if (saveData || memory <= 4 || cores <= 4 || network === 'slow-2g' || network === '2g' || network === '3g') {
+      return 'low';
+    }
+    if (memory >= 8 && cores >= 8) return 'high';
+    return 'mid';
+  }
+
+  const DEVICE_TIER = detectDeviceTier();
+  document.documentElement.dataset.tier = DEVICE_TIER;
 
   let currentLang = detectLanguage();
 
@@ -2811,6 +2829,11 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   function finaleFallbackReflection() {
     const held = (state.totalHolds || 0) > 0
       || sessionEvents.some((event) => event.held || event.heldMs > 0);
+    if (currentLang === 'en') {
+      return held
+        ? 'You lingered where the gaze usually slips past. The space remembered that response — the door will open again in two hours, when the silence settles.'
+        : 'You moved through the frames faster than a breath, trying not to linger. The door closes for two hours — return when you are ready to look more slowly.';
+    }
     if (held) {
       return 'Ты замирал там, где взгляд обычно скользит мимо. Пространство запомнило этот отклик — продолжение откроется через два часа, когда тишина уляжется.';
     }
@@ -2818,9 +2841,16 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
 
   function finaleReflectionIsValid(text) {
-    if (!text || /[A-Za-z]/.test(text)) return false;
-    if (!/[А-Яа-яЁё]/.test(text)) return false;
-    if (/(архетип|персон|либидо|юнгиан|психоанализ|трикстер|бездна|тень|бессознательн)/iu.test(text)) return false;
+    if (!text) return false;
+    if (currentLang === 'en') {
+      if (!/[A-Za-z]/.test(text) || /[А-Яа-яЁё]/.test(text)) return false;
+    } else if (!/[А-Яа-яЁё]/.test(text) || /[A-Za-z]/.test(text)) {
+      return false;
+    }
+    const banned = currentLang === 'en'
+      ? /(archetype|persona|libido|jungian|shadow work|unconscious|trickster|abyss)/iu
+      : /(архетип|персон|либидо|юнгиан|психоанализ|трикстер|бездна|тень|бессознательн)/iu;
+    if (banned.test(text)) return false;
     const sentences = text.match(/[^.!?…]+[.!?…]+/g) || [];
     return sentences.length === 2;
   }
@@ -2833,7 +2863,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const heldFrames = sessionEvents.filter((event) => event.held || event.heldMs > 0).length;
     const fastFrames = sessionEvents.filter((event) => event.fast || event.early).length;
     const pauses = sessionEvents.filter((event) => event.lingered).length;
-    const user = `За 30 кадров: удержаний — ${heldFrames}, быстрых свайпов — ${fastFrames}, пауз — ${pauses}. Всего удержаний за сессию — ${state.totalHolds || 0}.
+    const user = currentLang === 'en'
+      ? `Across 30 frames: holds — ${heldFrames}, fast swipes — ${fastFrames}, pauses — ${pauses}. Total holds — ${state.totalHolds || 0}.
+Write exactly 2 short English sentences. No numbers, jargon, video titles, or advice.`
+      : `За 30 кадров: удержаний — ${heldFrames}, быстрых свайпов — ${fastFrames}, пауз — ${pauses}. Всего удержаний за сессию — ${state.totalHolds || 0}.
 Напиши ровно 2 коротких предложения на русском. Без цифр, терминов, названий роликов, англицизмов и советов.`;
 
     const controller = new AbortController();
@@ -2846,7 +2879,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
           messages: [
             {
               role: 'system',
-              content: 'Ты — тихий, проницательный наблюдатель сна. На основе ритма просмотров и удержаний напиши 2 коротких, интригующих предложения на русском языке без терминов, англицизмов и морали. Создай ощущение, что пространство заметило скрытую реакцию пользователя, и мягко закрой дверь на 2 часа, чтобы увиденное улеглось.',
+              content: currentLang === 'en'
+                ? 'You are a quiet, perceptive observer of dreams. From the rhythm of viewing and holds, write 2 short, intriguing English sentences without jargon, anglicisms, or moralizing. Create the feeling that the space noticed a hidden reaction, and gently close the door for 2 hours so that what was seen can settle.'
+                : 'Ты — тихий, проницательный наблюдатель сна. На основе ритма просмотров и удержаний напиши 2 коротких, интригующих предложения на русском языке без терминов, англицизмов и морали. Создай ощущение, что пространство заметило скрытую реакцию пользователя, и мягко закрой дверь на 2 часа, чтобы увиденное улеглось.',
             },
             { role: 'user', content: user },
           ],
@@ -3494,6 +3529,28 @@ ${JSON.stringify(events, null, 2)}`;
       console.warn('[sanctuary] video unavailable:', clip.title);
     });
 
+    let waitingTimer = 0;
+    let waitingAdvanced = false;
+    const clearWaiting = () => {
+      window.clearTimeout(waitingTimer);
+      waitingTimer = 0;
+    };
+    video.addEventListener('waiting', () => {
+      if (category.index !== state.index || category.activeIndex !== index) return;
+      clearWaiting();
+      waitingTimer = window.setTimeout(() => {
+        if (waitingAdvanced) return;
+        if (category.index !== state.index || category.activeIndex !== index) return;
+        if (video.readyState >= 3) return;
+        waitingAdvanced = true;
+        go('up', 0.5);
+      }, 4000);
+    });
+    for (const eventName of ['playing', 'canplay', 'canplaythrough', 'timeupdate']) {
+      video.addEventListener(eventName, clearWaiting);
+    }
+    video.addEventListener('error', clearWaiting);
+
     video.src = playUrl;
     video.dataset.clipId = clip.id || '';
     clip.el = video;
@@ -3574,7 +3631,19 @@ ${JSON.stringify(events, null, 2)}`;
 
     prunePlaybackVideos(keep);
     if (current && current.clip && current.clip.el) current.clip.el.preload = 'auto';
-    if (next && next.clip && next.clip.el) next.clip.el.preload = 'auto';
+    if (next && next.clip && next.clip.el) {
+      next.clip.el.preload = DEVICE_TIER === 'low' ? 'none' : 'metadata';
+    }
+
+    const currentVideo = current && current.clip && current.clip.el;
+    const nextVideo = next && next.clip && next.clip.el;
+    if (currentVideo && nextVideo) {
+      const promoteNext = () => {
+        if (next.clip.el && current.clip.el === currentVideo) next.clip.el.preload = 'auto';
+      };
+      if (currentVideo.readyState >= 4) promoteNext();
+      else currentVideo.addEventListener('canplaythrough', promoteNext, { once: true });
+    }
   }
 
   function appendClips(category, clips) {
@@ -3667,6 +3736,7 @@ ${JSON.stringify(events, null, 2)}`;
       if (
         !itemSize || !itemWidth || !itemHeight
         || itemSize < 4_500_000
+        || itemSize > 14_500_000
         || itemWidth < 1080
         || itemHeight < 1920
         || itemBitrate < 2_500_000

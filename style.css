@@ -1323,7 +1323,7 @@ body,
 .ambient-orb--amber,
 .ambient-orb--smoke {
   background: radial-gradient(circle, rgba(236, 234, 230, 0.045) 0%, transparent 70%);
-  filter: blur(90px);
+  filter: none;
   opacity: 0.45;
 }
 
@@ -1343,7 +1343,7 @@ body,
   transform: translate(-50%, -50%);
   border-radius: 50%;
   background: radial-gradient(circle, rgba(236, 234, 230, 0.045) 0%, transparent 70%);
-  filter: blur(90px);
+  filter: none;
   box-shadow: none;
   animation: aura-breathe 8s var(--organic) infinite alternate;
   pointer-events: none;
@@ -1509,7 +1509,7 @@ body,
 
 .finale-glow {
   background: radial-gradient(circle, rgba(236, 234, 230, 0.045) 0%, transparent 70%);
-  filter: blur(90px);
+  filter: none;
   opacity: 0.6;
 }
 
@@ -1611,7 +1611,7 @@ body,
 .ambient-orb--amber,
 .ambient-orb--smoke {
   background: radial-gradient(circle, rgba(214, 199, 178, 0.045) 0%, transparent 72%);
-  filter: blur(95px);
+  filter: none;
   opacity: 0.5;
 }
 
@@ -1625,7 +1625,7 @@ body,
   transform: translate(-50%, -50%);
   border-radius: 50%;
   background: radial-gradient(circle, rgba(214, 199, 178, 0.045) 0%, transparent 72%);
-  filter: blur(95px);
+  filter: none;
   box-shadow: none;
   animation: aura-breathe 9s var(--organic) infinite alternate;
   pointer-events: none;
@@ -1920,7 +1920,7 @@ body,
 
 .finale-glow {
   background: radial-gradient(circle, rgba(214, 199, 178, 0.045) 0%, transparent 72%);
-  filter: blur(95px);
+  filter: none;
   opacity: 0.58;
 }
 
@@ -2105,4 +2105,26 @@ body,
   line-height: 1.55;
   letter-spacing: 0.02em;
   text-shadow: 0 2px 24px rgba(0, 0, 0, 0.95);
+}
+
+
+/* ============================================================ MOBILE GPU v29 */
+.ambient-orb,
+.ambient-orb--indigo,
+.ambient-orb--amber,
+.ambient-orb--smoke,
+.aura-core,
+.finale-glow {
+  filter: none;
+}
+
+.entry.is-open .ambient-orb,
+.entry.is-open .aura-core {
+  display: none;
+}
+
+.clip {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
