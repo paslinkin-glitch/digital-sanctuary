@@ -35,12 +35,16 @@
   const STUPOR_IDLE_MS = 20000;
   const ANCHOR_WATCH_MS = 12000;
   const MAX_WEIGHT = 6;
-  const SESSION_LENGTH = 40;
+  const SESSION_LENGTH = 50;
   const SESSION_STAGES = [
-    { id: 1, count: 10 },
-    { id: 2, count: 10 },
-    { id: 3, count: 10 },
-    { id: 4, count: 10 },
+    { id: 1, count: 8 },
+    { id: 2, count: 8 },
+    { id: 3, count: 7 },
+    { id: 4, count: 7 },
+    { id: 1, count: 5 },
+    { id: 2, count: 5 },
+    { id: 3, count: 5 },
+    { id: 4, count: 5 },
   ];
   const SESSION_FINALE_DELAY_MS = 3400;
   const SESSION_LOCK_MS = 2 * 60 * 60 * 1000;
@@ -61,16 +65,102 @@
   const CAPTION_MAX_RATIO = 0.4;
   const EARLY_SWIPE_RATIO = 0.55;
   const CAPTION_LINGER_MS = 3500;
-  const CAPTION_HOLD_REVEAL_MS = 1200;
-  const CAPTION_YOU_LIMIT = 0.2;
+  const CAPTION_HOLD_REVEAL_MS = 1100;
+  const CAPTION_YOU_LIMIT = 1;
   const CAPTION_TIMEOUT_MS = 9000;
-  const CAPTION_SYSTEM_PROMPT = `Ты — спокойный голос, который помогает заметить простое. Пиши только по-русски.
-Создай одну короткую фразу строго из 4–7 простых разговорных слов. Одна или две короткие строки; без поэзии, метафор, загадок и сложных образов.
-Фраза должна быть понятна с первого взгляда и звучать по-человечески.
-Запрещены слова «Тень», «Трикстер», «Бездна», «Архетип», «слой», «глубина», академические термины, кавычки, заголовки, списки, советы и мораль.
-Верни только саму фразу без пояснений.`;
-  const MUSIC_GAIN = 0.55;
-  const NOISE_GAIN = 0.3;
+  const CAPTION_SYSTEM_PROMPT_RU = `Ты — проницательный, слегка провокационный внутренний голос, который видит человека насквозь. Пиши только по-русски.
+Верни одну короткую фразу строго из 4–7 слов, 1–2 короткие строки. Без поэзии, метафор, загадок, терминов и абстрактной воды.
+Если поведение anxiety — мягко вскрой бегство от себя, как в примере: «Слишком быстро листаешь. Чего боишься коснуться?»
+Если поведение resonance — попади точно в скрытую тягу или усталость через конкретный образ кадра.
+Не морализируй, не давай советов. Верни только саму фразу.`;
+  const CAPTION_SYSTEM_PROMPT_EN = `You are an unnervingly perceptive, slightly provocative inner voice that sees through people. Write only in natural conversational English.
+Return one short line strictly 4–7 words, 1–2 short lines. No poetry, riddles, metaphors, jargon or abstract filler.
+If the behavior is anxiety — gently expose the escape from self, e.g. «Swipe too fast. What are you avoiding?»
+If the behavior is resonance — hit the hidden pull or fatigue through the concrete image in the frame.
+Do not moralize or give advice. Return only the line.`;
+  const MUSIC_GAIN = 0.42;
+  const NOISE_GAIN = 0.22;
+
+  const LANG_STORAGE_KEY = 'sanctuary-lang';
+  const I18N = {
+    ru: {
+      docTitle: 'Digital Sanctuary — разбор поведения',
+      entryAria: 'Порог эксперимента',
+      entryKicker: 'СЕССИЯ 01 // ЗЕРКАЛО ПОВЕДЕНИЯ',
+      entryTitle: 'Это не медитация и не социальная сеть.',
+      entrySub: 'Алгоритмы считывают твоё состояние без единого вопроса. Зажми экран, если кадр попал в точку.',
+      enter: 'Войти в эксперимент',
+      nav: 'Листай вверх, как ленту · Зажимай кадр, если попал в точку',
+      installApp: 'Установить приложение на экран',
+      installHint: 'Нажмите «Поделиться» → «На экран Домой»',
+      installCardTitle: 'Открывать как приложение без рамок',
+      install: 'Установить',
+      close: 'Закрыть',
+      swipe: 'СВАЙП ВВЕРХ',
+      finaleKicker: 'СЕССИЯ // РАЗБОР',
+      finaleTitle: 'ЧТО ТЫ СЕЙЧАС ПРЯЧЕШЬ',
+      finaleSub: 'РАЗБОР СЕССИИ',
+      loading: 'СОБИРАЕМ РАЗБОР...',
+      copy: 'Скопировать разбор',
+      copied: 'Разбор скопирован',
+      notify: 'Уведомить через 2 часа',
+      notifyOff: 'Уведомления отключены',
+      notifySet: 'Уведомление поставлено',
+      notifyUnavailable: 'Уведомления недоступны',
+      back: 'На главный экран',
+      lockLabel: 'ПРОДОЛЖЕНИЕ',
+      lockedPrefix: 'Продолжение через',
+      notificationBody: 'Продолжение открыто. Вернись, чтобы узнать, что дальше.',
+      captionFallback: 'В этот час лучше просто дышать.',
+    },
+    en: {
+      docTitle: 'Digital Sanctuary — behavioral mirror',
+      entryAria: 'Experiment threshold',
+      entryKicker: 'SESSION 01 // BEHAVIORAL MIRROR',
+      entryTitle: 'This is not meditation. It is not a social network.',
+      entrySub: 'The algorithm reads your state without asking one question. Hold the screen when a frame lands.',
+      enter: 'Enter the experiment',
+      nav: 'Swipe up like a feed · Hold a frame when it lands',
+      installApp: 'Add the app to your screen',
+      installHint: 'Tap Share → Add to Home Screen',
+      installCardTitle: 'Open it as an app, no browser frame',
+      install: 'Install',
+      close: 'Close',
+      swipe: 'SWIPE UP',
+      finaleKicker: 'SESSION // VERDICT',
+      finaleTitle: 'WHAT YOU ARE HIDING RIGHT NOW',
+      finaleSub: 'SESSION VERDICT',
+      loading: 'BUILDING YOUR VERDICT...',
+      copy: 'Copy verdict',
+      copied: 'Copied',
+      notify: 'Notify me in 2 hours',
+      notifyOff: 'Notifications off',
+      notifySet: 'Notification set',
+      notifyUnavailable: 'Notifications unavailable',
+      back: 'Back to start',
+      lockLabel: 'CONTINUATION',
+      lockedPrefix: 'Continues in',
+      notificationBody: 'The next chapter is open. Come back and see what it holds.',
+      captionFallback: 'Right now, it is enough to breathe.',
+    },
+  };
+
+  function detectLanguage() {
+    try {
+      const stored = localStorage.getItem(LANG_STORAGE_KEY);
+      if (stored === 'ru' || stored === 'en') return stored;
+    } catch (_) {
+      /* localStorage может быть недоступен */
+    }
+    const browser = String((navigator && navigator.language) || '').toLowerCase();
+    return browser.startsWith('ru') ? 'ru' : 'en';
+  }
+
+  let currentLang = detectLanguage();
+
+  function tr(key) {
+    return (I18N[currentLang] && I18N[currentLang][key]) || I18N.ru[key] || key;
+  }
 
   function trackEvent(eventName, props = {}) {
     try {
@@ -259,32 +349,28 @@
   // поисковых запросов API, и чередуются под каждый новый кадр.
   const MUSIC_CATALOG = {
     Shadow: [
-      { id: 'romQsuZqm1', title: 'Dark Entries', url: 'https://cdn.coverr.co/audios/coverr-dark-entries-n4GG3j/preview.mp3' },
       { id: 'HDgXJpCNph', title: 'Whisper Canyon', url: 'https://cdn.coverr.co/audios/coverr-song-15-whisper-canyon-ambient-5-mix-1--zXUbWU/preview.mp3' },
       { id: 'DoetucQLKg', title: 'Monolith', url: 'https://cdn.coverr.co/audios/coverr-song-12-monolith-ambient-4-mix-2-ozGFbG/preview.mp3' },
-      { id: 'cH1b7erY3p', title: 'Song Before The Ritual', url: 'https://cdn.coverr.co/audios/coverr-song-before-the-ritual-36s2hf/preview.mp3' },
-      { id: 'GK7hNqbWfn', title: 'Darkness', url: 'https://cdn.coverr.co/audios/coverr-darkness-TAJPb7/preview.mp3' },
+      { id: '2v8dZRPll8', title: 'inner world', url: 'https://cdn.coverr.co/audios/coverr-inner-world-7oAf9q/preview.mp3' },
+      { id: 'mvh5rImd1R', title: 'clouds', url: 'https://cdn.coverr.co/audios/coverr-clouds-tzNU5D/preview.mp3' },
     ],
     Calm: [
       { id: 'HTzsyicaIT', title: 'crystal rain', url: 'https://cdn.coverr.co/audios/coverr-crylstal-rain-uq0tDK/preview.mp3' },
       { id: 'WUzwP3T0HC', title: 'tokio rain', url: 'https://cdn.coverr.co/audios/coverr-tokio-rain-VBOD5g/preview.mp3' },
-      { id: '2D7bBaIE3r', title: 'Waiting for the Bell to Ring', url: 'https://cdn.coverr.co/audios/coverr-19-waiting-for-the-bell-to-ring-ToOKsQ/preview.mp3' },
       { id: '2v8dZRPll8', title: 'inner world', url: 'https://cdn.coverr.co/audios/coverr-inner-world-7oAf9q/preview.mp3' },
       { id: 'mvh5rImd1R', title: 'clouds', url: 'https://cdn.coverr.co/audios/coverr-clouds-tzNU5D/preview.mp3' },
     ],
     Abyss: [
-      { id: 'UjcADXXvc8', title: 'deep space', url: 'https://cdn.coverr.co/audios/coverr-deep-space-lqfqIj/preview.mp3' },
       { id: '5nxzquf11g', title: 'The Color of Space', url: 'https://cdn.coverr.co/audios/coverr-09-the-color-of-space-HGrgoz/preview.mp3' },
-      { id: 'AItrEi4QtA', title: 'inside a space lounge', url: 'https://cdn.coverr.co/audios/coverr-coverrco-inside-a-space-lounge-i43PLU/preview.mp3' },
-      { id: 'sGPevMbGzP', title: 'Deep Meditation', url: 'https://cdn.coverr.co/audios/coverr-deep-meditation-U8tCn6/preview.mp3' },
       { id: 'AeWsKx2z16', title: 'A Look At The Sky', url: 'https://cdn.coverr.co/audios/coverr-a-look-at-the-sky-xEdhi6/preview.mp3' },
+      { id: 'sGPevMbGzP', title: 'Deep Meditation', url: 'https://cdn.coverr.co/audios/coverr-deep-meditation-U8tCn6/preview.mp3' },
+      { id: 'mvh5rImd1R', title: 'clouds', url: 'https://cdn.coverr.co/audios/coverr-clouds-tzNU5D/preview.mp3' },
     ],
     Trickster: [
-      { id: 'YwOh8LspUf', title: 'What Awaits In The Dark', url: 'https://cdn.coverr.co/audios/coverr-what-awaits-in-the-dark-2kG5h0/preview.mp3' },
-      { id: 'nJ5W7hjMnK', title: 'Tension Scene', url: 'https://cdn.coverr.co/audios/14-tension-scene-Q9JhvP/preview.mp3' },
-      { id: 'QmqMQlXuFA', title: 'Throne of Blood', url: 'https://cdn.coverr.co/audios/coverr-throne-of-blood-tsouNm/preview.mp3' },
-      { id: 'MJnihkiJny', title: 'Psychopath', url: 'https://cdn.coverr.co/audios/coverr-psychopath-QmAJXt/preview.mp3' },
-      { id: '75i7cLNkgY', title: 'Left Behind', url: 'https://cdn.coverr.co/audios/coverr-left-behind-Qe9qNf/preview.mp3' },
+      { id: 'EX6e6IkDGx', title: 'A Piano For Travel', url: 'https://cdn.coverr.co/audios/coverr-a-piano-for-travel-OgNcjz/preview.mp3' },
+      { id: 'aUHfXkgixI', title: 'Cinematic Visions', url: 'https://cdn.coverr.co/audios/coverr-08-cinematic-visions-wdPqT9/preview.mp3' },
+      { id: 'yutSfOSE7l', title: 'Lotus Flower', url: 'https://cdn.coverr.co/audios/coverr-08-lotus-flower-mDp10e/preview.mp3' },
+      { id: 'p2sexNoWO6', title: 'horizons', url: 'https://cdn.coverr.co/audios/coverr-horizons-1WOjtJ/preview.mp3' },
     ],
     Path: [
       { id: 'EX6e6IkDGx', title: 'A Piano For Travel', url: 'https://cdn.coverr.co/audios/coverr-a-piano-for-travel-OgNcjz/preview.mp3' },
@@ -364,8 +450,81 @@
   const finaleLockLabel = document.getElementById('finale-lock-label');
   const copySnapshotButton = document.getElementById('copy-snapshot');
   const notifyReturnButton = document.getElementById('notify-return');
+  const backToStartButton = document.getElementById('back-to-start');
+  const langSwitch = document.getElementById('lang-switch');
+  const langButtons = Array.from(document.querySelectorAll('.lang-switch-btn'));
+  const spiralBeacon = document.getElementById('spiral-beacon');
+  const spiralBeaconText = document.getElementById('spiral-beacon-text');
 
 
+
+  function applyLanguage() {
+    document.documentElement.lang = currentLang;
+    document.title = tr('docTitle');
+
+    const setText = (selector, key) => {
+      const node = document.querySelector(selector);
+      if (node) node.textContent = tr(key);
+    };
+
+    setText('.entry-kicker', 'entryKicker');
+    setText('.entry-title', 'entryTitle');
+    setText('.entry-sub', 'entrySub');
+    setText('.entry-nav-hint', 'nav');
+    setText('.install-card-title', 'installCardTitle');
+    setText('.finale-kicker', 'finaleKicker');
+    setText('.finale-title', 'finaleTitle');
+    setText('.finale-sub', 'finaleSub');
+    setText('.finale-lock-label', 'lockLabel');
+    setText('.swipe-hint-label', 'swipe');
+
+    if (entryGate) entryGate.setAttribute('aria-label', tr('entryAria'));
+    if (entryTrigger) {
+      entryTrigger.textContent = isSessionLocked()
+        ? `${tr('lockedPrefix')} ${formatSessionCountdown(Math.max(0, sessionLockAt - Date.now()))}`
+        : tr('enter');
+    }
+    if (entryInstallButton) entryInstallButton.textContent = tr('installApp');
+    if (entryInstallHint) entryInstallHint.textContent = tr('installHint');
+    if (installCardInstall) installCardInstall.textContent = tr('install');
+    if (installCardHint) installCardHint.textContent = tr('installHint');
+    if (installCardLater) installCardLater.setAttribute('aria-label', tr('close'));
+    if (copySnapshotButton) copySnapshotButton.textContent = tr('copy');
+    if (notifyReturnButton) notifyReturnButton.textContent = tr('notify');
+    if (backToStartButton) backToStartButton.textContent = tr('back');
+
+    const loading = finalePortraitEl && finalePortraitEl.querySelector('.finale-loading');
+    if (loading) loading.textContent = tr('loading');
+
+    for (const button of langButtons) {
+      const active = button.dataset.lang === currentLang;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    }
+
+    updateSessionLockUI();
+  }
+
+  function setLanguage(lang) {
+    if (lang !== 'ru' && lang !== 'en') return;
+    currentLang = lang;
+    try {
+      localStorage.setItem(LANG_STORAGE_KEY, currentLang);
+    } catch (_) {
+      /* localStorage может быть недоступен */
+    }
+    applyLanguage();
+  }
+
+  if (langSwitch) {
+    langSwitch.addEventListener('pointerdown', (event) => event.stopPropagation());
+  }
+  for (const button of langButtons) {
+    button.addEventListener('click', (event) => {
+      event.stopPropagation();
+      setLanguage(button.dataset.lang);
+    });
+  }
 
   const categories = slides.map((slide, index) => {
     const tag = slide.dataset.tag;
@@ -624,6 +783,8 @@
   let returnAfterLock = false;
   let lastTrackedStage = 0;
   let lastHoldTrackedFrame = -1;
+  let spiralBeaconShown = false;
+  let spiralBeaconTimer = 0;
   let portraitText = '';
   let portraitRequestId = 0;
   let returnNotificationTimer = 0;
@@ -936,16 +1097,20 @@
 
     const words = countCaptionWords(text);
     if (words < CAPTION_MIN_WORDS || words > CAPTION_MAX_WORDS) return false;
-    if (!/[А-Яа-яЁё]/.test(text)) return false;
+    if (currentLang === 'en') {
+      if (!/[A-Za-z]/.test(text)) return false;
+    } else if (!/[А-Яа-яЁё]/.test(text)) {
+      return false;
+    }
     if (/[<>]/.test(text)) return false;
     if (/["«»“”]/.test(text)) return false;
 
     const sentenceMarks = text.match(/[.!?…]/g) || [];
-    if (sentenceMarks.length > 1) return false;
+    if (sentenceMarks.length > 2) return false;
 
-    if (/(архетип|персон|либидо|юнгиан|психоанализ)/i.test(text)) return false;
-    if (/(тень|трикстер|бездна|архетип|персон|либидо|слой|глубин)/iu.test(text)) return false;
-    if (/(сделай|поверь|должен|нужно|попробуй|стань|обещай)/i.test(text)) return false;
+    if (/(архетип|персон|либидо|юнгиан|психоанализ|archetype|persona|libido|jungian)/iu.test(text)) return false;
+    if (/(тень|трикстер|бездна|архетип|персон|либидо|слой|глубин|shadow|trickster|abyss|archetype|persona|libido)/iu.test(text)) return false;
+    if (/(сделай|поверь|должен|нужно|попробуй|стань|обещай|you should|you must|try to|promise me)/iu.test(text)) return false;
 
     return true;
   }
@@ -963,13 +1128,13 @@
   function localTimeContext() {
     const date = new Date();
     const hour = date.getHours();
-    let label = 'глубокая ночь';
+    let label = currentLang === 'en' ? 'deep night' : 'глубокая ночь';
 
-    if (hour >= 5 && hour < 8) label = 'раннее утро';
-    else if (hour >= 8 && hour < 12) label = 'утро';
-    else if (hour >= 12 && hour < 17) label = 'день';
-    else if (hour >= 17 && hour < 21) label = 'вечер';
-    else if (hour >= 21) label = 'поздний вечер';
+    if (hour >= 5 && hour < 8) label = currentLang === 'en' ? 'early morning' : 'раннее утро';
+    else if (hour >= 8 && hour < 12) label = currentLang === 'en' ? 'morning' : 'утро';
+    else if (hour >= 12 && hour < 17) label = currentLang === 'en' ? 'day' : 'день';
+    else if (hour >= 17 && hour < 21) label = currentLang === 'en' ? 'evening' : 'вечер';
+    else if (hour >= 21) label = currentLang === 'en' ? 'late evening' : 'поздний вечер';
 
     return {
       clock: `${String(hour).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`,
@@ -981,24 +1146,45 @@
     const stage = stageFor(stageId || STAGE_BY_CATEGORY[category.tag] || 1);
     const archetype = clip.archetype || stage.archetype || stage.name;
     const time = localTimeContext();
-    const details = [
-      `Архетип: ${archetype}.`,
-      `Категория: ${category.tag}.`,
-      `Стадия: ${stage.id} — ${stage.name}.`,
-      `Локальное время пользователя: ${time.clock}, ${time.label}.`,
-      `Видео: «${clip.title || 'без названия'}».`,
-      clip.description ? `Описание: ${clip.description.slice(0, 420)}.` : '',
-      clip.tags && clip.tags.length ? `Теги: ${clip.tags.slice(0, 18).join(', ')}.` : '',
-      `Поведение пользователя: ${behavior.context}.`,
-      'Создай одну новую фразу по правилам. Верни только текст фразы.',
-    ].filter(Boolean);
+    const behaviorKey = (behavior && behavior.key) || 'neutral';
+    const behaviorLine = currentLang === 'en'
+      ? ({
+        anxiety: 'early exits and fast swipes — hidden resistance, fleeing from self',
+        resonance: 'held finger or a loop — real immersion, hidden pull or fatigue',
+        neutral: 'steady watching without a strong reaction',
+      }[behaviorKey] || 'steady watching')
+      : (behavior && behavior.context) || 'спокойное наблюдение';
+
+    const details = currentLang === 'en'
+      ? [
+        `Category: ${category.tag}.`,
+        `Stage: ${stage.id}.`,
+        `Local time: ${time.clock}.`,
+        `Video: “${clip.title || 'untitled'}”.`,
+        clip.description ? `Description: ${clip.description.slice(0, 420)}.` : '',
+        clip.tags && clip.tags.length ? `Tags: ${clip.tags.slice(0, 18).join(', ')}.` : '',
+        `Behavior: ${behaviorLine}.`,
+        'Write one new line in natural conversational English, strictly 4–7 words. Return only the line.',
+      ]
+      : [
+        `Архетип: ${archetype}.`,
+        `Категория: ${category.tag}.`,
+        `Стадия: ${stage.id}.`,
+        `Локальное время: ${time.clock}.`,
+        `Видео: «${clip.title || 'без названия'}».`,
+        clip.description ? `Описание: ${clip.description.slice(0, 420)}.` : '',
+        clip.tags && clip.tags.length ? `Теги: ${clip.tags.slice(0, 18).join(', ')}.` : '',
+        `Поведение: ${behaviorLine}.`,
+        'Создай одну новую фразу строго из 4–7 слов. Верни только текст.',
+      ];
+    const systemPrompt = currentLang === 'en' ? CAPTION_SYSTEM_PROMPT_EN : CAPTION_SYSTEM_PROMPT_RU;
 
     return [
       {
         role: 'system',
-        content: `${CAPTION_SYSTEM_PROMPT}\n\nТекущая стадия пути: ${stage.id} — ${stage.name}. Архетип: ${archetype}. ${stage.tone}.${memoryPrompt()}`,
+        content: `${systemPrompt}\n\n${currentLang === 'en' ? 'Respond only in English.' : 'Отвечай только по-русски.'}`,
       },
-      { role: 'user', content: details.join('\n') },
+      { role: 'user', content: details.filter(Boolean).join('\n') },
     ];
   }
 
@@ -1068,7 +1254,9 @@
           { role: 'assistant', content: raw },
           {
             role: 'user',
-            content: `В предыдущей попытке получилось ${words} слов. Нужна ровно одна новая фраза строго из 4–7 слов, не более двух строк, только текст без кавычек и пояснений. Соблюдай лимит и не начинай фразу со слов «Ты/Твой/Твоя/Твои»; не повторяй прошлые формулировки.`,
+            content: currentLang === 'en'
+              ? `Previous attempt had ${words} words. Write one new line strictly 4–7 words, at most two short lines, only text without quotes or explanations. Do not repeat previous wording.`
+              : `В предыдущей попытке получилось ${words} слов. Нужна ровно одна новая фраза строго из 4–7 слов, не более двух строк, только текст без кавычек и пояснений. Не повторяй прошлые формулировки.`,
           },
         ]);
 
@@ -1312,6 +1500,7 @@
       token,
     };
 
+    const hiddenEligible = captionAllow || Math.random() < 0.6;
     const started = now();
     const applyText = (text) => {
       if (token !== captionSceneToken || !text) return;
@@ -1333,19 +1522,20 @@
     const cached = captionCache.get(key);
     const fallbackFirst = () => {
       if (sceneOrdinal > 1) return;
-      const time = localTimeContext();
-      applyText(`В этот час лучше просто дышать.`);
+      applyText(tr('captionFallback'));
     };
 
-    if (cached) {
-      applyText(cached);
-    } else {
-      requestCaption(clip, category, behavior, stage)
-        .then((text) => {
-          if (text) applyText(text);
-          else fallbackFirst();
-        })
-        .catch(() => fallbackFirst());
+    if (captionAllow || hiddenEligible) {
+      if (cached) {
+        applyText(cached);
+      } else {
+        requestCaption(clip, category, behavior, stage)
+          .then((text) => {
+            if (text) applyText(text);
+            else fallbackFirst();
+          })
+          .catch(() => fallbackFirst());
+      }
     }
 
     prefetchNextCaptions(behavior);
@@ -2213,6 +2403,32 @@
     return false;
   }
 
+  function normalizeSessionKey(value) {
+    return String(value || '')
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}]+/gu, ' ')
+      .trim();
+  }
+
+  function sessionPlanIsUnique(entries) {
+    const ids = new Set();
+    const urls = new Set();
+    const titles = new Set();
+    for (const entry of entries) {
+      const clip = entry && entry.clip;
+      if (!clip) return false;
+      const id = String(clip.id || '');
+      const url = String(clip.url || '');
+      const title = normalizeSessionKey(clip.title);
+      if (!id || !url || !title) return false;
+      if (ids.has(id) || urls.has(url) || titles.has(title)) return false;
+      ids.add(id);
+      urls.add(url);
+      titles.add(title);
+    }
+    return true;
+  }
+
   function buildSessionPlan() {
     resetViewedCycleIfComplete();
     const attempt = (allowSeen) => {
@@ -2230,7 +2446,7 @@
     };
 
     const entries = attempt(false) || attempt(true);
-    if (!entries || entries.length !== SESSION_LENGTH) return false;
+    if (!entries || entries.length !== SESSION_LENGTH || !sessionPlanIsUnique(entries)) return false;
 
     pathPlan = entries;
     pathPicked = new Set(entries.map((entry) => entry.clip.id));
@@ -2310,13 +2526,19 @@
     activeHapticStage = 0;
     lastTrackedStage = 0;
     lastHoldTrackedFrame = -1;
+    spiralBeaconShown = false;
+    window.clearTimeout(spiralBeaconTimer);
+    if (spiralBeacon) {
+      spiralBeacon.classList.remove('is-visible');
+      spiralBeacon.hidden = true;
+    }
     portraitText = '';
     portraitRequestId += 1;
 
-    if (copySnapshotButton) copySnapshotButton.textContent = 'Скопировать разбор';
+    if (copySnapshotButton) copySnapshotButton.textContent = tr('copy');
     if (notifyReturnButton) {
       notifyReturnButton.disabled = false;
-      notifyReturnButton.textContent = 'Уведомить через 2 часа';
+      notifyReturnButton.textContent = tr('notify');
     }
 
     if (finaleEl) {
@@ -2368,12 +2590,12 @@
       if (remaining > 0) {
         if (entryTrigger) {
           entryTrigger.disabled = true;
-          entryTrigger.textContent = `Продолжение через ${text}`;
+          entryTrigger.textContent = `${tr('lockedPrefix')} ${text}`;
         }
       } else {
         if (entryTrigger) {
           entryTrigger.disabled = false;
-          entryTrigger.textContent = 'Войти в эксперимент';
+          entryTrigger.textContent = tr('enter');
         }
       }
     }
@@ -2465,6 +2687,101 @@
     }, SESSION_FINALE_DELAY_MS);
   }
 
+  function summarizeEventsForBeacon(events) {
+    const top = events
+      .slice()
+      .sort((a, b) => (b.heldMs || 0) - (a.heldMs || 0) || (b.viewedMs || 0) - (a.viewedMs || 0))[0];
+    return {
+      title: (top && top.title) || '',
+      stage: (top && top.stage) || sessionStage,
+    };
+  }
+
+  function spiralBeaconFallback() {
+    const summary = summarizeEventsForBeacon(sessionEvents.slice(-30));
+    const title = String(summary.title || '').trim();
+    if (currentLang === 'en') {
+      return title
+        ? `You freeze at “${title}.” Go deeper.`
+        : 'You freeze at the quiet. Go deeper.';
+    }
+    return title
+      ? `Ты замираешь на «${title}». Дальше глубже.`
+      : 'Ты замираешь в тишине. Дальше глубже.';
+  }
+
+  async function requestSpiralBeaconLine() {
+    const events = sessionEvents.slice(-30).map((event) => ({
+      stage: event.stage,
+      title: event.title,
+      seconds: Math.round((event.viewedMs || 0) / 100) / 10,
+      heldSeconds: Math.round((event.heldMs || 0) / 100) / 10,
+      early: Boolean(event.early),
+    }));
+    const langLine = currentLang === 'en'
+      ? 'Write in natural conversational English.'
+      : 'Пиши на естественном разговорном русском.';
+    const system = currentLang === 'en'
+      ? `You are an unnervingly perceptive inner voice. Return exactly one sentence of 6–9 words, no quotes, no explanations. Expose the escape or the hidden pull without abstract poetry. ${langLine}`
+      : `Ты — проницательный, слегка провокационный внутренний голос. Верни ровно одну фразу из 6–9 слов, без кавычек и пояснений. Вскрой бегство или скрытую тягу без абстрактной поэзии. ${langLine}`;
+    const user = currentLang === 'en'
+      ? `First 30 frames: ${JSON.stringify(events)}\nGive one short line that lands like a private observation.`
+      : `Первые 30 кадров: ${JSON.stringify(events)}\nДай одну короткую фразу, похожую на личное наблюдение.`;
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), 7000);
+    try {
+      const response = await fetch(DEEPSEEK_PROXY_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [
+            { role: 'system', content: system },
+            { role: 'user', content: user },
+          ],
+          temperature: 1.05,
+          max_tokens: 40,
+        }),
+        signal: controller.signal,
+        cache: 'no-store',
+      });
+      if (!response.ok) return;
+      const payload = await response.json();
+      const raw = payload
+        && payload.choices
+        && payload.choices[0]
+        && payload.choices[0].message
+        && payload.choices[0].message.content;
+      const text = String(raw || '').replace(/^["'«»“”]+|["'«»“”]+$/g, '').trim();
+      const words = text.split(/\s+/).filter(Boolean);
+      if (words.length < 6 || words.length > 9) return;
+      if (currentLang === 'en' ? !/[A-Za-z]/.test(text) : !/[А-Яа-яЁё]/.test(text)) return;
+      if (!spiralBeacon || !spiralBeacon.classList.contains('is-visible')) return;
+      if (spiralBeaconText) spiralBeaconText.textContent = text;
+    } catch (_) {
+      /* фолбэк уже показан */
+    } finally {
+      window.clearTimeout(timer);
+    }
+  }
+
+  function showSpiralBeacon() {
+    if (!spiralBeacon || spiralBeaconShown) return;
+    spiralBeaconShown = true;
+    if (spiralBeaconText) spiralBeaconText.textContent = spiralBeaconFallback();
+    spiralBeacon.hidden = false;
+    window.requestAnimationFrame(() => spiralBeacon.classList.add('is-visible'));
+    safeVibrate([10, 45, 10], 0);
+    window.clearTimeout(spiralBeaconTimer);
+    spiralBeaconTimer = window.setTimeout(() => {
+      spiralBeacon.classList.remove('is-visible');
+      window.setTimeout(() => {
+        if (spiralBeacon) spiralBeacon.hidden = true;
+      }, 1000);
+    }, 4000);
+    requestSpiralBeaconLine();
+  }
+
   function finishSession() {
     if (sessionComplete) return;
 
@@ -2481,7 +2798,7 @@
 
     stage.classList.add('is-finalizing');
     hideInstallCard();
-    if (stageLabelEl) stageLabelEl.textContent = '40 // СЕССИЯ ЗАВЕРШЕНА';
+    if (stageLabelEl) stageLabelEl.textContent = '50 // СЕССИЯ ЗАВЕРШЕНА';
     setSessionLock();
     updateSessionProgress();
 
@@ -2495,6 +2812,30 @@
     requestSessionPortrait();
   }
 
+  function returnToStart() {
+    stopFinaleSessionVideo();
+    if (finaleEl) {
+      finaleEl.hidden = true;
+      finaleEl.classList.remove('is-visible');
+      finaleEl.setAttribute('aria-hidden', 'true');
+    }
+    stage.classList.remove('is-finalizing');
+    gateOpen = false;
+    pathStarted = false;
+    pathPos = -1;
+    pathPlan = [];
+    pathPicked = new Set();
+    if (entryGate) {
+      entryGate.hidden = false;
+      entryGate.classList.remove('is-open');
+      entryGate.setAttribute('aria-hidden', 'false');
+    }
+    hideInstallCard();
+    beginSession();
+    if (!buildSessionPlan()) appendFallbackPath(true);
+    updateSessionLockUI();
+  }
+
   function stageNameFor(stageId) {
     return stageFor(stageId).name;
   }
@@ -2504,11 +2845,36 @@
     return counted.length ? counted : sessionEvents;
   }
 
+  function sessionTopMoment(events) {
+    return events
+      .slice()
+      .sort((a, b) => (b.heldMs || 0) - (a.heldMs || 0) || (b.viewedMs || 0) - (a.viewedMs || 0))[0];
+  }
+
+  function sessionAverageSeconds(events) {
+    if (!events.length) return 0;
+    const total = events.reduce((sum, event) => sum + (event.viewedMs || 0), 0);
+    return Math.max(0.1, total / events.length / 1000);
+  }
+
   function fallbackSessionPortrait() {
+    const events = countedSessionEvents();
+    const top = sessionTopMoment(events);
+    const title = String((top && top.title) || '').trim().split(/\s+/).slice(0, 5).join(' ');
+    const pace = sessionAverageSeconds(events).toFixed(1).replace('.', currentLang === 'en' ? '.' : ',');
+    if (currentLang === 'en') {
+      const image = title ? `“${title}”` : 'the silence';
+      return [
+        `Your pace is ${pace} seconds per frame; you keep your face steady even when tired.`,
+        `You stayed longest with ${image} — that is where your body told the truth.`,
+        'The real trigger is only surfacing; the full read opens in two hours.',
+      ];
+    }
+    const image = title ? `«${title}»` : 'тишине';
     return [
-      'Защита через скорость: пауза сбрасывается за полсекунды.',
-      'Внимание замирает только там, где есть холод и пустота.',
-      'Главный триггер — привычка держать лицо; разбор откроется через два часа.',
+      `Твой темп — ${pace} секунды на кадр: ты держишь лицо даже когда устал.`,
+      `Дольше всего ты замер на ${image} — там тело сказало правду.`,
+      'Главный триггер только нащупан; настоящий разбор откроется через два часа.',
     ];
   }
 
@@ -2532,17 +2898,15 @@
 
     const text = lines.join(' ').trim();
     const words = text.split(/\s+/).filter(Boolean);
-    if (words.length < 20 || words.length > 30) return false;
-
-    const tokens = text.toLowerCase().split(/[^а-яёa-z]+/i).filter(Boolean);
-    const banned = new Set([
-      'ты', 'твой', 'твоя', 'твои', 'твоего', 'твоему', 'твоим',
-      'твоей', 'твоих', 'твою', 'тобой', 'тебя', 'тебе',
-      'ваш', 'ваша', 'ваше', 'ваши', 'вашего', 'вашему', 'вашим',
-      'вашей', 'ваших', 'вашу', 'вами', 'вас', 'вам',
-    ]);
-    if (/(тень|трикстер|бездна|архетип|персон|либидо|слой|глубин)/iu.test(text)) return false;
-    return !tokens.some((token) => banned.has(token));
+    if (words.length < 25 || words.length > 50) return false;
+    if (currentLang === 'en') {
+      if (!/[A-Za-z]/.test(text)) return false;
+    } else if (!/[А-Яа-яЁё]/.test(text)) {
+      return false;
+    }
+    if (/[<>]/.test(text)) return false;
+    if (/(архетип|персон|либидо|юнгиан|психоанализ|archetype|persona|libido|jungian)/iu.test(text)) return false;
+    return true;
   }
 
   function renderSessionPortrait(lines) {
@@ -2564,7 +2928,7 @@
   async function requestSessionPortrait() {
     const requestId = ++portraitRequestId;
     if (finalePortraitEl) {
-      finalePortraitEl.innerHTML = '<p class="finale-loading">СБОРКА СЛЕПКА...</p>';
+      finalePortraitEl.innerHTML = `<p class="finale-loading">${tr('loading')}</p>`;
     }
 
     const fallback = fallbackSessionPortrait();
@@ -2574,8 +2938,7 @@
     }
 
     const time = localTimeContext();
-    const counted = countedSessionEvents().slice(-SESSION_LENGTH);
-    const events = counted.map((event) => ({
+    const events = sessionEvents.slice(-SESSION_LENGTH).map((event) => ({
       stage: event.stage,
       archetype: event.archetype,
       category: event.category,
@@ -2588,39 +2951,84 @@
       direction: event.direction,
     }));
 
-    const system = [
-      'Ты — спокойный наблюдатель, не психотерапевт.',
-      'По 40 кадрам поведения создай короткий разбор: ровно 3 короткие рубленые строки.',
-      'Жёсткий лимит: всего 20–30 слов во всех трёх строках. Никаких длинных абзацев.',
-      'Полный запрет на слова «Ты», «Твой», «Твоя», «Твои» и любые формы второго лица.',
-      'Пиши от третьего лица или безлично, как короткая точная заметка наблюдения.',
-      'Пиши простым, ясным человеческим языком: без вычурности, метафор и терминов.',
-      'Редкие досрочные свайпы — главный маркер скрытого сопротивления.',
-      'Третья строка — крючок: главный триггер скрыт, разбор откроется через два часа.',
-      'Без заголовков, списков, кавычек, диагнозов и пояснений. Верни только 3 строки.',
-    ].join('\n');
+    const stageSummary = [1, 2, 3, 4].map((stageId) => {
+      const stageEvents = events.filter((event) => Number(event.stage) === stageId);
+      const top = stageEvents
+        .slice()
+        .sort((a, b) => (b.heldSeconds - a.heldSeconds) || (b.seconds - a.seconds))
+        .slice(0, 3)
+        .map((event) => ({
+          title: event.title,
+          seconds: event.seconds,
+          heldSeconds: event.heldSeconds,
+        }));
+      return {
+        stage: stageId,
+        frames: stageEvents.length,
+        holds: stageEvents.filter((event) => event.heldSeconds > 0).length,
+        top_titles: top,
+      };
+    });
+    const holds = events.filter((event) => event.heldSeconds > 0).length;
+    const pace = events.length
+      ? Math.round(events.reduce((sum, event) => sum + event.seconds, 0) / events.length * 10) / 10
+      : 0;
 
-    const user = `Локальное время: ${time.clock}, ${time.label}.
-События 40 учтённых кадров:
+    const summary = {
+      total_frames: events.length,
+      total_holds: holds,
+      average_seconds_per_frame: pace,
+      stages: stageSummary,
+    };
+
+    const system = currentLang === 'en'
+      ? `You are an unsparing but lucid observer of human behavior, not a therapist.
+Write in natural, direct English. Exactly 3 short lines, 25–50 words total.
+Address the reader as you/your when it makes the line land harder.
+Line 1: expose the mask and the real tempo.
+Line 2: name the exact image or moment where the reader froze or lingered.
+Line 3: leave an unfinished loop — the hidden trigger is only surfacing and the full read opens in two hours.
+No abstract water, no poetry, no therapy vocabulary, no headings, no lists, no quotes.
+Return only the 3 lines.`
+      : `Ты — проницательный, безжалостно точный наблюдатель поведения, не психотерапевт.
+Пиши на естественном, прямом русском. Ровно 3 короткие строки, всего 25–50 слов.
+Можно обращаться на «ты», если так точнее попадаешь.
+1-я строка: вскрой маску и реальный темп.
+2-я строка: назови конкретный кадр или момент, где человек замер или задержался.
+3-я строка: оставь незакрытый гештальт — главный триггер только нащупан, полный разбор откроется через два часа.
+Без абстрактной воды, поэзии, терапевтических терминов, заголовков, списков и кавычек.
+Верни только 3 строки.`;
+
+    const user = currentLang === 'en'
+      ? `Local time: ${time.clock}, ${time.label}.
+Real 50-frame summary:
+${JSON.stringify(summary, null, 2)}
+All frame events:
 ${JSON.stringify(events, null, 2)}
 
-Верни ровно 3 строки, 20–30 слов, без второго лица.`;
+Write exactly 3 lines in English, 25–50 words, based on the real held images and tempo.`
+      : `Локальное время: ${time.clock}, ${time.label}.
+Реальная сводка 50 кадров:
+${JSON.stringify(summary, null, 2)}
+Все события кадров:
+${JSON.stringify(events, null, 2)}
+
+Верни ровно 3 строки на русском, 25–50 слов, опираясь на реальные кадры замирания и темп.`;
+
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), PORTRAIT_TIMEOUT_MS);
 
     try {
       const response = await fetch(DEEPSEEK_PROXY_ENDPOINT, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: [
             { role: 'system', content: system },
             { role: 'user', content: user },
           ],
-          temperature: 0.86,
-          max_tokens: 170,
+          temperature: 0.82,
+          max_tokens: 190,
         }),
         signal: controller.signal,
         cache: 'no-store',
@@ -2664,12 +3072,12 @@ ${JSON.stringify(events, null, 2)}
       area.remove();
     }
 
-    if (copySnapshotButton) copySnapshotButton.textContent = 'Разбор скопирован';
+    if (copySnapshotButton) copySnapshotButton.textContent = tr('copied');
     trackEvent('copy_verdict');
   }
 
   function scheduleReturnNotification(unlockAt) {
-    const body = 'Продолжение открыто. Вернись, чтобы узнать, что дальше.';
+    const body = tr('notificationBody');
     const delay = Math.max(0, unlockAt - Date.now());
 
     window.clearTimeout(returnNotificationTimer);
@@ -2703,7 +3111,7 @@ ${JSON.stringify(events, null, 2)}
   async function enableReturnNotification() {
     trackEvent('notify_enable');
     if (!('Notification' in window)) {
-      if (notifyReturnButton) notifyReturnButton.textContent = 'Уведомления недоступны';
+      if (notifyReturnButton) notifyReturnButton.textContent = tr('notifyUnavailable');
       return;
     }
 
@@ -2717,14 +3125,14 @@ ${JSON.stringify(events, null, 2)}
     }
 
     if (permission !== 'granted') {
-      if (notifyReturnButton) notifyReturnButton.textContent = 'Уведомления отключены';
+      if (notifyReturnButton) notifyReturnButton.textContent = tr('notifyOff');
       return;
     }
 
     const unlockAt = sessionLockAt || (Date.now() + SESSION_LOCK_MS);
     scheduleReturnNotification(unlockAt);
     if (notifyReturnButton) {
-      notifyReturnButton.textContent = 'Уведомление поставлено';
+      notifyReturnButton.textContent = tr('notifySet');
       notifyReturnButton.disabled = true;
     }
   }
@@ -3651,6 +4059,7 @@ ${JSON.stringify(events, null, 2)}
 
     pathPos += 1;
     sceneContext.stage = entry.stage;
+    if (pathPos === 30) showSpiralBeacon();
 
     navigateTo(
       entry.category.index,
@@ -3742,6 +4151,7 @@ ${JSON.stringify(events, null, 2)}
     holdTimer = 0;
     resonanceTimer = 0;
     captionRevealTimer = 0;
+    const wasHolding = Boolean(gesture && gesture.holding);
     stopHold();
 
     const g = gesture;
@@ -3764,8 +4174,8 @@ ${JSON.stringify(events, null, 2)}
       return;
     }
 
-    const isLongEnough = distance >= SWIPE_MIN_PX;
-    const isFlick = distance >= FLICK_MIN_PX && velocity >= FLICK_MIN_SPEED;
+    const isLongEnough = distance >= (wasHolding ? 85 : SWIPE_MIN_PX);
+    const isFlick = !wasHolding && distance >= FLICK_MIN_PX && velocity >= FLICK_MIN_SPEED;
 
     if (isLongEnough || isFlick) {
       go(dy < 0 ? 'up' : 'down', velocity);
@@ -4172,6 +4582,7 @@ ${JSON.stringify(events, null, 2)}
   sessionLockAt = readSessionLock();
   returnAfterLock = Boolean(sessionLockAt && sessionLockAt <= Date.now());
   startSessionLockTicker();
+  applyLanguage();
   window.addEventListener('load', () => trackEvent('threshold_open'), { once: true });
 
   if (copySnapshotButton) {
@@ -4180,6 +4591,10 @@ ${JSON.stringify(events, null, 2)}
 
   if (notifyReturnButton) {
     notifyReturnButton.addEventListener('click', enableReturnNotification);
+  }
+
+  if (backToStartButton) {
+    backToStartButton.addEventListener('click', returnToStart);
   }
 
   attachLockSwipe(entryGate, () => {

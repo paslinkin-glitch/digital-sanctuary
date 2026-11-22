@@ -1,4 +1,4 @@
-/* Generated from videos.json. Light-rebalanced FullHD catalog. */
+/* Generated from videos.json. Curated 50-frame catalog. */
 window.VIDEOS_DATA = [
   {
     "id": "g9re0sRUYA",
@@ -21,19 +21,6 @@ window.VIDEOS_DATA = [
     "duration": 20.888,
     "vertical": true,
     "size": 11626137
-  },
-  {
-    "id": "wikimedia:93689411",
-    "title": "Rain water",
-    "description": "",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/2/23/Rain_water.webm",
-    "stage": "shadow",
-    "source": "wikimedia",
-    "vertical": true,
-    "width": 720,
-    "height": 1280,
-    "duration": 10,
-    "size": 14106235
   },
   {
     "id": "coverr-coverr-nights-in-the-city-9359",
@@ -64,16 +51,6 @@ window.VIDEOS_DATA = [
     "url": "https://cdn.coverr.co/videos/coverr-rain-in-the-city-430/1080p.mp4",
     "vertical": false,
     "size": 9167464
-  },
-  {
-    "id": "coverr-coverr-asian-man-stands-in-the-street-at-night-5550",
-    "stage": "shadow",
-    "archetype": "Тень",
-    "source": "coverr",
-    "title": "Asian man stands in the street at night",
-    "url": "https://cdn.coverr.co/videos/coverr-asian-man-stands-in-the-street-at-night-5550/1080p.mp4",
-    "vertical": false,
-    "size": 8818959
   },
   {
     "id": "coverr-coverr-a-shadow-of-a-man-on-the-pavement-3707",
@@ -296,19 +273,6 @@ window.VIDEOS_DATA = [
     "size": 14855506
   },
   {
-    "id": "coverr:NDxc9OuhzQ",
-    "title": "Asian man drinking water",
-    "description": "Medium close-up shot of an Asian man drinking water at night.",
-    "url": "https://cdn.coverr.co/videos/coverr-asian-man-drinking-water-1136/1080p.mp4",
-    "stage": "shadow",
-    "source": "coverr",
-    "vertical": false,
-    "width": 3840,
-    "height": 2160,
-    "duration": 10,
-    "size": 9631885
-  },
-  {
     "id": "coverr:fwwKKUlRGF",
     "title": "Night city from a moving car",
     "description": "Shot from inside a moving car, showing the city at night.",
@@ -320,32 +284,6 @@ window.VIDEOS_DATA = [
     "height": 2160,
     "duration": 10,
     "size": 13304444
-  },
-  {
-    "id": "wikimedia:194225647",
-    "title": "Rainfall in East Legon 02",
-    "description": "",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/a/ae/Rainfall_in_East_Legon_02.webm",
-    "stage": "shadow",
-    "source": "wikimedia",
-    "vertical": false,
-    "width": 1920,
-    "height": 1080,
-    "duration": 10,
-    "size": 12587566
-  },
-  {
-    "id": "wikimedia:194225653",
-    "title": "Rainfall in East Legon 04",
-    "description": "",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/4/4f/Rainfall_in_East_Legon_04.webm",
-    "stage": "shadow",
-    "source": "wikimedia",
-    "vertical": false,
-    "width": 1920,
-    "height": 1080,
-    "duration": 10,
-    "size": 10609523
   },
   {
     "id": "coverr-coverr-waves-in-the-ocean-9488",
@@ -396,16 +334,6 @@ window.VIDEOS_DATA = [
     "url": "https://cdn.coverr.co/videos/coverr-large-ocean-wave-5169/1080p.mp4",
     "vertical": false,
     "size": 10989022
-  },
-  {
-    "id": "coverr-coverr-waves-in-the-ocean-9927",
-    "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
-    "source": "coverr",
-    "title": "Waves in the ocean",
-    "url": "https://cdn.coverr.co/videos/coverr-waves-in-the-ocean-9927/1080p.mp4",
-    "vertical": false,
-    "size": 10631191
   },
   {
     "id": "coverr-coverr-the-incoming-waves-of-the-ocean-gently-splash-onto-the-shore-3079",
@@ -520,19 +448,6 @@ window.VIDEOS_DATA = [
     "size": 5733152
   },
   {
-    "id": "coverr:XqrXhQBw8W",
-    "title": "Indian fire ceremony",
-    "description": "Still shot of an Indian fire ceremony at night.",
-    "url": "https://cdn.coverr.co/videos/coverr-indian-fire-ceremony-9024/1080p.mp4",
-    "stage": "trickster_abyss",
-    "source": "coverr",
-    "vertical": false,
-    "width": 1920,
-    "height": 1080,
-    "duration": 10,
-    "size": 6862303
-  },
-  {
     "id": "coverr:LLTaHT34D2",
     "title": "Warming up by the fire",
     "description": "Traveling shot of someone warming their hands up by the fire.",
@@ -609,19 +524,6 @@ window.VIDEOS_DATA = [
     "height": 2160,
     "duration": 10,
     "size": 6124958
-  },
-  {
-    "id": "coverr:jOlwnczJML",
-    "title": "Ocean waves",
-    "description": "Aerial shot of the beautiful ocean waves.",
-    "url": "https://cdn.coverr.co/videos/coverr-ocean-waves-3953/1080p.mp4",
-    "stage": "trickster_abyss",
-    "source": "coverr",
-    "vertical": false,
-    "width": 1920,
-    "height": 1080,
-    "duration": 10,
-    "size": 15414011
   },
   {
     "id": "coverr:k2PyrY9cxl",
@@ -753,19 +655,6 @@ window.VIDEOS_DATA = [
     "size": 6673908
   },
   {
-    "id": "wikimedia:175524396",
-    "title": "Cloud September 2025",
-    "description": "",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/0/06/Cloud_September_2025.webm",
-    "stage": "calm",
-    "source": "wikimedia",
-    "vertical": true,
-    "width": 720,
-    "height": 1280,
-    "duration": 10,
-    "size": 5487210
-  },
-  {
     "id": "coverr-coverr-crystal-clear-sea-water-894",
     "stage": "calm",
     "archetype": "Покой / Анима",
@@ -874,16 +763,6 @@ window.VIDEOS_DATA = [
     "url": "https://cdn.coverr.co/videos/coverr-forest-covered-by-a-thick-fog-3180/1080p.mp4",
     "vertical": false,
     "size": 7151570
-  },
-  {
-    "id": "coverr-coverr-lighting-a-candle-4842",
-    "stage": "calm",
-    "archetype": "Покой / Анима",
-    "source": "coverr",
-    "title": "Lighting a candle",
-    "url": "https://cdn.coverr.co/videos/coverr-lighting-a-candle-4842/1080p.mp4",
-    "vertical": false,
-    "size": 16479667
   },
   {
     "id": "coverr-coverr-rain-falling-in-the-forest-9275",
@@ -1322,7 +1201,7 @@ window.VIDEOS_DATA = [
     "width": 3840,
     "height": 2160,
     "duration": 10,
-    "size": null
+    "size": 15943883
   },
   {
     "id": "coverr:B1u9fiuoHy",
@@ -1335,7 +1214,7 @@ window.VIDEOS_DATA = [
     "width": 1920,
     "height": 1080,
     "duration": 10,
-    "size": null
+    "size": 15464080
   },
   {
     "id": "coverr:oW4o7tWGej",
@@ -1426,7 +1305,7 @@ window.VIDEOS_DATA = [
     "width": 1920,
     "height": 1080,
     "duration": 10,
-    "size": null
+    "size": 15218079
   },
   {
     "id": "coverr:eU6Z9ZcIMT",
@@ -1683,19 +1562,6 @@ window.VIDEOS_DATA = [
     "height": 720,
     "duration": 10,
     "size": 7579877
-  },
-  {
-    "id": "coverr:TFvSHUlwvU",
-    "title": "Pigeons flying away",
-    "description": "A still shot of pigeons flying away.",
-    "url": "https://cdn.coverr.co/videos/coverr-pigeons-flying-away-3261/1080p.mp4",
-    "stage": "path",
-    "source": "coverr",
-    "vertical": false,
-    "width": 3840,
-    "height": 2160,
-    "duration": 10,
-    "size": 8767534
   },
   {
     "id": "coverr:WtEJI3B4eV",
@@ -2150,6 +2016,6 @@ window.VIDEOS_DATA = [
     "width": 1920,
     "height": 1080,
     "duration": 10,
-    "size": null
+    "size": 16343019
   }
 ];

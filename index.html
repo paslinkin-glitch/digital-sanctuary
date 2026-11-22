@@ -61,6 +61,10 @@
       <span class="swipe-hint-arrow">↑</span>
       <span class="swipe-hint-label">СВАЙП ВВЕРХ</span>
     </div>
+    <div class="spiral-beacon" id="spiral-beacon" hidden aria-live="polite">
+      <span class="spiral-beacon-mark" aria-hidden="true">◆</span>
+      <p class="spiral-beacon-text" id="spiral-beacon-text"></p>
+    </div>
   </main>
 
   <div class="entry" id="entry" role="dialog" aria-label="Порог эксперимента">
@@ -68,6 +72,11 @@
       <span class="ambient-orb ambient-orb--indigo"></span>
       <span class="ambient-orb ambient-orb--amber"></span>
       <span class="ambient-orb ambient-orb--smoke"></span>
+    </div>
+    <div class="lang-switch" id="lang-switch" role="group" aria-label="Language">
+      <button class="lang-switch-btn" type="button" data-lang="ru">RU</button>
+      <span class="lang-switch-sep" aria-hidden="true">/</span>
+      <button class="lang-switch-btn" type="button" data-lang="en">EN</button>
     </div>
     <div class="entry-copy">
       <p class="entry-kicker">СЕССИЯ 01 // ЗЕРКАЛО ПОВЕДЕНИЯ</p>
@@ -110,11 +119,11 @@
       <div class="finale-actions">
         <button class="finale-btn" id="copy-snapshot" type="button">Скопировать разбор</button>
         <button class="finale-btn" id="notify-return" type="button">Уведомить через 2 часа</button>
+        <button class="finale-btn finale-btn--ghost" id="back-to-start" type="button">На главный экран</button>
       </div>
       <div class="finale-lock">
         <p class="finale-lock-label" id="finale-lock-label">ПРОДОЛЖЕНИЕ</p>
         <p class="finale-countdown" id="finale-countdown">02:00:00</p>
-        <p class="finale-lock-note">Продолжение откроется через <span id="finale-lock-inline">02:00:00</span></p>
       </div>
     </div>
   </section>
