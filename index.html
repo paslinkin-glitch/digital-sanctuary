@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=21">
+  <link rel="stylesheet" href="style.css?v=22">
 </head>
 <body>
   <main class="stage" id="stage">
@@ -45,6 +45,7 @@
       <span class="session-progress-fill" id="session-progress-fill"></span>
     </div>
     <div class="sanctuary-frame" aria-hidden="true"></div>
+    <div class="cycle-whisper" id="cycle-whisper" aria-live="polite" aria-hidden="true"></div>
     <div class="optic" aria-hidden="true">
       <div class="optic-haze"></div>
       <div class="optic-water"></div>
@@ -97,29 +98,6 @@
     <button class="install-card-close" id="install-card-later" type="button" aria-label="Закрыть">×</button>
   </aside>
 
-  <section class="finale" id="finale" hidden aria-labelledby="finale-title">
-    <video class="finale-session-video" id="finale-session-video" muted loop playsinline preload="metadata" disablepictureinpicture aria-hidden="true"></video>
-    <div class="ambient-mesh ambient-mesh--finale" aria-hidden="true">
-      <span class="ambient-orb ambient-orb--indigo"></span>
-      <span class="ambient-orb ambient-orb--amber"></span>
-      <span class="ambient-orb ambient-orb--smoke"></span>
-    </div>
-    <div class="finale-glow" aria-hidden="true"></div>
-    <div class="finale-shell">
-      <p class="finale-kicker">ТИШИНА</p>
-      <h2 class="finale-title" id="finale-title">Сон завершён</h2>
-      <p class="finale-sub">ПРОСТРАНСТВО РЯДОМ</p>
-      <div class="finale-rule" aria-hidden="true"></div>
-      <div class="finale-portrait" id="finale-portrait" aria-live="polite">
-        <p>Здесь ничего не нужно объяснять или исправлять.</p>
-        <p>Тишина просто побыла рядом — ты можешь остаться в ней или вернуться в любой момент.</p>
-      </div>
-      <div class="finale-actions">
-        <button class="finale-btn finale-btn--glass" id="back-to-start" type="button">Ещё один сон</button>
-      </div>
-    </div>
-  </section>
-
   <script>
     window.__deferredInstallPrompt = null;
     window.addEventListener('beforeinstallprompt', function (event) {
@@ -127,7 +105,7 @@
       window.__deferredInstallPrompt = event;
     });
   </script>
-  <script src="videos-data.js?v=21"></script>
-  <script src="app.js?v=21"></script>
+  <script src="videos-data.js?v=22"></script>
+  <script src="app.js?v=22"></script>
 </body>
 </html>

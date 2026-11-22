@@ -1295,3 +1295,41 @@ body {
 .finale-rule {
   margin: 1.35rem 0 1.2rem;
 }
+
+
+/* ------------------------------------------------------- cycle whisper */
+.cycle-whisper {
+  position: absolute;
+  top: 42%;
+  left: 50%;
+  z-index: 8;
+  width: min(84vw, 390px);
+  margin: 0;
+  transform: translate(-50%, -50%);
+  color: rgba(248, 246, 242, 0.94);
+  font-family: var(--serif);
+  font-size: clamp(17px, 4.6vw, 21px);
+  font-weight: 300;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  text-align: center;
+  text-wrap: balance;
+  text-shadow: 0 2px 22px rgba(0, 0, 0, 0.95);
+  opacity: 0;
+  filter: blur(8px);
+  transition:
+    opacity 1.2s var(--organic),
+    filter 1.2s var(--organic);
+  pointer-events: none;
+}
+
+.cycle-whisper.is-visible {
+  opacity: 0.96;
+  filter: blur(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cycle-whisper {
+    transition-duration: 0.01ms;
+  }
+}

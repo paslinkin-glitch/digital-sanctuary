@@ -98,6 +98,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       finaleBody2: 'Тишина просто побыла рядом — ты можешь остаться в ней или вернуться в любой момент.',
       loading: 'СОБИРАЕМ РАЗБОР...',
       back: 'Ещё один сон',
+      cycle1: 'Первый круг сна завершён. Пространство ведёт глубже.',
+      cycle2: 'Второй круг пройден. Тишина остаётся рядом.',
+      cycle3: 'Круг сна завершён. Дыхание продолжается.',
       lockLabel: 'ПРОДОЛЖЕНИЕ',
       lockedPrefix: 'Продолжение через',
       notificationBody: 'Продолжение открыто. Вернись, чтобы узнать, что дальше.',
@@ -124,6 +127,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       finaleBody2: 'Silence simply stayed beside you — you can remain in it or return at any moment.',
       loading: 'BUILDING YOUR VERDICT...',
       back: 'One more dream',
+      cycle1: 'First cycle of the dream complete. The space leads deeper.',
+      cycle2: 'Second cycle passed. Silence remains beside you.',
+      cycle3: 'Dream cycle complete. Breathing continues.',
       lockLabel: 'CONTINUATION',
       lockedPrefix: 'Continues in',
       notificationBody: 'The next chapter is open. Come back and see what it holds.',
@@ -434,6 +440,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   /* ------------------------------------------------------------------ DOM */
 
   const stage = document.querySelector('.stage');
+  const cycleWhisperEl = document.getElementById('cycle-whisper');
   const slides = Array.from(document.querySelectorAll('.slide'));
   const captionEl = document.querySelector('.caption');
   const captionLines = captionEl
@@ -788,6 +795,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   let quietSinceText = 0;
   let quietRequired = 1;
   let sessionFinalTimer = 0;
+  let cycleNumber = 1;
+  let cycleWhisperTimer = 0;
+  let captionStartDelayOverride = 0;
+  let cycleWhisperUntil = 0;
   let activeHapticStage = 0;
   let holdPulseTimer = 0;
   let lastHapticAt = 0;
@@ -1398,7 +1409,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   function scheduleCaptionVisible(started, token, immediate) {
     if (!captionEl || !captionHasText || token !== captionSceneToken) return;
 
-    const delay = immediate ? 0 : Math.max(0, CAPTION_START_DELAY_MS - (now() - started));
+    const requestedDelay = captionStartDelayOverride || CAPTION_START_DELAY_MS;
+    const delay = immediate ? 0 : Math.max(0, requestedDelay - (now() - started));
+    captionStartDelayOverride = 0;
     window.clearTimeout(captionTimer);
     captionTimer = window.setTimeout(() => {
       if (token !== captionSceneToken || !captionHasText) return;
@@ -1419,6 +1432,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
 
   function revealCaptionForHold() {
     if (!captionSuppressed || captionHoldReady) return;
+    if (Date.now() < cycleWhisperUntil) return;
     if (!gesture || !gesture.holding) return;
 
     captionHoldReady = true;
@@ -2496,6 +2510,32 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (promise && typeof promise.catch === 'function') promise.catch(() => {});
   }
 
+  function hideCycleWhisper() {
+    window.clearTimeout(cycleWhisperTimer);
+    cycleWhisperTimer = 0;
+    cycleWhisperUntil = 0;
+    if (!cycleWhisperEl) return;
+    cycleWhisperEl.classList.remove('is-visible');
+    cycleWhisperEl.setAttribute('aria-hidden', 'true');
+  }
+
+  function showCycleWhisper(completedCycle) {
+    if (!cycleWhisperEl) return;
+    window.clearTimeout(cycleWhisperTimer);
+    const key = completedCycle === 1 ? 'cycle1' : (completedCycle === 2 ? 'cycle2' : 'cycle3');
+    cycleWhisperEl.textContent = tr(key);
+    cycleWhisperUntil = Date.now() + 4800;
+    cycleWhisperEl.setAttribute('aria-hidden', 'false');
+    window.requestAnimationFrame(() => {
+      if (cycleWhisperEl) cycleWhisperEl.classList.add('is-visible');
+    });
+    cycleWhisperTimer = window.setTimeout(() => {
+      if (!cycleWhisperEl) return;
+      cycleWhisperEl.classList.remove('is-visible');
+      cycleWhisperEl.setAttribute('aria-hidden', 'true');
+    }, 4500);
+  }
+
   function beginSession() {
     window.clearTimeout(sessionFinalTimer);
     sessionFinalTimer = 0;
@@ -2504,6 +2544,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     sessionComplete = false;
     sessionStage = 1;
     sessionAccounted = 0;
+    cycleNumber = 1;
+    hideCycleWhisper();
+    captionStartDelayOverride = 0;
     lastSessionProgressAt = Date.now();
     userAvgWatchTime = 0;
     sessionTextFrames = 1;
@@ -3115,16 +3158,59 @@ ${JSON.stringify(events, null, 2)}`;
     });
   }
 
-  function extendPathPlan() {
-    if (appendPathCycle()) return true;
-    if (appendPathCycle(true)) return true;
-    if (appendFallbackPath(true)) return true;
+  function makeCycleEntries(allowSeen) {
+    const picked = new Set(pathPicked);
+    const entries = [];
 
-    // Последний резерв: новых роликов не осталось — снимаем и внутренний
-    // фильтр текущей сессии, иначе очередь закончится и свайпы замолчат.
+    for (const spec of SESSION_STAGES) {
+      const stage = stageFor(spec.id);
+      const picks = pickStageClips(stage, spec.count, picked, allowSeen);
+      if (picks.length < spec.count) return null;
+      entries.push(...picks);
+    }
+
+    if (entries.length !== SESSION_LENGTH) return null;
+
+    const last = entries[entries.length - 1];
+    if (last && last.stage === 4 && !last.clip.is_finale) {
+      const used = new Set(entries.map((entry) => entry.clip.id));
+      const pathStage = stageFor(4);
+      const pathCategories = categories.filter((category) => pathStage.categories.includes(category.tag));
+      const final = pathCategories
+        .flatMap((category) => category.clips.map((clip) => ({ category, clip })))
+        .find(({ category, clip }) => (
+          clip.is_finale
+          && !clip.invalid
+          && !used.has(clip.id)
+          && !pathPicked.has(clip.id)
+          && (allowSeen || !isVideoSeen(clip.id))
+        ));
+      if (final) {
+        last.clip = final.clip;
+        last.category = final.category;
+      }
+    }
+
+    return entries;
+  }
+
+  function extendPathPlan() {
+    for (const allowSeen of (false, true)) {
+      const entries = makeCycleEntries(allowSeen);
+      if (!entries) continue;
+      for (const entry of entries) pathPicked.add(entry.clip.id);
+      pathPlan.push(...entries);
+      return true;
+    }
+
+    // После исчерпания уникального пула повторяем атмосферные кадры,
+    // но никогда не останавливаем ленту и не открываем модальный финал.
     pathPicked.clear();
-    if (appendPathCycle(true)) return true;
-    return appendFallbackPath(true);
+    const entries = makeCycleEntries(true);
+    if (!entries) return false;
+    for (const entry of entries) pathPicked.add(entry.clip.id);
+    pathPlan.push(...entries);
+    return true;
   }
 
   function dismissSwipeHint(removeElement = false) {
@@ -3459,6 +3545,7 @@ ${JSON.stringify(events, null, 2)}`;
         description: archetype,
         tags: [stageKey, archetype],
         vertical: Boolean(item.vertical),
+        is_finale: Boolean(item.is_finale),
         element: elementForClip(title, [stageKey, archetype], tag, archetype),
         archetype,
         stage: stageKey,
@@ -3939,6 +4026,7 @@ ${JSON.stringify(events, null, 2)}`;
 
   function go(direction, speed) {
     if (!gateOpen || sessionComplete) return;
+    hideCycleWhisper();
     markFirstSwipe();
     lastSwipeAt = now();
     const record = reportSwipe(direction, speed);
@@ -3970,24 +4058,32 @@ ${JSON.stringify(events, null, 2)}`;
 
     recordSessionEvent(record);
 
-    if (sessionAccounted >= SESSION_LENGTH) {
-      finishSession();
-      return;
-    }
-
-    if (pathPos + 1 >= pathPlan.length && !extendPathPlan()) {
-      finishSession();
-      return;
+    const isCycleBoundary = (pathPos + 1) % SESSION_LENGTH === 0;
+    if (pathPos + 1 >= pathPlan.length) {
+      if (!extendPathPlan()) {
+        pathPicked.clear();
+        if (!extendPathPlan()) return;
+      }
     }
 
     const entry = pathPlan[pathPos + 1];
-    if (!entry) {
-      finishSession();
-      return;
-    }
+    if (!entry) return;
 
     pathPos += 1;
     sceneContext.stage = entry.stage;
+
+    if (isCycleBoundary) {
+      const completedCycle = cycleNumber;
+      cycleNumber += 1;
+      sessionAccounted = 1;
+      sessionTextFrames = 1;
+      quietSinceText = 0;
+      quietRequired = 0;
+      captionStartDelayOverride = 4800;
+      showCycleWhisper(completedCycle);
+    } else {
+      captionStartDelayOverride = 0;
+    }
 
     navigateTo(
       entry.category.index,
