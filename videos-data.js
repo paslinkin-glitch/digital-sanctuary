@@ -177,22 +177,6 @@ window.VIDEOS_DATA = [
     "title_ru": "Покой 03"
   },
   {
-    "id": "coverr:ShRtrsAwjz",
-    "title": "Red street decorations",
-    "description": "Vertical shot of some red ball decorations hanging over the top of a street.",
-    "url": "https://cdn.coverr.co/videos/coverr-red-street-decorations-3507/1080p.mp4",
-    "stage": "calm",
-    "archetype": "Покой / Анима",
-    "is_finale": false,
-    "source": "coverr",
-    "vertical": true,
-    "width": 1080,
-    "height": 1920,
-    "duration": 10.88,
-    "size": 6120622,
-    "title_ru": "Покой 04"
-  },
-  {
     "id": "coverr:eq54uTB0v7",
     "title": "Vertical shot of flowers",
     "description": "Close-up, vertical shot of white flowers swaying in the wind.",
@@ -206,7 +190,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 15.24,
     "size": 8545836,
-    "title_ru": "Покой 05"
+    "title_ru": "Покой 04"
   },
   {
     "id": "055ZCWp14T",
@@ -222,23 +206,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 14.982,
     "size": 8395743,
-    "title_ru": "Покой 06"
-  },
-  {
-    "id": "lNAKBMV6lB",
-    "title": "Vertical shot of red tulips",
-    "description": "Close-up, vertical shot of red tulips on the street.",
-    "url": "https://cdn.coverr.co/videos/coverr-vertical-shot-of-red-tulips-7019/1080p.mp4",
-    "stage": "calm",
-    "archetype": "Покой / Анима",
-    "is_finale": false,
-    "source": "coverr",
-    "vertical": true,
-    "width": 1080,
-    "height": 1920,
-    "duration": 16.76,
-    "size": 9290569,
-    "title_ru": "Покой 07"
+    "title_ru": "Покой 05"
   },
   {
     "id": "wGWKTMPMX7",
@@ -270,7 +238,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 20.354,
     "size": 11080556,
-    "title_ru": "Покой 08"
+    "title_ru": "Покой 06"
   },
   {
     "id": "vecteezy:50096613",
@@ -286,23 +254,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 9.521,
     "size": 4797618,
-    "title_ru": "Покой 09"
-  },
-  {
-    "id": "vecteezy:47432950",
-    "title": "Slow motion vertical of white smoke, fog, mist, vapor on a black background.",
-    "description": "Slow motion vertical of white smoke, fog, mist, vapor on a black background.",
-    "url": "https://static.vecteezy.com/system/resources/previews/047/432/950/original/slow-motion-vertical-of-white-smoke-fog-mist-vapor-on-a-black-background-free-video.mp4",
-    "stage": "shadow",
-    "archetype": "Тень",
-    "is_finale": false,
-    "source": "vecteezy",
-    "vertical": true,
-    "width": 1080,
-    "height": 1920,
-    "duration": 30.04,
-    "size": 13680687,
-    "title_ru": "Тень 02"
+    "title_ru": "Покой 07"
   },
   {
     "id": "vecteezy:48120369",
@@ -318,7 +270,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 18.436,
     "size": 7862858,
-    "title_ru": "Тень 03"
+    "title_ru": "Тень 02"
   },
   {
     "id": "vecteezy:18761254",
@@ -334,7 +286,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 31.867,
     "size": 10770251,
-    "title_ru": "Покой 10"
+    "title_ru": "Покой 08"
   },
   {
     "id": "vecteezy:33573845",
@@ -446,7 +398,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 18.252,
     "size": 10455733,
-    "title_ru": "Тень 04"
+    "title_ru": "Тень 03"
   },
   {
     "id": "ZQeB9bkb8P",
@@ -462,7 +414,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 11.28,
     "size": 6442974,
-    "title_ru": "Тень 05"
+    "title_ru": "Тень 04"
   },
   {
     "id": "coverr:9EJgOxnSM3",
@@ -478,7 +430,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 13.013,
     "size": 7370590,
-    "title_ru": "Тень 06"
+    "title_ru": "Тень 05"
   },
   {
     "id": "g9re0sRUYA",
@@ -494,7 +446,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 11.053,
     "size": 6218807,
-    "title_ru": "Тень 07"
+    "title_ru": "Тень 06"
   },
   {
     "id": "vecteezy:16766057",
@@ -526,7 +478,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.386,
     "size": 5839402,
-    "title_ru": "Тень 08"
+    "title_ru": "Тень 07"
   },
   {
     "id": "fAoM7MmEIF",
@@ -549,32 +501,16 @@ window.VIDEOS_DATA = [
     "title": "Castle on the mountain",
     "description": "Aerial, panning shot of a castle on a mountain in Mexico.",
     "url": "https://cdn.coverr.co/videos/coverr-castle-on-the-mountain-238/1080p.mp4",
-    "stage": "path",
-    "archetype": "Путь / Самость",
-    "is_finale": true,
+    "stage": "shadow",
+    "archetype": "Тень",
+    "is_finale": false,
     "source": "coverr",
     "vertical": true,
     "width": 1080,
     "height": 1920,
     "duration": 10.52,
     "size": 5813310,
-    "title_ru": "Путь 07"
-  },
-  {
-    "id": "coverr:2SXsaMcfLh",
-    "title": "Colorful apartment block",
-    "description": "Vertical, panning shot of a colorful apartment block and the city view.",
-    "url": "https://cdn.coverr.co/videos/coverr-colorful-apartment-block-3665/1080p.mp4",
-    "stage": "path",
-    "archetype": "Путь / Самость",
-    "is_finale": false,
-    "source": "coverr",
-    "vertical": true,
-    "width": 1080,
-    "height": 1920,
-    "duration": 12.68,
-    "size": 6635933,
-    "title_ru": "Путь 08"
+    "title_ru": "Тень 08"
   },
   {
     "id": "vecteezy:25038712",
@@ -590,7 +526,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 12.028,
     "size": 6115246,
-    "title_ru": "Путь 09"
+    "title_ru": "Путь 07"
   },
   {
     "id": "vecteezy:44851735",
@@ -606,7 +542,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 15.403,
     "size": 7134298,
-    "title_ru": "Путь 10"
+    "title_ru": "Путь 08"
   },
   {
     "id": "coverr:train-in-woods-2841",
@@ -639,5 +575,53 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 6800000,
     "title_ru": "Тень 10"
+  },
+  {
+    "id": "coverr:timelapse-journey-sweden-2075",
+    "title": "Timelapse journey in Sweden",
+    "description": "A slow journey through wild Nordic light.",
+    "url": "https://cdn.coverr.co/videos/coverr-timelapse-journey-in-sweden-2075/1080p.mp4",
+    "stage": "calm",
+    "is_finale": false,
+    "source": "coverr",
+    "vertical": true,
+    "width": 1080,
+    "height": 1920,
+    "duration": 10.0,
+    "size": 8600000,
+    "archetype": "Покой / Анима",
+    "title_ru": "Покой 09"
+  },
+  {
+    "id": "coverr:walking-mountain-top-8360",
+    "title": "Walking to the mountain top",
+    "description": "A solitary walk toward an open mountain horizon.",
+    "url": "https://cdn.coverr.co/videos/coverr-walking-to-the-mountain-top-8360/1080p.mp4",
+    "stage": "path",
+    "is_finale": false,
+    "source": "coverr",
+    "vertical": true,
+    "width": 1080,
+    "height": 1920,
+    "duration": 10.0,
+    "size": 8800000,
+    "archetype": "Путь / Самость",
+    "title_ru": "Путь 09"
+  },
+  {
+    "id": "coverr:porto-santo-coastline-2591",
+    "title": "Taking photos of Porto Santo coastline",
+    "description": "A quiet coastline opening toward the sea.",
+    "url": "https://cdn.coverr.co/videos/coverr-taking-photos-of-porto-santo-coastline-2591/1080p.mp4",
+    "stage": "path",
+    "is_finale": false,
+    "source": "coverr",
+    "vertical": true,
+    "width": 1080,
+    "height": 1920,
+    "duration": 10.0,
+    "size": 7200000,
+    "archetype": "Путь / Самость",
+    "title_ru": "Путь 10"
   }
 ];

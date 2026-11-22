@@ -2128,3 +2128,35 @@ body,
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
 }
+
+
+/* ============================================================ CAPTION READABILITY v31 */
+.caption,
+.caption-line {
+  font-family: var(--sans);
+  font-weight: 400;
+  font-size: clamp(17px, 4.6vw, 20px);
+  line-height: 1.5;
+  letter-spacing: 0.015em;
+  color: rgba(248, 246, 242, 0.96);
+  text-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.98),
+    0 3px 18px rgba(0, 0, 0, 0.92);
+}
+
+.caption-shade {
+  height: 44%;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(0, 0, 0, 0.25) 40%,
+    rgba(0, 0, 0, 0.74) 100%
+  );
+}
+
+.cycle-whisper-text {
+  font-weight: 400;
+  text-shadow:
+    0 1px 4px rgba(0, 0, 0, 0.98),
+    0 4px 24px rgba(0, 0, 0, 0.92);
+}

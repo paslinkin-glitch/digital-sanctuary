@@ -21,7 +21,7 @@ MIN_SIZE = 4_500_000
 MIN_WIDTH = 1080
 MIN_HEIGHT = 1920
 MIN_BITRATE = 2_500_000
-MAX_SIZE = 14_500_000
+MAX_SIZE = 12_500_000
 TARGET_PER_STAGE = 25
 
 RU_STAGE = {
@@ -44,7 +44,7 @@ def is_crystal(item: dict) -> bool:
     width = int(item.get("width") or 0)
     height = int(item.get("height") or 0)
     size = int(item.get("size") or 0)
-    if width < MIN_WIDTH or height < MIN_HEIGHT or size < MIN_SIZE or size > MAX_SIZE:
+    if width != 1080 or height != 1920 or size < MIN_SIZE or size > MAX_SIZE:
         return False
     if abs(width / height - 9 / 16) > 0.02:
         return False

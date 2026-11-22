@@ -3499,12 +3499,13 @@ ${JSON.stringify(events, null, 2)}`;
     video.setAttribute('aria-hidden', 'true');
 
     video.addEventListener('loadedmetadata', () => {
-      if (clip.invalid) return;
+      if (clip.skipped) return;
       const bad = video.videoWidth < 1080
         || video.videoHeight < 1920
         || video.videoWidth >= video.videoHeight;
       if (!bad) return;
       clip.invalid = true;
+      clip.skipped = true;
       console.warn('[sanctuary] low-quality clip skipped:', clip.title, video.videoWidth, video.videoHeight);
       if (category.index === state.index && category.activeIndex === index) {
         window.setTimeout(() => go('up', 0.5), 0);
@@ -3515,7 +3516,7 @@ ${JSON.stringify(events, null, 2)}`;
     video.addEventListener('playing', () => video.classList.add('is-ready'));
     video.addEventListener('timeupdate', () => handleLoop(category, index, video));
     video.addEventListener('error', () => {
-      if (!triedOriginal && playUrl !== clip.url) {
+      if (!triedOriginal && playUrl !== clip.url && !clip.skipped) {
         triedOriginal = true;
         video.classList.remove('is-ready');
         video.src = clip.url;
@@ -3526,30 +3527,15 @@ ${JSON.stringify(events, null, 2)}`;
         }
         return;
       }
-      console.warn('[sanctuary] video unavailable:', clip.title);
+      if (clip.skipped) return;
+      if (category.index !== state.index || category.activeIndex !== index) {
+        console.warn('[sanctuary] video unavailable:', clip.title);
+        return;
+      }
+      clip.skipped = true;
+      console.warn('[sanctuary] fatal video error, advancing:', clip.title);
+      go('up', 0.5);
     });
-
-    let waitingTimer = 0;
-    let waitingAdvanced = false;
-    const clearWaiting = () => {
-      window.clearTimeout(waitingTimer);
-      waitingTimer = 0;
-    };
-    video.addEventListener('waiting', () => {
-      if (category.index !== state.index || category.activeIndex !== index) return;
-      clearWaiting();
-      waitingTimer = window.setTimeout(() => {
-        if (waitingAdvanced) return;
-        if (category.index !== state.index || category.activeIndex !== index) return;
-        if (video.readyState >= 3) return;
-        waitingAdvanced = true;
-        go('up', 0.5);
-      }, 4000);
-    });
-    for (const eventName of ['playing', 'canplay', 'canplaythrough', 'timeupdate']) {
-      video.addEventListener(eventName, clearWaiting);
-    }
-    video.addEventListener('error', clearWaiting);
 
     video.src = playUrl;
     video.dataset.clipId = clip.id || '';
@@ -3632,7 +3618,7 @@ ${JSON.stringify(events, null, 2)}`;
     prunePlaybackVideos(keep);
     if (current && current.clip && current.clip.el) current.clip.el.preload = 'auto';
     if (next && next.clip && next.clip.el) {
-      next.clip.el.preload = DEVICE_TIER === 'low' ? 'none' : 'metadata';
+      next.clip.el.preload = 'metadata';
     }
 
     const currentVideo = current && current.clip && current.clip.el;
@@ -3641,8 +3627,8 @@ ${JSON.stringify(events, null, 2)}`;
       const promoteNext = () => {
         if (next.clip.el && current.clip.el === currentVideo) next.clip.el.preload = 'auto';
       };
-      if (currentVideo.readyState >= 4) promoteNext();
-      else currentVideo.addEventListener('canplaythrough', promoteNext, { once: true });
+      if (currentVideo.readyState >= 3) promoteNext();
+      else currentVideo.addEventListener('canplay', promoteNext, { once: true });
     }
   }
 
@@ -3736,9 +3722,9 @@ ${JSON.stringify(events, null, 2)}`;
       if (
         !itemSize || !itemWidth || !itemHeight
         || itemSize < 4_500_000
-        || itemSize > 14_500_000
-        || itemWidth < 1080
-        || itemHeight < 1920
+        || itemSize > 12_500_000
+        || itemWidth !== 1080
+        || itemHeight !== 1920
         || itemBitrate < 2_500_000
       ) continue;
 
@@ -3947,6 +3933,7 @@ ${JSON.stringify(events, null, 2)}`;
         video.classList.add('is-current');
         video.preload = 'auto';
         video.playbackRate = stage.classList.contains('is-held') ? SLOW_RATE : 1;
+        if (video.readyState >= 1) video.currentTime = 0;
         clip.lastTime = video.currentTime;
 
         const promise = video.play();
