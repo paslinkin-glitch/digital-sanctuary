@@ -10,14 +10,14 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Digital Sanctuary">
-  <title>Digital Sanctuary — разбор поведения</title>
+  <title>Digital Sanctuary — интерактивное убежище</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=21">
 </head>
 <body>
   <main class="stage" id="stage">
@@ -44,6 +44,7 @@
     <div class="session-progress" aria-hidden="true">
       <span class="session-progress-fill" id="session-progress-fill"></span>
     </div>
+    <div class="sanctuary-frame" aria-hidden="true"></div>
     <div class="optic" aria-hidden="true">
       <div class="optic-haze"></div>
       <div class="optic-water"></div>
@@ -61,10 +62,6 @@
       <span class="swipe-hint-arrow">↑</span>
       <span class="swipe-hint-label">СВАЙП ВВЕРХ</span>
     </div>
-    <div class="spiral-beacon" id="spiral-beacon" hidden aria-live="polite">
-      <span class="spiral-beacon-mark" aria-hidden="true">◆</span>
-      <p class="spiral-beacon-text" id="spiral-beacon-text"></p>
-    </div>
   </main>
 
   <div class="entry" id="entry" role="dialog" aria-label="Порог эксперимента">
@@ -79,13 +76,13 @@
       <button class="lang-switch-btn" type="button" data-lang="en">EN</button>
     </div>
     <div class="entry-copy">
-      <p class="entry-kicker">СЕССИЯ 01 // ЗЕРКАЛО ПОВЕДЕНИЯ</p>
-      <h1 class="entry-title">Это не медитация и не социальная сеть.</h1>
-      <p class="entry-sub">Алгоритмы считывают твоё состояние без единого вопроса. Зажми экран, если кадр попал в точку.</p>
+      <p class="entry-kicker">ЦИФРОВОЕ УБЕЖИЩЕ</p>
+      <h1 class="entry-title">Закрытое пространство тишины и созерцания.</h1>
+      <p class="entry-sub">Без слов, оценок и попыток тебя исправить. Листай вверх как сон; задержи палец, если кадр отзывается.</p>
     </div>
     <div class="entry-actions">
-      <button class="entry-trigger" id="entry-trigger" type="button">Войти в эксперимент</button>
-      <p class="entry-nav-hint">Листай вверх, как ленту · Зажимай кадр, если попал в точку</p>
+      <button class="entry-trigger" id="entry-trigger" type="button">Войти в сон</button>
+      <p class="entry-nav-hint">Листай вверх как сон · Задержи палец, если кадр отзывается</p>
       <button class="entry-install" id="entry-install" type="button" hidden>Установить приложение на экран</button>
       <p class="entry-install-hint" id="entry-install-hint" hidden>Нажмите «Поделиться» → «На экран Домой»</p>
     </div>
@@ -109,21 +106,16 @@
     </div>
     <div class="finale-glow" aria-hidden="true"></div>
     <div class="finale-shell">
-      <p class="finale-kicker">СЕССИЯ // РАЗБОР</p>
-      <h2 class="finale-title" id="finale-title">ЧТО ТЫ СЕЙЧАС ПРЯЧЕШЬ</h2>
-      <p class="finale-sub">РАЗБОР СЕССИИ</p>
+      <p class="finale-kicker">ТИШИНА</p>
+      <h2 class="finale-title" id="finale-title">Сон завершён</h2>
+      <p class="finale-sub">ПРОСТРАНСТВО РЯДОМ</p>
       <div class="finale-rule" aria-hidden="true"></div>
       <div class="finale-portrait" id="finale-portrait" aria-live="polite">
-        <p class="finale-loading">СОБИРАЕМ РАЗБОР...</p>
+        <p>Здесь ничего не нужно объяснять или исправлять.</p>
+        <p>Тишина просто побыла рядом — ты можешь остаться в ней или вернуться в любой момент.</p>
       </div>
       <div class="finale-actions">
-        <button class="finale-btn" id="copy-snapshot" type="button">Скопировать разбор</button>
-        <button class="finale-btn" id="notify-return" type="button">Уведомить через 2 часа</button>
-        <button class="finale-btn finale-btn--ghost" id="back-to-start" type="button">На главный экран</button>
-      </div>
-      <div class="finale-lock">
-        <p class="finale-lock-label" id="finale-lock-label">ПРОДОЛЖЕНИЕ</p>
-        <p class="finale-countdown" id="finale-countdown">02:00:00</p>
+        <button class="finale-btn finale-btn--glass" id="back-to-start" type="button">Ещё один сон</button>
       </div>
     </div>
   </section>
@@ -135,7 +127,7 @@
       window.__deferredInstallPrompt = event;
     });
   </script>
-  <script src="videos-data.js"></script>
-  <script src="app.js"></script>
+  <script src="videos-data.js?v=21"></script>
+  <script src="app.js?v=21"></script>
 </body>
 </html>

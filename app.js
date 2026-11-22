@@ -35,19 +35,15 @@
   const STUPOR_IDLE_MS = 20000;
   const ANCHOR_WATCH_MS = 12000;
   const MAX_WEIGHT = 6;
-  const SESSION_LENGTH = 50;
+  const SESSION_LENGTH = 12;
   const SESSION_STAGES = [
-    { id: 1, count: 8 },
-    { id: 2, count: 8 },
-    { id: 3, count: 7 },
-    { id: 4, count: 7 },
-    { id: 1, count: 5 },
-    { id: 2, count: 5 },
-    { id: 3, count: 5 },
-    { id: 4, count: 5 },
+    { id: 1, count: 3 },
+    { id: 2, count: 3 },
+    { id: 3, count: 3 },
+    { id: 4, count: 3 },
   ];
   const SESSION_FINALE_DELAY_MS = 3400;
-  const SESSION_LOCK_MS = 2 * 60 * 60 * 1000;
+  const SESSION_LOCK_MS = 0;
   const SESSION_LOCK_KEY = 'sanctuary-unlock-at';
   const HAPTIC_COOLDOWN_MS = 180;
   const SWIPE_HAPTIC_COOLDOWN_MS = 600;
@@ -59,91 +55,149 @@
   const API_KEY = 'b1155018766256bd1ea645df7d64e178';
   const API_ENDPOINT = 'https://api.coverr.co/videos';
   const DEEPSEEK_PROXY_ENDPOINT = '/api/deepseek';
-  const CAPTION_START_DELAY_MS = 2200;
+  const CAPTION_START_DELAY_MS = 1200;
   const CAPTION_MIN_WORDS = 4;
-  const CAPTION_MAX_WORDS = 7;
-  const CAPTION_MAX_RATIO = 0.4;
+  const CAPTION_MAX_WORDS = 6;
+  const CAPTION_MAX_RATIO = 0.85;
   const EARLY_SWIPE_RATIO = 0.55;
   const CAPTION_LINGER_MS = 3500;
   const CAPTION_HOLD_REVEAL_MS = 1100;
   const CAPTION_YOU_LIMIT = 1;
-  const CAPTION_TIMEOUT_MS = 9000;
-  const CAPTION_SYSTEM_PROMPT_RU = `Ты — проницательный, слегка провокационный внутренний голос, который видит человека насквозь. Пиши только по-русски.
-Верни одну короткую фразу строго из 4–7 слов, 1–2 короткие строки. Без поэзии, метафор, загадок, терминов и абстрактной воды.
-Если поведение anxiety — мягко вскрой бегство от себя, как в примере: «Слишком быстро листаешь. Чего боишься коснуться?»
-Если поведение resonance — попади точно в скрытую тягу или усталость через конкретный образ кадра.
-Не морализируй, не давай советов. Верни только саму фразу.`;
-  const CAPTION_SYSTEM_PROMPT_EN = `You are an unnervingly perceptive, slightly provocative inner voice that sees through people. Write only in natural conversational English.
-Return one short line strictly 4–7 words, 1–2 short lines. No poetry, riddles, metaphors, jargon or abstract filler.
-If the behavior is anxiety — gently expose the escape from self, e.g. «Swipe too fast. What are you avoiding?»
-If the behavior is resonance — hit the hidden pull or fatigue through the concrete image in the frame.
-Do not moralize or give advice. Return only the line.`;
+  const CAPTION_TIMEOUT_MS = 3500;
+  const CAPTION_SYSTEM_PROMPT_RU = `Ты — тихий голос сна, который звучит рядом с изображением. Пиши только по-русски.
+Верни одну короткую фразу строго из 4–6 слов, 1–2 короткие строки. Без поэтических загадок, терминов, оценок, советов и латиницы.
+Говори образами и присутствием: дождь, тень, вода, свет, дыхание, дорога. Не называй поведение и не объясняй человеку, что он делает.
+Не морализируй, не утешай нарочито, не задавай вопросов. Верни только саму фразу.`;
+  const CAPTION_SYSTEM_PROMPT_EN = `You are a quiet voice of the dream, speaking beside the image. Write only in natural English.
+Return one short line strictly 4–6 words, 1–2 short lines. No riddles, jargon, judgments, advice, or Latin padding.
+Speak through images and presence: rain, shadow, water, light, breath, road. Do not name behavior or explain what the person is doing.
+Do not moralize, over-comfort, or ask questions. Return only the line.`;
   const MUSIC_GAIN = 0.42;
   const NOISE_GAIN = 0.22;
 
   const LANG_STORAGE_KEY = 'sanctuary-lang';
   const I18N = {
     ru: {
-      docTitle: 'Digital Sanctuary — разбор поведения',
-      entryAria: 'Порог эксперимента',
-      entryKicker: 'СЕССИЯ 01 // ЗЕРКАЛО ПОВЕДЕНИЯ',
-      entryTitle: 'Это не медитация и не социальная сеть.',
-      entrySub: 'Алгоритмы считывают твоё состояние без единого вопроса. Зажми экран, если кадр попал в точку.',
-      enter: 'Войти в эксперимент',
-      nav: 'Листай вверх, как ленту · Зажимай кадр, если попал в точку',
+      docTitle: 'Digital Sanctuary — интерактивное убежище',
+      entryAria: 'Вход в убежище',
+      entryKicker: 'ЦИФРОВОЕ УБЕЖИЩЕ',
+      entryTitle: 'Закрытое пространство тишины и созерцания.',
+      entrySub: 'Без слов, оценок и попыток тебя исправить. Листай вверх как сон; задержи палец, если кадр отзывается.',
+      enter: 'Войти в сон',
+      nav: 'Листай вверх как сон · Задержи палец, если кадр отзывается',
       installApp: 'Установить приложение на экран',
       installHint: 'Нажмите «Поделиться» → «На экран Домой»',
       installCardTitle: 'Открывать как приложение без рамок',
       install: 'Установить',
       close: 'Закрыть',
       swipe: 'СВАЙП ВВЕРХ',
-      finaleKicker: 'СЕССИЯ // РАЗБОР',
-      finaleTitle: 'ЧТО ТЫ СЕЙЧАС ПРЯЧЕШЬ',
-      finaleSub: 'РАЗБОР СЕССИИ',
+      finaleKicker: 'ТИШИНА',
+      finaleTitle: 'Сон завершён',
+      finaleSub: 'ПРОСТРАНСТВО РЯДОМ',
+      finaleBody1: 'Здесь ничего не нужно объяснять или исправлять.',
+      finaleBody2: 'Тишина просто побыла рядом — ты можешь остаться в ней или вернуться в любой момент.',
       loading: 'СОБИРАЕМ РАЗБОР...',
-      copy: 'Скопировать разбор',
-      copied: 'Разбор скопирован',
-      notify: 'Уведомить через 2 часа',
-      notifyOff: 'Уведомления отключены',
-      notifySet: 'Уведомление поставлено',
-      notifyUnavailable: 'Уведомления недоступны',
-      back: 'На главный экран',
+      back: 'Ещё один сон',
       lockLabel: 'ПРОДОЛЖЕНИЕ',
       lockedPrefix: 'Продолжение через',
       notificationBody: 'Продолжение открыто. Вернись, чтобы узнать, что дальше.',
       captionFallback: 'В этот час лучше просто дышать.',
     },
     en: {
-      docTitle: 'Digital Sanctuary — behavioral mirror',
-      entryAria: 'Experiment threshold',
-      entryKicker: 'SESSION 01 // BEHAVIORAL MIRROR',
-      entryTitle: 'This is not meditation. It is not a social network.',
-      entrySub: 'The algorithm reads your state without asking one question. Hold the screen when a frame lands.',
-      enter: 'Enter the experiment',
-      nav: 'Swipe up like a feed · Hold a frame when it lands',
+      docTitle: 'Digital Sanctuary — an interactive sanctuary',
+      entryAria: 'Entrance to the sanctuary',
+      entryKicker: 'DIGITAL SANCTUARY',
+      entryTitle: 'A closed space of silence and contemplation.',
+      entrySub: 'No words, judgments, or attempts to fix you. Swipe up like a dream; hold the screen when a frame resonates.',
+      enter: 'Enter the dream',
+      nav: 'Swipe up like a dream · Hold when a frame resonates',
       installApp: 'Add the app to your screen',
       installHint: 'Tap Share → Add to Home Screen',
       installCardTitle: 'Open it as an app, no browser frame',
       install: 'Install',
       close: 'Close',
       swipe: 'SWIPE UP',
-      finaleKicker: 'SESSION // VERDICT',
-      finaleTitle: 'WHAT YOU ARE HIDING RIGHT NOW',
-      finaleSub: 'SESSION VERDICT',
+      finaleKicker: 'SILENCE',
+      finaleTitle: 'The dream is complete',
+      finaleSub: 'THE SPACE BESIDE YOU',
+      finaleBody1: 'Nothing here needs to be explained or repaired.',
+      finaleBody2: 'Silence simply stayed beside you — you can remain in it or return at any moment.',
       loading: 'BUILDING YOUR VERDICT...',
-      copy: 'Copy verdict',
-      copied: 'Copied',
-      notify: 'Notify me in 2 hours',
-      notifyOff: 'Notifications off',
-      notifySet: 'Notification set',
-      notifyUnavailable: 'Notifications unavailable',
-      back: 'Back to start',
+      back: 'One more dream',
       lockLabel: 'CONTINUATION',
       lockedPrefix: 'Continues in',
       notificationBody: 'The next chapter is open. Come back and see what it holds.',
       captionFallback: 'Right now, it is enough to breathe.',
     },
   };
+
+  const CAPTION_FALLBACK_POOL = {
+    Shadow: [
+      'Тень дышит рядом с тобой',
+      'Свет уходит в глубину',
+      'Здесь темно и спокойно',
+      'Отражение ждёт у окна',
+      'Туман держит твою тень',
+      'Ночь не требует ответа',
+    ],
+    Trickster: [
+      'Огонь помнит твой ритм',
+      'Волна уносит лишнее',
+      'Дым рисует новый путь',
+      'Глубина дышит очень медленно',
+      'Искра живёт одно мгновение',
+      'Вода хранит твой шёпот',
+    ],
+    Abyss: [
+      'Бездна не зовёт по имени',
+      'Тишина здесь глубже слов',
+      'Мрак мягко держит тебя',
+      'В глубине нет спешки',
+      'Пустота становится тихим пространством',
+      'Ты слышишь только дыхание',
+    ],
+    Calm: [
+      'Листья шепчут о покое',
+      'Озеро хранит твоё дыхание',
+      'Рассвет приходит без слов',
+      'Ветер стихает у воды',
+      'Свет ложится на траву',
+      'Мягкий дождь остаётся рядом',
+    ],
+    Path: [
+      'Дорога ведёт к свету',
+      'Горизонт открыт перед тобой',
+      'Шаги звучат всё тише',
+      'Птицы летят над водой',
+      'Утро ждёт впереди',
+      'Путь дышит вместе с тобой',
+    ],
+  };
+
+  const CAPTION_FALLBACK_POOL_EN = {
+    Shadow: ['Shadow breathes beside you', 'Light goes into depth', 'Darkness stays quietly here', 'A reflection waits by the window', 'Fog holds your shadow', 'Night asks for nothing'],
+    Trickster: ['Fire remembers your rhythm', 'The wave carries away noise', 'Smoke draws another path', 'The deep breathes very slowly', 'A spark lives one moment', 'Water keeps your whisper'],
+    Abyss: ['The abyss does not call', 'Silence here is deeper', 'Darkness holds you softly', 'The deep has no hurry', 'Emptiness becomes quiet space', 'You hear only breathing'],
+    Calm: ['Leaves whisper of peace', 'The lake holds your breath', 'Dawn arrives without words', 'Wind softens by water', 'Light rests on grass', 'Soft rain stays beside you'],
+    Path: ['The road leads to light', 'The horizon opens before you', 'Footsteps grow quieter now', 'Birds fly above water', 'Morning waits ahead', 'The path breathes with you'],
+  };
+
+  let fallbackCaptionUsed = new Set();
+
+  function pickFallbackCaption(categoryTag) {
+    const tag = categoryTag || 'Shadow';
+    const pool = (currentLang === 'en' ? CAPTION_FALLBACK_POOL_EN : CAPTION_FALLBACK_POOL)[tag]
+      || CAPTION_FALLBACK_POOL.Shadow;
+    const fresh = pool.find((line) => !fallbackCaptionUsed.has(line));
+    if (fresh) {
+      fallbackCaptionUsed.add(fresh);
+      return fresh;
+    }
+    fallbackCaptionUsed = new Set();
+    const fallback = pool[0] || '';
+    if (fallback) fallbackCaptionUsed.add(fallback);
+    return fallback;
+  }
 
   function detectLanguage() {
     try {
@@ -176,52 +230,11 @@ Do not moralize or give advice. Return only the line.`;
      если API недоступен: те же ролики Coverr, уже проверенные по API. */
 
   const FALLBACK_CLIPS = {
-    Shadow: [
-      {
-        id: 'fallback-shadow-field',
-        title: 'Slow field in low light',
-        duration: 30,
-        url: 'https://media.w3.org/2010/05/video/movie_300.mp4',
-      },
-      {
-        id: 'fallback-shadow-trailer',
-        title: 'Dusk before the dark',
-        duration: 33,
-        url: 'https://media.w3.org/2010/05/bunny/trailer.mp4',
-      },
-    ],
-    Trickster: [
-      {
-        id: 'fallback-trickster-sintel',
-        title: 'Firelit descent',
-        duration: 10,
-        url: 'https://test-videos.co.uk/vids/sintel/mp4/h264/720/Sintel_720_10s_1MB.mp4',
-      },
-    ],
-    Abyss: [
-      {
-        id: 'fallback-abyss-jellyfish',
-        title: 'Jellyfish in deep blue',
-        duration: 10,
-        url: 'https://test-videos.co.uk/vids/jellyfish/mp4/h264/720/Jellyfish_720_10s_1MB.mp4',
-      },
-    ],
-    Calm: [
-      {
-        id: 'fallback-calm-flower',
-        title: 'Flower opening in silence',
-        duration: 5,
-        url: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
-      },
-    ],
-    Path: [
-      {
-        id: 'fallback-path-bunny',
-        title: 'Small movement toward the light',
-        duration: 10,
-        url: 'https://www.w3schools.com/html/mov_bbb.mp4',
-      },
-    ],
+    Shadow: [],
+    Trickster: [],
+    Abyss: [],
+    Calm: [],
+    Path: [],
   };
 
   /* ---------------------------------------------------------- категории */
@@ -453,8 +466,6 @@ Do not moralize or give advice. Return only the line.`;
   const backToStartButton = document.getElementById('back-to-start');
   const langSwitch = document.getElementById('lang-switch');
   const langButtons = Array.from(document.querySelectorAll('.lang-switch-btn'));
-  const spiralBeacon = document.getElementById('spiral-beacon');
-  const spiralBeaconText = document.getElementById('spiral-beacon-text');
 
 
 
@@ -475,7 +486,9 @@ Do not moralize or give advice. Return only the line.`;
     setText('.finale-kicker', 'finaleKicker');
     setText('.finale-title', 'finaleTitle');
     setText('.finale-sub', 'finaleSub');
-    setText('.finale-lock-label', 'lockLabel');
+    const finaleBody = document.querySelectorAll('.finale-portrait p');
+    if (finaleBody[0]) finaleBody[0].textContent = tr('finaleBody1');
+    if (finaleBody[1]) finaleBody[1].textContent = tr('finaleBody2');
     setText('.swipe-hint-label', 'swipe');
 
     if (entryGate) entryGate.setAttribute('aria-label', tr('entryAria'));
@@ -783,8 +796,6 @@ Do not moralize or give advice. Return only the line.`;
   let returnAfterLock = false;
   let lastTrackedStage = 0;
   let lastHoldTrackedFrame = -1;
-  let spiralBeaconShown = false;
-  let spiralBeaconTimer = 0;
   let portraitText = '';
   let portraitRequestId = 0;
   let returnNotificationTimer = 0;
@@ -1148,12 +1159,8 @@ Do not moralize or give advice. Return only the line.`;
     const time = localTimeContext();
     const behaviorKey = (behavior && behavior.key) || 'neutral';
     const behaviorLine = currentLang === 'en'
-      ? ({
-        anxiety: 'early exits and fast swipes — hidden resistance, fleeing from self',
-        resonance: 'held finger or a loop — real immersion, hidden pull or fatigue',
-        neutral: 'steady watching without a strong reaction',
-      }[behaviorKey] || 'steady watching')
-      : (behavior && behavior.context) || 'спокойное наблюдение';
+      ? 'quiet presence with the image'
+      : 'тихое присутствие рядом с образом';
 
     const details = currentLang === 'en'
       ? [
@@ -1164,7 +1171,7 @@ Do not moralize or give advice. Return only the line.`;
         clip.description ? `Description: ${clip.description.slice(0, 420)}.` : '',
         clip.tags && clip.tags.length ? `Tags: ${clip.tags.slice(0, 18).join(', ')}.` : '',
         `Behavior: ${behaviorLine}.`,
-        'Write one new line in natural conversational English, strictly 4–7 words. Return only the line.',
+        'Write one new line in natural conversational English, strictly 4–6 words. Return only the line.',
       ]
       : [
         `Архетип: ${archetype}.`,
@@ -1175,7 +1182,7 @@ Do not moralize or give advice. Return only the line.`;
         clip.description ? `Описание: ${clip.description.slice(0, 420)}.` : '',
         clip.tags && clip.tags.length ? `Теги: ${clip.tags.slice(0, 18).join(', ')}.` : '',
         `Поведение: ${behaviorLine}.`,
-        'Создай одну новую фразу строго из 4–7 слов. Верни только текст.',
+        'Создай одну новую фразу строго из 4–6 слов. Верни только текст.',
       ];
     const systemPrompt = currentLang === 'en' ? CAPTION_SYSTEM_PROMPT_EN : CAPTION_SYSTEM_PROMPT_RU;
 
@@ -1243,26 +1250,6 @@ Do not moralize or give advice. Return only the line.`;
       const messages = captionMessages(clip, category, behavior, stageId);
       let raw = await callDeepSeek(messages, 1.15);
       let text = normalizeCaption(raw);
-
-      if (raw && (
-        !captionIsValid(text)
-        || captionSeen.has(text.toLowerCase())
-        || !captionVoiceAllowed(text)
-      )) {
-        const words = countCaptionWords(text);
-        const retryMessages = messages.concat([
-          { role: 'assistant', content: raw },
-          {
-            role: 'user',
-            content: currentLang === 'en'
-              ? `Previous attempt had ${words} words. Write one new line strictly 4–7 words, at most two short lines, only text without quotes or explanations. Do not repeat previous wording.`
-              : `В предыдущей попытке получилось ${words} слов. Нужна ровно одна новая фраза строго из 4–7 слов, не более двух строк, только текст без кавычек и пояснений. Не повторяй прошлые формулировки.`,
-          },
-        ]);
-
-        raw = await callDeepSeek(retryMessages, 0.9);
-        text = normalizeCaption(raw);
-      }
 
       if (
         !captionIsValid(text)
@@ -1374,28 +1361,13 @@ Do not moralize or give advice. Return only the line.`;
   }
 
   function captionAllowedForScene(context) {
-    const cap = Math.max(1, Math.floor(SESSION_LENGTH * CAPTION_MAX_RATIO));
+    const cap = Math.max(9, Math.floor(SESSION_LENGTH * CAPTION_MAX_RATIO));
+    const resonance = context && (context.held || context.looped);
+    if (resonance) return true;
     if (sceneOrdinal <= 1) return true;
     if (sessionTextFrames >= cap) return false;
-
-    const resonance = context && (context.held || context.looped);
-    if (resonance) {
-      registerCaptionFrame();
-      return true;
-    }
-
-    if (quietSinceText < quietRequired) {
-      quietSinceText += 1;
-      return false;
-    }
-
-    if (Math.random() < 0.55) {
-      registerCaptionFrame();
-      return true;
-    }
-
-    quietSinceText += 1;
-    return false;
+    registerCaptionFrame();
+    return true;
   }
 
   function maybeRecordResonance() {
@@ -1500,7 +1472,7 @@ Do not moralize or give advice. Return only the line.`;
       token,
     };
 
-    const hiddenEligible = captionAllow || Math.random() < 0.6;
+    const hiddenEligible = true;
     const started = now();
     const applyText = (text) => {
       if (token !== captionSceneToken || !text) return;
@@ -1521,8 +1493,7 @@ Do not moralize or give advice. Return only the line.`;
     const key = captionKey(clip);
     const cached = captionCache.get(key);
     const fallbackFirst = () => {
-      if (sceneOrdinal > 1) return;
-      applyText(tr('captionFallback'));
+      applyText(pickFallbackCaption(category.tag));
     };
 
     if (captionAllow || hiddenEligible) {
@@ -2226,7 +2197,7 @@ Do not moralize or give advice. Return only the line.`;
 
     const available = (index) => {
       const clip = clips[index];
-      return Boolean(clip) && (!clip.id || !isVideoSeen(clip.id));
+      return Boolean(clip) && !clip.invalid && (!clip.id || !isVideoSeen(clip.id));
     };
 
     if (category.freshIndex !== null) {
@@ -2279,6 +2250,7 @@ Do not moralize or give advice. Return only the line.`;
       const filtered = category.clips.filter((clip) => (
         Boolean(clip)
         && Boolean(clip.id)
+        && !clip.invalid
         && !pathPicked.has(clip.id)
         && !picked.has(clip.id)
         && (allowSeen || !isVideoSeen(clip.id))
@@ -2382,8 +2354,8 @@ Do not moralize or give advice. Return only the line.`;
       .concat(playable.includes(current) ? [current] : []);
 
     for (const category of ordered) {
-      const clip = category.clips.find((item) => !isVideoSeen(item.id))
-        || category.clips[0];
+      const clip = category.clips.find((item) => !item.invalid && !isVideoSeen(item.id))
+        || category.clips.find((item) => !item.invalid);
 
       if (!clip) continue;
 
@@ -2440,6 +2412,20 @@ Do not moralize or give advice. Return only the line.`;
         const picks = pickStageClips(stage, spec.count, picked, allowSeen);
         if (picks.length < spec.count) return null;
         entries.push(...picks);
+      }
+
+      const last = entries[entries.length - 1];
+      if (last && last.stage === 4 && !last.clip.is_finale) {
+        const used = new Set(entries.map((entry) => entry.clip.id));
+        const pathStage = stageFor(4);
+        const finalCategory = categories.find((category) => pathStage.categories.includes(category.tag));
+        const finalClip = finalCategory && finalCategory.clips.find((clip) => (
+          clip.is_finale && !clip.invalid && !used.has(clip.id)
+        ));
+        if (finalClip) {
+          last.clip = finalClip;
+          last.category = finalCategory;
+        }
       }
 
       return entries;
@@ -2522,16 +2508,11 @@ Do not moralize or give advice. Return only the line.`;
     userAvgWatchTime = 0;
     sessionTextFrames = 1;
     quietSinceText = 0;
-    quietRequired = 1 + Math.floor(Math.random() * 2);
+    quietRequired = 0;
+    fallbackCaptionUsed.clear();
     activeHapticStage = 0;
     lastTrackedStage = 0;
     lastHoldTrackedFrame = -1;
-    spiralBeaconShown = false;
-    window.clearTimeout(spiralBeaconTimer);
-    if (spiralBeacon) {
-      spiralBeacon.classList.remove('is-visible');
-      spiralBeacon.hidden = true;
-    }
     portraitText = '';
     portraitRequestId += 1;
 
@@ -2697,91 +2678,6 @@ Do not moralize or give advice. Return only the line.`;
     };
   }
 
-  function spiralBeaconFallback() {
-    const summary = summarizeEventsForBeacon(sessionEvents.slice(-30));
-    const title = String(summary.title || '').trim();
-    if (currentLang === 'en') {
-      return title
-        ? `You freeze at “${title}.” Go deeper.`
-        : 'You freeze at the quiet. Go deeper.';
-    }
-    return title
-      ? `Ты замираешь на «${title}». Дальше глубже.`
-      : 'Ты замираешь в тишине. Дальше глубже.';
-  }
-
-  async function requestSpiralBeaconLine() {
-    const events = sessionEvents.slice(-30).map((event) => ({
-      stage: event.stage,
-      title: event.title,
-      seconds: Math.round((event.viewedMs || 0) / 100) / 10,
-      heldSeconds: Math.round((event.heldMs || 0) / 100) / 10,
-      early: Boolean(event.early),
-    }));
-    const langLine = currentLang === 'en'
-      ? 'Write in natural conversational English.'
-      : 'Пиши на естественном разговорном русском.';
-    const system = currentLang === 'en'
-      ? `You are an unnervingly perceptive inner voice. Return exactly one sentence of 6–9 words, no quotes, no explanations. Expose the escape or the hidden pull without abstract poetry. ${langLine}`
-      : `Ты — проницательный, слегка провокационный внутренний голос. Верни ровно одну фразу из 6–9 слов, без кавычек и пояснений. Вскрой бегство или скрытую тягу без абстрактной поэзии. ${langLine}`;
-    const user = currentLang === 'en'
-      ? `First 30 frames: ${JSON.stringify(events)}\nGive one short line that lands like a private observation.`
-      : `Первые 30 кадров: ${JSON.stringify(events)}\nДай одну короткую фразу, похожую на личное наблюдение.`;
-
-    const controller = new AbortController();
-    const timer = window.setTimeout(() => controller.abort(), 7000);
-    try {
-      const response = await fetch(DEEPSEEK_PROXY_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: [
-            { role: 'system', content: system },
-            { role: 'user', content: user },
-          ],
-          temperature: 1.05,
-          max_tokens: 40,
-        }),
-        signal: controller.signal,
-        cache: 'no-store',
-      });
-      if (!response.ok) return;
-      const payload = await response.json();
-      const raw = payload
-        && payload.choices
-        && payload.choices[0]
-        && payload.choices[0].message
-        && payload.choices[0].message.content;
-      const text = String(raw || '').replace(/^["'«»“”]+|["'«»“”]+$/g, '').trim();
-      const words = text.split(/\s+/).filter(Boolean);
-      if (words.length < 6 || words.length > 9) return;
-      if (currentLang === 'en' ? !/[A-Za-z]/.test(text) : !/[А-Яа-яЁё]/.test(text)) return;
-      if (!spiralBeacon || !spiralBeacon.classList.contains('is-visible')) return;
-      if (spiralBeaconText) spiralBeaconText.textContent = text;
-    } catch (_) {
-      /* фолбэк уже показан */
-    } finally {
-      window.clearTimeout(timer);
-    }
-  }
-
-  function showSpiralBeacon() {
-    if (!spiralBeacon || spiralBeaconShown) return;
-    spiralBeaconShown = true;
-    if (spiralBeaconText) spiralBeaconText.textContent = spiralBeaconFallback();
-    spiralBeacon.hidden = false;
-    window.requestAnimationFrame(() => spiralBeacon.classList.add('is-visible'));
-    safeVibrate([10, 45, 10], 0);
-    window.clearTimeout(spiralBeaconTimer);
-    spiralBeaconTimer = window.setTimeout(() => {
-      spiralBeacon.classList.remove('is-visible');
-      window.setTimeout(() => {
-        if (spiralBeacon) spiralBeacon.hidden = true;
-      }, 1000);
-    }, 4000);
-    requestSpiralBeaconLine();
-  }
-
   function finishSession() {
     if (sessionComplete) return;
 
@@ -2798,8 +2694,7 @@ Do not moralize or give advice. Return only the line.`;
 
     stage.classList.add('is-finalizing');
     hideInstallCard();
-    if (stageLabelEl) stageLabelEl.textContent = '50 // СЕССИЯ ЗАВЕРШЕНА';
-    setSessionLock();
+    if (stageLabelEl) stageLabelEl.textContent = '12 // ТИШИНА';
     updateSessionProgress();
 
     if (finaleEl) {
@@ -2809,7 +2704,6 @@ Do not moralize or give advice. Return only the line.`;
       window.requestAnimationFrame(() => finaleEl.classList.add('is-visible'));
     }
 
-    requestSessionPortrait();
   }
 
   function returnToStart() {
@@ -2857,24 +2751,47 @@ Do not moralize or give advice. Return only the line.`;
     return Math.max(0.1, total / events.length / 1000);
   }
 
+  function topTitlesForStage(events, stageId, limit = 2) {
+    return events
+      .filter((event) => Number(event.stage) === Number(stageId))
+      .slice()
+      .sort((a, b) => (b.heldMs || 0) - (a.heldMs || 0) || (b.viewedMs || 0) - (a.viewedMs || 0))
+      .slice(0, limit)
+      .map((event) => String(event.title || '').split(/\s+/).slice(0, 5).join(' '))
+      .filter(Boolean);
+  }
+
   function fallbackSessionPortrait() {
     const events = countedSessionEvents();
-    const top = sessionTopMoment(events);
-    const title = String((top && top.title) || '').trim().split(/\s+/).slice(0, 5).join(' ');
-    const pace = sessionAverageSeconds(events).toFixed(1).replace('.', currentLang === 'en' ? '.' : ',');
+    const shadowTitle = topTitlesForStage(events, 1, 1)[0];
+    const trickTitle = topTitlesForStage(events, 2, 1)[0];
+    const calmTitle = topTitlesForStage(events, 3, 1)[0];
+    const pathTitle = topTitlesForStage(events, 4, 1)[0];
+
     if (currentLang === 'en') {
-      const image = title ? `“${title}”` : 'the silence';
+      const shadow = shadowTitle || 'the dark frame';
+      const trick = trickTitle || 'the edge of intensity';
+      const calm = calmTitle || 'the quiet frame';
+      const path = pathTitle || 'the open horizon';
       return [
-        `Your pace is ${pace} seconds per frame; you keep your face steady even when tired.`,
-        `You stayed longest with ${image} — that is where your body told the truth.`,
-        'The real trigger is only surfacing; the full read opens in two hours.',
+        `Shadow: attention stayed with “${shadow}”; something there is usually kept just outside the light.`,
+        `Trickster and Abyss: “${trick}” held both attraction and the urge not to look directly.`,
+        `Calm / Anima: “${calm}” brought breath back; not an answer, more a place to be without proving anything.`,
+        `Path / Self: “${path}” points somewhere, though the direction has not yet become a choice.`,
+        'Which part of this movement are you still not ready to call yours?',
       ];
     }
-    const image = title ? `«${title}»` : 'тишине';
+
+    const shadow = shadowTitle || 'тёмном кадре';
+    const trick = trickTitle || 'краю интенсивности';
+    const calm = calmTitle || 'тихом кадре';
+    const path = pathTitle || 'открытом горизонте';
     return [
-      `Твой темп — ${pace} секунды на кадр: ты держишь лицо даже когда устал.`,
-      `Дольше всего ты замер на ${image} — там тело сказало правду.`,
-      'Главный триггер только нащупан; настоящий разбор откроется через два часа.',
+      `Тень: внимание дольше оставалось на «${shadow}»; там проступает то, что обычно держат вне света.`,
+      `Трикстер и Бездна: «${trick}» удерживает и притяжение, и желание не смотреть прямо.`,
+      `Покой / Анима: «${calm}» возвращает дыхание; это не ответ, скорее место, где можно быть без доказательств.`,
+      `Путь / Самость: «${path}» намечает направление, хотя оно ещё не стало выбором.`,
+      'Какую часть этого движения ты пока не готов назвать своей?',
     ];
   }
 
@@ -2885,27 +2802,27 @@ Do not moralize or give advice. Return only the line.`;
       .trim();
     if (!cleaned) return [];
 
-    let lines = cleaned.split(/\n+/).map((line) => line.trim()).filter(Boolean);
-    if (lines.length < 3) {
-      lines = cleaned.split(/(?<=[.!?…])\s+/).map((line) => line.trim()).filter(Boolean);
+    let lines = cleaned.split(/\n\s*\n/).map((line) => line.trim()).filter(Boolean);
+    if (lines.length < 5) {
+      lines = cleaned.split(/\n+/).map((line) => line.trim()).filter(Boolean);
     }
-
-    return lines.slice(0, 3);
+    return lines.slice(0, 6);
   }
 
   function isPortraitValid(lines) {
-    if (!Array.isArray(lines) || lines.length !== 3) return false;
+    if (!Array.isArray(lines) || (lines.length !== 5 && lines.length !== 6)) return false;
 
     const text = lines.join(' ').trim();
     const words = text.split(/\s+/).filter(Boolean);
-    if (words.length < 25 || words.length > 50) return false;
+    if (words.length < 45 || words.length > 140) return false;
     if (currentLang === 'en') {
       if (!/[A-Za-z]/.test(text)) return false;
     } else if (!/[А-Яа-яЁё]/.test(text)) {
       return false;
     }
     if (/[<>]/.test(text)) return false;
-    if (/(архетип|персон|либидо|юнгиан|психоанализ|archetype|persona|libido|jungian)/iu.test(text)) return false;
+    if (!/\?/.test(lines[lines.length - 1])) return false;
+    if (/(тебе нужно|ты должен|ты должна|просто сделай|поп-психолог|you need to|you should|just do it|toxic|narcissist)/iu.test(text)) return false;
     return true;
   }
 
@@ -2914,13 +2831,13 @@ Do not moralize or give advice. Return only the line.`;
     const safeLines = Array.isArray(lines) && lines.length
       ? lines
       : fallbackSessionPortrait();
-    portraitText = safeLines.join('\n');
+    portraitText = safeLines.join('\n\n');
     finalePortraitEl.textContent = '';
 
     safeLines.forEach((line, index) => {
       const paragraph = document.createElement('p');
       paragraph.textContent = line;
-      if (index === safeLines.length - 1) paragraph.classList.add('is-hook');
+      if (index === safeLines.length - 1) paragraph.classList.add('is-question');
       finalePortraitEl.appendChild(paragraph);
     });
   }
@@ -2940,80 +2857,64 @@ Do not moralize or give advice. Return only the line.`;
     const time = localTimeContext();
     const events = sessionEvents.slice(-SESSION_LENGTH).map((event) => ({
       stage: event.stage,
-      archetype: event.archetype,
-      category: event.category,
       title: event.title,
-      seconds: Math.round(event.viewedMs / 100) / 10,
-      heldSeconds: Math.round(event.heldMs / 100) / 10,
-      fast: event.fast,
-      early: event.early,
-      lingered: event.lingered,
-      direction: event.direction,
+      seconds: Math.round((event.viewedMs || 0) / 100) / 10,
+      heldSeconds: Math.round((event.heldMs || 0) / 100) / 10,
+      early: Boolean(event.early),
     }));
-
-    const stageSummary = [1, 2, 3, 4].map((stageId) => {
+    const stages = [1, 2, 3, 4].map((stageId) => {
       const stageEvents = events.filter((event) => Number(event.stage) === stageId);
-      const top = stageEvents
+      const top_titles = stageEvents
         .slice()
         .sort((a, b) => (b.heldSeconds - a.heldSeconds) || (b.seconds - a.seconds))
         .slice(0, 3)
-        .map((event) => ({
-          title: event.title,
-          seconds: event.seconds,
-          heldSeconds: event.heldSeconds,
-        }));
+        .map((event) => event.title)
+        .filter(Boolean);
       return {
         stage: stageId,
         frames: stageEvents.length,
         holds: stageEvents.filter((event) => event.heldSeconds > 0).length,
-        top_titles: top,
+        top_titles,
       };
     });
-    const holds = events.filter((event) => event.heldSeconds > 0).length;
-    const pace = events.length
-      ? Math.round(events.reduce((sum, event) => sum + event.seconds, 0) / events.length * 10) / 10
-      : 0;
-
     const summary = {
       total_frames: events.length,
-      total_holds: holds,
-      average_seconds_per_frame: pace,
-      stages: stageSummary,
+      total_holds: events.filter((event) => event.heldSeconds > 0).length,
+      average_seconds: events.length
+        ? Math.round(events.reduce((sum, event) => sum + event.seconds, 0) / events.length * 10) / 10
+        : 0,
+      stages,
     };
 
     const system = currentLang === 'en'
-      ? `You are an unsparing but lucid observer of human behavior, not a therapist.
-Write in natural, direct English. Exactly 3 short lines, 25–50 words total.
-Address the reader as you/your when it makes the line land harder.
-Line 1: expose the mask and the real tempo.
-Line 2: name the exact image or moment where the reader froze or lingered.
-Line 3: leave an unfinished loop — the hidden trigger is only surfacing and the full read opens in two hours.
-No abstract water, no poetry, no therapy vocabulary, no headings, no lists, no quotes.
-Return only the 3 lines.`
-      : `Ты — проницательный, безжалостно точный наблюдатель поведения, не психотерапевт.
-Пиши на естественном, прямом русском. Ровно 3 короткие строки, всего 25–50 слов.
-Можно обращаться на «ты», если так точнее попадаешь.
-1-я строка: вскрой маску и реальный темп.
-2-я строка: назови конкретный кадр или момент, где человек замер или задержался.
-3-я строка: оставь незакрытый гештальт — главный триггер только нащупан, полный разбор откроется через два часа.
-Без абстрактной воды, поэзии, терапевтических терминов, заголовков, списков и кавычек.
-Верни только 3 строки.`;
+      ? `You are a Jungian phenomenological observer. Do not advise, flatter, diagnose, moralize or manipulate. Reflect the trajectory of attention without telling the reader what to do.
+Return exactly 5 short paragraphs separated by one blank line:
+1. Shadow — what the dark images kept near.
+2. Trickster and Abyss — where intensity, fire, water or disorientation pulled attention.
+3. Calm / Anima — where the pace softened and breath returned.
+4. Path / Self — what direction or image of openness appeared.
+5. One open, respectful question for the reader's own integration; it must end with a question mark.
+Use precise images from the supplied titles. No pop psychology, no advice, no “you should”, no “you need to”. 45–140 words total, in natural English.`
+      : `Ты — юнгианский феноменологический наблюдатель. Не советуй, не льсти, не ставь диагноз, не морализируй и не манипулируй. Отражай траекторию внимания, не указывая человеку, что делать.
+Верни ровно 5 коротких абзацев, разделённых пустой строкой:
+1. Тень — что удерживали тёмные образы.
+2. Трикстер и Бездна — где интенсивность, огонь, вода или дезориентация притягивали внимание.
+3. Покой / Анима — где темп смягчался и возвращалось дыхание.
+4. Путь / Самость — какое направление или образ открытости проступил.
+5. Один открытый, уважительный вопрос для самостоятельной интеграции; он должен заканчиваться знаком вопроса.
+Опирайся на конкретные названия кадров. Без поп-психологии, советов, «тебе нужно» и «ты должен». Всего 45–140 слов, естественным русским языком.`;
 
     const user = currentLang === 'en'
       ? `Local time: ${time.clock}, ${time.label}.
-Real 50-frame summary:
+Real 50-frame trajectory:
 ${JSON.stringify(summary, null, 2)}
-All frame events:
-${JSON.stringify(events, null, 2)}
-
-Write exactly 3 lines in English, 25–50 words, based on the real held images and tempo.`
+Frames:
+${JSON.stringify(events, null, 2)}`
       : `Локальное время: ${time.clock}, ${time.label}.
-Реальная сводка 50 кадров:
+Реальная траектория 50 кадров:
 ${JSON.stringify(summary, null, 2)}
-Все события кадров:
-${JSON.stringify(events, null, 2)}
-
-Верни ровно 3 строки на русском, 25–50 слов, опираясь на реальные кадры замирания и темп.`;
+События кадров:
+${JSON.stringify(events, null, 2)}`;
 
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), PORTRAIT_TIMEOUT_MS);
@@ -3027,18 +2928,16 @@ ${JSON.stringify(events, null, 2)}
             { role: 'system', content: system },
             { role: 'user', content: user },
           ],
-          temperature: 0.82,
-          max_tokens: 190,
+          temperature: 0.78,
+          max_tokens: 260,
         }),
         signal: controller.signal,
         cache: 'no-store',
       });
-
       if (!response.ok) {
         renderSessionPortrait(fallback);
         return;
       }
-
       const payload = await response.json();
       const content = payload
         && payload.choices
@@ -3323,6 +3222,19 @@ ${JSON.stringify(events, null, 2)}
     video.setAttribute('webkit-playsinline', '');
     video.setAttribute('aria-hidden', 'true');
 
+    video.addEventListener('loadedmetadata', () => {
+      if (clip.invalid) return;
+      const bad = video.videoWidth < 1080
+        || video.videoHeight < 1920
+        || video.videoWidth >= video.videoHeight;
+      if (!bad) return;
+      clip.invalid = true;
+      console.warn('[sanctuary] low-quality clip skipped:', clip.title, video.videoWidth, video.videoHeight);
+      if (category.index === state.index && category.activeIndex === index) {
+        window.setTimeout(() => forceNextAvailableScene('up'), 0);
+      }
+    });
+
     video.addEventListener('canplay', () => video.classList.add('is-ready'));
     video.addEventListener('playing', () => video.classList.add('is-ready'));
     video.addEventListener('timeupdate', () => handleLoop(category, index, video));
@@ -3506,6 +3418,19 @@ ${JSON.stringify(events, null, 2)}
       if (!item || typeof item.url !== 'string' || !/^https:\/\//i.test(item.url)) continue;
       if (usedUrls.has(item.url)) continue;
 
+      const itemSize = Number(item.size) || 0;
+      const itemWidth = Number(item.width) || 0;
+      const itemHeight = Number(item.height) || 0;
+      const itemDuration = Number(item.duration) || 0;
+      const itemBitrate = itemSize * 8 / Math.max(1, itemDuration);
+      if (
+        !itemSize || !itemWidth || !itemHeight
+        || itemSize < 4_500_000
+        || itemWidth < 1080
+        || itemHeight < 1920
+        || itemBitrate < 2_500_000
+      ) continue;
+
       const rawStage = String(item.stage || '').toLowerCase().replace(/\s+/g, '_');
       const stageKey = rawStage === 'trickster' || rawStage === 'abyss'
         ? 'trickster_abyss'
@@ -3538,6 +3463,10 @@ ${JSON.stringify(events, null, 2)}
         archetype,
         stage: stageKey,
         source: item.source || 'catalog',
+        width: itemWidth,
+        height: itemHeight,
+        size: itemSize,
+        bitrate: itemBitrate,
         lightPriority: lightPriorityFor(title),
       };
 
@@ -4059,7 +3988,6 @@ ${JSON.stringify(events, null, 2)}
 
     pathPos += 1;
     sceneContext.stage = entry.stage;
-    if (pathPos === 30) showSpiralBeacon();
 
     navigateTo(
       entry.category.index,
@@ -4579,9 +4507,10 @@ ${JSON.stringify(events, null, 2)}
     gateOpen = true;
   }
 
-  sessionLockAt = readSessionLock();
-  returnAfterLock = Boolean(sessionLockAt && sessionLockAt <= Date.now());
-  startSessionLockTicker();
+  try { localStorage.removeItem(SESSION_LOCK_KEY); } catch (_) { /* noop */ }
+  sessionLockAt = 0;
+  returnAfterLock = false;
+  if (lockTicker) { window.clearInterval(lockTicker); lockTicker = 0; }
   applyLanguage();
   window.addEventListener('load', () => trackEvent('threshold_open'), { once: true });
 
