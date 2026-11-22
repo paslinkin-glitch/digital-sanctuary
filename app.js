@@ -35,7 +35,8 @@
   const STUPOR_IDLE_MS = 20000;
   const ANCHOR_WATCH_MS = 12000;
   const MAX_WEIGHT = 6;
-  const SESSION_LENGTH = 12;
+  const CYCLE_LENGTH = 12;
+  const SESSION_LENGTH = 24;
   const SESSION_STAGES = [
     { id: 1, count: 3 },
     { id: 2, count: 3 },
@@ -43,7 +44,7 @@
     { id: 4, count: 3 },
   ];
   const SESSION_FINALE_DELAY_MS = 3400;
-  const SESSION_LOCK_MS = 0;
+  const SESSION_LOCK_MS = 2 * 60 * 60 * 1000;
   const SESSION_LOCK_KEY = 'sanctuary-unlock-at';
   const HAPTIC_COOLDOWN_MS = 180;
   const SWIPE_HAPTIC_COOLDOWN_MS = 600;
@@ -104,6 +105,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       lockLabel: 'ПРОДОЛЖЕНИЕ',
       lockedPrefix: 'Продолжение через',
       notificationBody: 'Продолжение открыто. Вернись, чтобы узнать, что дальше.',
+      notify: 'Уведомить через 2 часа',
+      notifySet: 'Уведомление поставлено',
+      notifyOff: 'Уведомления отключены',
+      notifyUnavailable: 'Уведомления недоступны',
       captionFallback: 'В этот час лучше просто дышать.',
     },
     en: {
@@ -133,6 +138,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       lockLabel: 'CONTINUATION',
       lockedPrefix: 'Continues in',
       notificationBody: 'The next chapter is open. Come back and see what it holds.',
+      notify: 'Notify me in 2 hours',
+      notifySet: 'Notification set',
+      notifyOff: 'Notifications off',
+      notifyUnavailable: 'Notifications unavailable',
       captionFallback: 'Right now, it is enough to breathe.',
     },
   };
@@ -466,6 +475,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   const finaleSessionVideo = document.getElementById('finale-session-video');
   const finalePortraitEl = document.getElementById('finale-portrait');
   const finaleCountdownEl = document.getElementById('finale-countdown');
+  const finaleReflectionEl = document.getElementById('finale-reflection');
   const finaleLockInlineEl = document.getElementById('finale-lock-inline');
   const finaleLockLabel = document.getElementById('finale-lock-label');
   const copySnapshotButton = document.getElementById('copy-snapshot');
@@ -1364,7 +1374,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
 
   function registerCaptionFrame() {
     sessionTextFrames = Math.min(
-      Math.max(1, Math.floor(SESSION_LENGTH * CAPTION_MAX_RATIO)),
+      Math.max(1, Math.floor(CYCLE_LENGTH * CAPTION_MAX_RATIO)),
       sessionTextFrames + 1
     );
     quietSinceText = 0;
@@ -1372,7 +1382,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
 
   function captionAllowedForScene(context) {
-    const cap = Math.max(9, Math.floor(SESSION_LENGTH * CAPTION_MAX_RATIO));
+    const cap = Math.max(9, Math.floor(CYCLE_LENGTH * CAPTION_MAX_RATIO));
     const resonance = context && (context.held || context.looped);
     if (resonance) return true;
     if (sceneOrdinal <= 1) return true;
@@ -2303,10 +2313,29 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const entries = [];
 
     for (const stage of STAGES) {
-      const count = 3 + Math.floor(Math.random() * 2);
+      const count = 3;
       const picks = pickStageClips(stage, count, picked, allowSeen);
       if (picks.length < 3) return false;
       entries.push(...picks);
+    }
+
+    const last = entries[entries.length - 1];
+    if (last && last.stage === 4 && !last.clip.is_finale) {
+      const used = new Set(entries.map((entry) => entry.clip.id));
+      const pathStage = stageFor(4);
+      const pathCategories = categories.filter((category) => pathStage.categories.includes(category.tag));
+      const final = pathCategories
+        .flatMap((category) => category.clips.map((clip) => ({ category, clip })))
+        .find(({ category, clip }) => (
+          clip.is_finale
+          && !clip.invalid
+          && !used.has(clip.id)
+          && (allowSeen || !isVideoSeen(clip.id))
+        ));
+      if (final) {
+        last.clip = final.clip;
+        last.category = final.category;
+      }
     }
 
     for (const entry of entries) pathPicked.add(entry.clip.id);
@@ -2446,7 +2475,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     };
 
     const entries = attempt(false) || attempt(true);
-    if (!entries || entries.length !== SESSION_LENGTH || !sessionPlanIsUnique(entries)) return false;
+    if (!entries || entries.length !== CYCLE_LENGTH || !sessionPlanIsUnique(entries)) return false;
 
     pathPlan = entries;
     pathPicked = new Set(entries.map((entry) => entry.clip.id));
@@ -2458,10 +2487,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   function updateSessionProgress() {
     if (!progressFill) return;
 
-    const completed = sessionComplete
-      ? SESSION_LENGTH
-      : sessionAccounted;
-    progressFill.style.width = `${(completed / SESSION_LENGTH) * 100}%`;
+    const completed = Math.min(CYCLE_LENGTH, sessionAccounted);
+    progressFill.style.width = `${(completed / CYCLE_LENGTH) * 100}%`;
   }
 
   function stageLabelFor(stageId) {
@@ -2676,7 +2703,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       : viewedMs < FAST_VIEW_MS;
 
     if (counted) {
-      sessionAccounted = Math.min(SESSION_LENGTH, sessionAccounted + 1);
+      sessionAccounted = Math.min(CYCLE_LENGTH, sessionAccounted + 1);
       lastSessionProgressAt = Date.now();
     }
 
@@ -2721,6 +2748,72 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     };
   }
 
+  const FINALE_TIMEOUT_MS = 4000;
+
+  function finaleFallbackReflection() {
+    const held = (state.totalHolds || 0) > 0
+      || sessionEvents.some((event) => event.held || event.heldMs > 0);
+    if (held) {
+      return 'Ты замирал там, где взгляд обычно скользит мимо. Пространство запомнило этот отклик — продолжение откроется через два часа, когда тишина уляжется.';
+    }
+    return 'Ты шёл сквозь кадры быстрее, чем успевал выдохнуть, стараясь не задерживаться. Дверь закрывается на два часа — возвращайся, когда будешь готов смотреть медленнее.';
+  }
+
+  function finaleReflectionIsValid(text) {
+    if (!text || /[A-Za-z]/.test(text)) return false;
+    if (!/[А-Яа-яЁё]/.test(text)) return false;
+    if (/(архетип|персон|либидо|юнгиан|психоанализ|трикстер|бездна|тень|бессознательн)/iu.test(text)) return false;
+    const sentences = text.match(/[^.!?…]+[.!?…]+/g) || [];
+    return sentences.length === 2;
+  }
+
+  async function requestFinaleReflection() {
+    const fallback = finaleFallbackReflection();
+    if (finaleReflectionEl) finaleReflectionEl.textContent = fallback;
+    if (location.protocol === 'file:') return;
+
+    const heldFrames = sessionEvents.filter((event) => event.held || event.heldMs > 0).length;
+    const fastFrames = sessionEvents.filter((event) => event.fast || event.early).length;
+    const pauses = sessionEvents.filter((event) => event.lingered).length;
+    const user = `За 24 кадра: удержаний — ${heldFrames}, быстрых свайпов — ${fastFrames}, пауз — ${pauses}. Всего удержаний за сессию — ${state.totalHolds || 0}.
+Напиши ровно 2 коротких предложения на русском. Без цифр, терминов, названий роликов, англицизмов и советов.`;
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), FINALE_TIMEOUT_MS);
+    try {
+      const response = await fetch(DEEPSEEK_PROXY_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [
+            {
+              role: 'system',
+              content: 'Ты — тихий, проницательный наблюдатель сна. На основе ритма просмотров и удержаний напиши 2 коротких, интригующих предложения на русском языке без терминов, англицизмов и морали. Создай ощущение, что пространство заметило скрытую реакцию пользователя, и мягко закрой дверь на 2 часа, чтобы увиденное улеглось.',
+            },
+            { role: 'user', content: user },
+          ],
+          temperature: 0.8,
+          max_tokens: 120,
+        }),
+        signal: controller.signal,
+        cache: 'no-store',
+      });
+      if (!response.ok) return;
+      const payload = await response.json();
+      const raw = payload
+        && payload.choices
+        && payload.choices[0]
+        && payload.choices[0].message
+        && payload.choices[0].message.content;
+      const text = String(raw || '').replace(/^["«»“”]+|["«»“”]+$/g, '').replace(/\s+/g, ' ').trim();
+      if (finaleReflectionIsValid(text) && finaleReflectionEl) finaleReflectionEl.textContent = text;
+    } catch (_) {
+      /* fallback already shown */
+    } finally {
+      window.clearTimeout(timer);
+    }
+  }
+
   function finishSession() {
     if (sessionComplete) return;
 
@@ -2737,8 +2830,11 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
 
     stage.classList.add('is-finalizing');
     hideInstallCard();
-    if (stageLabelEl) stageLabelEl.textContent = '12 // ТИШИНА';
+    if (stageLabelEl) stageLabelEl.textContent = '24 // ТИШИНА';
+    setSessionLock();
     updateSessionProgress();
+    updateSessionLockUI();
+    requestFinaleReflection();
 
     if (finaleEl) {
       finaleEl.hidden = false;
@@ -3169,7 +3265,7 @@ ${JSON.stringify(events, null, 2)}`;
       entries.push(...picks);
     }
 
-    if (entries.length !== SESSION_LENGTH) return null;
+    if (entries.length !== CYCLE_LENGTH) return null;
 
     const last = entries[entries.length - 1];
     if (last && last.stage === 4 && !last.clip.is_finale) {
@@ -4058,7 +4154,12 @@ ${JSON.stringify(events, null, 2)}`;
 
     recordSessionEvent(record);
 
-    const isCycleBoundary = (pathPos + 1) % SESSION_LENGTH === 0;
+    if (pathPos >= SESSION_LENGTH - 1) {
+      finishSession();
+      return;
+    }
+
+    const isCycleBoundary = (pathPos + 1) % CYCLE_LENGTH === 0;
     if (pathPos + 1 >= pathPlan.length) {
       if (!extendPathPlan()) {
         pathPicked.clear();
@@ -4603,10 +4704,9 @@ ${JSON.stringify(events, null, 2)}`;
     gateOpen = true;
   }
 
-  try { localStorage.removeItem(SESSION_LOCK_KEY); } catch (_) { /* noop */ }
-  sessionLockAt = 0;
-  returnAfterLock = false;
-  if (lockTicker) { window.clearInterval(lockTicker); lockTicker = 0; }
+  sessionLockAt = readSessionLock();
+  returnAfterLock = Boolean(sessionLockAt && sessionLockAt <= Date.now());
+  startSessionLockTicker();
   applyLanguage();
   window.addEventListener('load', () => trackEvent('threshold_open'), { once: true });
 
