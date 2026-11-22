@@ -82,8 +82,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       docTitle: 'Digital Sanctuary — интерактивное убежище',
       entryAria: 'Вход в убежище',
       entryKicker: 'ЦИФРОВОЕ УБЕЖИЩЕ',
-      entryTitle: 'Закрытое пространство тишины и созерцания.',
-      entrySub: 'Без слов, оценок и попыток тебя исправить. Листай вверх как сон; задержи палец, если кадр отзывается.',
+      entryTitle: 'Закрытое пространство<br>тишины и созерцания.',
+      entrySub: 'Без слов, оценок и попыток<br>тебя исправить.',
       enter: 'Войти в сон',
       nav: 'Листай вверх как сон · Задержи палец, если кадр отзывается',
       installApp: 'Установить приложение на экран',
@@ -115,8 +115,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       docTitle: 'Digital Sanctuary — an interactive sanctuary',
       entryAria: 'Entrance to the sanctuary',
       entryKicker: 'DIGITAL SANCTUARY',
-      entryTitle: 'A closed space of silence and contemplation.',
-      entrySub: 'No words, judgments, or attempts to fix you. Swipe up like a dream; hold the screen when a frame resonates.',
+      entryTitle: 'A private space<br>of silence and stillness.',
+      entrySub: 'No words, no judgments,<br>no attempts to fix you.',
       enter: 'Enter the dream',
       nav: 'Swipe up like a dream · Hold when a frame resonates',
       installApp: 'Add the app to your screen',
@@ -494,10 +494,14 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       const node = document.querySelector(selector);
       if (node) node.textContent = tr(key);
     };
+    const setHtml = (selector, key) => {
+      const node = document.querySelector(selector);
+      if (node) node.innerHTML = tr(key);
+    };
 
     setText('.entry-kicker', 'entryKicker');
-    setText('.entry-title', 'entryTitle');
-    setText('.entry-sub', 'entrySub');
+    setHtml('.entry-title', 'entryTitle');
+    setHtml('.entry-sub', 'entrySub');
     setText('.entry-nav-hint', 'nav');
     setText('.install-card-title', 'installCardTitle');
     setText('.finale-kicker', 'finaleKicker');
@@ -2510,8 +2514,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   function updateSessionProgress() {
     if (!progressFill) return;
 
-    const completed = Math.min(CYCLE_LENGTH, sessionAccounted);
-    progressFill.style.width = `${(completed / CYCLE_LENGTH) * 100}%`;
+    const currentFrame = sessionComplete
+      ? SESSION_LENGTH
+      : Math.min(SESSION_LENGTH, Math.max(0, pathPos + 1));
+    progressFill.style.width = `${(currentFrame / SESSION_LENGTH) * 100}%`;
   }
 
   function stageLabelFor(stageId) {
