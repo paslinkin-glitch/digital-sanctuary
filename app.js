@@ -49,6 +49,12 @@
   const HAPTIC_COOLDOWN_MS = 180;
   const SWIPE_HAPTIC_COOLDOWN_MS = 600;
   const HOLD_HEARTBEAT_MS = 1800;
+  const HAPTIC_PATTERNS = {
+    fire: { frame: [32, 45, 48], hold: [42, 85, 58], interval: 1400 },
+    water: { frame: [20, 55, 36, 70, 54], hold: [52, 160, 72], interval: 2200 },
+    fog: { frame: [46, 110, 28], hold: [58, 130, 34], interval: 2000 },
+    space: { frame: [34, 65, 34], hold: [44, 180, 44], interval: 2400 },
+  };
   const PORTRAIT_TIMEOUT_MS = 18000;
 
   // Demo key from the brief. A static prototype must expose it; for production
@@ -59,7 +65,7 @@
   const CAPTION_START_DELAY_MS = 1200;
   const CAPTION_MIN_WORDS = 4;
   const CAPTION_MAX_WORDS = 6;
-  const CAPTION_MAX_RATIO = 0.85;
+  const CAPTION_MAX_RATIO = 0.45;
   const EARLY_SWIPE_RATIO = 0.55;
   const CAPTION_LINGER_MS = 3500;
   const CAPTION_HOLD_REVEAL_MS = 1100;
@@ -82,8 +88,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       docTitle: 'Digital Sanctuary — интерактивное убежище',
       entryAria: 'Вход в убежище',
       entryKicker: 'ЦИФРОВОЕ УБЕЖИЩЕ',
-      entryTitle: 'Закрытое пространство<br>тишины и созерцания.',
-      entrySub: 'Без слов, оценок и попыток<br>тебя исправить.',
+      entryTitle: 'Закрытое пространство<br>тишины и созерцания',
+      entrySub: 'Без слов, оценок и попыток<br>тебя исправить',
       enter: 'Войти в сон',
       nav: 'Листай вверх как сон · Задержи палец, если кадр отзывается',
       installApp: 'Установить приложение на экран',
@@ -99,7 +105,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       finaleBody2: 'Тишина просто побыла рядом — ты можешь остаться в ней или вернуться в любой момент.',
       loading: 'СОБИРАЕМ РАЗБОР...',
       back: 'Ещё один сон',
-      cycle1: 'Первый круг сна завершён. Пространство ведёт глубже.',
+      cycle1: 'Первый круг завершён. Теперь сон опускается глубже',
+      cycleKicker: 'КРУГ I // ПРОЙДЕН',
       cycle2: 'Второй круг пройден. Тишина остаётся рядом.',
       cycle3: 'Круг сна завершён. Дыхание продолжается.',
       lockLabel: 'ПРОДОЛЖЕНИЕ',
@@ -115,8 +122,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       docTitle: 'Digital Sanctuary — an interactive sanctuary',
       entryAria: 'Entrance to the sanctuary',
       entryKicker: 'DIGITAL SANCTUARY',
-      entryTitle: 'A private space<br>of silence and stillness.',
-      entrySub: 'No words, no judgments,<br>no attempts to fix you.',
+      entryTitle: 'A private space<br>of silence and stillness',
+      entrySub: 'No words, no judgments,<br>no attempts to fix you',
       enter: 'Enter the dream',
       nav: 'Swipe up like a dream · Hold when a frame resonates',
       installApp: 'Add the app to your screen',
@@ -132,7 +139,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       finaleBody2: 'Silence simply stayed beside you — you can remain in it or return at any moment.',
       loading: 'BUILDING YOUR VERDICT...',
       back: 'One more dream',
-      cycle1: 'First cycle of the dream complete. The space leads deeper.',
+      cycle1: 'First cycle complete. The dream now descends deeper',
+      cycleKicker: 'CYCLE I // COMPLETE',
       cycle2: 'Second cycle passed. Silence remains beside you.',
       cycle3: 'Dream cycle complete. Breathing continues.',
       lockLabel: 'CONTINUATION',
@@ -450,6 +458,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
 
   const stage = document.querySelector('.stage');
   const cycleWhisperEl = document.getElementById('cycle-whisper');
+  const cycleWhisperKickerEl = document.getElementById('cycle-whisper-kicker');
+  const cycleWhisperTextEl = document.getElementById('cycle-whisper-text');
   const slides = Array.from(document.querySelectorAll('.slide'));
   const captionEl = document.querySelector('.caption');
   const captionLines = captionEl
@@ -813,6 +823,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   let cycleWhisperTimer = 0;
   let captionStartDelayOverride = 0;
   let cycleWhisperUntil = 0;
+  let cycleCaptionBlocked = false;
   let activeHapticStage = 0;
   let holdPulseTimer = 0;
   let lastHapticAt = 0;
@@ -939,14 +950,19 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
   }
 
+  function hapticPatternForCurrent() {
+    return HAPTIC_PATTERNS[currentOpticElement] || HAPTIC_PATTERNS.fog;
+  }
+
   function startHoldPulse() {
     stopHoldPulse();
-    safeVibrate(22, HAPTIC_COOLDOWN_MS);
+    const pattern = hapticPatternForCurrent();
+    safeVibrate(pattern.hold, 0);
     holdPulseTimer = window.setInterval(() => {
       if (gesture && gesture.holding) {
-        safeVibrate(22, HOLD_HEARTBEAT_MS - 200);
+        safeVibrate(pattern.hold, pattern.interval - 220);
       }
-    }, HOLD_HEARTBEAT_MS);
+    }, pattern.interval);
   }
 
   function stopHoldPulse() {
@@ -1386,11 +1402,22 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
 
   function captionAllowedForScene(context) {
-    const cap = Math.max(9, Math.floor(CYCLE_LENGTH * CAPTION_MAX_RATIO));
-    const resonance = context && (context.held || context.looped);
-    if (resonance) return true;
+    if (cycleCaptionBlocked) {
+      cycleCaptionBlocked = false;
+      quietSinceText = 0;
+      return false;
+    }
+
+    const cap = Math.max(1, Math.floor(CYCLE_LENGTH * CAPTION_MAX_RATIO));
+    if (context && context.held) return true;
     if (sceneOrdinal <= 1) return true;
     if (sessionTextFrames >= cap) return false;
+
+    if (quietSinceText < quietRequired) {
+      quietSinceText += 1;
+      return false;
+    }
+
     registerCaptionFrame();
     return true;
   }
@@ -2579,8 +2606,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (!cycleWhisperEl) return;
     window.clearTimeout(cycleWhisperTimer);
     const key = completedCycle === 1 ? 'cycle1' : (completedCycle === 2 ? 'cycle2' : 'cycle3');
-    cycleWhisperEl.textContent = tr(key);
-    cycleWhisperUntil = Date.now() + 4800;
+    if (cycleWhisperKickerEl) cycleWhisperKickerEl.textContent = tr('cycleKicker');
+    if (cycleWhisperTextEl) cycleWhisperTextEl.textContent = tr(key);
+    cycleWhisperUntil = Date.now() + 5000;
     cycleWhisperEl.setAttribute('aria-hidden', 'false');
     window.requestAnimationFrame(() => {
       if (cycleWhisperEl) cycleWhisperEl.classList.add('is-visible');
@@ -2589,7 +2617,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       if (!cycleWhisperEl) return;
       cycleWhisperEl.classList.remove('is-visible');
       cycleWhisperEl.setAttribute('aria-hidden', 'true');
-    }, 4500);
+    }, 5000);
   }
 
   function beginSession() {
@@ -2601,13 +2629,14 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     sessionStage = 1;
     sessionAccounted = 0;
     cycleNumber = 1;
+    cycleCaptionBlocked = false;
     hideCycleWhisper();
     captionStartDelayOverride = 0;
     lastSessionProgressAt = Date.now();
     userAvgWatchTime = 0;
     sessionTextFrames = 1;
     quietSinceText = 0;
-    quietRequired = 0;
+    quietRequired = 1;
     fallbackCaptionUsed.clear();
     activeHapticStage = 0;
     lastTrackedStage = 0;
@@ -3402,6 +3431,7 @@ ${JSON.stringify(events, null, 2)}`;
     trackStageReached(entry.stage);
     updateSessionProgress();
     setSceneElement(activeClip());
+    safeVibrate(hapticPatternForCurrent().frame, HAPTIC_COOLDOWN_MS);
     activateCaption(category, activeClip(), behaviorContext(), true, entry.stage);
 
     const track = nextTrackFor(category);
@@ -4080,7 +4110,6 @@ ${JSON.stringify(events, null, 2)}`;
     if (activeHapticStage !== sceneStage) {
       activeHapticStage = sceneStage;
       trackStageReached(sceneStage);
-      safeVibrate(35, 1000);
     }
     updateStageLabel(sceneStage);
     updateSessionProgress();
@@ -4101,6 +4130,7 @@ ${JSON.stringify(events, null, 2)}`;
 
     playCategory(category);
     setSceneElement(activeClip());
+    safeVibrate(hapticPatternForCurrent().frame, HAPTIC_COOLDOWN_MS);
     activateCaption(category, activeClip(), behavior, allowed, sceneStage);
     const track = nextTrackFor(category);
     switchSoundtrack(track, duration);
@@ -4208,8 +4238,9 @@ ${JSON.stringify(events, null, 2)}`;
       sessionAccounted = 2;
       sessionTextFrames = 1;
       quietSinceText = 0;
-      quietRequired = 0;
-      captionStartDelayOverride = 4800;
+      quietRequired = 1;
+      captionStartDelayOverride = 0;
+      cycleCaptionBlocked = true;
       showCycleWhisper(completedCycle);
     } else {
       captionStartDelayOverride = 0;

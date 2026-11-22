@@ -2046,3 +2046,63 @@ body,
     animation: none;
   }
 }
+
+
+/* ============================================================ CYCLE THRESHOLD v29 */
+.cycle-whisper {
+  top: 46%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: min(90vw, 540px);
+  margin: 0;
+  padding: 1.7rem 1.4rem;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(ellipse 90% 70% at 50% 50%, rgba(6, 6, 7, 0.72), transparent 78%);
+  color: var(--silk);
+  text-align: center;
+  opacity: 0;
+  filter: blur(8px);
+  transition:
+    opacity 1.2s var(--organic),
+    filter 1.2s var(--organic);
+  pointer-events: none;
+}
+
+.cycle-whisper.is-visible {
+  opacity: 1;
+  filter: blur(0);
+}
+
+.cycle-whisper-kicker {
+  display: block;
+  color: var(--champagne);
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 300;
+  line-height: 1.5;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.cycle-whisper-rule {
+  display: block;
+  width: 120px;
+  height: 0.5px;
+  margin: 0.9rem auto;
+  background: linear-gradient(90deg, transparent, var(--champagne), transparent);
+}
+
+.cycle-whisper-text {
+  display: block;
+  max-width: 400px;
+  margin: 0 auto;
+  color: var(--silk);
+  font-family: var(--serif);
+  font-size: clamp(20px, 5.4vw, 25px);
+  font-weight: 300;
+  line-height: 1.55;
+  letter-spacing: 0.02em;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.95);
+}

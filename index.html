@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=28">
+  <link rel="stylesheet" href="style.css?v=29">
 </head>
 <body>
   <main class="stage" id="stage">
@@ -45,7 +45,12 @@
       <span class="session-progress-fill" id="session-progress-fill"></span>
     </div>
     <div class="sanctuary-frame" aria-hidden="true"></div>
-    <div class="cycle-whisper" id="cycle-whisper" aria-live="polite" aria-hidden="true"></div>
+    <div class="cycle-whisper" id="cycle-whisper" aria-live="polite" aria-hidden="true">
+      <span class="cycle-whisper-kicker" id="cycle-whisper-kicker"></span>
+      <span class="cycle-whisper-rule" aria-hidden="true"></span>
+      <span class="cycle-whisper-text" id="cycle-whisper-text"></span>
+      <span class="cycle-whisper-rule" aria-hidden="true"></span>
+    </div>
     <div class="optic" aria-hidden="true">
       <div class="optic-haze"></div>
       <div class="optic-water"></div>
@@ -79,8 +84,8 @@
     </div>
     <div class="entry-copy">
       <p class="entry-kicker">ЦИФРОВОЕ УБЕЖИЩЕ</p>
-      <h1 class="entry-title">Закрытое пространство<br>тишины и созерцания.</h1>
-      <p class="entry-sub">Без слов, оценок и попыток<br>тебя исправить.</p>
+      <h1 class="entry-title">Закрытое пространство<br>тишины и созерцания</h1>
+      <p class="entry-sub">Без слов, оценок и попыток<br>тебя исправить</p>
     </div>
     <div class="entry-actions">
       <button class="entry-trigger" id="entry-trigger" type="button">Войти в сон</button>
@@ -130,7 +135,7 @@
       window.__deferredInstallPrompt = event;
     });
   </script>
-  <script src="videos-data.js?v=28"></script>
-  <script src="app.js?v=28"></script>
+  <script src="videos-data.js?v=29"></script>
+  <script src="app.js?v=29"></script>
 </body>
 </html>
