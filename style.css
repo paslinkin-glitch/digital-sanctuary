@@ -3043,3 +3043,111 @@ body,
 .entry.has-install-card .entry-actions::before {
   display: none;
 }
+
+
+/* ================================================== v43 EDITORIAL DARK LUXURY */
+.install-card[hidden],
+.install-card--ios[hidden] {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+.entry {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  justify-items: center;
+  align-items: center;
+  gap: clamp(10px, 2.4vh, 28px);
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  padding:
+    max(18px, calc(env(safe-area-inset-top) + 10px))
+    clamp(18px, 6vw, 48px)
+    max(18px, calc(env(safe-area-inset-bottom) + 12px));
+  background:
+    radial-gradient(ellipse 68% 42% at 50% 46%, rgba(214, 199, 178, 0.085), transparent 75%),
+    var(--void);
+}
+
+.lang-switch {
+  grid-row: 1;
+  align-self: start;
+  position: relative;
+  z-index: 4;
+}
+
+.entry-copy {
+  grid-row: 2;
+  align-self: center;
+  width: min(86vw, 380px);
+  margin: 0;
+}
+
+.entry-copy::before,
+.entry-copy::after {
+  content: "";
+  display: block;
+  width: 0.5px;
+  height: clamp(20px, 4vh, 42px);
+  margin: 0 auto 1.15rem;
+  background: linear-gradient(180deg, transparent, rgba(214, 199, 178, 0.45), transparent);
+  pointer-events: none;
+}
+
+.entry-copy::after {
+  margin: 1.15rem auto 0;
+}
+
+.entry-actions {
+  grid-row: 4;
+  position: relative;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  width: min(86vw, 280px);
+  margin: 0 auto;
+  padding: 0;
+  transform: none;
+  align-self: end;
+}
+
+.entry-actions .entry-trigger {
+  width: 100%;
+  max-width: 280px;
+  margin: 0 auto;
+}
+
+.entry.has-install-card {
+  padding-bottom: max(18px, calc(env(safe-area-inset-bottom) + 12px));
+}
+
+.entry.has-install-card .entry-actions {
+  bottom: auto;
+  transform: none;
+}
+
+.entry-trigger,
+.install-card,
+.install-card--ios {
+  border: 0.5px solid rgba(234, 229, 220, 0.16);
+  border-top-color: rgba(234, 229, 220, 0.34);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 18px 44px rgba(0, 0, 0, 0.72);
+}
+
+.install-card:not(.install-card--ios),
+.install-card--ios {
+  top: calc(env(safe-area-inset-top) + clamp(72px, 11vh, 118px));
+  bottom: auto;
+}
+
+/* card remains the primary visual step, above the quiet entry button */
+.entry-kicker {
+  color: var(--champagne);
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}

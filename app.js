@@ -898,7 +898,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
 
   let gesture = null;
   let isTransitioning = false;
-  let pointerGestureSeen = false;
   let touchOrigin = null;
   let holdTimer = 0;
   let lastSwipeAt = 0;
@@ -4714,7 +4713,7 @@ ${JSON.stringify(events, null, 2)}`;
   }
 
   stage.addEventListener('pointerdown', (event) => {
-    pointerGestureSeen = true;
+    if (event.pointerType !== 'mouse') return;
     enableSoundscape();
     wakePlayback();
 
@@ -4839,14 +4838,17 @@ ${JSON.stringify(events, null, 2)}`;
       touchOrigin = null;
       return;
     }
+    enableSoundscape();
+    wakePlayback();
     const touch = event.touches[0];
     touchOrigin = {
       x: touch.clientX,
       y: touch.clientY,
+      lastY: touch.clientY,
       t: now(),
-      prevent: !pointerGestureSeen,
+      lastT: now(),
     };
-    if (touchOrigin.prevent && event.cancelable) event.preventDefault();
+    if (event.cancelable) event.preventDefault();
   }, { passive: false });
 
   stage.addEventListener('touchmove', (event) => {
@@ -4855,10 +4857,11 @@ ${JSON.stringify(events, null, 2)}`;
     const dx = touch.clientX - touchOrigin.x;
     const dy = touch.clientY - touchOrigin.y;
     if (Math.abs(dy) > 10 && event.cancelable) event.preventDefault();
-    if (pointerGestureSeen) return;
     if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 10) {
       setBreath(clamp(-dy / 140, -1, 1));
     }
+    touchOrigin.lastY = touch.clientY;
+    touchOrigin.lastT = now();
   }, { passive: false });
 
   stage.addEventListener('touchend', (event) => {
@@ -4866,13 +4869,15 @@ ${JSON.stringify(events, null, 2)}`;
     const changed = event.changedTouches && event.changedTouches[0];
     const origin = touchOrigin;
     touchOrigin = null;
-    if (!changed || pointerGestureSeen) return;
+    if (!changed) return;
     const dx = changed.clientX - origin.x;
     const dy = changed.clientY - origin.y;
+    const elapsed = Math.max(1, now() - origin.t);
+    const velocity = Math.abs(dy) / elapsed;
     setBreath(0);
     abortGesture();
     if (dy < -36 && Math.abs(dy) > Math.abs(dx)) {
-      go('up');
+      go('up', velocity);
     }
   }, { passive: false });
 
@@ -5189,20 +5194,18 @@ ${JSON.stringify(events, null, 2)}`;
   }
 
   if (installCardInstall) installCardInstall.addEventListener('click', handleInstallClick);
-  if (installCardLater) {
-    installCardLater.addEventListener('click', () => {
-      rememberInstallChoice();
-      installCardDismissed = true;
-      hideInstallCard();
-    });
+  function closeInstallPrompt(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    rememberInstallChoice();
+    installCardDismissed = true;
+    hideInstallCard();
   }
 
-  if (iosInstallClose) {
-    iosInstallClose.addEventListener('click', () => {
-      rememberInstallChoice();
-      installCardDismissed = true;
-      hideInstallCard();
-    });
+  for (const button of [installCardLater, iosInstallClose]) {
+    if (!button) continue;
+    button.addEventListener('pointerdown', closeInstallPrompt);
+    button.addEventListener('click', closeInstallPrompt);
   }
 
   if (isStandaloneMode()) {
