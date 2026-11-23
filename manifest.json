@@ -5,7 +5,7 @@
   "description": "Тихая интерактивная видео-лента: юнгианские образы, замедление и эмбиент.",
   "lang": "ru",
   "dir": "ltr",
-  "start_url": "./",
+  "start_url": "./?app=1",
   "scope": "./",
   "display": "standalone",
   "display_override": [

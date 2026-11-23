@@ -3714,3 +3714,69 @@ body .entry.entry-browser-mode > .install-card .install-card-btn {
   right: auto !important;
   transform: none !important;
 }
+
+
+/* v54 hard hidden and browser install capsule */
+.install-card[hidden],
+.install-card--ios[hidden],
+.entry-browser-mode[hidden],
+.entry-app-mode[hidden] {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+/* Browser install: only the glass capsule, no outer container frame */
+.entry.is-browser > .install-card:not(.install-card--ios) {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  padding: 0 !important;
+  width: min(100%, 300px) !important;
+  max-width: 300px !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.entry.is-browser > .install-card:not(.install-card--ios) .install-card-copy {
+  order: 2;
+  width: 100%;
+}
+
+.entry.is-browser > .install-card:not(.install-card--ios) .install-card-btn {
+  order: 1;
+  margin: 0 auto !important;
+}
+
+.entry.is-browser #ios-install-card,
+.entry.is-browser .ios-install-card {
+  display: none !important;
+}
+
+/* Installed: one line only */
+.entry.is-installed > .lang-switch,
+.entry.is-installed > .install-card,
+.entry.is-installed > .install-card--ios,
+.entry.is-installed > #ios-install-card,
+.entry.is-installed > .entry-gesture-guide,
+.entry.is-installed > .entry-actions {
+  display: none !important;
+}
+
+.entry.is-installed .entry-installed-note {
+  display: block !important;
+}
+
+
+body .entry.is-installed .install-card,
+body .entry.is-installed .install-card--ios,
+body .entry.is-installed #ios-install-card,
+body .entry.is-installed .lang-switch,
+body .entry.is-installed .entry-actions {
+  display: none !important;
+  pointer-events: none !important;
+}

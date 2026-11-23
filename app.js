@@ -4628,8 +4628,11 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
 
   function isStandaloneMode() {
     if (new URLSearchParams(location.search).get('app') === '1') return true;
-    return window.matchMedia('(display-mode: standalone)').matches
-      || window.navigator.standalone === true;
+    if (window.matchMedia('(display-mode: standalone)').matches) return true;
+    if (window.matchMedia('(display-mode: fullscreen)').matches) return true;
+    if (window.navigator.standalone === true) return true;
+    if (document.referrer.startsWith('android-app://')) return true;
+    return false;
   }
 
   function installChoiceMade() {
@@ -4685,6 +4688,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
 
   function showAndroidInfoCard() {
     if (isStandaloneMode() || installChoiceMade() || !installCard) return;
+    if (iosInstallCard) { iosInstallCard.hidden = true; iosInstallCard.style.display = 'none'; }
     installCard.classList.add('install-card--info');
     if (installCardInfo) {
       installCardInfo.textContent = tr('installInApp');
@@ -4699,6 +4703,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
 
   function showAndroidFallbackCard() {
     if (isStandaloneMode() || installChoiceMade() || !installCard) return;
+    if (iosInstallCard) { iosInstallCard.hidden = true; iosInstallCard.style.display = 'none'; }
     installCard.classList.remove('install-card--info');
     if (installCardInfo) installCardInfo.hidden = true;
     if (installCardHint) installCardHint.hidden = true;
@@ -4864,6 +4869,11 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
 
   function showInstalledState() {
     hideInstallCard();
+    for (const card of [installCard, iosInstallCard]) {
+      if (!card) continue;
+      card.hidden = true;
+      card.style.setProperty('display', 'none', 'important');
+    }
     if (entryGate) entryGate.classList.add('is-installed');
     if (entryTapPrompt) entryTapPrompt.hidden = true;
     if (entryInstalledNote) entryInstalledNote.hidden = false;
