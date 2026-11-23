@@ -2783,7 +2783,6 @@ html:not([data-maintenance="true"]) #maintenance-screen {
 .install-card-btn,
 .finale-btn,
 .finale-btn--glass,
-.finale-shell,
 .install-action {
   background: linear-gradient(180deg, rgba(24, 23, 22, 0.78) 0%, rgba(12, 12, 14, 0.88) 100%);
   -webkit-backdrop-filter: blur(22px) saturate(115%);

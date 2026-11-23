@@ -2378,10 +2378,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const text = `${clip.title || ''} ${clip.description || ''}`.toLowerCase();
     const darkContext = ['rain', 'fog', 'snow'].includes(envContext.weatherType)
       || ['evening', 'night'].includes(envContext.timeOfDay);
-    const brightContext = envContext.weatherType === 'clear'
-      && ['morning', 'day'].includes(envContext.timeOfDay);
     if (darkContext && /\b(beach|tropical|palm|summer|flower|sunny|sunlight|golden)\b/.test(text)) return false;
-    if (brightContext && /\b(snow|blizzard|storm|night|dark|fog|rain)\b/.test(text)) return false;
     return true;
   }
 
@@ -3629,7 +3626,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       ensureClipVideo(entry.category, entry.clip);
       if (entry.clip.el) {
         entry.clip.el.preload = 'auto';
-        if (entry.clip.el.readyState < 1) entry.clip.el.load();
+        if (entry.clip.el.readyState === 0) entry.clip.el.load();
       }
     }
     if (anchorClip && anchorClip.id) {
@@ -3848,7 +3845,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
         video.classList.add('is-current');
         video.preload = 'auto';
         video.playbackRate = stage.classList.contains('is-held') ? SLOW_RATE : 1;
-        if (video.readyState >= 1) video.currentTime = 0;
         clip.lastTime = video.currentTime;
 
         const promise = video.play();
@@ -4608,9 +4604,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
   const entryGate = document.querySelector('.entry');
 
   function isStandaloneMode() {
-    try {
-      if (localStorage.getItem(INSTALLED_KEY) === '1') return true;
-    } catch (_) {}
     return window.matchMedia('(display-mode: standalone)').matches
       || window.navigator.standalone === true;
   }
@@ -4858,9 +4851,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
   }
 
   if (installCardInstall) installCardInstall.hidden = true;
-  if (isStandaloneMode()) {
-    try { localStorage.setItem(INSTALLED_KEY, '1'); } catch (_) {}
-  }
   if (!isStandaloneMode() && !installChoiceMade()) {
     if (isIos()) showInstallCard(true);
     else if (isAndroidInApp()) showAndroidInfoCard();
@@ -4878,7 +4868,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     }
     gateOpen = true;
     isTransitioning = false;
-    rememberInstallChoice();
     requestWakeLock();
     trackEvent('session_start', { local_hour: new Date().getHours() });
     if (returnAfterLock) {
