@@ -44,6 +44,7 @@
   const SESSION_FINALE_DELAY_MS = 3400;
   const SESSION_LOCK_MS = 2 * 60 * 60 * 1000;
   const SESSION_LOCK_KEY = 'sanctuary-unlock-at';
+  const BLOCKED_VIDEO_IDS = new Set(['vecteezy-23002431', 'vecteezy-28326594']);
   const HAPTIC_COOLDOWN_MS = 180;
   const SWIPE_HAPTIC_COOLDOWN_MS = 600;
   const HOLD_HEARTBEAT_MS = 1800;
@@ -3489,6 +3490,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     for (const item of catalog) {
       if (!item || typeof item.url !== 'string' || !/^https:\/\//i.test(item.url)) continue;
       if (usedUrls.has(item.url)) continue;
+      if (BLOCKED_VIDEO_IDS.has(String(item.id || '')) || BLOCKED_VIDEO_IDS.has(String(item.fileHash || '')) || BLOCKED_VIDEO_IDS.has(String(item.url || ''))) continue;
 
       const itemSize = Number(item.size) || 0;
       const itemWidth = Number(item.width) || 0;
