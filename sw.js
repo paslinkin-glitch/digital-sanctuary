@@ -3,7 +3,7 @@
  * the cache is only a fallback for offline launches. Coverr API and video
  * CDN requests are cross-origin and deliberately pass through untouched.
  */
-const CACHE = 'sanctuary-shell-v55';
+const CACHE = 'sanctuary-shell-v56';
 const ASSETS = [
   './',
   './index.html',
@@ -62,7 +62,7 @@ const ASSETS = [
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE);
-    await cache.addAll(ASSETS);
+    await Promise.allSettled(ASSETS.map((asset) => cache.add(asset)));
     await self.skipWaiting();
   })());
 });
@@ -119,7 +119,7 @@ self.addEventListener('message', (event) => {
     icon: './icon-192.png',
     badge: './icon-192.png',
     tag: 'sanctuary-return',
-    data: { url: './' },
+    data: { url: './?app=1' },
     renotify: false,
   };
 
@@ -156,6 +156,6 @@ self.addEventListener('notificationclick', (event) => {
         return;
       }
     }
-    await self.clients.openWindow('./');
+    await self.clients.openWindow('./?app=1');
   })());
 });
