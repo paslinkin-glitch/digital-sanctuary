@@ -4764,12 +4764,6 @@ ${JSON.stringify(events, null, 2)}`;
       peakSpeed: 0,
     };
 
-    try {
-      stage.setPointerCapture(event.pointerId);
-    } catch (_) {
-      // Захват недоступен — жест всё равно обработается всплывающими событиями.
-    }
-
     holdTimer = window.setTimeout(startHold, HOLD_MS);
     resonanceTimer = window.setTimeout(() => {
       if (gesture && !gesture.moved) {
