@@ -1886,7 +1886,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
     const audio = document.createElement('audio');
     track.failed = false;
-    audio.crossOrigin = 'anonymous';
     audio.loop = true;
     audio.preload = 'metadata';
     audio.setAttribute('playsinline', '');
@@ -2004,9 +2003,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const profile = ELEMENTAL_NOISE[key] || ELEMENTAL_NOISE.fog;
     const now = sound.ctx.currentTime;
     const held = Boolean(sound.held);
-    const targetGain = sound.activeType === 'music'
+    let targetGain = sound.activeType === 'music'
       ? (held ? 0.018 : 0)
       : (held ? Math.max(0.06, profile.gain * 0.55) : profile.gain);
+    if (SCREEN_TIER === 'low') targetGain = 0;
     sound.elementalGain = profile.gain;
     sound.noiseBaseGain = targetGain;
     sound.noiseCut.frequency.cancelScheduledValues(now);
@@ -2023,6 +2023,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
 
   function setStageOvertone(stageId) {
+    if (SCREEN_TIER === 'low') {
+      if (sound && sound.overtoneGain) sound.overtoneGain.gain.value = 0;
+      return;
+    }
     if (!sound || !sound.overtone) return;
     const frequencies = [110, 146.83, 174.61, 196];
     const frequency = frequencies[Math.max(0, Math.min(3, Number(stageId) - 1))];
@@ -2036,6 +2040,11 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   function setStageSubBass(stageId) {
     if (!sound || !sound.subBassGain) return;
     const stage = Number(stageId) || 1;
+    if (SCREEN_TIER === 'low') {
+      sound.subBassGain.gain.cancelScheduledValues(sound.ctx.currentTime);
+      sound.subBassGain.gain.linearRampToValueAtTime(0, sound.ctx.currentTime + 0.2);
+      return;
+    }
     const frequency = stage === 1 ? 38 : stage === 2 ? 44 : stage === 3 ? 50 : 56;
     const gain = stage === 1 ? 0.010 : stage === 2 ? 0.014 : stage === 3 ? 0.017 : 0.021;
     const now = sound.ctx.currentTime;
@@ -2091,13 +2100,21 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       const master = ctx.createGain();
       master.gain.value = 0.72;
 
+      const limiter = ctx.createDynamicsCompressor();
+      limiter.threshold.value = -2;
+      limiter.knee.value = 2;
+      limiter.ratio.value = 20;
+      limiter.attack.value = 0.003;
+      limiter.release.value = 0.12;
+
       bus.connect(rumbleCut);
       rumbleCut.connect(depth);
       depth.connect(breath);
       breath.connect(compressor);
       compressor.connect(breathPulse);
       breathPulse.connect(master);
-      master.connect(ctx.destination);
+      master.connect(limiter);
+      limiter.connect(ctx.destination);
 
       const noise = ctx.createBufferSource();
       noise.buffer = createPinkNoiseBuffer(ctx, 4);
@@ -2156,6 +2173,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         breath,
         breathPulse,
         master,
+        limiter,
         noise,
         noiseCut,
         noiseTone,
@@ -2228,10 +2246,15 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       recentTrackIds = recentTrackIds.slice(-18);
     }
 
-    for (const [id, item] of sound.channels) {
+    const hardSwap = SCREEN_TIER !== 'high';
+    for (const [id, item] of [...sound.channels]) {
       if (channel && id === targetId) {
         item.audio.volume = 0;
         fadeChannelVolume(item, 0, duration);
+      } else if (hardSwap) {
+        item.audio.pause();
+        item.audio.volume = 0;
+        disposeTrackChannel(item);
       } else {
         fadeChannelVolume(item, 0, duration);
       }
