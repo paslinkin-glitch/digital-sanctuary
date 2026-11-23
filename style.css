@@ -65,3 +65,15 @@ body .entry.is-installed > .entry-installed-note{display:block!important;positio
 .caption.is-zero{animation:none!important;opacity:.16!important;transform:translate(-50%,-50%)!important}
 .caption.is-awake,.stage.is-touching .caption,.stage.is-held .caption{animation:none!important;opacity:.92!important;transform:translate(-50%,-50%) scale(1.03)!important}
 .stage.is-caption-active .slide.is-active video{filter:brightness(.75);transition:filter 1.2s var(--organic)}
+
+
+/* v64 golden-line caption and low tier */
+.caption{top:62%!important;bottom:auto!important;left:50%!important;transform:translate(-50%,-50%)!important;width:min(84vw,400px)!important}
+.caption.is-awake,.stage.is-touching .caption,.stage.is-held .caption{transform:translate(-50%,-50%) scale(1.03)!important}
+.caption.is-zero{transform:translate(-50%,-50%)!important}
+html[data-tier="low"] .install-card,
+html[data-tier="low"] .install-card--ios,
+html[data-tier="low"] .finale-btn,
+html[data-tier="low"] .entry-trigger,
+html[data-tier="low"] .entry-install,
+html[data-tier="low"] .lang-switch{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background-color:rgba(12,12,14,.92)!important}

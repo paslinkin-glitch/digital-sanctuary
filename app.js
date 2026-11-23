@@ -589,6 +589,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   const iosInapp2 = document.getElementById('ios-inapp-2');
   const finaleEl = document.getElementById('finale');
   const finaleSessionVideo = document.getElementById('finale-session-video');
+  if (SCREEN_TIER === 'low' && finaleSessionVideo) finaleSessionVideo.remove();
   const finalePortraitEl = document.getElementById('finale-portrait');
   const finaleCountdownEl = document.getElementById('finale-countdown');
   const finaleReflectionEl = document.getElementById('finale-reflection');
@@ -1514,9 +1515,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
 
     const cap = Math.max(1, Math.floor(CYCLE_LENGTH * CAPTION_MAX_RATIO));
     if (context && context.held) return true;
-    if (sceneOrdinal <= 1) return true;
     if (sessionTextFrames >= cap) return false;
-    if (pathPos - lastCaptionFrame < 3) {
+    if (Math.abs(pathPos - lastCaptionFrame) < 3) {
       quietSinceText = Math.max(quietSinceText, 2);
       return false;
     }
@@ -1562,9 +1562,14 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (!captionEl || !captionHasText || !captionEl.classList.contains('is-visible')) return;
     captionZeroTimer = window.setTimeout(() => {
       if (captionEl && captionEl.classList.contains('is-visible') && !stage.classList.contains('is-touching') && !stage.classList.contains('is-held')) {
-        captionEl.classList.add('is-zero');
+        captionEl.classList.remove('is-visible', 'is-zero');
+        stage.classList.remove('is-caption-active');
+        captionRevealed = false;
+        captionSuppressed = true;
+        captionHoldReady = false;
+        if (currentCaption) currentCaption.revealed = false;
       }
-    }, 5000);
+    }, 4800);
   }
 
   function wakeCaption() {
@@ -1859,12 +1864,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       createTrackAudio(first);
       preloadTrack(first);
     }
-
-    for (const category of categories) {
-      for (const track of category.musicTracks) {
-        if (!trackAudio.has(track.id)) createTrackAudio(track);
-      }
-    }
   }
 
   function createTrackAudio(track) {
@@ -1878,6 +1877,13 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       document.body.appendChild(soundBank);
     }
 
+    if (SCREEN_TIER === 'low' && trackAudio.size >= 2) {
+      for (const [id, oldAudio] of [...trackAudio]) {
+        if (id === sound?.activeTrackId) continue;
+        try { oldAudio.pause(); oldAudio.removeAttribute('src'); oldAudio.load(); oldAudio.remove(); } catch (_) {}
+        trackAudio.delete(id);
+      }
+    }
     const audio = document.createElement('audio');
     track.failed = false;
     audio.crossOrigin = 'anonymous';
@@ -1913,12 +1919,12 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
 
   function preloadFirstTracks() {
-    for (const category of categories) {
-      preloadTrack(category.musicTracks[0]);
-    }
+    const first = categories[0] && categories[0].musicTracks[0];
+    if (first) preloadTrack(first);
   }
 
   function preloadNextTrack(category) {
+    if (SCREEN_TIER === 'low') return;
     if (!category || !category.musicTracks.length) return;
     preloadTrack(category.musicTracks[category.trackCursor % category.musicTracks.length]);
   }
@@ -1937,9 +1943,28 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     return fallback;
   }
 
+  function disposeTrackChannel(channel) {
+    if (!channel) return;
+    const { track, audio, source, gain } = channel;
+    try { source.disconnect(); } catch (_) {}
+    try { gain.disconnect(); } catch (_) {}
+    try { audio.pause(); } catch (_) {}
+    try { audio.removeAttribute('src'); audio.load(); } catch (_) {}
+    try { audio.remove(); } catch (_) {}
+    if (track) {
+      if (trackAudio.get(track.id) === audio) trackAudio.delete(track.id);
+      if (sound && sound.channels.get(track.id) === channel) sound.channels.delete(track.id);
+    }
+  }
+
   function ensureTrackChannel(track) {
     if (!sound || !track || track.failed) return null;
     if (sound.channels.has(track.id)) return sound.channels.get(track.id);
+    if (sound.channels.size >= 2) {
+      for (const [id, item] of sound.channels) {
+        if (id !== sound.activeTrackId) { disposeTrackChannel(item); break; }
+      }
+    }
 
     const audio = trackAudio.get(track.id) || createTrackAudio(track);
     if (!audio) return null;
@@ -2031,7 +2056,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
 
     soundStarting = true;
     try {
-      const ctx = new AudioCtor();
+      const ctx = SCREEN_TIER === 'low' ? new AudioCtor({ latencyHint: 'playback' }) : new AudioCtor();
       const bus = ctx.createGain();
 
       const rumbleCut = ctx.createBiquadFilter();
@@ -2175,11 +2200,11 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
 
     if (sound.activeType === 'music' && sound.activeTrackId === track.id && !channel.audio.paused) {
-      channel.audio.playbackRate = sound.held ? SLOW_RATE : 1;
+      channel.audio.playbackRate = SCREEN_TIER === 'low' ? 1 : (sound.held ? SLOW_RATE : 1);
       return;
     }
 
-    channel.audio.playbackRate = sound.held ? SLOW_RATE : 1;
+    channel.audio.playbackRate = SCREEN_TIER === 'low' ? 1 : (sound.held ? SLOW_RATE : 1);
     channel.audio.preload = 'auto';
     startSoundCrossfade(channel, duration);
   }
@@ -2215,7 +2240,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     );
 
     if (channel) {
-      channel.audio.playbackRate = sound.held ? SLOW_RATE : 1;
+      channel.audio.playbackRate = SCREEN_TIER === 'low' ? 1 : (sound.held ? SLOW_RATE : 1);
       const promise = channel.audio.play();
       if (promise && typeof promise.catch === 'function') {
         promise.catch(() => {
@@ -2227,9 +2252,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
 
     window.setTimeout(() => {
       if (!sound || fadeToken !== sound.fadeToken) return;
-      for (const [id, item] of sound.channels) {
+      for (const [id, item] of [...sound.channels]) {
         if ((!channel || id !== targetId) && item.gain.gain.value < 0.01) {
-          item.audio.pause();
+          disposeTrackChannel(item);
         }
       }
     }, (duration + 0.1) * 1000);
@@ -2240,7 +2265,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
 
     sound.held = deep;
     const now = sound.ctx.currentTime;
-    const cutoff = deep ? 750 : 18000;
+    const cutoff = deep ? (SCREEN_TIER === 'low' ? 650 : 750) : 18000;
 
     sound.depth.frequency.cancelScheduledValues(now);
     sound.depth.frequency.setValueAtTime(sound.depth.frequency.value, now);
@@ -2251,7 +2276,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     sound.master.gain.linearRampToValueAtTime(deep ? 0.58 : 0.72, now + 0.4);
 
     for (const channel of sound.channels.values()) {
-      channel.audio.playbackRate = deep ? SLOW_RATE : 1;
+      channel.audio.playbackRate = SCREEN_TIER === 'low' ? 1 : (deep ? SLOW_RATE : 1);
     }
     setElementalNoise();
   }
@@ -3362,7 +3387,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     trackStageReached(entry.stage);
     updateSessionProgress();
     setSceneElement(activeClip());
-    activateCaption(category, activeClip(), behaviorContext(), true, entry.stage);
+    activateCaption(category, activeClip(), behaviorContext(), false, entry.stage);
 
     const track = nextTrackFor(category);
     switchSoundtrack(track, SLOW_FADE_MS);
@@ -3488,7 +3513,9 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
 
   function preparePlaybackWindow(currentEntry, nextEntry) {
     const base = pathPos < 0 ? 0 : pathPos;
-    const windowEntries = [currentEntry || pathPlan[base], nextEntry || pathPlan[base + 1], pathPlan[base + 2]].filter(Boolean);
+    const windowEntries = (SCREEN_TIER === 'low'
+      ? [currentEntry || pathPlan[base], nextEntry || pathPlan[base + 1]]
+      : [currentEntry || pathPlan[base], nextEntry || pathPlan[base + 1], pathPlan[base + 2]]).filter(Boolean);
     const keep = new Set();
     for (const entry of windowEntries) {
       if (!entry || !entry.clip) continue;
