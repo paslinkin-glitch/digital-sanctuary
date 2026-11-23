@@ -102,3 +102,18 @@ html[data-tier="low"] .lang-switch{backdrop-filter:none!important;-webkit-backdr
 .finale-install{margin-top:12px;text-align:center}
 .finale-install-link{padding:4px;border:0;background:none;color:rgba(234,229,220,.48);font-family:var(--mono);font-size:8px;letter-spacing:.18em;text-transform:uppercase;text-decoration:underline;text-underline-offset:4px}
 .finale-install-hint{max-width:280px;margin:8px auto 0;color:rgba(234,229,220,.55);font-family:var(--sans);font-size:11px;line-height:1.5}
+
+
+/* v69 seamless threshold */
+.entry{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:flex-start!important;gap:0!important}
+.entry .lang-switch{position:absolute!important;top:max(20px,env(safe-area-inset-top))!important;left:clamp(18px,6vw,48px)!important;right:auto!important;z-index:5!important}
+.entry-copy{margin:auto 0 0!important;order:1!important}
+.entry-copy::before,.entry-copy::after{display:none!important}
+.entry-gesture-guide{display:flex!important;order:2!important;margin:16px auto 0!important;gap:0!important}
+.entry-gesture-guide .guide-thread{width:.5px!important;height:44px!important;margin:0 auto 14px!important}
+.entry-gesture-guide .guide-line{color:rgba(234,229,220,.58)!important;font-family:var(--mono)!important;font-size:9px!important;letter-spacing:.22em!important;text-transform:uppercase!important;animation:entryHint 4s ease-in-out infinite}
+.quiet-presence{order:3!important;margin-top:auto!important;margin-bottom:max(22px,env(safe-area-inset-bottom))!important}
+.entry-lock{order:0!important;margin:auto!important}
+.entry.is-locked .entry-copy,.entry.is-locked .entry-gesture-guide,.entry.is-locked .quiet-presence{display:none!important}
+.entry.is-locked .entry-lock-rail,.entry.is-locked .entry-lock-time{display:none!important}
+@keyframes entryHint{0%,100%{opacity:.38;transform:translateY(0)}50%{opacity:.78;transform:translateY(-3px)}}

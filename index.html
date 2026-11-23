@@ -14,10 +14,10 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
   <link rel="preconnect" href="https://s3.twcstorage.ru" crossorigin>
-  <link rel="stylesheet" href="style.css?v=67">
+  <link rel="stylesheet" href="style.css?v=69">
 </head>
 <body>
-  <script>window.SANCTUARY_MAINTENANCE = true; if (window.SANCTUARY_MAINTENANCE) document.documentElement.dataset.maintenance = 'true';</script>
+  <script>window.SANCTUARY_MAINTENANCE = false; if (window.SANCTUARY_MAINTENANCE) document.documentElement.dataset.maintenance = 'true';</script>
   <section id="maintenance-screen" aria-live="polite">
     <div class="maintenance-inner">
       <span class="maintenance-thread" aria-hidden="true"></span>
@@ -91,13 +91,13 @@
       <p class="entry-kicker">A QUIET SPACE</p>
       <h1 class="entry-title">When thoughts<br>won’t stop</h1>
       <p class="entry-sub">Before sleep, after a hard day,<br>or between calls</p>
-      <p class="entry-barrier">Nothing to do — just watch.<br>Free, no sign-up.</p>
+
     </div>
     <div class="quiet-presence" id="entry-presence" aria-live="polite">
       <span class="presence-dot" aria-hidden="true"></span>
       <span class="presence-text" data-presence>Quiet presence</span>
     </div>
-    <button class="entry-begin" id="entry-begin" type="button">Enter the quiet</button>
+
     <div class="entry-lock" id="entry-lock" hidden aria-live="polite">
       <p class="entry-lock-kicker" id="entry-lock-kicker">ДВЕРЬ ЗАКРЫТА</p>
       <span class="entry-lock-rail" aria-hidden="true"><i id="entry-lock-light"></i></span>
@@ -107,62 +107,11 @@
     <div class="entry-gesture-guide" id="entry-gesture-guide" aria-hidden="true">
       <span class="guide-thread"><i></i></span>
       <span class="guide-line" id="guide-line-1">Swipe up — to enter and shift</span>
-      <span class="guide-line" id="guide-line-2">Hold — to slow down time</span>
+
     </div>
 
     <p class="entry-installed-note" id="entry-installed-note" hidden>Sanctuary installed. Close the browser and open it from your home screen</p>
-  <aside class="install-card" id="install-card" hidden aria-live="polite">
-    <div class="install-card-copy">
-      <p class="install-card-hint" id="install-card-hint" hidden>Tap Share → Add to Home Screen</p>
-      <p class="install-card-info" id="install-card-info" hidden></p>
-    </div>
-    <button class="install-card-btn" id="install-card-install" type="button">Add to screen</button>
-  </aside>
 
-  <aside class="install-card install-card--ios" id="ios-install-card" hidden aria-live="polite">
-    <p class="ios-install-kicker" id="ios-install-kicker">SAVE THE SANCTUARY</p>
-    <div class="ios-steps" id="ios-steps-safari">
-      <div class="ios-step">
-        <span class="ios-step-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-            <rect x="4" y="9" width="16" height="12" rx="2"></rect>
-            <path d="M12 3v11M8 7l4-4 4 4"></path>
-          </svg>
-        </span>
-        <span class="ios-step-text" id="ios-safari-1">Tap Share in the bottom bar</span>
-      </div>
-      <div class="ios-step">
-        <span class="ios-step-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-            <rect x="4" y="4" width="16" height="16" rx="2"></rect>
-            <path d="M12 8v8M8 12h8"></path>
-          </svg>
-        </span>
-        <span class="ios-step-text" id="ios-safari-2">Select «Add to Home Screen»</span>
-      </div>
-    </div>
-    <div class="ios-steps" id="ios-steps-inapp" hidden>
-      <div class="ios-step">
-        <span class="ios-step-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-            <circle cx="12" cy="12" r="9"></circle>
-            <path d="M15.5 8.5l-2 5-5 2 2-5z"></path>
-          </svg>
-        </span>
-        <span class="ios-step-text" id="ios-inapp-1">Open this page in Safari</span>
-      </div>
-      <div class="ios-step">
-        <span class="ios-step-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-            <rect x="4" y="4" width="16" height="16" rx="2"></rect>
-            <path d="M12 8v8M8 12h8"></path>
-          </svg>
-        </span>
-        <span class="ios-step-text" id="ios-inapp-2">Then tap Share → Add to Home Screen</span>
-      </div>
-    </div>
-    <span class="ios-install-ray" aria-hidden="true"></span>
-  </aside>
 
   </div>
 
@@ -209,7 +158,7 @@
       window.__deferredInstallPrompt = event;
     });
   </script>
-  <script src="videos-data.js?v=67"></script>
-  <script src="app.js?v=67"></script>
+  <script src="videos-data.js?v=69"></script>
+  <script src="app.js?v=69"></script>
 </body>
 </html>
