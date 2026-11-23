@@ -568,6 +568,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   const entryLockKicker = document.getElementById('entry-lock-kicker');
   const entryLockTime = document.getElementById('entry-lock-time');
   const entryLockHint = document.getElementById('entry-lock-hint');
+  const entryLockLight = document.getElementById('entry-lock-light');
   const guideLine1 = document.getElementById('guide-line-1');
   const guideLine2 = document.getElementById('guide-line-2');
   const entryInstalledNote = document.getElementById('entry-installed-note');
@@ -955,6 +956,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   let firstHintTimer = 0;
   let activeHapticStage = 0;
   let holdPulseTimer = 0;
+  let holdBreathStep = 0;
+  let entryLockRevealTimer = 0;
   let lastHapticAt = 0;
   let sessionLockAt = 0;
   let lockTicker = 0;
@@ -1084,17 +1087,21 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   function startHoldPulse() {
     stopHoldPulse();
     const pattern = hapticPatternForCurrent();
+    holdBreathStep = 0;
     safeVibrate(pattern.hold, 0);
-    holdPulseTimer = window.setInterval(() => {
-      if (gesture && gesture.holding) {
-        safeVibrate(pattern.hold, pattern.interval - 220);
-      }
-    }, pattern.interval);
+    const breathe = () => {
+      if (!gesture || !gesture.holding) return;
+      holdBreathStep += 1;
+      safeVibrate(pattern.whisper, 0);
+      const wait = holdBreathStep % 2 === 1 ? 6000 : 4000;
+      holdPulseTimer = window.setTimeout(breathe, wait);
+    };
+    holdPulseTimer = window.setTimeout(breathe, 4000);
   }
 
   function stopHoldPulse() {
     const wasHolding = Boolean(holdPulseTimer);
-    window.clearInterval(holdPulseTimer);
+    window.clearTimeout(holdPulseTimer);
     holdPulseTimer = 0;
     if (wasHolding) stopHaptics();
   }
@@ -1470,11 +1477,19 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
 
     const words = text.split(/\s+/).filter(Boolean);
     const middle = Math.ceil(words.length / 2);
-    const first = words.slice(0, middle).join(' ');
-    const second = words.slice(middle).join(' ');
-
-    if (captionLines[0]) captionLines[0].textContent = first;
-    if (captionLines[1]) captionLines[1].textContent = second;
+    const renderLine = (line, list, offset) => {
+      if (!line) return;
+      line.textContent = '';
+      list.forEach((word, index) => {
+        const span = document.createElement('span');
+        span.textContent = word;
+        span.style.setProperty('--word-delay', `${(offset + index) * 0.14}s`);
+        line.appendChild(span);
+        if (index < list.length - 1) line.appendChild(document.createTextNode(' '));
+      });
+    };
+    renderLine(captionLines[0], words.slice(0, middle), 0);
+    renderLine(captionLines[1], words.slice(middle), middle);
     captionEl.setAttribute('aria-label', text);
   }
 
@@ -1954,6 +1969,20 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     sound.overtoneGain.gain.linearRampToValueAtTime(0.008, now + 1.2);
   }
 
+  function setStageSubBass(stageId) {
+    if (!sound || !sound.subBassGain) return;
+    const stage = Number(stageId) || 1;
+    const frequency = stage === 1 ? 38 : stage === 2 ? 44 : stage === 3 ? 50 : 56;
+    const gain = stage === 1 ? 0.010 : stage === 2 ? 0.014 : stage === 3 ? 0.017 : 0.021;
+    const now = sound.ctx.currentTime;
+    sound.subBass.frequency.cancelScheduledValues(now);
+    sound.subBass.frequency.setValueAtTime(sound.subBass.frequency.value, now);
+    sound.subBass.frequency.linearRampToValueAtTime(frequency, now + 2.4);
+    sound.subBassGain.gain.cancelScheduledValues(now);
+    sound.subBassGain.gain.setValueAtTime(sound.subBassGain.gain.value, now);
+    sound.subBassGain.gain.linearRampToValueAtTime(gain, now + 2.4);
+  }
+
   function enableSoundscape() {
     if (sound) {
       if (sound.ctx.state === 'suspended') sound.ctx.resume().catch(() => {});
@@ -2046,6 +2075,15 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       overtoneGain.connect(bus);
       overtone.start();
 
+      const subBass = ctx.createOscillator();
+      subBass.type = 'sine';
+      subBass.frequency.value = 42;
+      const subBassGain = ctx.createGain();
+      subBassGain.gain.value = 0;
+      subBass.connect(subBassGain);
+      subBassGain.connect(master);
+      subBass.start();
+
       sound = {
         ctx,
         bus,
@@ -2062,6 +2100,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         windDepth,
         overtone,
         overtoneGain,
+        subBass,
+        subBassGain,
         elementalGain: NOISE_GAIN,
         bank: soundBank,
         channels: new Map(),
@@ -2075,6 +2115,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       if (ctx.state === 'suspended') ctx.resume().catch(() => {});
       setElementalNoise(currentOpticElement);
       setStageOvertone(sessionStage);
+      setStageSubBass(sessionStage);
 
       preloadFirstTracks();
     } catch (_) {
@@ -2513,6 +2554,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   function updateStageLabel(stageId) {
     sessionStage = stageId || sessionStage;
     setStageOvertone(sessionStage);
+    setStageSubBass(sessionStage);
     if (stageLabelEl) stageLabelEl.textContent = stageLabelFor(sessionStage);
   }
 
@@ -2662,6 +2704,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (entryLock) {
       entryLock.hidden = !showEntryLock;
       if (entryLockTime) entryLockTime.textContent = text;
+      if (entryLockLight) entryLockLight.style.width = `${Math.max(0, Math.min(100, (remaining / SESSION_LOCK_MS) * 100))}%`;
       if (entryGate) entryGate.classList.toggle('is-locked', showEntryLock);
     }
 
@@ -3767,10 +3810,31 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     return viewedMs < QUICK_VIEW_MS || impulsive ? QUICK_FADE_MS : SLOW_FADE_MS;
   }
 
+  function showFrameAfterglow() {
+    if (!gateOpen || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const video = document.querySelector('.slide.is-active video');
+    if (!video || !video.src) return;
+    try {
+      const ghost = video.cloneNode(true);
+      ghost.removeAttribute('id');
+      ghost.className = 'afterglow-video';
+      ghost.muted = true;
+      document.body.appendChild(ghost);
+      try { ghost.pause(); } catch (_) {}
+      try {
+        const time = Number(video.currentTime) || 0;
+        if (Number.isFinite(time)) ghost.currentTime = time;
+      } catch (_) {}
+      requestAnimationFrame(() => ghost.classList.add('is-visible'));
+      window.setTimeout(() => ghost.remove(), 520);
+    } catch (_) {}
+  }
+
   function navigateTo(targetIndex, direction, fadeMs, forcedClipId, sceneContext) {
     if (targetIndex === null || targetIndex === undefined) return;
     if (!slides[targetIndex]) return;
 
+    showFrameAfterglow();
     maybeRecordResonance();
     markInteraction();
     setBreath(0);
@@ -4683,6 +4747,15 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
 
   if (backToStartButton) {
     backToStartButton.addEventListener('click', returnToStart);
+  }
+
+  if (entryLock) {
+    entryLock.addEventListener('pointerdown', (event) => {
+      event.stopPropagation();
+      entryLock.classList.add('is-revealed');
+      window.clearTimeout(entryLockRevealTimer);
+      entryLockRevealTimer = window.setTimeout(() => entryLock.classList.remove('is-revealed'), 4200);
+    });
   }
 
   attachLockSwipe(entryGate, () => {

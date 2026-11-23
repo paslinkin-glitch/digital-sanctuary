@@ -31,3 +31,15 @@ body .entry.is-installed > .entry-installed-note{display:block!important;positio
 .caption-line{filter:blur(5px);opacity:0;transform:translateY(5px);transition:opacity 1.6s ease,filter 1.6s ease,transform 1.6s var(--organic)}
 .caption.is-visible .caption-line{filter:blur(0);opacity:1;transform:translateY(0)}
 .caption.is-visible .caption-line:nth-child(2){transition-delay:.22s}
+
+
+/* v62 tactile and typographic breath */
+.entry-lock-rail{display:block;width:min(220px,58vw);height:.5px;margin:4px auto;background:rgba(234,229,220,.14);overflow:hidden}
+#entry-lock-light{display:block;height:1px;width:100%;background:linear-gradient(90deg,rgba(214,199,178,.25),rgba(214,199,178,.95));box-shadow:0 0 12px rgba(214,199,178,.35);transform-origin:left center;transition:width 1s linear}
+.entry-lock-time{display:none}
+.entry-lock.is-revealed .entry-lock-time{display:block}
+.caption-line{opacity:1!important;filter:none!important;transform:none!important}
+.caption-line span{display:inline-block;opacity:0;filter:blur(5px);transform:translateY(5px);transition:opacity .9s ease,filter .9s ease,transform .9s var(--organic);transition-delay:var(--word-delay,0s)}
+.caption.is-visible .caption-line span{opacity:1;filter:blur(0);transform:translateY(0)}
+.afterglow-video{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;filter:blur(7px) saturate(.65);transform:scale(1.02);pointer-events:none;z-index:2;mix-blend-mode:screen;transition:opacity .42s ease}
+.afterglow-video.is-visible{opacity:.14}

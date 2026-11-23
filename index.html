@@ -14,10 +14,10 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
   <link rel="preconnect" href="https://s3.twcstorage.ru" crossorigin>
-  <link rel="stylesheet" href="style.css?v=61">
+  <link rel="stylesheet" href="style.css?v=62">
 </head>
 <body>
-  <script>window.SANCTUARY_MAINTENANCE = true; if (window.SANCTUARY_MAINTENANCE) document.documentElement.dataset.maintenance = 'true';</script>
+  <script>window.SANCTUARY_MAINTENANCE = false; if (window.SANCTUARY_MAINTENANCE) document.documentElement.dataset.maintenance = 'true';</script>
   <section id="maintenance-screen" aria-live="polite">
     <div class="maintenance-inner">
       <span class="maintenance-thread" aria-hidden="true"></span>
@@ -94,6 +94,7 @@
     </div>
     <div class="entry-lock" id="entry-lock" hidden aria-live="polite">
       <p class="entry-lock-kicker" id="entry-lock-kicker">ДВЕРЬ ЗАКРЫТА</p>
+      <span class="entry-lock-rail" aria-hidden="true"><i id="entry-lock-light"></i></span>
       <p class="entry-lock-time" id="entry-lock-time">02:00:00</p>
       <p class="entry-lock-hint" id="entry-lock-hint">Тишина ещё длится</p>
     </div>
@@ -190,7 +191,7 @@
       window.__deferredInstallPrompt = event;
     });
   </script>
-  <script src="videos-data.js?v=61"></script>
-  <script src="app.js?v=61"></script>
+  <script src="videos-data.js?v=62"></script>
+  <script src="app.js?v=62"></script>
 </body>
 </html>
