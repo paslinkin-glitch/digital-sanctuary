@@ -14,7 +14,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 3532954,
     "title_ru": "РўРµРЅСЊ 01",
-    "fileHash": "vecteezy-50527364"
+    "fileHash": "vecteezy-50527364",
+    "caption_ru": "Свет тонет над спящим городом",
+    "caption_en": "Light sinks in quiet water"
   },
   {
     "id": "vecteezy-21570169",
@@ -31,7 +33,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 5272093,
     "title_ru": "РўРµРЅСЊ 02",
-    "fileHash": "vecteezy-21570169"
+    "fileHash": "vecteezy-21570169",
+    "caption_ru": "Тень скользит в тихой воде",
+    "caption_en": "Shadow slips above sleeping city"
   },
   {
     "id": "g9re0sruya",
@@ -48,7 +52,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 6218807,
     "title_ru": "РўРµРЅСЊ 03",
-    "fileHash": "g9re0sruya"
+    "fileHash": "g9re0sruya",
+    "caption_ru": "Тишина держит в тёмной комнате",
+    "caption_en": "Breath remains by the sea"
   },
   {
     "id": "zqeb9bkb8p",
@@ -65,7 +71,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 6442974,
     "title_ru": "РўРµРЅСЊ 04",
-    "fileHash": "zqeb9bkb8p"
+    "fileHash": "zqeb9bkb8p",
+    "caption_ru": "Снег ложится за закрытой дверью",
+    "caption_en": "Fog waits on cold stone"
   },
   {
     "id": "coverr-blue-subway-5836",
@@ -82,7 +90,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 6844902,
     "title_ru": "РўРµРЅСЊ 05",
-    "fileHash": "coverr-blue-subway-5836"
+    "fileHash": "coverr-blue-subway-5836",
+    "caption_ru": "Дорога уходит над спящим городом",
+    "caption_en": "Water remembers on white snow"
   },
   {
     "id": "vecteezy-48120369",
@@ -99,7 +109,9 @@ window.VIDEOS_DATA = [
     "duration": 18.436,
     "size": 7862858,
     "title_ru": "РўРµРЅСЊ 06",
-    "fileHash": "vecteezy-48120369"
+    "fileHash": "vecteezy-48120369",
+    "caption_ru": "Свет тонет в тихой воде",
+    "caption_en": "Flame breathes on wet glass"
   },
   {
     "id": "vecteezy-50527423",
@@ -116,7 +128,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 8301239,
     "title_ru": "РўРµРЅСЊ 07",
-    "fileHash": "vecteezy-50527423"
+    "fileHash": "vecteezy-50527423",
+    "caption_ru": "Тень скользит в тёмной комнате",
+    "caption_en": "Wind carries in soft light"
   },
   {
     "id": "vecteezy-38594556",
@@ -133,7 +147,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 3662571,
     "title_ru": "РўРµРЅСЊ 08",
-    "fileHash": "vecteezy-38594556"
+    "fileHash": "vecteezy-38594556",
+    "caption_ru": "Дыхание остаётся в тихой воде",
+    "caption_en": "Silence holds under low sky"
   },
   {
     "id": "vecteezy-29868578",
@@ -150,7 +166,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 4964548,
     "title_ru": "РўРµРЅСЊ 09",
-    "fileHash": "vecteezy-29868578"
+    "fileHash": "vecteezy-29868578",
+    "caption_ru": "Ветер несёт в глубоком тумане",
+    "caption_en": "Rain falls in deep fog"
   },
   {
     "id": "pibfpdhvox",
@@ -167,7 +185,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 5813310,
     "title_ru": "РўРµРЅСЊ 10",
-    "fileHash": "pibfpdhvox"
+    "fileHash": "pibfpdhvox",
+    "caption_ru": "Дорога уходит в тихой воде",
+    "caption_en": "Snow settles in dark room"
   },
   {
     "id": "qlz28yfl9f",
@@ -184,7 +204,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 5839402,
     "title_ru": "РўРµРЅСЊ 11",
-    "fileHash": "qlz28yfl9f"
+    "fileHash": "qlz28yfl9f",
+    "caption_ru": "Свет тонет в тёмной комнате",
+    "caption_en": "The road opens at night edge"
   },
   {
     "id": "coverr-9ejgoxnsm3",
@@ -201,7 +223,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 7370590,
     "title_ru": "РўРµРЅСЊ 12",
-    "fileHash": "coverr-9ejgoxnsm3"
+    "fileHash": "coverr-9ejgoxnsm3",
+    "caption_ru": "Тень скользит за закрытой дверью",
+    "caption_en": "The sky softens behind closed door"
   },
   {
     "id": "vecteezy-45709951",
@@ -218,7 +242,9 @@ window.VIDEOS_DATA = [
     "duration": 6.547,
     "size": 9375455,
     "title_ru": "РўРµРЅСЊ 13",
-    "fileHash": "vecteezy-45709951"
+    "fileHash": "vecteezy-45709951",
+    "caption_ru": "Вода помнит у линии моря",
+    "caption_en": "Light sinks on wet glass"
   },
   {
     "id": "coverr-gukaxin4fr",
@@ -235,7 +261,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 10455733,
     "title_ru": "РўРµРЅСЊ 14",
-    "fileHash": "coverr-gukaxin4fr"
+    "fileHash": "coverr-gukaxin4fr",
+    "caption_ru": "Снег ложится в тихой воде",
+    "caption_en": "Shadow slips in soft light"
   },
   {
     "id": "coverr-0pab3nr95c",
@@ -252,7 +280,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 9039976,
     "title_ru": "РўРµРЅСЊ 15",
-    "fileHash": "coverr-0pab3nr95c"
+    "fileHash": "coverr-0pab3nr95c",
+    "caption_ru": "Дорога уходит в тёмной комнате",
+    "caption_en": "Breath remains under low sky"
   },
   {
     "id": "coverr-qideiywgzv",
@@ -269,7 +299,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 10455515,
     "title_ru": "РўРµРЅСЊ 16",
-    "fileHash": "coverr-qideiywgzv"
+    "fileHash": "coverr-qideiywgzv",
+    "caption_ru": "Свет тонет за закрытой дверью",
+    "caption_en": "Fog waits in deep fog"
   },
   {
     "id": "vecteezy-9006691",
@@ -286,7 +318,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 3890416,
     "title_ru": "РўРµРЅСЊ 17",
-    "fileHash": "vecteezy-9006691"
+    "fileHash": "vecteezy-9006691",
+    "caption_ru": "Свет тонет на холодном камне",
+    "caption_en": "Water remembers in dark room"
   },
   {
     "id": "vecteezy-34827118",
@@ -303,7 +337,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 5562007,
     "title_ru": "РўРµРЅСЊ 18",
-    "fileHash": "vecteezy-34827118"
+    "fileHash": "vecteezy-34827118",
+    "caption_ru": "Вода помнит в тихой воде",
+    "caption_en": "Flame breathes at night edge"
   },
   {
     "id": "vecteezy-50124393",
@@ -320,7 +356,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 5902083,
     "title_ru": "РўРµРЅСЊ 19",
-    "fileHash": "vecteezy-50124393"
+    "fileHash": "vecteezy-50124393",
+    "caption_ru": "Дыхание остаётся у линии моря",
+    "caption_en": "Wind carries behind closed door"
   },
   {
     "id": "vecteezy-48229330",
@@ -337,7 +375,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 6061015,
     "title_ru": "РўРµРЅСЊ 20",
-    "fileHash": "vecteezy-48229330"
+    "fileHash": "vecteezy-48229330",
+    "caption_ru": "Дорога уходит за закрытой дверью",
+    "caption_en": "Silence holds in quiet water"
   },
   {
     "id": "wgwktmpmx7",
@@ -354,7 +394,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 6403198,
     "title_ru": "РўРµРЅСЊ 21",
-    "fileHash": "wgwktmpmx7"
+    "fileHash": "wgwktmpmx7",
+    "caption_ru": "Тишина держит в тихой воде",
+    "caption_en": "Rain falls above sleeping city"
   },
   {
     "id": "coverr-coverr-cars-on-the-highway-2993",
@@ -371,7 +413,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 7515847,
     "title_ru": "РўРµРЅСЊ 22",
-    "fileHash": "coverr-coverr-cars-on-the-highway-2993"
+    "fileHash": "coverr-coverr-cars-on-the-highway-2993",
+    "caption_ru": "Тишина держит над спящим городом",
+    "caption_en": "Snow settles by the sea"
   },
   {
     "id": "coverr-t9mmfvmoau",
@@ -388,7 +432,9 @@ window.VIDEOS_DATA = [
     "duration": 14.147,
     "size": 8123841,
     "title_ru": "РўРµРЅСЊ 23",
-    "fileHash": "coverr-t9mmfvmoau"
+    "fileHash": "coverr-t9mmfvmoau",
+    "caption_ru": "Снег ложится над спящим городом",
+    "caption_en": "The road opens on cold stone"
   },
   {
     "id": "vecteezy-41638597",
@@ -405,7 +451,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 4171283,
     "title_ru": "РўРµРЅСЊ 24",
-    "fileHash": "vecteezy-41638597"
+    "fileHash": "vecteezy-41638597",
+    "caption_ru": "Тень скользит над спящим городом",
+    "caption_en": "The sky softens on white snow"
   },
   {
     "id": "vecteezy-36195382",
@@ -422,7 +470,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 7932625,
     "title_ru": "РўРµРЅСЊ 25",
-    "fileHash": "vecteezy-36195382"
+    "fileHash": "vecteezy-36195382",
+    "caption_ru": "Свет тонет по мокрому стеклу",
+    "caption_en": "Light sinks at night edge"
   },
   {
     "id": "vecteezy-42239858",
@@ -439,7 +489,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 4888856,
     "title_ru": "РўРµРЅСЊ 29",
-    "fileHash": "vecteezy-42239858"
+    "fileHash": "vecteezy-42239858",
+    "caption_ru": "Тишина держит за закрытой дверью",
+    "caption_en": "Shadow slips behind closed door"
   },
   {
     "id": "vecteezy-22187669",
@@ -456,7 +508,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 4375124,
     "title_ru": "РўРµРЅСЊ 30",
-    "fileHash": "vecteezy-22187669"
+    "fileHash": "vecteezy-22187669",
+    "caption_ru": "Свет тонет у края ночи",
+    "caption_en": "Breath remains in quiet water"
   },
   {
     "id": "vecteezy-40722016",
@@ -473,7 +527,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 5357026,
     "title_ru": "РўРµРЅСЊ 31",
-    "fileHash": "vecteezy-40722016"
+    "fileHash": "vecteezy-40722016",
+    "caption_ru": "Снег ложится в тёмной комнате",
+    "caption_en": "Fog waits above sleeping city"
   },
   {
     "id": "vecteezy-23006125",
@@ -490,7 +546,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 3507612,
     "title_ru": "РўРµРЅСЊ 32",
-    "fileHash": "vecteezy-23006125"
+    "fileHash": "vecteezy-23006125",
+    "caption_ru": "Свет тонет в глубоком тумане",
+    "caption_en": "Water remembers by the sea"
   },
   {
     "id": "vecteezy-1616756",
@@ -507,7 +565,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 4065494,
     "title_ru": "РўСЂРёРєСЃС‚РµСЂ 02",
-    "fileHash": "vecteezy-1616756"
+    "fileHash": "vecteezy-1616756",
+    "caption_ru": "Свет тонет у линии моря",
+    "caption_en": "Flame breathes on cold stone"
   },
   {
     "id": "vecteezy-23002431",
@@ -524,7 +584,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 4206879,
     "title_ru": "РўСЂРёРєСЃС‚РµСЂ 03",
-    "fileHash": "vecteezy-23002431"
+    "fileHash": "vecteezy-23002431",
+    "caption_ru": "Тень скользит на холодном камне",
+    "caption_en": "Wind carries on white snow"
   },
   {
     "id": "vecteezy-33573845",
@@ -541,7 +603,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 4883329,
     "title_ru": "РўСЂРёРєСЃС‚РµСЂ 04",
-    "fileHash": "vecteezy-33573845"
+    "fileHash": "vecteezy-33573845",
+    "caption_ru": "Тень скользит у линии моря",
+    "caption_en": "Silence holds on wet glass"
   },
   {
     "id": "vecteezy-27163190",
@@ -558,7 +622,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 6457409,
     "title_ru": "РўСЂРёРєСЃС‚РµСЂ 05",
-    "fileHash": "vecteezy-27163190"
+    "fileHash": "vecteezy-27163190",
+    "caption_ru": "Вода помнит на холодном камне",
+    "caption_en": "Rain falls in soft light"
   },
   {
     "id": "vecteezy-20287073",
@@ -575,7 +641,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 6620511,
     "title_ru": "РўСЂРёРєСЃС‚РµСЂ 06",
-    "fileHash": "vecteezy-20287073"
+    "fileHash": "vecteezy-20287073",
+    "caption_ru": "Дыхание остаётся на холодном камне",
+    "caption_en": "Snow settles under low sky"
   },
   {
     "id": "2bfirk705y",
@@ -592,7 +660,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 6673908,
     "title_ru": "РўСЂРёРєСЃС‚РµСЂ 07",
-    "fileHash": "2bfirk705y"
+    "fileHash": "2bfirk705y",
+    "caption_ru": "Свет тонет в мягком свете",
+    "caption_en": "The road opens in deep fog"
   },
   {
     "id": "vecteezy-28326594",
@@ -609,7 +679,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 6742580,
     "title_ru": "РўСЂРёРєСЃС‚РµСЂ 08",
-    "fileHash": "vecteezy-28326594"
+    "fileHash": "vecteezy-28326594",
+    "caption_ru": "Свет тонет на белом снегу",
+    "caption_en": "The sky softens in dark room"
   },
   {
     "id": "vecteezy-24514776",
@@ -626,7 +698,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 7495696,
     "title_ru": "РўСЂРёРєСЃС‚РµСЂ 09",
-    "fileHash": "vecteezy-24514776"
+    "fileHash": "vecteezy-24514776",
+    "caption_ru": "Свет тонет под низким небом",
+    "caption_en": "Light sinks on cold stone"
   },
   {
     "id": "vecteezy-23413773",
@@ -643,7 +717,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 8491372,
     "title_ru": "РўСЂРёРєСЃС‚РµСЂ 10",
-    "fileHash": "vecteezy-23413773"
+    "fileHash": "vecteezy-23413773",
+    "caption_ru": "Тень скользит по мокрому стеклу",
+    "caption_en": "Shadow slips on white snow"
   },
   {
     "id": "vecteezy-22524485",
@@ -660,7 +736,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 9108433,
     "title_ru": "РўСЂРёРєСЃС‚РµСЂ 11",
-    "fileHash": "vecteezy-22524485"
+    "fileHash": "vecteezy-22524485",
+    "caption_ru": "Тень скользит у края ночи",
+    "caption_en": "Breath remains on wet glass"
   },
   {
     "id": "vecteezy-44572320",
@@ -677,7 +755,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 9293459,
     "title_ru": "РўСЂРёРєСЃС‚РµСЂ 12",
-    "fileHash": "vecteezy-44572320"
+    "fileHash": "vecteezy-44572320",
+    "caption_ru": "Тень скользит в глубоком тумане",
+    "caption_en": "Fog waits in soft light"
   },
   {
     "id": "vecteezy-42851671",
@@ -694,7 +774,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 9396777,
     "title_ru": "РўСЂРёРєСЃС‚РµСЂ 13",
-    "fileHash": "vecteezy-42851671"
+    "fileHash": "vecteezy-42851671",
+    "caption_ru": "Тень скользит в мягком свете",
+    "caption_en": "Water remembers under low sky"
   },
   {
     "id": "vecteezy-50636732",
@@ -711,7 +793,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 10086016,
     "title_ru": "РўСЂРёРєСЃС‚РµСЂ 14",
-    "fileHash": "vecteezy-50636732"
+    "fileHash": "vecteezy-50636732",
+    "caption_ru": "Тень скользит на белом снегу",
+    "caption_en": "Flame breathes in deep fog"
   },
   {
     "id": "vecteezy-24210863",
@@ -728,7 +812,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 10220025,
     "title_ru": "РўСЂРёРєСЃС‚РµСЂ 15",
-    "fileHash": "vecteezy-24210863"
+    "fileHash": "vecteezy-24210863",
+    "caption_ru": "Тень скользит под низким небом",
+    "caption_en": "Wind carries in dark room"
   },
   {
     "id": "vecteezy-39159769",
@@ -745,7 +831,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 3588536,
     "title_ru": "РўСЂРёРєСЃС‚РµСЂ 16",
-    "fileHash": "vecteezy-39159769"
+    "fileHash": "vecteezy-39159769",
+    "caption_ru": "Ветер несёт на холодном камне",
+    "caption_en": "Silence holds at night edge"
   },
   {
     "id": "vecteezy-37190062",
@@ -762,7 +850,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 3655384,
     "title_ru": "РўСЂРёРєСЃС‚РµСЂ 17",
-    "fileHash": "vecteezy-37190062"
+    "fileHash": "vecteezy-37190062",
+    "caption_ru": "Туман ждёт на холодном камне",
+    "caption_en": "Rain falls behind closed door"
   },
   {
     "id": "vecteezy-39160369",
@@ -779,7 +869,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 4809427,
     "title_ru": "РўСЂРёРєСЃС‚РµСЂ 18",
-    "fileHash": "vecteezy-39160369"
+    "fileHash": "vecteezy-39160369",
+    "caption_ru": "Дыхание остаётся по мокрому стеклу",
+    "caption_en": "Snow settles in quiet water"
   },
   {
     "id": "vecteezy-25413582",
@@ -796,7 +888,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 4189178,
     "title_ru": "РўСЂРёРєСЃС‚РµСЂ 20",
-    "fileHash": "vecteezy-25413582"
+    "fileHash": "vecteezy-25413582",
+    "caption_ru": "Пламя дышит в мягком свете",
+    "caption_en": "The road opens above sleeping city"
   },
   {
     "id": "vecteezy-46285849",
@@ -813,7 +907,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 7052576,
     "title_ru": "РўСЂРёРєСЃС‚РµСЂ 21",
-    "fileHash": "vecteezy-46285849"
+    "fileHash": "vecteezy-46285849",
+    "caption_ru": "Дыхание остаётся у края ночи",
+    "caption_en": "The sky softens by the sea"
   },
   {
     "id": "vecteezy-26744510",
@@ -830,7 +926,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 7444334,
     "title_ru": "РўСЂРёРєСЃС‚РµСЂ 22",
-    "fileHash": "vecteezy-26744510"
+    "fileHash": "vecteezy-26744510",
+    "caption_ru": "Дыхание остаётся в глубоком тумане",
+    "caption_en": "Light sinks in deep fog"
   },
   {
     "id": "vecteezy-18761237",
@@ -847,7 +945,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 3522722,
     "title_ru": "РџРѕРєРѕР№ 01",
-    "fileHash": "vecteezy-18761237"
+    "fileHash": "vecteezy-18761237",
+    "caption_ru": "Дыхание остаётся над спящим городом",
+    "caption_en": "Shadow slips in dark room"
   },
   {
     "id": "vecteezy-27482214",
@@ -864,7 +964,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 3575419,
     "title_ru": "РџРѕРєРѕР№ 02",
-    "fileHash": "vecteezy-27482214"
+    "fileHash": "vecteezy-27482214",
+    "caption_ru": "Дыхание остаётся в мягком свете",
+    "caption_en": "Breath remains at night edge"
   },
   {
     "id": "vecteezy-18761245",
@@ -881,7 +983,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 3770400,
     "title_ru": "РџРѕРєРѕР№ 03",
-    "fileHash": "vecteezy-18761245"
+    "fileHash": "vecteezy-18761245",
+    "caption_ru": "Дыхание остаётся за закрытой дверью",
+    "caption_en": "Fog waits behind closed door"
   },
   {
     "id": "vecteezy-78882544",
@@ -898,7 +1002,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 3799265,
     "title_ru": "РџРѕРєРѕР№ 04",
-    "fileHash": "vecteezy-78882544"
+    "fileHash": "vecteezy-78882544",
+    "caption_ru": "Дыхание остаётся на белом снегу",
+    "caption_en": "Water remembers in quiet water"
   },
   {
     "id": "vecteezy-27272805",
@@ -915,7 +1021,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 3965194,
     "title_ru": "РџРѕРєРѕР№ 05",
-    "fileHash": "vecteezy-27272805"
+    "fileHash": "vecteezy-27272805",
+    "caption_ru": "Дыхание остаётся в тёмной комнате",
+    "caption_en": "Flame breathes above sleeping city"
   },
   {
     "id": "vecteezy-49924671",
@@ -932,7 +1040,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 4131702,
     "title_ru": "РџРѕРєРѕР№ 06",
-    "fileHash": "vecteezy-49924671"
+    "fileHash": "vecteezy-49924671",
+    "caption_ru": "Дыхание остаётся под низким небом",
+    "caption_en": "Wind carries by the sea"
   },
   {
     "id": "vecteezy-20831039",
@@ -949,7 +1059,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 4240025,
     "title_ru": "РџРѕРєРѕР№ 07",
-    "fileHash": "vecteezy-20831039"
+    "fileHash": "vecteezy-20831039",
+    "caption_ru": "Туман ждёт под низким небом",
+    "caption_en": "Silence holds on cold stone"
   },
   {
     "id": "vecteezy-24955868",
@@ -966,7 +1078,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 4255986,
     "title_ru": "РџРѕРєРѕР№ 08",
-    "fileHash": "vecteezy-24955868"
+    "fileHash": "vecteezy-24955868",
+    "caption_ru": "Туман ждёт в тихой воде",
+    "caption_en": "Rain falls on white snow"
   },
   {
     "id": "vecteezy-11705699",
@@ -983,7 +1097,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 4463488,
     "title_ru": "РџРѕРєРѕР№ 10",
-    "fileHash": "vecteezy-11705699"
+    "fileHash": "vecteezy-11705699",
+    "caption_ru": "Дождь падает над спящим городом",
+    "caption_en": "Snow settles on wet glass"
   },
   {
     "id": "vecteezy-37989279",
@@ -1000,7 +1116,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 4464549,
     "title_ru": "РџРѕРєРѕР№ 11",
-    "fileHash": "vecteezy-37989279"
+    "fileHash": "vecteezy-37989279",
+    "caption_ru": "Дождь падает в мягком свете",
+    "caption_en": "The road opens in soft light"
   },
   {
     "id": "vecteezy-15957810",
@@ -1017,7 +1135,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 4471087,
     "title_ru": "РџРѕРєРѕР№ 12",
-    "fileHash": "vecteezy-15957810"
+    "fileHash": "vecteezy-15957810",
+    "caption_ru": "Туман ждёт по мокрому стеклу",
+    "caption_en": "The sky softens under low sky"
   },
   {
     "id": "vecteezy-26369703",
@@ -1034,7 +1154,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 4661530,
     "title_ru": "РџРѕРєРѕР№ 13",
-    "fileHash": "vecteezy-26369703"
+    "fileHash": "vecteezy-26369703",
+    "caption_ru": "Туман ждёт в глубоком тумане",
+    "caption_en": "Light sinks above sleeping city"
   },
   {
     "id": "vecteezy-10366500",
@@ -1051,7 +1173,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 4689580,
     "title_ru": "РџРѕРєРѕР№ 14",
-    "fileHash": "vecteezy-10366500"
+    "fileHash": "vecteezy-10366500",
+    "caption_ru": "Туман ждёт у края ночи",
+    "caption_en": "Shadow slips by the sea"
   },
   {
     "id": "vecteezy-50096613",
@@ -1068,7 +1192,9 @@ window.VIDEOS_DATA = [
     "duration": 9.521,
     "size": 4797618,
     "title_ru": "РџРѕРєРѕР№ 15",
-    "fileHash": "vecteezy-50096613"
+    "fileHash": "vecteezy-50096613",
+    "caption_ru": "Туман ждёт над спящим городом",
+    "caption_en": "Breath remains on cold stone"
   },
   {
     "id": "vecteezy-23624434",
@@ -1085,7 +1211,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 5033763,
     "title_ru": "РџРѕРєРѕР№ 16",
-    "fileHash": "vecteezy-23624434"
+    "fileHash": "vecteezy-23624434",
+    "caption_ru": "Туман ждёт в мягком свете",
+    "caption_en": "Fog waits on white snow"
   },
   {
     "id": "vecteezy-21244998",
@@ -1102,7 +1230,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 5490630,
     "title_ru": "РџРѕРєРѕР№ 18",
-    "fileHash": "vecteezy-21244998"
+    "fileHash": "vecteezy-21244998",
+    "caption_ru": "Туман ждёт за закрытой дверью",
+    "caption_en": "Water remembers on wet glass"
   },
   {
     "id": "vecteezy-44308857",
@@ -1119,7 +1249,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 5845023,
     "title_ru": "РџРѕРєРѕР№ 19",
-    "fileHash": "vecteezy-44308857"
+    "fileHash": "vecteezy-44308857",
+    "caption_ru": "Туман ждёт на белом снегу",
+    "caption_en": "Flame breathes in soft light"
   },
   {
     "id": "vecteezy-31688932",
@@ -1136,7 +1268,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 5869438,
     "title_ru": "РџРѕРєРѕР№ 20",
-    "fileHash": "vecteezy-31688932"
+    "fileHash": "vecteezy-31688932",
+    "caption_ru": "Туман ждёт в тёмной комнате",
+    "caption_en": "Wind carries under low sky"
   },
   {
     "id": "vecteezy-39898433",
@@ -1153,7 +1287,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 5968569,
     "title_ru": "РџРѕРєРѕР№ 21",
-    "fileHash": "vecteezy-39898433"
+    "fileHash": "vecteezy-39898433",
+    "caption_ru": "Туман ждёт у линии моря",
+    "caption_en": "Silence holds in deep fog"
   },
   {
     "id": "vecteezy-28660818",
@@ -1170,7 +1306,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 6160581,
     "title_ru": "РџРѕРєРѕР№ 22",
-    "fileHash": "vecteezy-28660818"
+    "fileHash": "vecteezy-28660818",
+    "caption_ru": "Вода помнит по мокрому стеклу",
+    "caption_en": "Rain falls in dark room"
   },
   {
     "id": "vecteezy-22675470",
@@ -1187,7 +1325,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 6319773,
     "title_ru": "РџРѕРєРѕР№ 23",
-    "fileHash": "vecteezy-22675470"
+    "fileHash": "vecteezy-22675470",
+    "caption_ru": "Ветер несёт под низким небом",
+    "caption_en": "Snow settles at night edge"
   },
   {
     "id": "vecteezy-26673477",
@@ -1204,7 +1344,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 6819996,
     "title_ru": "РџРѕРєРѕР№ 24",
-    "fileHash": "vecteezy-26673477"
+    "fileHash": "vecteezy-26673477",
+    "caption_ru": "Вода помнит у края ночи",
+    "caption_en": "The road opens behind closed door"
   },
   {
     "id": "vecteezy-49319867",
@@ -1221,7 +1363,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 6883780,
     "title_ru": "РџРѕРєРѕР№ 25",
-    "fileHash": "vecteezy-49319867"
+    "fileHash": "vecteezy-49319867",
+    "caption_ru": "Дождь падает по мокрому стеклу",
+    "caption_en": "The sky softens in quiet water"
   },
   {
     "id": "vecteezy-21798334",
@@ -1238,7 +1382,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 6936621,
     "title_ru": "РџРѕРєРѕР№ 26",
-    "fileHash": "vecteezy-21798334"
+    "fileHash": "vecteezy-21798334",
+    "caption_ru": "Вода помнит в глубоком тумане",
+    "caption_en": "Light sinks in soft light"
   },
   {
     "id": "vecteezy-47385242",
@@ -1255,7 +1401,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 7477310,
     "title_ru": "РџРѕРєРѕР№ 27",
-    "fileHash": "vecteezy-47385242"
+    "fileHash": "vecteezy-47385242",
+    "caption_ru": "Вода помнит над спящим городом",
+    "caption_en": "Shadow slips under low sky"
   },
   {
     "id": "055zcwp14t",
@@ -1272,7 +1420,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 8395743,
     "title_ru": "РџРѕРєРѕР№ 28",
-    "fileHash": "055zcwp14t"
+    "fileHash": "055zcwp14t",
+    "caption_ru": "Вода помнит в мягком свете",
+    "caption_en": "Breath remains in deep fog"
   },
   {
     "id": "coverr-eq54utb0v7",
@@ -1289,7 +1439,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 8545836,
     "title_ru": "РџРѕРєРѕР№ 29",
-    "fileHash": "coverr-eq54utb0v7"
+    "fileHash": "coverr-eq54utb0v7",
+    "caption_ru": "Вода помнит за закрытой дверью",
+    "caption_en": "Fog waits in dark room"
   },
   {
     "id": "8lsbvwzhox",
@@ -1306,7 +1458,9 @@ window.VIDEOS_DATA = [
     "duration": 15.249,
     "size": 8695238,
     "title_ru": "РџРѕРєРѕР№ 30",
-    "fileHash": "8lsbvwzhox"
+    "fileHash": "8lsbvwzhox",
+    "caption_ru": "Вода помнит на белом снегу",
+    "caption_en": "Water remembers at night edge"
   },
   {
     "id": "vecteezy-17202055",
@@ -1323,7 +1477,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 3593694,
     "title_ru": "РџРѕРєРѕР№ 31",
-    "fileHash": "vecteezy-17202055"
+    "fileHash": "vecteezy-17202055",
+    "caption_ru": "Вода помнит в тёмной комнате",
+    "caption_en": "Flame breathes behind closed door"
   },
   {
     "id": "vecteezy-11733811",
@@ -1340,7 +1496,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 6366257,
     "title_ru": "РџРѕРєРѕР№ 32",
-    "fileHash": "vecteezy-11733811"
+    "fileHash": "vecteezy-11733811",
+    "caption_ru": "Вода помнит под низким небом",
+    "caption_en": "Wind carries in quiet water"
   },
   {
     "id": "vecteezy-26167264",
@@ -1357,7 +1515,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 3712807,
     "title_ru": "РџСѓС‚СЊ 01",
-    "fileHash": "vecteezy-26167264"
+    "fileHash": "vecteezy-26167264",
+    "caption_ru": "Пламя дышит в тихой воде",
+    "caption_en": "Silence holds above sleeping city"
   },
   {
     "id": "vecteezy-39227242",
@@ -1374,7 +1534,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 3736950,
     "title_ru": "РџСѓС‚СЊ 02",
-    "fileHash": "vecteezy-39227242"
+    "fileHash": "vecteezy-39227242",
+    "caption_ru": "Пламя дышит по мокрому стеклу",
+    "caption_en": "Rain falls by the sea"
   },
   {
     "id": "vecteezy-49924669",
@@ -1391,7 +1553,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 3842925,
     "title_ru": "РџСѓС‚СЊ 03",
-    "fileHash": "vecteezy-49924669"
+    "fileHash": "vecteezy-49924669",
+    "caption_ru": "Пламя дышит у края ночи",
+    "caption_en": "Snow settles on cold stone"
   },
   {
     "id": "vecteezy-49757118",
@@ -1408,7 +1572,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 4017319,
     "title_ru": "РџСѓС‚СЊ 04",
-    "fileHash": "vecteezy-49757118"
+    "fileHash": "vecteezy-49757118",
+    "caption_ru": "Пламя дышит на холодном камне",
+    "caption_en": "The road opens on white snow"
   },
   {
     "id": "vecteezy-25251767",
@@ -1425,7 +1591,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 4244001,
     "title_ru": "РџСѓС‚СЊ 05",
-    "fileHash": "vecteezy-25251767"
+    "fileHash": "vecteezy-25251767",
+    "caption_ru": "Пламя дышит в глубоком тумане",
+    "caption_en": "The sky softens on wet glass"
   },
   {
     "id": "vecteezy-48665208",
@@ -1442,7 +1610,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 4556449,
     "title_ru": "РџСѓС‚СЊ 06",
-    "fileHash": "vecteezy-48665208"
+    "fileHash": "vecteezy-48665208",
+    "caption_ru": "Пламя дышит над спящим городом",
+    "caption_en": "Light sinks behind closed door"
   },
   {
     "id": "vecteezy-47104840",
@@ -1459,7 +1629,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 4614285,
     "title_ru": "РџСѓС‚СЊ 07",
-    "fileHash": "vecteezy-47104840"
+    "fileHash": "vecteezy-47104840",
+    "caption_ru": "Пламя дышит за закрытой дверью",
+    "caption_en": "Shadow slips in quiet water"
   },
   {
     "id": "vecteezy-16766057",
@@ -1476,7 +1648,9 @@ window.VIDEOS_DATA = [
     "duration": 8.676,
     "size": 4879249,
     "title_ru": "РџСѓС‚СЊ 08",
-    "fileHash": "vecteezy-16766057"
+    "fileHash": "vecteezy-16766057",
+    "caption_ru": "Пламя дышит на белом снегу",
+    "caption_en": "Breath remains above sleeping city"
   },
   {
     "id": "vecteezy-42408065",
@@ -1493,7 +1667,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 4960460,
     "title_ru": "РџСѓС‚СЊ 10",
-    "fileHash": "vecteezy-42408065"
+    "fileHash": "vecteezy-42408065",
+    "caption_ru": "Пламя дышит в тёмной комнате",
+    "caption_en": "Fog waits by the sea"
   },
   {
     "id": "vecteezy-13129372",
@@ -1510,7 +1686,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 5295649,
     "title_ru": "РџСѓС‚СЊ 11",
-    "fileHash": "vecteezy-13129372"
+    "fileHash": "vecteezy-13129372",
+    "caption_ru": "Пламя дышит у линии моря",
+    "caption_en": "Water remembers on cold stone"
   },
   {
     "id": "vecteezy-44308850",
@@ -1527,7 +1705,9 @@ window.VIDEOS_DATA = [
     "duration": 8.499,
     "size": 5356719,
     "title_ru": "РџСѓС‚СЊ 12",
-    "fileHash": "vecteezy-44308850"
+    "fileHash": "vecteezy-44308850",
+    "caption_ru": "Пламя дышит под низким небом",
+    "caption_en": "Flame breathes on white snow"
   },
   {
     "id": "vecteezy-48665200",
@@ -1544,7 +1724,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 5715123,
     "title_ru": "РџСѓС‚СЊ 13",
-    "fileHash": "vecteezy-48665200"
+    "fileHash": "vecteezy-48665200",
+    "caption_ru": "Ветер несёт в тихой воде",
+    "caption_en": "Wind carries on wet glass"
   },
   {
     "id": "vecteezy-26489445",
@@ -1561,7 +1743,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 5800762,
     "title_ru": "РџСѓС‚СЊ 14",
-    "fileHash": "vecteezy-26489445"
+    "fileHash": "vecteezy-26489445",
+    "caption_ru": "Ветер несёт по мокрому стеклу",
+    "caption_en": "Silence holds in soft light"
   },
   {
     "id": "vecteezy-39227308",
@@ -1578,7 +1762,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 6814806,
     "title_ru": "РџСѓС‚СЊ 16",
-    "fileHash": "vecteezy-39227308"
+    "fileHash": "vecteezy-39227308",
+    "caption_ru": "Ветер несёт у края ночи",
+    "caption_en": "Rain falls under low sky"
   },
   {
     "id": "vecteezy-44851735",
@@ -1595,7 +1781,9 @@ window.VIDEOS_DATA = [
     "duration": 15.403,
     "size": 7134298,
     "title_ru": "РџСѓС‚СЊ 17",
-    "fileHash": "vecteezy-44851735"
+    "fileHash": "vecteezy-44851735",
+    "caption_ru": "Ветер несёт над спящим городом",
+    "caption_en": "Snow settles in deep fog"
   },
   {
     "id": "vecteezy-44308819",
@@ -1612,7 +1800,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 7194682,
     "title_ru": "РџСѓС‚СЊ 18",
-    "fileHash": "vecteezy-44308819"
+    "fileHash": "vecteezy-44308819",
+    "caption_ru": "Ветер несёт в мягком свете",
+    "caption_en": "The road opens in dark room"
   },
   {
     "id": "coverr-porto-santo-coastline-2591",
@@ -1629,7 +1819,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 7193387,
     "title_ru": "РџСѓС‚СЊ 19",
-    "fileHash": "coverr-porto-santo-coastline-2591"
+    "fileHash": "coverr-porto-santo-coastline-2591",
+    "caption_ru": "Тишина держит под низким небом",
+    "caption_en": "The sky softens at night edge"
   },
   {
     "id": "faom7mmeif",
@@ -1646,7 +1838,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 7238560,
     "title_ru": "РџСѓС‚СЊ 20",
-    "fileHash": "faom7mmeif"
+    "fileHash": "faom7mmeif",
+    "caption_ru": "Небо мягчеет под низким небом",
+    "caption_en": "Light sinks on white snow"
   },
   {
     "id": "vecteezy-24153650",
@@ -1663,7 +1857,9 @@ window.VIDEOS_DATA = [
     "duration": 10.884,
     "size": 7585387,
     "title_ru": "РџСѓС‚СЊ 21",
-    "fileHash": "vecteezy-24153650"
+    "fileHash": "vecteezy-24153650",
+    "caption_ru": "Ветер несёт за закрытой дверью",
+    "caption_en": "Shadow slips on wet glass"
   },
   {
     "id": "vecteezy-44308860",
@@ -1680,7 +1876,9 @@ window.VIDEOS_DATA = [
     "duration": 10.473,
     "size": 7797161,
     "title_ru": "РџСѓС‚СЊ 22",
-    "fileHash": "vecteezy-44308860"
+    "fileHash": "vecteezy-44308860",
+    "caption_ru": "Ветер несёт на белом снегу",
+    "caption_en": "Breath remains in soft light"
   },
   {
     "id": "coverr-walking-mountain-top-8360",
@@ -1697,7 +1895,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 8797143,
     "title_ru": "РџСѓС‚СЊ 23",
-    "fileHash": "coverr-walking-mountain-top-8360"
+    "fileHash": "coverr-walking-mountain-top-8360",
+    "caption_ru": "Ветер несёт в тёмной комнате",
+    "caption_en": "Fog waits under low sky"
   },
   {
     "id": "vecteezy-35353508",
@@ -1714,7 +1914,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 9156747,
     "title_ru": "РџСѓС‚СЊ 24",
-    "fileHash": "vecteezy-35353508"
+    "fileHash": "vecteezy-35353508",
+    "caption_ru": "Ветер несёт у линии моря",
+    "caption_en": "Water remembers in deep fog"
   },
   {
     "id": "vecteezy-28800918",
@@ -1731,7 +1933,9 @@ window.VIDEOS_DATA = [
     "duration": 13.114,
     "size": 9340076,
     "title_ru": "РџСѓС‚СЊ 25",
-    "fileHash": "vecteezy-28800918"
+    "fileHash": "vecteezy-28800918",
+    "caption_ru": "Тишина держит по мокрому стеклу",
+    "caption_en": "Flame breathes in dark room"
   },
   {
     "id": "vecteezy-48659846",
@@ -1748,7 +1952,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 8738728,
     "title_ru": "РџСѓС‚СЊ 26",
-    "fileHash": "vecteezy-48659846"
+    "fileHash": "vecteezy-48659846",
+    "caption_ru": "Тишина держит у края ночи",
+    "caption_en": "Wind carries at night edge"
   },
   {
     "id": "vecteezy-9978949",
@@ -1765,7 +1971,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 9067186,
     "title_ru": "РџСѓС‚СЊ 27",
-    "fileHash": "vecteezy-9978949"
+    "fileHash": "vecteezy-9978949",
+    "caption_ru": "Тишина держит на холодном камне",
+    "caption_en": "Silence holds behind closed door"
   },
   {
     "id": "vecteezy-9687461",
@@ -1782,7 +1990,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 9745285,
     "title_ru": "РџСѓС‚СЊ 28",
-    "fileHash": "vecteezy-9687461"
+    "fileHash": "vecteezy-9687461",
+    "caption_ru": "Тишина держит в глубоком тумане",
+    "caption_en": "Rain falls in quiet water"
   },
   {
     "id": "vecteezy-23156720",
@@ -1799,7 +2009,9 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 9817151,
     "title_ru": "РџСѓС‚СЊ 29",
-    "fileHash": "vecteezy-23156720"
+    "fileHash": "vecteezy-23156720",
+    "caption_ru": "Тишина держит в мягком свете",
+    "caption_en": "Snow settles above sleeping city"
   },
   {
     "id": "vecteezy-47104845",
@@ -1816,7 +2028,9 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 6512189,
-    "title_ru": "Покой 33"
+    "title_ru": "Покой 33",
+    "caption_ru": "Тишина держит на белом снегу",
+    "caption_en": "The road opens by the sea"
   },
   {
     "id": "vecteezy-41420997",
@@ -1833,7 +2047,9 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 6365545,
-    "title_ru": "Покой 38"
+    "title_ru": "Покой 38",
+    "caption_ru": "Тишина держит у линии моря",
+    "caption_en": "The sky softens on cold stone"
   },
   {
     "id": "vecteezy-20383962",
@@ -1850,7 +2066,9 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 3724072,
-    "title_ru": "Путь 30"
+    "title_ru": "Путь 30",
+    "caption_ru": "Дождь падает в тихой воде",
+    "caption_en": "Light sinks in dark room"
   },
   {
     "id": "vecteezy-35230903",
@@ -1867,7 +2085,9 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 5008288,
-    "title_ru": "Путь 31"
+    "title_ru": "Путь 31",
+    "caption_ru": "Небо мягчеет над спящим городом",
+    "caption_en": "Shadow slips at night edge"
   },
   {
     "id": "vecteezy-27148488",
@@ -1884,7 +2104,9 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 8602726,
-    "title_ru": "Трикстер 35"
+    "title_ru": "Трикстер 35",
+    "caption_ru": "Дождь падает у края ночи",
+    "caption_en": "Breath remains behind closed door"
   },
   {
     "id": "vecteezy-36096700",
@@ -1901,7 +2123,9 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 6634236,
-    "title_ru": "Трикстер 36"
+    "title_ru": "Трикстер 36",
+    "caption_ru": "Дождь падает на холодном камне",
+    "caption_en": "Fog waits in quiet water"
   },
   {
     "id": "vecteezy-84289015",
@@ -1918,7 +2142,9 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 4327703,
-    "title_ru": "Трикстер 37"
+    "title_ru": "Трикстер 37",
+    "caption_ru": "Дождь падает в глубоком тумане",
+    "caption_en": "Water remembers above sleeping city"
   },
   {
     "id": "calm_33_vecteezy-22187669",
@@ -1935,7 +2161,9 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 4375124,
-    "title_ru": "Покой 39"
+    "title_ru": "Покой 39",
+    "caption_ru": "Дождь падает за закрытой дверью",
+    "caption_en": "Flame breathes by the sea"
   },
   {
     "id": "calm_34_vecteezy-40722016",
@@ -1952,7 +2180,9 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 5357026,
-    "title_ru": "Покой 39"
+    "title_ru": "Покой 39",
+    "caption_ru": "Дождь падает на белом снегу",
+    "caption_en": "Wind carries on cold stone"
   },
   {
     "id": "calm_35_vecteezy-34213914",
@@ -1969,7 +2199,9 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 3559576,
-    "title_ru": "Покой 39"
+    "title_ru": "Покой 39",
+    "caption_ru": "Дождь падает в тёмной комнате",
+    "caption_en": "Silence holds on white snow"
   },
   {
     "id": "calm_36_vecteezy-27272805",
@@ -1986,7 +2218,9 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 3965194,
-    "title_ru": "Покой 39"
+    "title_ru": "Покой 39",
+    "caption_ru": "Дождь падает у линии моря",
+    "caption_en": "Rain falls on wet glass"
   },
   {
     "id": "calm_39_vecteezy-23624434",
@@ -2003,7 +2237,9 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 5033763,
-    "title_ru": "Покой 39"
+    "title_ru": "Покой 39",
+    "caption_ru": "Дождь падает под низким небом",
+    "caption_en": "Snow settles in soft light"
   },
   {
     "id": "calm_40_vecteezy-31688932",
@@ -2020,7 +2256,9 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 5869438,
-    "title_ru": "Покой 40"
+    "title_ru": "Покой 40",
+    "caption_ru": "Снег ложится по мокрому стеклу",
+    "caption_en": "The road opens under low sky"
   },
   {
     "id": "calm_41_vecteezy-78882544",
@@ -2037,6 +2275,8 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 3799265,
-    "title_ru": "Покой 41"
+    "title_ru": "Покой 41",
+    "caption_ru": "Снег ложится у края ночи",
+    "caption_en": "The sky softens in deep fog"
   }
 ];

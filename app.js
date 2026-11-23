@@ -48,10 +48,10 @@
   const SWIPE_HAPTIC_COOLDOWN_MS = 600;
   const HOLD_HEARTBEAT_MS = 1800;
   const HAPTIC_PATTERNS = {
-    fire: { frame: [32, 45, 48], hold: [42, 85, 58], interval: 1400 },
-    water: { frame: [20, 55, 36, 70, 54], hold: [52, 160, 72], interval: 2200 },
-    fog: { frame: [46, 110, 28], hold: [58, 130, 34], interval: 2000 },
-    space: { frame: [34, 65, 34], hold: [44, 180, 44], interval: 2400 },
+    fire: { frame: [32, 45, 48], hold: [42, 85, 58], interval: 1400, whisper: [12, 70, 18], anchor: [28, 90, 12, 90, 34] },
+    water: { frame: [20, 55, 36, 70, 54], hold: [52, 160, 72], interval: 2200, whisper: [8, 55, 14], anchor: [20, 120, 10, 120, 26] },
+    fog: { frame: [46, 110, 28], hold: [58, 130, 34], interval: 2000, whisper: [10, 85, 12], anchor: [18, 110, 14, 110, 30] },
+    space: { frame: [34, 65, 34], hold: [44, 180, 44], interval: 2400, whisper: [6, 95, 10], anchor: [24, 150, 18, 150, 40] },
   };
   const PORTRAIT_TIMEOUT_MS = 1500;
 
@@ -121,6 +121,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       cycle3: 'Круг сна завершён. Дыхание продолжается.',
       lockLabel: 'ПРОДОЛЖЕНИЕ',
       lockedPrefix: 'Продолжение через',
+      lockEntryKicker: 'ДВЕРЬ ЗАКРЫТА',
+      lockEntryHint: 'Тишина ещё длится',
       notificationBody: 'Продолжение открыто. Вернись, чтобы узнать, что дальше.',
       notify: 'Уведомить через 2 часа',
       notifySet: 'Уведомление поставлено',
@@ -173,6 +175,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       cycle3: 'Dream cycle complete. Breathing continues.',
       lockLabel: 'CONTINUATION',
       lockedPrefix: 'Continues in',
+      lockEntryKicker: 'THE DOOR IS CLOSED',
+      lockEntryHint: 'The silence is still here',
       notificationBody: 'The next chapter is open. Come back and see what it holds.',
       notify: 'Notify me in 2 hours',
       notifySet: 'Notification set',
@@ -559,6 +563,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   const entryTrigger = document.getElementById('entry-trigger');
   const entryInstallButton = document.getElementById('entry-install');
   const entryTapPrompt = document.getElementById('entry-tap-prompt');
+  const entryLock = document.getElementById('entry-lock');
+  const entryLockKicker = document.getElementById('entry-lock-kicker');
+  const entryLockTime = document.getElementById('entry-lock-time');
+  const entryLockHint = document.getElementById('entry-lock-hint');
   const guideLine1 = document.getElementById('guide-line-1');
   const guideLine2 = document.getElementById('guide-line-2');
   const entryInstalledNote = document.getElementById('entry-installed-note');
@@ -633,6 +641,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (entryInstallHint) entryInstallHint.textContent = tr('installHint');
     if (installCardInstall) installCardInstall.textContent = tr('install');
     if (entryTapPrompt) entryTapPrompt.textContent = tr('tapToBegin');
+    if (entryLockKicker) entryLockKicker.textContent = tr('lockEntryKicker');
+    if (entryLockHint) entryLockHint.textContent = tr('lockEntryHint');
     if (entryInstalledNote) entryInstalledNote.textContent = tr('installedNote');
     if (installCardHint) installCardHint.textContent = tr('installHint');
     if (installCardInfo) installCardInfo.textContent = tr('installInApp');
@@ -1519,6 +1529,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (resonanceMemory.length > 4) resonanceMemory.shift();
 
     resonanceMemoryVersion += 1;
+    safeVibrate(hapticPatternForCurrent().anchor, 6000);
     prefetchNextCaptions(behaviorContext());
   }
 
@@ -1539,7 +1550,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         currentCaption.revealed = true;
         if (!currentCaption.haptic) {
           currentCaption.haptic = true;
-          safeVibrate([10, 60, 10], 4000);
+          safeVibrate(hapticPatternForCurrent().whisper, 4000);
         }
       }
       maybeRecordResonance();
@@ -1563,7 +1574,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       currentCaption.revealed = true;
       if (!currentCaption.haptic) {
         currentCaption.haptic = true;
-        safeVibrate([10, 60, 10], 4000);
+        safeVibrate(hapticPatternForCurrent().whisper, 4000);
       }
     }
     maybeRecordResonance();
@@ -1622,9 +1633,19 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
 
     const key = captionKey(clip);
     const cached = captionCache.get(key);
+    const staticCaption = currentLang === 'en' ? clip.caption_en : clip.caption_ru;
     const fallbackFirst = () => {
       applyText(pickFallbackCaption(category.tag));
     };
+
+    if (staticCaption) {
+      applyText(staticCaption);
+      prefetchNextCaptions(behavior);
+      captionMemoryTimer = window.setTimeout(() => {
+        if (token === captionSceneToken) maybeRecordResonance();
+      }, CAPTION_LINGER_MS);
+      return;
+    }
 
     if (captionAllow || hiddenEligible) {
       if (cached) {
@@ -2633,9 +2654,15 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   function updateSessionLockUI() {
     const remaining = sessionLockAt ? Math.max(0, sessionLockAt - Date.now()) : 0;
     const text = formatSessionCountdown(remaining);
+    const showEntryLock = remaining > 0 && !gateOpen;
 
     if (finaleCountdownEl) finaleCountdownEl.textContent = text;
     if (finaleLockInlineEl) finaleLockInlineEl.textContent = text;
+    if (entryLock) {
+      entryLock.hidden = !showEntryLock;
+      if (entryLockTime) entryLockTime.textContent = text;
+      if (entryGate) entryGate.classList.toggle('is-locked', showEntryLock);
+    }
 
     if (!gateOpen) {
       if (remaining > 0) {
@@ -3256,7 +3283,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     trackStageReached(entry.stage);
     updateSessionProgress();
     setSceneElement(activeClip());
-    safeVibrate(hapticPatternForCurrent().frame, HAPTIC_COOLDOWN_MS);
     activateCaption(category, activeClip(), behaviorContext(), true, entry.stage);
 
     const track = nextTrackFor(category);
@@ -3501,6 +3527,8 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       const clip = {
         id,
         fileHash: String(item.fileHash || id),
+        caption_ru: String(item.caption_ru || ''),
+        caption_en: String(item.caption_en || ''),
         title,
         url: item.url,
         duration: Number.isFinite(Number(item.duration)) ? Number(item.duration) : 10,
@@ -3801,7 +3829,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
 
     playCategory(category);
     setSceneElement(activeClip());
-    safeVibrate(hapticPatternForCurrent().frame, HAPTIC_COOLDOWN_MS);
     activateCaption(category, activeClip(), behavior, allowed, sceneStage);
     const track = nextTrackFor(category);
     switchSoundtrack(track, duration);
