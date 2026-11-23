@@ -143,7 +143,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       installApp: 'Add the app to your screen',
       installHint: 'Tap Share → Add to Home Screen',
       installCardTitle: 'Keep the sanctuary',
-      install: 'Add to home screen',
+      install: 'Add to screen',
       iosKicker: 'SAVE THE SANCTUARY',
       iosSafari1: 'Tap Share in the bottom bar',
       iosSafari2: 'Select «Add to Home Screen»',
@@ -4993,34 +4993,53 @@ ${JSON.stringify(events, null, 2)}`;
     if (isStandaloneMode()) return;
     if (!force && (installCardDismissed || gateOpen)) return;
     if (isIos() && iosInstallCard) {
-      if (installCard) installCard.hidden = true;
+      if (installCard) { installCard.hidden = true; installCard.classList.remove('is-visible'); }
       iosInstallCard.hidden = false;
+      iosInstallCard.classList.add('is-visible');
       iosInstallCard.classList.toggle('install-card--final', Boolean(finalContext));
       syncIosInstallCard();
+      syncEntryInstallOffset(true, iosInstallCard);
       syncInstallButton();
       return;
     }
-    if (iosInstallCard) iosInstallCard.hidden = true;
+    if (iosInstallCard) { iosInstallCard.hidden = true; iosInstallCard.classList.remove('is-visible'); }
     if (!installCard) return;
     installCard.classList.toggle('install-card--final', Boolean(finalContext));
+    installCard.classList.add('is-visible');
     installCard.hidden = false;
+    syncEntryInstallOffset(true, installCard);
     syncInstallButton();
+  }
+
+  function syncEntryInstallOffset(visible, card) {
+    const entry = document.getElementById('entry');
+    if (!entry) return;
+    entry.classList.toggle('has-install-card', Boolean(visible));
+    if (!visible) {
+      entry.style.removeProperty('--install-offset');
+      return;
+    }
+    window.requestAnimationFrame(() => {
+      const height = (card && card.offsetHeight) || 80;
+      entry.style.setProperty('--install-offset', `${Math.round(height + 38)}px`);
+    });
   }
 
   function hideInstallCard() {
     if (installCard) {
       installCard.hidden = true;
-      installCard.classList.remove('install-card--final');
+      installCard.classList.remove('install-card--final', 'is-visible');
     }
     if (iosInstallCard) {
       iosInstallCard.hidden = true;
-      iosInstallCard.classList.remove('install-card--final');
+      iosInstallCard.classList.remove('install-card--final', 'is-visible');
     }
     if (installCardHint) installCardHint.hidden = true;
+    syncEntryInstallOffset(false);
     syncInstallButton();
   }
 
-  function nudgeInstallCard(delay = 1500, finalContext = false) {
+  function nudgeInstallCard(delay = 3500, finalContext = false) {
     window.clearTimeout(installNudgeTimer);
     installNudgeTimer = window.setTimeout(() => {
       if (!isStandaloneMode() && !gateOpen) showInstallCard(true, finalContext);
@@ -5111,7 +5130,7 @@ ${JSON.stringify(events, null, 2)}`;
   }
 
   if (!isIos() && deferredPrompt) showInstallCard();
-  nudgeInstallCard(1500, false);
+  nudgeInstallCard(3500, false);
   syncInstallButton();
 
   function unlockExperience() {

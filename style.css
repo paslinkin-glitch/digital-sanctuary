@@ -2449,3 +2449,158 @@ html:not([data-maintenance="true"]) #maintenance-screen {
   z-index: 61;
   bottom: calc(env(safe-area-inset-bottom) + 92px);
 }
+
+
+/* ================================================ QUIET LUXURY SURFACES v36 */
+.entry-trigger,
+.entry-install,
+.install-card,
+.install-card--ios,
+.install-card-btn,
+.finale-btn,
+.finale-btn--glass,
+.finale-shell,
+.install-action {
+  background: linear-gradient(180deg, rgba(24, 23, 22, 0.78) 0%, rgba(12, 12, 14, 0.88) 100%);
+  -webkit-backdrop-filter: blur(22px) saturate(115%);
+  backdrop-filter: blur(22px) saturate(115%);
+  border: 0.5px solid rgba(234, 229, 220, 0.16);
+  box-shadow:
+    inset 0 1px 0 rgba(234, 229, 220, 0.08),
+    0 18px 44px rgba(0, 0, 0, 0.72);
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.entry-trigger:active,
+.entry-install:active,
+.install-card-btn:active,
+.finale-btn:active,
+.finale-btn--glass:active,
+.install-action:active {
+  transform: scale(0.985);
+  background: rgba(234, 229, 220, 0.08);
+  border-color: rgba(214, 199, 178, 0.32);
+  transition: all 350ms var(--organic);
+}
+
+.install-card:not(.install-card--ios):active {
+  transform: translateX(-50%) scale(0.985);
+  background: rgba(234, 229, 220, 0.08);
+  border-color: rgba(214, 199, 178, 0.32);
+  transition: all 350ms var(--organic);
+}
+
+/* compact, symmetric Android install row */
+.install-card:not(.install-card--ios) {
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom) + 18px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: min(calc(100vw - 32px), 380px);
+  padding: 14px 18px;
+  border-radius: 18px;
+  transform: translateX(-50%);
+}
+
+.install-card:not(.install-card--ios) .install-card-copy {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.install-card:not(.install-card--ios) .install-card-title {
+  margin: 0;
+  overflow: visible;
+  color: var(--silk);
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  white-space: normal;
+}
+
+.install-card:not(.install-card--ios) .install-card-hint {
+  margin: 0;
+  color: rgba(234, 229, 220, 0.48);
+  font-family: var(--sans);
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.install-card:not(.install-card--ios) .install-card-btn {
+  flex: 0 0 auto;
+  min-height: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  color: var(--silk);
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.install-card:not(.install-card--ios) .install-card-close {
+  flex: 0 0 auto;
+  width: auto;
+  height: auto;
+  padding: 6px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(234, 229, 220, 0.45);
+  font-family: var(--sans);
+  font-size: 17px;
+  line-height: 1;
+  opacity: 0.45;
+}
+
+.install-card:not(.install-card--ios) .install-card-mark {
+  display: none;
+}
+
+/* entry must breathe above either install card */
+.entry {
+  transition:
+    opacity 1s var(--organic),
+    filter 1s var(--organic),
+    padding-bottom 600ms var(--organic);
+}
+
+.entry.has-install-card {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 128px);
+}
+
+.entry-actions {
+  transition:
+    transform 600ms var(--organic),
+    bottom 600ms var(--organic),
+    padding-bottom 600ms var(--organic);
+}
+
+.entry.has-install-card .entry-actions {
+  bottom: calc(env(safe-area-inset-bottom) + var(--install-offset, 128px));
+  transform: translateX(-50%);
+}
+
+.entry.has-install-card .entry-actions::before {
+  content: "";
+  display: block;
+  height: 20px;
+  pointer-events: none;
+}
+
+
+.install-card--ios:active {
+  transform: scale(0.985);
+  background: rgba(234, 229, 220, 0.08);
+  border-color: rgba(214, 199, 178, 0.32);
+  transition: all 350ms var(--organic);
+}
