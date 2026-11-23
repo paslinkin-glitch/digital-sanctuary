@@ -1,12 +1,4 @@
-﻿/* Digital Sanctuary — MVP 3: curated individuation catalog.
- *
- * Zero-UI vertical feed built on the Jungian path from concept.md:
- * Shadow -> Trickster & Abyss -> Calm -> Path. The 80-film catalog is loaded
- * from videos.json, shuffled inside each stage, and filtered by the IDs the
- * viewer has already seen. Coverr API calls are intentionally disabled.
- * Behaviour (view time, swipe speed, hold) remains invisible; optical layers
- * and the DeepSeek caption rhythm answer it without buttons or counters.
- */
+﻿
 (() => {
   'use strict';
 
@@ -17,9 +9,8 @@
     return;
   }
 
-  /* ------------------------------------------------------------- настройки */
+  
 
-  // Медленный fade — 800 мс из style.css; быстрый — 250 мс для импульсивных свайпов.
   const SLOW_FADE_MS = parseFloat(
     getComputedStyle(document.documentElement).getPropertyValue('--fade-duration')
   ) || 800;
@@ -64,8 +55,6 @@
   };
   const PORTRAIT_TIMEOUT_MS = 1500;
 
-  // Demo key from the brief. A static prototype must expose it; for production
-  // this call belongs behind a tiny server-side proxy.
   const DEEPSEEK_PROXY_ENDPOINT = '/api/deepseek';
   const CAPTION_START_DELAY_MS = 1200;
   const CAPTION_MIN_WORDS = 4;
@@ -268,10 +257,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       const stored = localStorage.getItem(LANG_STORAGE_KEY);
       if (stored === 'ru' || stored === 'en') return stored;
     } catch (_) {
-      /* localStorage может быть недоступен */
+      
     }
-    // International launch defaults to English until the visitor explicitly
-    // chooses Russian in the language switch.
     return 'en';
   }
 
@@ -321,7 +308,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         });
         sensor.start();
       } catch (_) {
-        /* sensor permission is optional */
+        
       }
     }
 
@@ -350,7 +337,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       else if (code === 45 || code === 48) type = 'fog';
       envContext = { ...envContext, weatherType: type };
     } catch (_) {
-      /* quiet fallback: clear weather */
+      
     } finally {
       window.clearTimeout(timer);
       setElementalNoise(currentOpticElement);
@@ -383,12 +370,11 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         window.umami.track(eventName, props);
       }
     } catch (_) {
-      /* аналитика не должна влиять на работу сцены */
+      
     }
   }
 
-  /* ------------------------------------------------------ клипы на случай,
-     если API недоступен: те же ролики Coverr, уже проверенные по API. */
+  
 
   const FALLBACK_CLIPS = {
     Shadow: [],
@@ -398,43 +384,43 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     Path: [],
   };
 
-  /* ---------------------------------------------------------- категории */
+  
 
-  /* ------------------------------------------------------ путь индивидуации */
+  
 
   const STAGES = [
     {
       id: 1,
-      name: 'Тень',
-      archetype: 'Тень',
+      name: 'I',
+      archetype: 'I',
       categories: ['Shadow'],
-      tone: 'напряжение, маска, первое честное признание',
+      tone: 'quiet tension',
       tags: ['silhouette shadow', 'dark corridor', 'smoke dark', 'night window rain', 'alone dark'],
     },
     {
       id: 2,
-      name: 'Слом и Бездна',
-      archetype: 'Трикстер и Бездна',
+      name: 'II',
+      archetype: 'II',
       categories: ['Trickster', 'Abyss'],
-      tone: 'провокация, парадокс, потеря прежней опоры',
+      tone: 'fracture and movement',
       tags: ['crowd blur night', 'reflection glass dark', 'deep underwater dark', 'black waves ocean', 'fire sparks dark'],
       shadowTags: ['crowd blur night', 'reflection glass dark', 'fire sparks dark'],
       abyssTags: ['deep underwater dark', 'black waves ocean'],
     },
     {
       id: 3,
-      name: 'Тишина',
-      archetype: 'Покой / Анима',
+      name: 'III',
+      archetype: 'III',
       categories: ['Calm'],
-      tone: 'замедление, дыхание, мягкость без слов',
+      tone: 'slowness and breath',
       tags: ['dust light beam', 'candle flame dark', 'fog forest dark', 'moonlight water', 'slow clouds night'],
     },
     {
       id: 4,
-      name: 'Выход и Путь',
-      archetype: 'Путь / Самость',
+      name: 'IV',
+      archetype: 'IV',
       categories: ['Path'],
-      tone: 'свет, движение, ясность и право идти дальше',
+      tone: 'light and movement',
       tags: ['tunnel light dark', 'train tracks night', 'birds sky dusk', 'empty highway night', 'sunrise fog'],
     },
   ];
@@ -474,10 +460,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     };
   });
 
-  // /music из брифа отдаёт 404; официальный эндпоинт Coverr — /audios.
-  // Ниже 25 уникальных preview.mp3 из ответов /audios: по пять треков на
-  // категорию. Ссылки зафиксированы, чтобы музыка не зависела от лимита
-  // поисковых запросов API, и чередуются под каждый новый кадр.
     const MUSIC_CATALOG = {
     Shadow: [
       { id: 'HDgXJpCNph', title: 'Whisper Canyon', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/whisper-canyon-HDgXJpCNph.mp3' },
@@ -515,7 +497,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       { id: 'open-sky', title: 'Open Sky', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/open-sky.mp3' },
     ],
   };
-/* ------------------------------------------------------------------ DOM */
+
 
   const ELEMENT_DEFAULT = {
     Shadow: 'fog',
@@ -554,7 +536,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
 
   const ALL_MUSIC_TRACKS = Object.values(MUSIC_CATALOG).flat();
 
-  /* ------------------------------------------------------------------ DOM */
+  
 
   const stage = document.querySelector('.stage');
   const cycleWhisperEl = document.getElementById('cycle-whisper');
@@ -683,7 +665,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     try {
       localStorage.setItem(LANG_STORAGE_KEY, currentLang);
     } catch (_) {
-      /* localStorage может быть недоступен */
+      
     }
     applyLanguage();
   }
@@ -764,7 +746,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     try {
       localStorage.setItem(VIEWED_STORAGE_KEY, JSON.stringify(viewedVideoIds));
     } catch (_) {
-      /* localStorage может быть недоступен */
+      
     }
   }
 
@@ -772,7 +754,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     try {
       localStorage.setItem(VIEWED_ALL_KEY, JSON.stringify([...allViewedVideoIds]));
     } catch (_) {
-      /* localStorage может быть недоступен */
+      
     }
   }
 
@@ -791,7 +773,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       localStorage.removeItem(VIEWED_ALL_KEY);
       localStorage.removeItem(VIEWED_STORAGE_KEY);
     } catch (_) {
-      /* localStorage может быть недоступен */
+      
     }
     return true;
   }
@@ -1079,7 +1061,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       try {
         navigator.vibrate(0);
       } catch (_) {
-        /* вибрация не критична */
+        
       }
     }
   }
@@ -1295,8 +1277,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const sentenceMarks = text.match(/[.!?…]/g) || [];
     if (sentenceMarks.length > 2) return false;
 
-    if (/(архетип|персон|либидо|юнгиан|психоанализ|archetype|persona|libido|jungian)/iu.test(text)) return false;
-    if (/(тень|трикстер|бездна|архетип|персон|либидо|слой|глубин|shadow|trickster|abyss|archetype|persona|libido)/iu.test(text)) return false;
     if (/(сделай|поверь|должен|нужно|попробуй|стань|обещай|you should|you must|try to|promise me)/iu.test(text)) return false;
 
     return true;
@@ -1350,7 +1330,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         'Write one new line in natural conversational English, strictly 4–6 words. Return only the line.',
       ]
       : [
-        `Архетип: ${archetype}.`,
+        `Stage: ${archetype}.`,
         `Категория: ${category.tag}.`,
         `Стадия: ${stage.id}.`,
         `Локальное время: ${time.clock}.`,
@@ -1763,7 +1743,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     oscillator.stop(t + 0.12);
   }
 
-  /* ---------------------------------------------------------- звуковая среда */
+  
 
   function createPinkNoiseBuffer(ctx, seconds) {
     const length = Math.max(1, Math.floor(ctx.sampleRate * seconds));
@@ -1802,7 +1782,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     soundBank.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;pointer-events:none;';
     document.body.appendChild(soundBank);
 
-    // Первый трек ставим в очередь первым — он нужен к моменту касания.
     const first = categories[0].musicTracks[0];
     if (first) {
       createTrackAudio(first);
@@ -1904,7 +1883,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       sound.channels.set(track.id, channel);
       return channel;
     } catch (error) {
-      console.warn('[sanctuary] audio graph failed:', track.title, error);
+
       track.failed = true;
       return null;
     }
@@ -1969,7 +1948,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       const ctx = new AudioCtor();
       const bus = ctx.createGain();
 
-      // Инфраниз режем жёстко: корпус телефона не должен вибрировать.
       const rumbleCut = ctx.createBiquadFilter();
       rumbleCut.type = 'highpass';
       rumbleCut.frequency.value = 110;
@@ -2006,7 +1984,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       breathPulse.connect(master);
       master.connect(ctx.destination);
 
-      // Мягкий дождь/ветер: резерв, если музыка временно недоступна.
       const noise = ctx.createBufferSource();
       noise.buffer = createPinkNoiseBuffer(ctx, 4);
       noise.loop = true;
@@ -2077,10 +2054,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       setElementalNoise(currentOpticElement);
       setStageOvertone(sessionStage);
 
-      // Первый жест: первые треки всех категорий идут в preload сразу.
       preloadFirstTracks();
     } catch (_) {
-      // Web Audio недоступен — остаётся только визуальная сцена.
     } finally {
       soundStarting = false;
     }
@@ -2197,10 +2172,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (sound.activeTrack) switchSoundtrack(sound.activeTrack, SLOW_FADE_MS);
   }
 
-  /* ------------------------------------------------------------- Coverr API */
+  
 
-  // 720p — тот же ролик Coverr, но легче для мобильного автозапуска.
-  // Если варианта нет, обработчик ошибки вернётся к исходному 1080p.
   function playbackUrl(url) {
     return url;
   }
@@ -2535,7 +2508,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       finaleSessionVideo.removeAttribute('src');
       finaleSessionVideo.load();
     } catch (_) {
-      /* видео могло быть уже выгружено */
+      
     }
   }
 
@@ -2645,7 +2618,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       if (value) localStorage.setItem(SESSION_LOCK_KEY, String(value));
       else localStorage.removeItem(SESSION_LOCK_KEY);
     } catch (_) {
-      /* localStorage может быть недоступен */
+      
     }
   }
 
@@ -2783,10 +2756,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     } else if (!/[А-Яа-яЁё]/.test(text) || /[A-Za-z]/.test(text)) {
       return false;
     }
-    const banned = currentLang === 'en'
-      ? /(archetype|persona|libido|jungian|shadow work|unconscious|trickster|abyss)/iu
-      : /(архетип|персон|либидо|юнгиан|психоанализ|трикстер|бездна|тень|бессознательн)/iu;
-    if (banned.test(text)) return false;
     const sentences = text.match(/[^.!?…]+[.!?…]+/g) || [];
     return sentences.length === 2;
   }
@@ -2838,7 +2807,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       const text = String(raw || '').replace(/^["«»“”]+|["«»“”]+$/g, '').replace(/\s+/g, ' ').trim();
       if (finaleReflectionIsValid(text) && finaleReflectionEl) finaleReflectionEl.textContent = text;
     } catch (_) {
-      /* fallback already shown */
+      
     } finally {
       window.clearTimeout(timer);
     }
@@ -2856,7 +2825,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
 
   function releaseWakeLock() {
     if (!wakeLock) return;
-    try { wakeLock.release(); } catch (_) { /* already released */ }
+    try { wakeLock.release(); } catch (_) {  }
     wakeLock = null;
   }
 
@@ -2973,10 +2942,10 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     const calm = calmTitle || 'тихом кадре';
     const path = pathTitle || 'открытом горизонте';
     return [
-      `Тень: внимание дольше оставалось на «${shadow}»; там проступает то, что обычно держат вне света.`,
-      `Трикстер и Бездна: «${trick}» удерживает и притяжение, и желание не смотреть прямо.`,
-      `Покой / Анима: «${calm}» возвращает дыхание; это не ответ, скорее место, где можно быть без доказательств.`,
-      `Путь / Самость: «${path}» намечает направление, хотя оно ещё не стало выбором.`,
+      `Внимание дольше оставалось на «${shadow}»; там проступает то, что обычно держат вне света.`,
+      `«${trick}» удерживает и притяжение, и желание не смотреть прямо.`,
+      `«${calm}» возвращает дыхание; это не ответ, скорее место, где можно быть без доказательств.`,
+      `«${path}» намечает направление, хотя оно ещё не стало выбором.`,
       'Какую часть этого движения ты пока не готов назвать своей?',
     ];
   }
@@ -3003,7 +2972,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
           tag: 'sanctuary-return',
         });
       } catch (_) {
-        /* системное уведомление может быть недоступно */
+        
       }
     }, delay);
 
@@ -3199,8 +3168,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       return true;
     }
 
-    // После исчерпания уникального пула повторяем атмосферные кадры,
-    // но никогда не останавливаем ленту и не открываем модальный финал.
     pathPicked.clear();
     const entries = makeCycleEntries(true);
     if (!entries) return false;
@@ -3321,8 +3288,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     video.setAttribute('aria-hidden', 'true');
 
     video.addEventListener('loadedmetadata', () => {
-      // Never move the feed from metadata. Keep the current frame and only
-      // mark portrait media ready; portrait/non-portrait is not a reason to swipe.
       if (video.videoWidth > 0 && video.videoHeight > video.videoWidth) {
         video.classList.add('is-ready');
       }
@@ -3333,8 +3298,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     video.addEventListener('timeupdate', () => handleLoop(category, index, video));
     let fallbackCursor = 0;
     video.addEventListener('error', () => {
-      // Replace the source inside this same <video>. Never call go() or
-      // navigateTo() from a media event: the feed only moves on user input.
       const alternatives = category.clips.filter((candidate) => (
         candidate !== clip && candidate.url && !candidate.invalid
       ));
@@ -3382,7 +3345,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       video.load();
       video.remove();
     } catch (_) {
-      /* видео могло быть уже выгружено */
+      
     }
     clip.el = null;
     clip.lastTime = 0;
@@ -3411,7 +3374,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
             video.load();
             video.remove();
           } catch (_) {
-            /* уже удалено */
+            
           }
         }
       });
@@ -3467,9 +3430,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       : null;
     let catalog = embedded;
 
-    // file:// cannot fetch local JSON because of the browser CORS policy.
-    // The generated videos-data.js script is loaded before this file and acts
-    // as an instant, error-free fallback in that case.
     if (location.protocol !== 'file:') {
       try {
         const response = await fetch('./videos.json', { cache: 'no-store' });
@@ -3607,7 +3567,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     }
   }
 
-  /* ---------------------------------------------------------- воспроизведение */
+  
 
   function playClip(category, index) {
     if (!category || category.index !== state.index) return;
@@ -3633,7 +3593,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
         const promise = video.play();
         if (promise && typeof promise.catch === 'function') {
           promise.catch(() => {
-            // Autoplay может ждать первого касания; проснёмся в pointerdown.
           });
         }
       } else {
@@ -3665,7 +3624,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     if (promise && typeof promise.catch === 'function') promise.catch(() => {});
   }
 
-  /* -------------------------------------------------- юнгианский движок */
+  
 
   function rewardCategory(category, reason) {
     if (!category || engine.phase !== 'flow' || state.resonanceAwarded) return;
@@ -3793,7 +3752,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     const to = slides[targetIndex];
     const duration = fadeMs || SLOW_FADE_MS;
 
-    // Меняем длительность до классов: CSS-переход подхватывает новое значение.
     stage.style.setProperty('--fade-duration', `${duration}ms`);
 
     stage.classList.remove('is-held');
@@ -3802,8 +3760,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     setSoundDepth(false);
     pauseCategory(categories[fromIndex]);
 
-    // Перекрёстное растворение: старый кадр гаснет, новый проявляется сразу.
-    // Никаких таймеров и блокировки — следующий свайп может прервать это в любой момент.
     from.classList.remove('is-active');
     to.classList.add('is-active');
 
@@ -3836,7 +3792,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       if (isVideoSeen(forcedClipId)) sessionUsedVideoIds.delete(forcedClipId);
     }
 
-    // Новый кадр и его персональный трек стартуют в одном тике.
     const planned = pathPlan[pathPos];
     if (!forcedClipId && planned && planned.category === category) {
       const plannedIndex = category.clips.findIndex((clip) => clip.id === planned.clip.id);
@@ -3859,7 +3814,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     }
   }
 
-  /* ------------------------------------------------------------- телеметрия */
+  
 
   function reportSwipe(direction, speed) {
     const category = activeCategory();
@@ -3893,7 +3848,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     return record;
   }
 
-  /* ------------------------------------------------------------- переходы */
+  
 
   function compressShadowCycle() {
     if (shadowCompressed || pathPos !== 1) return;
@@ -3945,7 +3900,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
           return;
         }
       } catch (error) {
-        /* fall through to a playable scene */
+        
       }
 
       forceNextAvailableScene(direction);
@@ -4026,7 +3981,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     );
   }
 
-  /* ---------------------------------------------------------- удержание */
+  
 
   function startHold() {
     holdTimer = 0;
@@ -4106,7 +4061,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     stage.classList.remove('is-held');
   }
 
-  /* -------------------------------------------------------------- свайпы */
+  
 
 
 
@@ -4205,7 +4160,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
 
   window.addEventListener('blur', abortGesture);
 
-  /* ------------------------------- колесо мыши как свайп на десктопе */
+  
 
   let wheelSum = 0;
   let wheelFirstAt = 0;
@@ -4240,7 +4195,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     }
   }, { passive: false });
 
-  /* ------------------------------------ пауза, когда вкладка скрыта */
+  
 
   window.addEventListener('keydown', (event) => {
     const key = event.key;
@@ -4312,12 +4267,12 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     video.play().catch(() => {});
   });
 
-  /* ------------------------------------------------------------ инициализация */
+  
 
   try {
     prepareSoundLibrary();
   } catch (error) {
-    console.warn('[sanctuary] sound library failed:', error);
+
   }
 
   stage.dataset.element = 'fog';
@@ -4504,7 +4459,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
           try { window.close(); window.blur(); } catch (_) {}
         }
       } catch (_) {
-        /* установка может быть отменена системой */
+        
       }
       if (!isIos()) hideInstallCard();
       syncInstallButton();
@@ -4750,7 +4705,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
         const first = pathPlan[0];
         prefetchCaption(first.clip, first.category, behaviorContext(), first.stage);
       } catch (error) {
-        console.warn('[sanctuary] caption prefetch failed:', error);
+
       }
 
       if (gateOpen && !pathStarted) {
@@ -4768,7 +4723,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).catch((error) => {
-        console.warn('[sanctuary] service worker registration failed', error);
+
       });
     });
   }
