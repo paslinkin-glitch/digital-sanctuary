@@ -1020,12 +1020,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     synchronicity.symbol = clip.element || ELEMENT_DEFAULT[activeCategory().tag] || 'fog';
     synchronicity.anchorClipId = clip.id;
 
-    console.info('[sanctuary] shadow anchor', {
-      source,
-      symbol: synchronicity.symbol,
-      video: clip.title,
-      inSwipes: synchronicity.threshold,
-    });
+
   }
 
   function findSyncTarget() {
@@ -1468,54 +1463,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     requestCaption(clip, category, behavior, stageId).catch(() => {});
   }
 
-  function likelyNextCategories() {
-    const current = activeCategory();
 
-    if (engine.phase === 'diagnostic') {
-      if (engine.diagnosticViews.length === 0) {
-        const calm = categoryByTag('Calm');
-        return calm ? [calm] : [];
-      }
-      if (engine.diagnosticViews.length === 1) {
-        const abyss = categoryByTag('Abyss');
-        return abyss ? [abyss] : [];
-      }
-      return categories.filter((category) => category.index !== current.index);
-    }
 
-    for (const tag of engine.forced) {
-      const forced = categoryByTag(tag);
-      if (forced && forced.index !== current.index) return [forced];
-    }
 
-    if (isDeepEngagement() && engine.sincePath >= engine.pathEvery && current.tag !== 'Path') {
-      const path = categoryByTag('Path');
-      return path ? [path] : [];
-    }
-
-    return categories.filter((category) => category.index !== current.index);
-  }
-
-  function peekNextClip(category) {
-    if (!category || !category.clips.length) return null;
-
-    const available = (index) => {
-      const clip = category.clips[index];
-      return Boolean(clip) && (!clip.id || !sessionUsedVideoIds.has(clip.id));
-    };
-
-    if (category.freshIndex !== null && available(category.freshIndex)) {
-      return category.clips[category.freshIndex];
-    }
-
-    const start = category.lastPlayed === null ? -1 : category.lastPlayed;
-    for (let step = 1; step <= category.clips.length; step += 1) {
-      const index = (start + step + category.clips.length) % category.clips.length;
-      if (available(index)) return category.clips[index];
-    }
-
-    return null;
-  }
 
   function prefetchNextCaptions(behavior) {
     const next = pathPlan[pathPos + 1];
@@ -2280,73 +2230,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     return score;
   }
 
-  function selectClips(pool, category, allowSeen = false) {
-    const unique = [];
-    const seen = new Set();
 
-    for (const clip of pool) {
-      if (!clip || seen.has(clip.id) || (!allowSeen && isVideoSeen(clip.id))) continue;
-      seen.add(clip.id);
-      unique.push(clip);
-    }
-
-    unique.sort((a, b) => scoreClip(b, category) - scoreClip(a, category));
-
-    const selected = unique.slice(0, CLIPS_PER_CATEGORY);
-    const reserve = FALLBACK_CLIPS[category.tag] || [];
-
-    for (const clip of reserve) {
-      if (selected.length >= CLIPS_PER_CATEGORY) break;
-      if (!clip.id || (!allowSeen && isVideoSeen(clip.id))) continue;
-      if (!selected.some((item) => item.id === clip.id)) {
-        selected.push({
-          ...clip,
-          description: clip.description || '',
-          tags: Array.isArray(clip.tags) ? clip.tags : [],
-          element: clip.element || elementForClip(clip.title, [], category.tag, ''),
-        });
-      }
-    }
-
-    // Один якорь каждой стихии в пуле: иначе «Синхроничность» не найдёт
-    // видео с тем же символом в другой категории.
-    const symbolsInPool = new Set(unique.map((clip) => clip.element));
-    for (const symbol of symbolsInPool) {
-      if (selected.some((clip) => clip.element === symbol)) continue;
-
-      const candidate = unique.find(
-        (clip) => clip.element === symbol && !selected.some((item) => item.id === clip.id)
-      );
-      if (!candidate) continue;
-
-      if (selected.length < CLIPS_PER_CATEGORY) {
-        selected.push(candidate);
-        continue;
-      }
-
-      const counts = {};
-      for (const clip of selected) {
-        counts[clip.element] = (counts[clip.element] || 0) + 1;
-      }
-
-      let replaceIndex = -1;
-      selected.forEach((clip, index) => {
-        if (counts[clip.element] <= 1) return;
-        if (
-          replaceIndex < 0
-          || scoreClip(clip, category) < scoreClip(selected[replaceIndex], category)
-        ) {
-          replaceIndex = index;
-        }
-      });
-
-      if (replaceIndex >= 0) {
-        selected[replaceIndex] = candidate;
-      }
-    }
-
-    return selected;
-  }
 
   function nextClipIndex(category) {
     const clips = category.clips;
@@ -2450,41 +2334,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     return picks;
   }
 
-  function appendPathCycle(allowSeen = false) {
-    const picked = new Set();
-    const entries = [];
 
-    for (const stage of STAGES) {
-      const spec = CYCLE_STAGES.find((item) => item.id === stage.id);
-      const count = spec ? spec.count : 3;
-      const picks = pickStageClips(stage, count, picked, allowSeen);
-      if (picks.length < 3) return false;
-      entries.push(...picks);
-    }
-
-    const last = entries[entries.length - 1];
-    if (last && last.stage === 4 && !last.clip.is_finale) {
-      const used = new Set(entries.map((entry) => entry.clip.id));
-      const pathStage = stageFor(4);
-      const pathCategories = categories.filter((category) => pathStage.categories.includes(category.tag));
-      const final = pathCategories
-        .flatMap((category) => category.clips.map((clip) => ({ category, clip })))
-        .find(({ category, clip }) => (
-          clip.is_finale
-          && !clip.invalid
-          && !used.has(clip.id)
-          && (allowSeen || !isVideoSeen(clip.id))
-        ));
-      if (final) {
-        last.clip = final.clip;
-        last.category = final.category;
-      }
-    }
-
-    for (const entry of entries) pathPicked.add(entry.clip.id);
-    pathPlan.push(...entries);
-    return true;
-  }
 
   function appendFallbackPath(allowSeen = false) {
     const entries = [];
@@ -2906,24 +2756,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     return counted;
   }
 
-  function scheduleSessionFinale() {
-    window.clearTimeout(sessionFinalTimer);
-    sessionFinalTimer = window.setTimeout(() => {
-      sessionFinalTimer = 0;
-      recordSessionEvent(null);
-      finishSession();
-    }, SESSION_FINALE_DELAY_MS);
-  }
 
-  function summarizeEventsForBeacon(events) {
-    const top = events
-      .slice()
-      .sort((a, b) => (b.heldMs || 0) - (a.heldMs || 0) || (b.viewedMs || 0) - (a.viewedMs || 0))[0];
-    return {
-      title: (top && top.title) || '',
-      stage: (top && top.stage) || sessionStage,
-    };
-  }
+
+
 
   const FINALE_TIMEOUT_MS = 1500;
 
@@ -3146,73 +2981,13 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     ];
   }
 
-  function parsePortraitLines(raw) {
-    const cleaned = String(raw || '')
-      .replace(/^["«]+|["»]+$/g, '')
-      .replace(/^\s*[-–—]\s*/gm, '')
-      .trim();
-    if (!cleaned) return [];
 
-    let lines = cleaned.split(/\n\s*\n/).map((line) => line.trim()).filter(Boolean);
-    if (lines.length < 5) {
-      lines = cleaned.split(/\n+/).map((line) => line.trim()).filter(Boolean);
-    }
-    return lines.slice(0, 6);
-  }
 
-  function isPortraitValid(lines) {
-    if (!Array.isArray(lines) || (lines.length !== 5 && lines.length !== 6)) return false;
 
-    const text = lines.join(' ').trim();
-    const words = text.split(/\s+/).filter(Boolean);
-    if (words.length < 45 || words.length > 140) return false;
-    if (currentLang === 'en') {
-      if (!/[A-Za-z]/.test(text)) return false;
-    } else if (!/[А-Яа-яЁё]/.test(text)) {
-      return false;
-    }
-    if (/[<>]/.test(text)) return false;
-    if (!/\?/.test(lines[lines.length - 1])) return false;
-    if (/(тебе нужно|ты должен|ты должна|просто сделай|поп-психолог|you need to|you should|just do it|toxic|narcissist)/iu.test(text)) return false;
-    return true;
-  }
 
-  function renderSessionPortrait(lines) {
-    if (!finalePortraitEl) return;
-    const safeLines = Array.isArray(lines) && lines.length
-      ? lines
-      : fallbackSessionPortrait();
-    portraitText = safeLines.join('\n\n');
-    finalePortraitEl.textContent = '';
 
-    safeLines.forEach((line, index) => {
-      const paragraph = document.createElement('p');
-      paragraph.textContent = line;
-      if (index === safeLines.length - 1) paragraph.classList.add('is-question');
-      finalePortraitEl.appendChild(paragraph);
-    });
-  }
 
-  async function copySessionPortrait() {
-    const text = portraitText || (finalePortraitEl ? finalePortraitEl.innerText : '');
-    if (!text) return;
 
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch (_) {
-      const area = document.createElement('textarea');
-      area.value = text;
-      area.style.position = 'fixed';
-      area.style.opacity = '0';
-      document.body.appendChild(area);
-      area.select();
-      try { document.execCommand('copy'); } catch (_) { /* clipboard недоступен */ }
-      area.remove();
-    }
-
-    if (copySnapshotButton) copySnapshotButton.textContent = tr('copied');
-    trackEvent('copy_verdict');
-  }
 
   function scheduleReturnNotification(unlockAt) {
     const body = tr('notificationBody');
@@ -3663,23 +3438,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     prunePlaybackVideos(keep);
   }
 
-  function appendClips(category, clips) {
-    if (!clips.length) return;
 
-    const room = Math.max(0, CLIPS_PER_CATEGORY - category.clips.length);
-    if (!room) return;
-
-    const media = category.el.querySelector('.media');
-    if (!media) return;
-
-    const incoming = clips.slice(0, room);
-    const firstNew = category.clips.length;
-    incoming.forEach((clip) => {
-      category.clips.push(clip);
-    });
-
-    category.freshIndex = firstNew;
-  }
 
   const CATALOG_STAGE_CATEGORIES = {
     shadow: ['Shadow'],
@@ -3825,10 +3584,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     }
     resetViewedCycleIfComplete();
 
-    console.info('[sanctuary] catalog loaded:', {
-      videos: loaded,
-      categories: categories.map((category) => `${category.tag}: ${category.clips.length}`),
-    });
+
 
     return loaded;
   }
@@ -3919,11 +3675,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     engine.weights[category.tag] = nextWeight;
     engine.resonanceTotal += 1;
 
-    console.info('[sanctuary] resonance', {
-      category: category.tag,
-      reason,
-      weight: nextWeight,
-    });
+
 
   }
 
@@ -4019,37 +3771,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     return target;
   }
 
-  function chooseNext(record) {
-    if (engine.phase === 'diagnostic') {
-      engine.diagnosticViews.push(record.viewedMs);
-      engine.recentViews.push(record.viewedMs);
-      if (engine.recentViews.length > 6) engine.recentViews.shift();
 
-      if (engine.diagnosticViews.length === 1) {
-        engine.lastDecision = 'diagnostic:calm';
-        return categoryByTag('Calm').index;
-      }
-
-      if (engine.diagnosticViews.length === 2) {
-        engine.lastDecision = 'diagnostic:abyss';
-        return categoryByTag('Abyss').index;
-      }
-
-      engine.averagePaceMs = Math.round(
-        engine.diagnosticViews.reduce((sum, value) => sum + value, 0) /
-          engine.diagnosticViews.length
-      );
-      engine.phase = 'flow';
-      engine.lastDecision = 'diagnostic:complete';
-      registerBehavior(record);
-      return selectFlowTarget();
-    }
-
-    engine.recentViews.push(record.viewedMs);
-    if (engine.recentViews.length > 6) engine.recentViews.shift();
-    registerBehavior(record);
-    return selectFlowTarget();
-  }
 
   function fadeDurationFor(viewedMs, speed) {
     const impulsive = speed >= IMPULSIVE_SPEED;
@@ -4167,7 +3889,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       loggedAt: new Date().toISOString(),
     };
 
-    console.log('[sanctuary] swipe', record);
+
     return record;
   }
 
@@ -4196,7 +3918,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     pathPlan.splice(2, 3, ...replacements);
     for (const entry of replacements) pathPicked.add(entry.clip.id);
     shadowCompressed = true;
-    console.info('[sanctuary] first two frames were fast; Shadow softened to two frames');
   }
 
   function go(direction, speed) {
@@ -4387,51 +4108,9 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
 
   /* -------------------------------------------------------------- свайпы */
 
-  function swipeThreshold() {
-    return Math.max(44, stage.clientHeight * SWIPE_MIN_RATIO);
-  }
 
-  function endGesture(event) {
-    if (!gesture || event.pointerId !== gesture.id) return;
 
-    window.clearTimeout(holdTimer);
-    window.clearTimeout(resonanceTimer);
-    window.clearTimeout(captionRevealTimer);
-    holdTimer = 0;
-    resonanceTimer = 0;
-    captionRevealTimer = 0;
-    const wasHolding = Boolean(gesture && gesture.holding);
-    stopHold();
 
-    const g = gesture;
-    gesture = null;
-    stopHoldPulse();
-
-    setActivePlaybackRate(1);
-    setBreath(0);
-    stopOptics();
-    markInteraction();
-
-    const dx = event.clientX - g.x0;
-    const dy = event.clientY - g.y0;
-    const distance = Math.abs(dy);
-    const elapsed = Math.max(1, now() - g.t0);
-    const velocity = distance / elapsed;
-
-    if (distance < Math.abs(dx)) {
-      state.nervousStreak = 0;
-      return;
-    }
-
-    const isLongEnough = distance >= (wasHolding ? 85 : SWIPE_MIN_PX);
-    const isFlick = !wasHolding && distance >= FLICK_MIN_PX && velocity >= FLICK_MIN_SPEED;
-
-    if (isLongEnough || isFlick) {
-      go(dy < 0 ? 'up' : 'down', velocity);
-    } else {
-      state.nervousStreak = 0;
-    }
-  }
 
   function isInterfaceTarget(target) {
     return Boolean(target && target.closest('button, a, .install-card, .install-card--ios, .lang-switch, .finale'));
@@ -4793,12 +4472,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     syncInstallButton();
   }
 
-  function nudgeInstallCard(delay = 3500, finalContext = false) {
-    window.clearTimeout(installNudgeTimer);
-    installNudgeTimer = window.setTimeout(() => {
-      if (!isStandaloneMode() && !gateOpen) showInstallCard(true, finalContext);
-    }, delay);
-  }
+
 
   function showIosInstallHint() {
     const target = installCard && !installCard.hidden
@@ -5018,9 +4692,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
   applyLanguage();
   window.addEventListener('load', () => trackEvent('threshold_open'), { once: true });
 
-  if (copySnapshotButton) {
-    copySnapshotButton.addEventListener('click', copySessionPortrait);
-  }
 
   if (notifyReturnButton) {
     notifyReturnButton.addEventListener('click', enableReturnNotification);
@@ -5051,11 +4722,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     try {
       const total = categories.reduce((sum, category) => sum + category.clips.length, 0);
       const music = categories.reduce((sum, category) => sum + category.musicTracks.length, 0);
-      console.info('[sanctuary] video feed ready:', {
-        clips: total,
-        music,
-        categories: categories.map((category) => `${category.tag}: ${category.clips.length}`),
-      });
+
 
       try {
         if (!buildSessionPlan()) appendFallbackPath(true);
