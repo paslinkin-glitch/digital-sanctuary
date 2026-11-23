@@ -2962,3 +2962,37 @@ html:not([data-maintenance="true"]) #maintenance-screen {
 .entry.has-install-card .entry-actions {
   transform: none;
 }
+
+
+/* v39 input safety: invisible layers must never hold a finger */
+html:not([data-maintenance="true"]) #maintenance-screen {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+.caption-shade,
+.touch-vignette,
+.cycle-whisper:not(.is-visible),
+.finale:not(.is-visible) {
+  pointer-events: none !important;
+}
+
+.entry:not(.is-open) {
+  pointer-events: none;
+}
+
+.entry:not(.is-open) .entry-actions,
+.entry:not(.is-open) .entry-trigger,
+.entry:not(.is-open) .entry-install {
+  pointer-events: auto;
+}
+
+.stage,
+.viewport {
+  touch-action: none;
+}
+
+.install-card,
+.install-card--ios {
+  pointer-events: auto;
+}

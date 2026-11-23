@@ -897,6 +897,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   state.visits[0] = 1;
 
   let gesture = null;
+  let isTransitioning = false;
   let holdTimer = 0;
   let lastSwipeAt = 0;
   let lastBottomTapAt = 0;
@@ -3666,6 +3667,7 @@ ${JSON.stringify(events, null, 2)}`;
   }
 
   function startPathFirst() {
+    isTransitioning = false;
     if (pathStarted || !pathPlan.length) return false;
 
     beginSession();
@@ -5135,11 +5137,14 @@ ${JSON.stringify(events, null, 2)}`;
 
   function unlockExperience() {
     if (gateOpen) return;
+    isTransitioning = false;
+    window.setTimeout(() => { isTransitioning = false; }, 1000);
     if (isSessionLocked()) {
       updateSessionLockUI();
       return;
     }
     gateOpen = true;
+    isTransitioning = false;
     requestWakeLock();
     trackEvent('session_start', { local_hour: new Date().getHours() });
     if (returnAfterLock) {
