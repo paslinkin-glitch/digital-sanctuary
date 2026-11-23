@@ -60,10 +60,10 @@
   const CAPTION_START_DELAY_MS = 1200;
   const CAPTION_MIN_WORDS = 4;
   const CAPTION_MAX_WORDS = 6;
-  const CAPTION_MAX_RATIO = 0.45;
+  const CAPTION_MAX_RATIO = 0.30;
   const EARLY_SWIPE_RATIO = 0.55;
   const CAPTION_LINGER_MS = 3500;
-  const CAPTION_HOLD_REVEAL_MS = 1100;
+  const CAPTION_HOLD_REVEAL_MS = 750;
   const CAPTION_YOU_LIMIT = 1;
   const CAPTION_TIMEOUT_MS = 1500;
   const CAPTION_SYSTEM_PROMPT_RU = `Ты — тихий голос сна, который звучит рядом с изображением. Пиши только по-русски.
@@ -944,6 +944,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   let sessionTextFrames = 0;
   let quietSinceText = 0;
   let quietRequired = 1;
+  let lastCaptionFrame = -99;
   let sessionFinalTimer = 0;
   let cycleNumber = 1;
   let cycleWhisperTimer = 0;
@@ -1501,7 +1502,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       sessionTextFrames + 1
     );
     quietSinceText = 0;
-    quietRequired = 1 + Math.floor(Math.random() * 2);
+    quietRequired = 2 + Math.floor(Math.random() * 2);
   }
 
   function captionAllowedForScene(context) {
@@ -1515,6 +1516,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (context && context.held) return true;
     if (sceneOrdinal <= 1) return true;
     if (sessionTextFrames >= cap) return false;
+    if (pathPos - lastCaptionFrame < 3) {
+      quietSinceText = Math.max(quietSinceText, 2);
+      return false;
+    }
 
     if (quietSinceText < quietRequired) {
       quietSinceText += 1;
@@ -1522,6 +1527,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
 
     registerCaptionFrame();
+    lastCaptionFrame = pathPos;
     return true;
   }
 
@@ -1583,6 +1589,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       captionEl.setAttribute('aria-hidden', 'false');
       captionEl.classList.remove('is-zero');
       captionEl.classList.add('is-visible');
+      stage.classList.add('is-caption-active');
       captionRevealed = true;
       if (currentCaption) {
         currentCaption.revealed = true;
@@ -1609,8 +1616,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     captionEl.setAttribute('aria-hidden', 'false');
     captionEl.classList.remove('is-zero');
     captionEl.classList.add('is-visible');
+    stage.classList.add('is-caption-active');
     captionRevealed = true;
     if (currentCaption) {
+      currentCaption.holdReveal = true;
       currentCaption.revealed = true;
       if (!currentCaption.haptic) {
         currentCaption.haptic = true;
@@ -1639,6 +1648,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (!captionEl) return;
 
     captionEl.classList.remove('is-visible', 'is-zero', 'is-awake');
+    document.querySelector('.stage')?.classList.remove('is-caption-active');
     captionEl.setAttribute('aria-hidden', 'true');
 
     if (!clip || !category) return;
@@ -3552,6 +3562,10 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     };
     const usedIds = new Set();
     const usedUrls = new Set();
+    const usedBaseKeys = new Set();
+    const baseVideoKey = (value) => String(value || '').split('/').pop().split('?')[0]
+      .replace(/^(shadow|trickster_abyss|calm|path)_\d+_/, '')
+      .replace(/\.mp4$/, '');
     let tricksterFlip = 0;
     let loaded = 0;
 
@@ -3559,6 +3573,9 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       if (!item || typeof item.url !== 'string' || !/^https:\/\//i.test(item.url)) continue;
       if (usedUrls.has(item.url)) continue;
       if (BLOCKED_VIDEO_IDS.has(String(item.id || '')) || BLOCKED_VIDEO_IDS.has(String(item.fileHash || '')) || BLOCKED_VIDEO_IDS.has(String(item.url || ''))) continue;
+      const baseKey = baseVideoKey(item.url);
+      if (usedBaseKeys.has(baseKey)) continue;
+      usedBaseKeys.add(baseKey);
 
       const itemSize = Number(item.size) || 0;
       const itemWidth = Number(item.width) || 0;
@@ -4131,6 +4148,13 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     if (!gesture || !gesture.holding) return;
 
     gesture.holding = false;
+    if (currentCaption && currentCaption.holdReveal) {
+      currentCaption.holdReveal = false;
+      captionEl.classList.remove('is-visible');
+      stage.classList.remove('is-caption-active');
+      captionRevealed = false;
+      currentCaption.revealed = false;
+    }
     const duration = now() - gesture.holdStart;
     state.heldMs += duration;
     state.longestHoldMs = Math.max(state.longestHoldMs, duration);

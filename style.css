@@ -56,3 +56,12 @@ body .entry.is-installed > .entry-installed-note{display:block!important;positio
 .caption.is-zero{animation:none!important;opacity:.16!important}
 .caption.is-awake,.stage.is-touching .caption,.stage.is-held .caption{animation:none!important;opacity:.92!important;transform:translateX(-50%) scale(1.03)!important;transition:opacity .35s ease,transform .6s cubic-bezier(.22,1,.36,1)!important}
 @keyframes whisperBreath{0%{opacity:.42}40%{opacity:.88}100%{opacity:.42}}
+
+
+/* v63 optical center whisper */
+.caption{top:47%!important;bottom:auto!important;left:50%!important;right:auto!important;transform:translate(-50%,-50%)!important;width:min(84vw,400px)!important;max-width:84vw!important;padding:0!important;border:0!important;background:none!important;text-align:center!important;animation:whisperBreath 10s ease-in-out infinite}
+.caption::before{width:40px!important;height:.5px!important;margin:0 auto 12px!important;background:linear-gradient(90deg,transparent,#D6C7B2,transparent)!important}
+.caption-line{font-family:var(--serif)!important;font-weight:300!important;font-size:clamp(25px,6.5vw,31px)!important;line-height:1.35!important;letter-spacing:.02em!important;color:#F5F5F0!important;text-align:center!important;text-shadow:0 2px 24px rgba(7,7,9,.92)!important}
+.caption.is-zero{animation:none!important;opacity:.16!important;transform:translate(-50%,-50%)!important}
+.caption.is-awake,.stage.is-touching .caption,.stage.is-held .caption{animation:none!important;opacity:.92!important;transform:translate(-50%,-50%) scale(1.03)!important}
+.stage.is-caption-active .slide.is-active video{filter:brightness(.75);transition:filter 1.2s var(--organic)}
