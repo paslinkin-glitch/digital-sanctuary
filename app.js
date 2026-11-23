@@ -503,35 +503,35 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   // поисковых запросов API, и чередуются под каждый новый кадр.
   const MUSIC_CATALOG = {
     Shadow: [
-      { id: 'HDgXJpCNph', title: 'Whisper Canyon', url: 'https://cdn.coverr.co/audios/coverr-song-15-whisper-canyon-ambient-5-mix-1--zXUbWU/preview.mp3' },
-      { id: 'DoetucQLKg', title: 'Monolith', url: 'https://cdn.coverr.co/audios/coverr-song-12-monolith-ambient-4-mix-2-ozGFbG/preview.mp3' },
-      { id: '2v8dZRPll8', title: 'inner world', url: 'https://cdn.coverr.co/audios/coverr-inner-world-7oAf9q/preview.mp3' },
-      { id: 'mvh5rImd1R', title: 'clouds', url: 'https://cdn.coverr.co/audios/coverr-clouds-tzNU5D/preview.mp3' },
+      { id: 'HDgXJpCNph', title: 'Whisper Canyon', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/whisper-canyon-HDgXJpCNph.mp3' },
+      { id: 'DoetucQLKg', title: 'Monolith', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/monolith-DoetucQLKg.mp3' },
+      { id: '2v8dZRPll8', title: 'inner world', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/inner-world-2v8dZRPll8.mp3' },
+      { id: 'mvh5rImd1R', title: 'clouds', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/clouds-mvh5rImd1R.mp3' },
     ],
     Calm: [
-      { id: 'HTzsyicaIT', title: 'crystal rain', url: 'https://cdn.coverr.co/audios/coverr-crylstal-rain-uq0tDK/preview.mp3' },
-      { id: 'WUzwP3T0HC', title: 'tokio rain', url: 'https://cdn.coverr.co/audios/coverr-tokio-rain-VBOD5g/preview.mp3' },
-      { id: '2v8dZRPll8', title: 'inner world', url: 'https://cdn.coverr.co/audios/coverr-inner-world-7oAf9q/preview.mp3' },
-      { id: 'mvh5rImd1R', title: 'clouds', url: 'https://cdn.coverr.co/audios/coverr-clouds-tzNU5D/preview.mp3' },
+      { id: 'HTzsyicaIT', title: 'crystal rain', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/crystal-rain-HTzsyicaIT.mp3' },
+      { id: 'WUzwP3T0HC', title: 'tokio rain', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/tokio-rain-WUzwP3T0HC.mp3' },
+      { id: '2v8dZRPll8', title: 'inner world', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/inner-world-2v8dZRPll8.mp3' },
+      { id: 'mvh5rImd1R', title: 'clouds', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/clouds-mvh5rImd1R.mp3' },
     ],
     Abyss: [
-      { id: '5nxzquf11g', title: 'The Color of Space', url: 'https://cdn.coverr.co/audios/coverr-09-the-color-of-space-HGrgoz/preview.mp3' },
-      { id: 'AeWsKx2z16', title: 'A Look At The Sky', url: 'https://cdn.coverr.co/audios/coverr-a-look-at-the-sky-xEdhi6/preview.mp3' },
-      { id: 'sGPevMbGzP', title: 'Deep Meditation', url: 'https://cdn.coverr.co/audios/coverr-deep-meditation-U8tCn6/preview.mp3' },
-      { id: 'mvh5rImd1R', title: 'clouds', url: 'https://cdn.coverr.co/audios/coverr-clouds-tzNU5D/preview.mp3' },
+      { id: '5nxzquf11g', title: 'The Color of Space', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/the-color-of-space-5nxzquf11g.mp3' },
+      { id: 'AeWsKx2z16', title: 'A Look At The Sky', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/a-look-at-the-sky-AeWsKx2z16.mp3' },
+      { id: 'sGPevMbGzP', title: 'Deep Meditation', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/deep-meditation-sGPevMbGzP.mp3' },
+      { id: 'mvh5rImd1R', title: 'clouds', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/clouds-mvh5rImd1R.mp3' },
     ],
     Trickster: [
-      { id: 'EX6e6IkDGx', title: 'A Piano For Travel', url: 'https://cdn.coverr.co/audios/coverr-a-piano-for-travel-OgNcjz/preview.mp3' },
-      { id: 'aUHfXkgixI', title: 'Cinematic Visions', url: 'https://cdn.coverr.co/audios/coverr-08-cinematic-visions-wdPqT9/preview.mp3' },
-      { id: 'yutSfOSE7l', title: 'Lotus Flower', url: 'https://cdn.coverr.co/audios/coverr-08-lotus-flower-mDp10e/preview.mp3' },
-      { id: 'p2sexNoWO6', title: 'horizons', url: 'https://cdn.coverr.co/audios/coverr-horizons-1WOjtJ/preview.mp3' },
+      { id: 'EX6e6IkDGx', title: 'A Piano For Travel', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/a-piano-for-travel-EX6e6IkDGx.mp3' },
+      { id: 'aUHfXkgixI', title: 'Cinematic Visions', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/cinematic-visions-aUHfXkgixI.mp3' },
+      { id: 'yutSfOSE7l', title: 'Lotus Flower', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/lotus-flower-yutSfOSE7l.mp3' },
+      { id: 'p2sexNoWO6', title: 'horizons', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/horizons-p2sexNoWO6.mp3' },
     ],
     Path: [
-      { id: 'EX6e6IkDGx', title: 'A Piano For Travel', url: 'https://cdn.coverr.co/audios/coverr-a-piano-for-travel-OgNcjz/preview.mp3' },
-      { id: 'aUHfXkgixI', title: 'Cinematic Visions', url: 'https://cdn.coverr.co/audios/coverr-08-cinematic-visions-wdPqT9/preview.mp3' },
-      { id: 'yutSfOSE7l', title: 'Lotus Flower', url: 'https://cdn.coverr.co/audios/coverr-08-lotus-flower-mDp10e/preview.mp3' },
-      { id: 'p2sexNoWO6', title: 'horizons', url: 'https://cdn.coverr.co/audios/coverr-horizons-1WOjtJ/preview.mp3' },
-      { id: 'Ou9ZrAwafj', title: 'Through The Looking Glass', url: 'https://cdn.coverr.co/audios/coverr-song-1-ambient-1-mix-1-OCpc63/preview.mp3' },
+      { id: 'EX6e6IkDGx', title: 'A Piano For Travel', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/a-piano-for-travel-EX6e6IkDGx.mp3' },
+      { id: 'aUHfXkgixI', title: 'Cinematic Visions', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/cinematic-visions-aUHfXkgixI.mp3' },
+      { id: 'yutSfOSE7l', title: 'Lotus Flower', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/lotus-flower-yutSfOSE7l.mp3' },
+      { id: 'p2sexNoWO6', title: 'horizons', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/horizons-p2sexNoWO6.mp3' },
+      { id: 'Ou9ZrAwafj', title: 'Through The Looking Glass', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/through-the-looking-glass-Ou9ZrAwafj.mp3' },
     ],
   };
 
@@ -2225,119 +2225,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
 
   /* ------------------------------------------------------------- Coverr API */
 
-  async function fetchVideoPage(query, page) {
-    const controller = new AbortController();
-    const timer = window.setTimeout(() => controller.abort(), API_TIMEOUT_MS);
-
-    try {
-      const url = new URL(API_ENDPOINT);
-      url.searchParams.set('query', query);
-      url.searchParams.set('api_key', API_KEY);
-      url.searchParams.set('urls', 'true');
-      url.searchParams.set('page', String(page));
-      url.searchParams.set('page_size', '25');
-
-      const response = await fetch(url.toString(), {
-        signal: controller.signal,
-        cache: 'no-store',
-      });
-
-      if (!response.ok) {
-        throw new Error(`Coverr API HTTP ${response.status}`);
-      }
-
-      const payload = await response.json();
-      return payload && Array.isArray(payload.hits) ? payload.hits : [];
-    } finally {
-      window.clearTimeout(timer);
-    }
-  }
-
-  async function searchVideos(query) {
-    if (!query) return [];
-
-    // Coverr uses zero-based pagination: page=0 is the first page. The UI
-    // still chooses one of eight logical pages 1..8, but sends page 0..7.
-    const randomPage = 1 + Math.floor(Math.random() * 8);
-    const apiPage = randomPage - 1;
-    let hits = [];
-
-    try {
-      hits = await fetchVideoPage(query, apiPage);
-    } catch (error) {
-      hits = [];
-    }
-
-    if (hits.length < 8) {
-      try {
-        const firstPage = await fetchVideoPage(query, 0);
-        hits = hits.concat(firstPage);
-      } catch (error) {
-      }
-    } else {
-      const unseenOnPage = hits.filter((hit) => {
-        const id = hit && (hit.video_id || hit.id || hit.objectID);
-        return Boolean(id) && !isVideoSeen(id);
-      }).length;
-
-      if (unseenOnPage < 8) {
-        try {
-          const firstPage = await fetchVideoPage(query, 0);
-          hits = hits.concat(firstPage);
-        } catch (error) {
-        }
-      }
-    }
-
-    const seen = new Set();
-    const result = shuffleArray(hits.filter((hit) => {
-      const id = hit && (hit.video_id || hit.id || hit.objectID);
-      if (!id || seen.has(id)) return false;
-      seen.add(id);
-      return true;
-    }));
-
-    return result;
-  }
-
-  function normalizeClip(hit, category) {
-    if (!hit || hit.is_premium === true) return null;
-    if (hit.state && hit.state !== 'published') return null;
-
-    const url = hit.urls && hit.urls.mp4;
-    if (typeof url !== 'string' || !url.endsWith('.mp4')) return null;
-
-    // Только прямые mp4 самого Coverr: никаких shutterstock и внешних ссылок.
-    if (/shutterstock/i.test(url)) return null;
-    if (!/^https:\/\/[a-z0-9.-]+\.coverr\.co\/videos\//i.test(url)) return null;
-
-    const duration = Number(hit.duration);
-    if (!Number.isFinite(duration) || duration < 3 || duration > 45) return null;
-
-    const id = hit.video_id || hit.id || hit.objectID || url;
-    const title = typeof hit.title === 'string' && hit.title.trim()
-      ? hit.title.trim()
-      : 'Untitled';
-    const description = typeof hit.description === 'string' ? hit.description : '';
-    const tags = Array.isArray(hit.tags)
-      ? hit.tags.filter((tag) => typeof tag === 'string')
-      : [];
-    const haystack = `${title} ${tags.join(' ')} ${description}`.toLowerCase();
-    if (category.blocked.some((word) => haystack.includes(word))) return null;
-
-    return {
-      id: String(id),
-      title,
-      url,
-      playUrl: playbackUrl(url),
-      duration,
-      description,
-      vertical: Boolean(hit.is_vertical),
-      tags,
-      element: elementForClip(title, tags, category.tag, description),
-    };
-  }
-
   // 720p — тот же ролик Coverr, но легче для мобильного автозапуска.
   // Если варианта нет, обработчик ошибки вернётся к исходному 1080p.
   function playbackUrl(url) {
@@ -3299,118 +3186,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     });
   }
 
-  async function requestSessionPortrait() {
-    const requestId = ++portraitRequestId;
-    if (finalePortraitEl) {
-      finalePortraitEl.innerHTML = `<p class="finale-loading">${tr('loading')}</p>`;
-    }
-
-    const fallback = fallbackSessionPortrait();
-    if (location.protocol === 'file:') {
-      renderSessionPortrait(fallback);
-      return;
-    }
-
-    const time = localTimeContext();
-    const events = sessionEvents.slice(-SESSION_LENGTH).map((event) => ({
-      stage: event.stage,
-      title: event.title,
-      seconds: Math.round((event.viewedMs || 0) / 100) / 10,
-      heldSeconds: Math.round((event.heldMs || 0) / 100) / 10,
-      early: Boolean(event.early),
-    }));
-    const stages = [1, 2, 3, 4].map((stageId) => {
-      const stageEvents = events.filter((event) => Number(event.stage) === stageId);
-      const top_titles = stageEvents
-        .slice()
-        .sort((a, b) => (b.heldSeconds - a.heldSeconds) || (b.seconds - a.seconds))
-        .slice(0, 3)
-        .map((event) => event.title)
-        .filter(Boolean);
-      return {
-        stage: stageId,
-        frames: stageEvents.length,
-        holds: stageEvents.filter((event) => event.heldSeconds > 0).length,
-        top_titles,
-      };
-    });
-    const summary = {
-      total_frames: events.length,
-      total_holds: events.filter((event) => event.heldSeconds > 0).length,
-      average_seconds: events.length
-        ? Math.round(events.reduce((sum, event) => sum + event.seconds, 0) / events.length * 10) / 10
-        : 0,
-      stages,
-    };
-
-    const system = currentLang === 'en'
-      ? `You are a Jungian phenomenological observer. Do not advise, flatter, diagnose, moralize or manipulate. Reflect the trajectory of attention without telling the reader what to do.
-Return exactly 5 short paragraphs separated by one blank line:
-1. Shadow — what the dark images kept near.
-2. Trickster and Abyss — where intensity, fire, water or disorientation pulled attention.
-3. Calm / Anima — where the pace softened and breath returned.
-4. Path / Self — what direction or image of openness appeared.
-5. One open, respectful question for the reader's own integration; it must end with a question mark.
-Use precise images from the supplied titles. No pop psychology, no advice, no “you should”, no “you need to”. 45–140 words total, in natural English.`
-      : `Ты — юнгианский феноменологический наблюдатель. Не советуй, не льсти, не ставь диагноз, не морализируй и не манипулируй. Отражай траекторию внимания, не указывая человеку, что делать.
-Верни ровно 5 коротких абзацев, разделённых пустой строкой:
-1. Тень — что удерживали тёмные образы.
-2. Трикстер и Бездна — где интенсивность, огонь, вода или дезориентация притягивали внимание.
-3. Покой / Анима — где темп смягчался и возвращалось дыхание.
-4. Путь / Самость — какое направление или образ открытости проступил.
-5. Один открытый, уважительный вопрос для самостоятельной интеграции; он должен заканчиваться знаком вопроса.
-Опирайся на конкретные названия кадров. Без поп-психологии, советов, «тебе нужно» и «ты должен». Всего 45–140 слов, естественным русским языком.`;
-
-    const user = currentLang === 'en'
-      ? `Local time: ${time.clock}, ${time.label}.
-Real 50-frame trajectory:
-${JSON.stringify(summary, null, 2)}
-Frames:
-${JSON.stringify(events, null, 2)}`
-      : `Локальное время: ${time.clock}, ${time.label}.
-Реальная траектория 50 кадров:
-${JSON.stringify(summary, null, 2)}
-События кадров:
-${JSON.stringify(events, null, 2)}`;
-
-    const controller = new AbortController();
-    const timer = window.setTimeout(() => controller.abort(), PORTRAIT_TIMEOUT_MS);
-
-    try {
-      const response = await fetch(DEEPSEEK_PROXY_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: [
-            { role: 'system', content: system },
-            { role: 'user', content: user },
-          ],
-          temperature: 0.78,
-          max_tokens: 260,
-        }),
-        signal: controller.signal,
-        cache: 'no-store',
-      });
-      if (!response.ok) {
-        renderSessionPortrait(fallback);
-        return;
-      }
-      const payload = await response.json();
-      const content = payload
-        && payload.choices
-        && payload.choices[0]
-        && payload.choices[0].message
-        && payload.choices[0].message.content;
-      const lines = parsePortraitLines(content);
-      if (requestId !== portraitRequestId) return;
-      renderSessionPortrait(isPortraitValid(lines) ? lines : fallback);
-    } catch (_) {
-      if (requestId === portraitRequestId) renderSessionPortrait(fallback);
-    } finally {
-      window.clearTimeout(timer);
-    }
-  }
-
   async function copySessionPortrait() {
     const text = portraitText || (finalePortraitEl ? finalePortraitEl.innerText : '');
     if (!text) return;
@@ -4040,100 +3815,6 @@ ${JSON.stringify(events, null, 2)}`;
     return loaded;
   }
 
-  async function loadCategory(category) {
-    category.loading = true;
-    const queries = [category.query];
-    if (category.fallbackQuery && category.fallbackQuery !== category.query) {
-      queries.push(category.fallbackQuery);
-    }
-
-    try {
-      try {
-        const results = await Promise.allSettled(queries.map((query) => searchVideos(query)));
-        const pool = [];
-
-        for (let i = 0; i < results.length; i += 1) {
-          const result = results[i];
-          if (result.status !== 'fulfilled') {
-            console.warn(`[sanctuary] Coverr query failed: "${queries[i]}"`, result.reason);
-            continue;
-          }
-          for (const hit of result.value) {
-            const clip = normalizeClip(hit, category);
-            if (clip) pool.push(clip);
-          }
-        }
-
-        const unseenSelected = selectClips(pool, category);
-        category.clips = unseenSelected.length >= 3
-          ? unseenSelected
-          : selectClips(pool, category, true);
-      } catch (error) {
-        console.warn('[sanctuary] Coverr category failed:', category.tag, error);
-        category.clips = [];
-      }
-
-      if (!category.clips.length) {
-        const fallbackClips = (FALLBACK_CLIPS[category.tag] || []).map((clip) => ({
-          ...clip,
-          description: clip.description || '',
-          tags: Array.isArray(clip.tags) ? clip.tags : [],
-          element: clip.element || elementForClip(clip.title, [], category.tag, ''),
-        }));
-        const unseenFallback = fallbackClips.filter((clip) => !isVideoSeen(clip.id));
-        category.clips = (unseenFallback.length ? unseenFallback : fallbackClips)
-          .slice(0, CLIPS_PER_CATEGORY);
-      }
-
-      mountClips(category);
-    } finally {
-      category.loading = false;
-    }
-
-    if (category.extendWanted) {
-      category.extendWanted = false;
-      expandCategory(category);
-    }
-  }
-
-  async function expandCategory(category) {
-    return;
-    if (!category || category.extendedLoaded || category.extendedLoading) return;
-    if (category.loading) {
-      category.extendWanted = true;
-      return;
-    }
-
-    category.extendedLoading = true;
-    try {
-      const hits = await searchVideos(category.extendedQuery);
-      const existing = new Set(category.clips.map((clip) => clip.id));
-      const seen = new Set();
-      const fresh = [];
-
-      for (const hit of hits) {
-        const clip = normalizeClip(hit, category);
-        if (!clip || existing.has(clip.id) || seen.has(clip.id)) continue;
-        seen.add(clip.id);
-        fresh.push(clip);
-      }
-
-      fresh.sort((a, b) => scoreClip(b, category) - scoreClip(a, category));
-      const selected = fresh.slice(0, 2);
-
-      if (selected.length) {
-        appendClips(category, selected);
-        console.info('[sanctuary] resonance expanded', category.tag, selected.map((clip) => clip.title));
-      }
-
-      category.extendedLoaded = true;
-    } catch (error) {
-      console.warn('[sanctuary] extended Coverr query failed:', category.tag, error);
-    } finally {
-      category.extendedLoading = false;
-    }
-  }
-
   function handleLoop(category, clipIndex, video) {
     if (category.index !== state.index || category.activeIndex !== clipIndex) return;
 
@@ -4227,7 +3908,6 @@ ${JSON.stringify(events, null, 2)}`;
       weight: nextWeight,
     });
 
-    expandCategory(category);
   }
 
   function isDeepEngagement() {
@@ -4837,9 +4517,25 @@ ${JSON.stringify(events, null, 2)}`;
       touchOrigin = null;
       return;
     }
+    const touch = event.touches[0];
+    if (gesture) abortGesture();
     enableSoundscape();
     wakePlayback();
-    const touch = event.touches[0];
+    gesture = {
+      id: 'touch',
+      x0: touch.clientX,
+      y0: touch.clientY,
+      xPrev: touch.clientX,
+      yPrev: touch.clientY,
+      t0: now(),
+      tPrev: now(),
+      moved: false,
+      holding: false,
+      holdStart: 0,
+      holdCounted: false,
+      thresholdFelt: false,
+      peakSpeed: 0,
+    };
     touchOrigin = {
       x: touch.clientX,
       y: touch.clientY,
@@ -4847,17 +4543,51 @@ ${JSON.stringify(events, null, 2)}`;
       t: now(),
       lastT: now(),
     };
+    if (gateOpen) {
+      markInteraction();
+      setSceneElement(activeClip());
+      startOptics(touch);
+      setActivePlaybackRate(SLOW_RATE);
+      setBreath(0);
+      rememberAnchor('touch');
+      prefetchNextCaptions(behaviorContext());
+      if (captionSuppressed && currentCaption) {
+        window.clearTimeout(captionRevealTimer);
+        captionRevealTimer = window.setTimeout(() => {
+          captionRevealTimer = 0;
+          revealCaptionForHold();
+        }, CAPTION_HOLD_REVEAL_MS);
+      }
+      holdTimer = window.setTimeout(startHold, HOLD_MS);
+      resonanceTimer = window.setTimeout(() => {
+        if (gesture && !gesture.moved) rewardCategory(activeCategory(), 'hold');
+      }, RESONANCE_HOLD_MS);
+    }
     if (event.cancelable) event.preventDefault();
   }, { passive: false });
 
   stage.addEventListener('touchmove', (event) => {
-    if (!touchOrigin || event.touches.length !== 1) return;
+    if (!touchOrigin || !gesture || event.touches.length !== 1) return;
     const touch = event.touches[0];
     const dx = touch.clientX - touchOrigin.x;
     const dy = touch.clientY - touchOrigin.y;
     if (Math.abs(dy) > 10 && event.cancelable) event.preventDefault();
-    if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 10) {
-      setBreath(clamp(-dy / 140, -1, 1));
+    if (gateOpen) {
+      updateOptics(touch);
+      if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 10) {
+        setBreath(clamp(-dy / 140, -1, 1));
+      }
+    }
+    if (Math.hypot(dx, dy) > 12 && !gesture.moved) {
+      gesture.moved = true;
+      window.clearTimeout(holdTimer);
+      window.clearTimeout(resonanceTimer);
+      holdTimer = 0;
+      resonanceTimer = 0;
+    }
+    if (gesture.holding && Math.hypot(dx, dy) > 30) {
+      stopHold();
+      setActivePlaybackRate(1);
     }
     touchOrigin.lastY = touch.clientY;
     touchOrigin.lastT = now();
@@ -4868,11 +4598,17 @@ ${JSON.stringify(events, null, 2)}`;
     const changed = event.changedTouches && event.changedTouches[0];
     const origin = touchOrigin;
     touchOrigin = null;
-    if (!changed) return;
+    if (!changed) {
+      abortGesture();
+      return;
+    }
     const dx = changed.clientX - origin.x;
     const dy = changed.clientY - origin.y;
     const elapsed = Math.max(1, now() - origin.t);
     const velocity = Math.abs(dy) / elapsed;
+    const held = Boolean(gesture && gesture.holding);
+    if (held) stopHold();
+    setActivePlaybackRate(1);
     setBreath(0);
     abortGesture();
     if (dy < -36 && Math.abs(dy) > Math.abs(dx)) {
@@ -4881,8 +4617,11 @@ ${JSON.stringify(events, null, 2)}`;
   }, { passive: false });
 
   stage.addEventListener('touchcancel', () => {
+    if (gesture && gesture.holding) stopHold();
     touchOrigin = null;
+    setActivePlaybackRate(1);
     setBreath(0);
+    abortGesture();
   }, { passive: true });
 
   stage.addEventListener('contextmenu', (event) => {
