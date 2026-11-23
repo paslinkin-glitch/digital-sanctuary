@@ -34,7 +34,7 @@
   const FLICK_MIN_PX = 28;
   const FLICK_MIN_SPEED = 0.5;
   const SLOW_RATE = 0.45;
-  const API_TIMEOUT_MS = 7000;
+  const API_TIMEOUT_MS = 1500;
   const CLIPS_PER_CATEGORY = 65;
   const RESONANCE_HOLD_MS = 500;
   const FAST_VIEW_MS = 2000;
@@ -62,7 +62,7 @@
     fog: { frame: [46, 110, 28], hold: [58, 130, 34], interval: 2000 },
     space: { frame: [34, 65, 34], hold: [44, 180, 44], interval: 2400 },
   };
-  const PORTRAIT_TIMEOUT_MS = 18000;
+  const PORTRAIT_TIMEOUT_MS = 1500;
 
   // Demo key from the brief. A static prototype must expose it; for production
   // this call belongs behind a tiny server-side proxy.
@@ -77,7 +77,7 @@
   const CAPTION_LINGER_MS = 3500;
   const CAPTION_HOLD_REVEAL_MS = 1100;
   const CAPTION_YOU_LIMIT = 1;
-  const CAPTION_TIMEOUT_MS = 3500;
+  const CAPTION_TIMEOUT_MS = 1500;
   const CAPTION_SYSTEM_PROMPT_RU = `Ты — тихий голос сна, который звучит рядом с изображением. Пиши только по-русски.
 Верни одну короткую фразу строго из 4–6 слов, 1–2 короткие строки. Без поэтических загадок, терминов, оценок, советов и латиницы.
 Говори образами и присутствием: дождь, тень, вода, свет, дыхание, дорога. Не называй поведение и не объясняй человеку, что он делает.
@@ -306,7 +306,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
 
     const controller = new AbortController();
-    const timer = window.setTimeout(() => controller.abort(), 1800);
+    const timer = window.setTimeout(() => controller.abort(), 1500);
     try {
       const geoResponse = await fetch('https://get.geojs.io/v1/ip/geo.json', {
         signal: controller.signal,
@@ -2995,7 +2995,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     };
   }
 
-  const FINALE_TIMEOUT_MS = 4000;
+  const FINALE_TIMEOUT_MS = 1500;
 
   function finaleFallbackReflection() {
     const held = (state.totalHolds || 0) > 0
@@ -5212,7 +5212,8 @@ ${JSON.stringify(events, null, 2)}`;
     startNewSessionAfterUnlock();
   });
 
-  const startupTasks = [loadVideoCatalog(), loadEnvironment()];
+  const startupTasks = [loadVideoCatalog()];
+  loadEnvironment();
 
   Promise.allSettled(startupTasks).then(() => {
     try {

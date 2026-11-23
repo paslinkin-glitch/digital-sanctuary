@@ -3,7 +3,7 @@
  * the cache is only a fallback for offline launches. Coverr API and video
  * CDN requests are cross-origin and deliberately pass through untouched.
  */
-const CACHE = 'sanctuary-shell-v36';
+const CACHE = 'sanctuary-shell-v38';
 const ASSETS = [
   './',
   './index.html',
@@ -16,6 +16,47 @@ const ASSETS = [
   './icon-192.png',
   './icon-512.png',
   './icon-180.png',
+  './fonts/cormorant-garamond-300-italic-0.woff2',
+  './fonts/cormorant-garamond-300-italic-1.woff2',
+  './fonts/cormorant-garamond-300-italic-2.woff2',
+  './fonts/cormorant-garamond-300-italic-3.woff2',
+  './fonts/cormorant-garamond-300-italic-4.woff2',
+  './fonts/cormorant-garamond-300-normal-5.woff2',
+  './fonts/cormorant-garamond-300-normal-6.woff2',
+  './fonts/cormorant-garamond-300-normal-7.woff2',
+  './fonts/cormorant-garamond-300-normal-8.woff2',
+  './fonts/cormorant-garamond-300-normal-9.woff2',
+  './fonts/cormorant-garamond-400-normal-10.woff2',
+  './fonts/cormorant-garamond-400-normal-11.woff2',
+  './fonts/cormorant-garamond-400-normal-12.woff2',
+  './fonts/cormorant-garamond-400-normal-13.woff2',
+  './fonts/cormorant-garamond-400-normal-14.woff2',
+  './fonts/inter-300-normal-15.woff2',
+  './fonts/inter-300-normal-16.woff2',
+  './fonts/inter-300-normal-17.woff2',
+  './fonts/inter-300-normal-18.woff2',
+  './fonts/inter-300-normal-19.woff2',
+  './fonts/inter-300-normal-20.woff2',
+  './fonts/inter-300-normal-21.woff2',
+  './fonts/inter-400-normal-22.woff2',
+  './fonts/inter-400-normal-23.woff2',
+  './fonts/inter-400-normal-24.woff2',
+  './fonts/inter-400-normal-25.woff2',
+  './fonts/inter-400-normal-26.woff2',
+  './fonts/inter-400-normal-27.woff2',
+  './fonts/inter-400-normal-28.woff2',
+  './fonts/jetbrains-mono-300-normal-29.woff2',
+  './fonts/jetbrains-mono-300-normal-30.woff2',
+  './fonts/jetbrains-mono-300-normal-31.woff2',
+  './fonts/jetbrains-mono-300-normal-32.woff2',
+  './fonts/jetbrains-mono-300-normal-33.woff2',
+  './fonts/jetbrains-mono-300-normal-34.woff2',
+  './fonts/jetbrains-mono-400-normal-35.woff2',
+  './fonts/jetbrains-mono-400-normal-36.woff2',
+  './fonts/jetbrains-mono-400-normal-37.woff2',
+  './fonts/jetbrains-mono-400-normal-38.woff2',
+  './fonts/jetbrains-mono-400-normal-39.woff2',
+  './fonts/jetbrains-mono-400-normal-40.woff2',
 ];
 
 self.addEventListener('install', (event) => {
