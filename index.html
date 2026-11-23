@@ -21,6 +21,18 @@
   <link rel="stylesheet" href="style.css?v=33">
 </head>
 <body>
+  <script>window.SANCTUARY_MAINTENANCE = true; document.documentElement.dataset.maintenance = 'true';</script>
+  <section id="maintenance-screen" aria-live="polite">
+    <div class="maintenance-inner">
+      <span class="maintenance-thread" aria-hidden="true"></span>
+      <p class="maintenance-kicker">DIGITAL SANCTUARY</p>
+      <h1>THE SANCTUARY IS TEMPORARILY CLOSED</h1>
+      <p>Technical maintenance is underway. Please return shortly.</p>
+      <span class="maintenance-rule" aria-hidden="true"></span>
+      <h2>ПРОСТРАНСТВО ВРЕМЕННО ЗАКРЫТО</h2>
+      <p>Ведутся технические работы. Возвращайтесь чуть позже.</p>
+    </div>
+  </section>
   <main class="stage" id="stage">
     <section class="slide is-active" data-tag="Shadow">
       <div class="media" aria-hidden="true"></div>
@@ -67,7 +79,7 @@
     </div>
     <div class="swipe-hint" id="swipe-hint" hidden aria-hidden="true">
       <span class="swipe-hint-arrow">↑</span>
-      <span class="swipe-hint-label">SWIPE UP</span>
+      <span class="swipe-hint-label">Swipe up · Hold to sink deeper</span>
     </div>
   </main>
 
@@ -98,10 +110,11 @@
 
   <aside class="install-card" id="install-card" hidden aria-live="polite">
     <div class="install-card-copy">
-      <p class="install-card-title">Open it as an app, no browser frame</p>
-      <p class="install-card-hint" id="install-card-hint" hidden>Share → Add to Home Screen</p>
+      <span class="install-card-mark" aria-hidden="true">◇</span>
+      <p class="install-card-title">Keep the sanctuary</p>
+      <p class="install-card-hint" id="install-card-hint" hidden>Tap Share → Add to Home Screen</p>
     </div>
-    <button class="install-card-btn" id="install-card-install" type="button">Install</button>
+    <button class="install-card-btn" id="install-card-install" type="button">Add to home screen</button>
     <button class="install-card-close" id="install-card-later" type="button" aria-label="Close">×</button>
   </aside>
 
@@ -125,6 +138,7 @@
       </div>
       <div class="finale-actions">
         <button class="finale-btn finale-btn--glass" id="notify-return" type="button">Notify me in 2 hours</button>
+        <button class="finale-btn finale-btn--glass" id="save-dream-frame" type="button">Save dream frame</button>
       </div>
     </div>
   </section>

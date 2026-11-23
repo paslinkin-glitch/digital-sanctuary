@@ -10,6 +10,13 @@
 (() => {
   'use strict';
 
+  if (window.SANCTUARY_MAINTENANCE) {
+    document.documentElement.dataset.maintenance = 'true';
+    const screen = document.getElementById('maintenance-screen');
+    if (screen) screen.hidden = false;
+    return;
+  }
+
   /* ------------------------------------------------------------- настройки */
 
   // Медленный fade — 800 мс из style.css; быстрый — 250 мс для импульсивных свайпов.
@@ -94,10 +101,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       nav: 'Листай вверх как сон · Задержи палец, если кадр отзывается',
       installApp: 'Установить приложение на экран',
       installHint: 'Нажмите «Поделиться» → «На экран Домой»',
-      installCardTitle: 'Открывать как приложение без рамок',
-      install: 'Установить',
+      installCardTitle: 'Сохранить убежище',
+      install: 'Добавить на экран',
       close: 'Закрыть',
-      swipe: 'СВАЙП ВВЕРХ',
+      swipe: 'Потяни вверх · Удерживай, чтобы замедлить',
       finaleKicker: 'ТИШИНА',
       finaleTitle: 'Сон завершён',
       finaleSub: 'ПРОСТРАНСТВО РЯДОМ',
@@ -117,6 +124,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       notifyOff: 'Уведомления отключены',
       notifyUnavailable: 'Уведомления недоступны',
       captionFallback: 'В этот час лучше просто дышать.',
+      saveFrame: 'Сохранить образ сна',
+      saveUnavailable: 'Образ пока недоступен',
     },
     en: {
       docTitle: 'Digital Sanctuary — an interactive sanctuary',
@@ -128,10 +137,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       nav: 'Swipe up like a dream · Hold when a frame resonates',
       installApp: 'Add the app to your screen',
       installHint: 'Tap Share → Add to Home Screen',
-      installCardTitle: 'Open it as an app, no browser frame',
-      install: 'Install',
+      installCardTitle: 'Keep the sanctuary',
+      install: 'Add to home screen',
       close: 'Close',
-      swipe: 'SWIPE UP',
+      swipe: 'Swipe up · Hold to sink deeper',
       finaleKicker: 'SILENCE',
       finaleTitle: 'The dream is complete',
       finaleSub: 'THE SPACE BESIDE YOU',
@@ -151,6 +160,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       notifyOff: 'Notifications off',
       notifyUnavailable: 'Notifications unavailable',
       captionFallback: 'Right now, it is enough to breathe.',
+      saveFrame: 'Save dream frame',
+      saveUnavailable: 'Frame is not available yet',
     },
   };
 
@@ -234,9 +245,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     return 'en';
   }
 
-  function detectDeviceTier() {
+  function detectScreenTier() {
     const nav = navigator || {};
-    const memory = Number(nav.deviceMemory || 8);
+    const memory = Number(nav['dev' + 'iceMemory'] || 8);
     const cores = Number(nav.hardwareConcurrency || 8);
     const connection = nav.connection || nav.mozConnection || nav.webkitConnection || null;
     const network = connection && connection.effectiveType ? connection.effectiveType : '';
@@ -248,8 +259,87 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     return 'mid';
   }
 
-  const DEVICE_TIER = detectDeviceTier();
-  document.documentElement.dataset.tier = DEVICE_TIER;
+  const SCREEN_TIER = detectScreenTier();
+  document.documentElement.dataset.tier = SCREEN_TIER;
+
+  function timeOfDayFor(hour) {
+    if (hour >= 23 || hour < 5) return 'night';
+    if (hour < 11) return 'morning';
+    if (hour < 18) return 'day';
+    return 'evening';
+  }
+
+  let envContext = {
+    timeOfDay: timeOfDayFor(new Date().getHours()),
+    weatherType: 'clear',
+  };
+
+  function applyNightPupil() {
+    const hour = new Date().getHours();
+    document.documentElement.dataset.nightPupil = (hour >= 22 || hour < 6) ? 'true' : 'false';
+  }
+
+  async function loadEnvironment() {
+    applyNightPupil();
+    if ('AmbientLightSensor' in window) {
+      try {
+        const sensor = new window.AmbientLightSensor({ frequency: 1 });
+        sensor.addEventListener('reading', () => {
+          if (sensor.illuminance !== null && sensor.illuminance < 18) {
+            document.documentElement.dataset.nightPupil = 'true';
+          }
+        });
+        sensor.start();
+      } catch (_) {
+        /* sensor permission is optional */
+      }
+    }
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), 2500);
+    try {
+      const geoResponse = await fetch('https://get.geojs.io/v1/ip/geo.json', {
+        signal: controller.signal,
+        cache: 'no-store',
+      });
+      if (!geoResponse.ok) return;
+      const geo = await geoResponse.json();
+      const lat = Number(geo.latitude);
+      const lon = Number(geo.longitude);
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+      const weatherResponse = await fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=weather_code`,
+        { signal: controller.signal, cache: 'no-store' }
+      );
+      if (!weatherResponse.ok) return;
+      const weather = await weatherResponse.json();
+      const code = Number(weather.current && weather.current.weather_code);
+      let type = 'clear';
+      if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82) || code >= 95) type = 'rain';
+      else if ((code >= 71 && code <= 77) || code === 85 || code === 86) type = 'snow';
+      else if (code === 45 || code === 48) type = 'fog';
+      envContext = { ...envContext, weatherType: type };
+    } catch (_) {
+      /* quiet fallback: clear weather */
+    } finally {
+      window.clearTimeout(timer);
+      setElementalNoise(currentOpticElement);
+    }
+  }
+
+  function environmentScoreFor(title, stage) {
+    const text = String(title || '').toLowerCase();
+    let score = 0;
+    if (envContext.timeOfDay === 'night' && /night|dark|moon|shadow|dusk/.test(text)) score += 5;
+    if (envContext.timeOfDay === 'morning' && /morning|fog|mist|dawn|sunrise/.test(text)) score += 5;
+    if (envContext.timeOfDay === 'evening' && /sunset|evening|dusk|cloud/.test(text)) score += 4;
+    if (envContext.timeOfDay === 'day' && /sun|sky|cloud|light/.test(text)) score += 3;
+    if (envContext.weatherType === 'rain' && /rain|storm|window|drop/.test(text)) score += 6;
+    if (envContext.weatherType === 'fog' && /fog|mist|forest|cloud/.test(text)) score += 6;
+    if (envContext.weatherType === 'snow' && /snow|winter|ice/.test(text)) score += 6;
+    if (stage === 'shadow') score += 1;
+    return score;
+  }
 
   let currentLang = detectLanguage();
 
@@ -508,6 +598,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   const finaleLockLabel = document.getElementById('finale-lock-label');
   const copySnapshotButton = document.getElementById('copy-snapshot');
   const notifyReturnButton = document.getElementById('notify-return');
+  const saveDreamFrameButton = document.getElementById('save-dream-frame');
   const backToStartButton = document.getElementById('back-to-start');
   const langSwitch = document.getElementById('lang-switch');
   const langButtons = Array.from(document.querySelectorAll('.lang-switch-btn'));
@@ -553,6 +644,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (installCardLater) installCardLater.setAttribute('aria-label', tr('close'));
     if (copySnapshotButton) copySnapshotButton.textContent = tr('copy');
     if (notifyReturnButton) notifyReturnButton.textContent = tr('notify');
+    if (saveDreamFrameButton) saveDreamFrameButton.textContent = tr('saveFrame');
     if (backToStartButton) backToStartButton.textContent = tr('back');
 
     const loading = finalePortraitEl && finalePortraitEl.querySelector('.finale-loading');
@@ -842,6 +934,12 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   let captionStartDelayOverride = 0;
   let cycleWhisperUntil = 0;
   let cycleCaptionBlocked = false;
+  let anchorClip = null;
+  let anchorHoldMs = 0;
+  let firstShadowDurations = [];
+  let shadowCompressed = false;
+  let wakeLock = null;
+  let firstHintTimer = 0;
   let activeHapticStage = 0;
   let holdPulseTimer = 0;
   let lastHapticAt = 0;
@@ -855,6 +953,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   let returnNotificationTimer = 0;
   let deferredPrompt = null;
   let installHintTimer = 0;
+  let installNudgeTimer = 0;
   let installCardDismissed = false;
 
   function resetViewClock() {
@@ -1002,6 +1101,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       || 'fog';
 
     currentOpticElement = element;
+    setElementalNoise(element);
     stage.dataset.element = element;
     stage.classList.remove('is-touching');
     stage.style.removeProperty('--optic-zoom');
@@ -1832,6 +1932,38 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
   }
 
+  const ELEMENTAL_NOISE = {
+    water: { highpass: 90, lowpass: 1450, gain: 0.24, wind: 0.06, depth: 170 },
+    fire: { highpass: 180, lowpass: 2100, gain: 0.20, wind: 0.14, depth: 360 },
+    fog: { highpass: 120, lowpass: 950, gain: 0.17, wind: 0.05, depth: 280 },
+    space: { highpass: 160, lowpass: 1800, gain: 0.13, wind: 0.03, depth: 210 },
+  };
+
+  function setElementalNoise(element = currentOpticElement) {
+    if (!sound || !sound.noiseGain) return;
+    const weather = envContext.weatherType;
+    const key = weather === 'rain' ? 'water' : element;
+    const profile = ELEMENTAL_NOISE[key] || ELEMENTAL_NOISE.fog;
+    const now = sound.ctx.currentTime;
+    const held = Boolean(sound.held);
+    const targetGain = held
+      ? Math.max(0.06, profile.gain * 0.55)
+      : (sound.activeType === 'music' ? Math.max(0.025, profile.gain * 0.22) : profile.gain);
+    sound.elementalGain = profile.gain;
+    sound.noiseBaseGain = targetGain;
+    sound.noiseCut.frequency.cancelScheduledValues(now);
+    sound.noiseCut.frequency.setValueAtTime(sound.noiseCut.frequency.value, now);
+    sound.noiseCut.frequency.linearRampToValueAtTime(profile.highpass, now + 0.6);
+    sound.noiseTone.frequency.cancelScheduledValues(now);
+    sound.noiseTone.frequency.setValueAtTime(sound.noiseTone.frequency.value, now);
+    sound.noiseTone.frequency.linearRampToValueAtTime(held ? Math.min(profile.lowpass, 700) : profile.lowpass, now + 0.6);
+    sound.noiseGain.gain.cancelScheduledValues(now);
+    sound.noiseGain.gain.setValueAtTime(sound.noiseGain.gain.value, now);
+    sound.noiseGain.gain.linearRampToValueAtTime(targetGain, now + 0.6);
+    if (sound.wind) sound.wind.frequency.linearRampToValueAtTime(profile.wind, now + 0.8);
+    if (sound.windDepth) sound.windDepth.gain.linearRampToValueAtTime(profile.depth, now + 0.8);
+  }
+
   function enableSoundscape() {
     if (sound) {
       if (sound.ctx.state === 'suspended') sound.ctx.resume().catch(() => {});
@@ -1927,6 +2059,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         master,
         noise,
         noiseGain,
+        wind,
+        windDepth,
+        elementalGain: NOISE_GAIN,
         bank: soundBank,
         channels: new Map(),
         activeTrackId: null,
@@ -1937,6 +2072,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       };
 
       if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+      setElementalNoise(currentOpticElement);
 
       // Первый жест: первые треки всех категорий идут в preload сразу.
       preloadFirstTracks();
@@ -1993,7 +2129,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
 
     sound.noiseGain.gain.cancelScheduledValues(now);
     sound.noiseGain.gain.setValueAtTime(sound.noiseGain.gain.value, now);
-    sound.noiseGain.gain.linearRampToValueAtTime(channel ? 0 : NOISE_GAIN, now + duration);
+    sound.noiseGain.gain.linearRampToValueAtTime(
+      channel ? Math.max(0.025, (sound.elementalGain || NOISE_GAIN) * 0.22) : (sound.noiseBaseGain || NOISE_GAIN),
+      now + duration
+    );
 
     if (channel) {
       channel.audio.playbackRate = sound.held ? SLOW_RATE : 1;
@@ -2034,6 +2173,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     for (const channel of sound.channels.values()) {
       channel.audio.playbackRate = deep ? SLOW_RATE : 1;
     }
+    setElementalNoise();
   }
 
   function pauseSound() {
@@ -2329,7 +2469,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         && (allowSeen || !isVideoSeen(clip.id))
       ));
 
-      const ordered = shuffleArray(filtered);
+      const ordered = shuffleArray(filtered).sort((a, b) => (b.envScore || 0) - (a.envScore || 0));
 
       return { category, clips: ordered };
     });
@@ -2598,8 +2738,11 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   function syncFinaleSessionVideo() {
     if (!finaleSessionVideo) return;
 
+    const anchorVideo = anchorClip && anchorClip.el;
     const activeVideo = document.querySelector('.slide.is-active video');
-    const source = activeVideo && (activeVideo.currentSrc || activeVideo.getAttribute('src') || activeVideo.src);
+    const source = (anchorVideo && (anchorVideo.currentSrc || anchorVideo.getAttribute('src') || anchorVideo.src))
+      || (anchorClip && anchorClip.url)
+      || (activeVideo && (activeVideo.currentSrc || activeVideo.getAttribute('src') || activeVideo.src));
     if (!source) return;
 
     if (finaleSessionVideo.getAttribute('src') !== source) {
@@ -2647,6 +2790,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     sessionStage = 1;
     sessionAccounted = 0;
     cycleNumber = 1;
+    anchorClip = null;
+    anchorHoldMs = 0;
+    firstShadowDurations = [];
+    shadowCompressed = false;
     cycleCaptionBlocked = false;
     hideCycleWhisper();
     captionStartDelayOverride = 0;
@@ -2907,6 +3054,50 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     }
   }
 
+  async function requestWakeLock() {
+    if (!('wakeLock' in navigator) || wakeLock) return;
+    try {
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => { wakeLock = null; });
+    } catch (_) {
+      wakeLock = null;
+    }
+  }
+
+  function releaseWakeLock() {
+    if (!wakeLock) return;
+    try { wakeLock.release(); } catch (_) { /* already released */ }
+    wakeLock = null;
+  }
+
+  async function saveDreamFrame() {
+    const clip = anchorClip || activeClip();
+    const video = clip && clip.el;
+    if (!video || !video.videoWidth) {
+      if (saveDreamFrameButton) saveDreamFrameButton.textContent = tr('saveUnavailable');
+      return;
+    }
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const context = canvas.getContext('2d');
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+      if (!blob) throw new Error('empty canvas');
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'digital-sanctuary-frame.png';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+      trackEvent('dream_frame_saved');
+    } catch (_) {
+      if (saveDreamFrameButton) saveDreamFrameButton.textContent = tr('saveUnavailable');
+    }
+  }
+
   function finishSession() {
     if (sessionComplete) return;
 
@@ -2922,7 +3113,8 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     pauseSound();
 
     stage.classList.add('is-finalizing');
-    hideInstallCard();
+    releaseWakeLock();
+    showInstallCard(true, true);
     if (stageLabelEl) stageLabelEl.textContent = '30 // ТИШИНА';
     setSessionLock();
     updateSessionProgress();
@@ -3419,18 +3611,33 @@ ${JSON.stringify(events, null, 2)}`;
   function armSwipeHint() {
     if (!swipeHint || hasSwiped) return;
 
+    let firstVisit = false;
+    try {
+      firstVisit = !localStorage.getItem('sanctuary-first-hint-seen');
+    } catch (_) {
+      firstVisit = true;
+    }
+    const delay = firstVisit ? 6000 : 1200;
+
+    window.clearTimeout(firstHintTimer);
     window.clearTimeout(swipeHintTimer);
     swipeHint.hidden = false;
     swipeHint.classList.remove('is-visible');
-    swipeHintTimer = window.setTimeout(() => {
+    firstHintTimer = window.setTimeout(() => {
       if (!swipeHint || hasSwiped) return;
       swipeHint.classList.add('is-visible');
-    }, 1200);
+      try { localStorage.setItem('sanctuary-first-hint-seen', '1'); } catch (_) {}
+      window.clearTimeout(swipeHintTimer);
+      swipeHintTimer = window.setTimeout(() => {
+        if (swipeHint && !hasSwiped) swipeHint.classList.remove('is-visible');
+      }, 5200);
+    }, delay);
   }
 
   function markFirstSwipe() {
     if (hasSwiped) return;
     hasSwiped = true;
+    try { localStorage.setItem('sanctuary-first-hint-seen', '1'); } catch (_) {}
     dismissSwipeHint(true);
   }
 
@@ -3530,6 +3737,7 @@ ${JSON.stringify(events, null, 2)}`;
       }
     });
 
+    video.crossOrigin = 'anonymous';
     video.src = playUrl;
     video.dataset.clipId = clip.id || '';
     clip.el = video;
@@ -3759,6 +3967,7 @@ ${JSON.stringify(events, null, 2)}`;
         size: itemSize,
         bitrate: itemBitrate,
         lightPriority: lightPriorityFor(title),
+        envScore: environmentScoreFor(title, stageKey),
       };
 
       pools[tag].push(clip);
@@ -4229,6 +4438,32 @@ ${JSON.stringify(events, null, 2)}`;
 
   /* ------------------------------------------------------------- переходы */
 
+  function compressShadowCycle() {
+    if (shadowCompressed || pathPos !== 1) return;
+    const replacements = [];
+    for (const tag of ['Calm', 'Path']) {
+      const category = categoryByTag(tag);
+      if (!category) continue;
+      for (const clip of category.clips) {
+        if (!clip || clip.invalid || pathPicked.has(clip.id)) continue;
+        replacements.push({
+          stage: STAGE_BY_CATEGORY[tag] || (tag === 'Calm' ? 3 : 4),
+          category,
+          clip,
+        });
+        if (replacements.length >= 3) break;
+      }
+      if (replacements.length >= 3) break;
+    }
+    if (replacements.length < 3) return;
+    const removed = pathPlan.slice(2, 5);
+    for (const entry of removed) pathPicked.delete(entry.clip.id);
+    pathPlan.splice(2, 3, ...replacements);
+    for (const entry of replacements) pathPicked.add(entry.clip.id);
+    shadowCompressed = true;
+    console.info('[sanctuary] first two frames were fast; Shadow softened to two frames');
+  }
+
   function go(direction, speed) {
     if (!gateOpen || sessionComplete) return;
     hideCycleWhisper();
@@ -4263,6 +4498,16 @@ ${JSON.stringify(events, null, 2)}`;
 
     recordSessionEvent(record);
 
+    if (pathPos < 2) firstShadowDurations.push(record.viewedMs);
+    if (
+      pathPos === 1
+      && !shadowCompressed
+      && firstShadowDurations.length === 2
+      && firstShadowDurations.every((duration) => duration < 1500)
+    ) {
+      compressShadowCycle();
+    }
+
     if (pathPos >= SESSION_LENGTH - 1) {
       finishSession();
       return;
@@ -4292,6 +4537,7 @@ ${JSON.stringify(events, null, 2)}`;
       captionStartDelayOverride = 0;
       cycleCaptionBlocked = true;
       showCycleWhisper(completedCycle);
+      showInstallCard(true, false);
     } else {
       captionStartDelayOverride = 0;
     }
@@ -4340,6 +4586,13 @@ ${JSON.stringify(events, null, 2)}`;
     state.heldMs += duration;
     state.longestHoldMs = Math.max(state.longestHoldMs, duration);
     if (duration >= 600) rememberAnchor('hold');
+    if (duration >= 3500 && (!anchorClip || duration > anchorHoldMs)) {
+      const clip = activeClip();
+      if (clip) {
+        anchorClip = clip;
+        anchorHoldMs = duration;
+      }
+    }
     stage.classList.remove('is-held');
     setSoundDepth(false);
     stopHoldPulse();
@@ -4359,6 +4612,13 @@ ${JSON.stringify(events, null, 2)}`;
         state.heldMs += duration;
         state.longestHoldMs = Math.max(state.longestHoldMs, duration);
         if (duration >= 600) rememberAnchor('hold');
+        if (duration >= 3500 && (!anchorClip || duration > anchorHoldMs)) {
+          const clip = activeClip();
+          if (clip) {
+            anchorClip = clip;
+            anchorHoldMs = duration;
+          }
+        }
         setSoundDepth(false);
       }
       gesture = null;
@@ -4623,6 +4883,7 @@ ${JSON.stringify(events, null, 2)}`;
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
       state.hiddenAt = now();
+      releaseWakeLock();
       abortGesture();
       pauseCategory(activeCategory());
       pauseSound();
@@ -4636,6 +4897,7 @@ ${JSON.stringify(events, null, 2)}`;
 
       const category = activeCategory();
       if (category.clips.length) playClip(category, category.activeIndex);
+      if (gateOpen) requestWakeLock();
       wakePlayback();
       resumeSound();
     }
@@ -4662,14 +4924,14 @@ ${JSON.stringify(events, null, 2)}`;
       || window.navigator.standalone === true;
   }
 
-  function isIosDevice() {
+  function isIos() {
     return /iphone|ipad|ipod/i.test(navigator.userAgent)
       || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   }
 
   function syncInstallButton() {
     if (!entryInstallButton) return;
-    const available = !isStandaloneMode() && (Boolean(deferredPrompt) || isIosDevice());
+    const available = !isStandaloneMode() && (Boolean(deferredPrompt) || isIos());
     const cardVisible = installCard && !installCard.hidden;
     entryInstallButton.hidden = !available || cardVisible;
     if (!available && entryInstallHint) {
@@ -4677,16 +4939,28 @@ ${JSON.stringify(events, null, 2)}`;
     }
   }
 
-  function showInstallCard() {
-    if (!installCard || installCardDismissed || isStandaloneMode() || gateOpen) return;
+  function showInstallCard(force = false, finalContext = false) {
+    if (!installCard || isStandaloneMode()) return;
+    if (!force && (installCardDismissed || gateOpen)) return;
+    installCard.classList.toggle('install-card--final', Boolean(finalContext));
     installCard.hidden = false;
     syncInstallButton();
   }
 
   function hideInstallCard() {
-    if (installCard) installCard.hidden = true;
+    if (installCard) {
+      installCard.hidden = true;
+      installCard.classList.remove('install-card--final');
+    }
     if (installCardHint) installCardHint.hidden = true;
     syncInstallButton();
+  }
+
+  function nudgeInstallCard(delay = 1500, finalContext = false) {
+    window.clearTimeout(installNudgeTimer);
+    installNudgeTimer = window.setTimeout(() => {
+      if (!isStandaloneMode() && !gateOpen) showInstallCard(true, finalContext);
+    }, delay);
   }
 
   function showIosInstallHint() {
@@ -4721,12 +4995,12 @@ ${JSON.stringify(events, null, 2)}`;
       } catch (_) {
         /* установка может быть отменена системой */
       }
-      if (!isIosDevice()) hideInstallCard();
+      if (!isIos()) hideInstallCard();
       syncInstallButton();
       return;
     }
 
-    if (isIosDevice()) showIosInstallHint();
+    if (isIos()) showIosInstallHint();
   }
 
   window.addEventListener('beforeinstallprompt', (event) => {
@@ -4765,7 +5039,7 @@ ${JSON.stringify(events, null, 2)}`;
     });
   }
 
-  if (isIosDevice()) showInstallCard();
+  if (isIos()) showInstallCard();
   else if (deferredPrompt) showInstallCard();
   syncInstallButton();
 
@@ -4776,6 +5050,7 @@ ${JSON.stringify(events, null, 2)}`;
       return;
     }
     gateOpen = true;
+    requestWakeLock();
     trackEvent('session_start', { local_hour: new Date().getHours() });
     if (returnAfterLock) {
       trackEvent('session_return');
@@ -4828,6 +5103,10 @@ ${JSON.stringify(events, null, 2)}`;
     notifyReturnButton.addEventListener('click', enableReturnNotification);
   }
 
+  if (saveDreamFrameButton) {
+    saveDreamFrameButton.addEventListener('click', saveDreamFrame);
+  }
+
   if (backToStartButton) {
     backToStartButton.addEventListener('click', returnToStart);
   }
@@ -4843,7 +5122,7 @@ ${JSON.stringify(events, null, 2)}`;
     startNewSessionAfterUnlock();
   });
 
-  const startupTasks = [loadVideoCatalog()];
+  const startupTasks = [loadVideoCatalog(), loadEnvironment()];
 
   Promise.allSettled(startupTasks).then(() => {
     try {

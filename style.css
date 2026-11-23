@@ -18,9 +18,9 @@
   --pearl: var(--silk);
   --pearl-dim: var(--silk-dim);
   --hairline: var(--hairline-lux);
-  --serif: "Cormorant Garamond", "Playfair Display", Georgia, serif;
-  --sans: "Inter", "Helvetica Neue", Arial, sans-serif;
-  --mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+  --serif: 'Cormorant Garamond', Georgia, serif;
+  --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, monospace;
   color-scheme: dark;
 }
 
@@ -2159,4 +2159,173 @@ body,
   text-shadow:
     0 1px 4px rgba(0, 0, 0, 0.98),
     0 4px 24px rgba(0, 0, 0, 0.92);
+}
+
+
+/* ============================================================ TYPOGRAPHY v34 */
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.entry-title,
+.finale-title,
+.cycle-whisper-text,
+.finale-reflection {
+  font-family: var(--serif);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+.caption,
+.caption-line,
+.entry-sub,
+.entry-nav-hint,
+.install-card-hint,
+.finale-sub {
+  font-family: var(--sans);
+  font-weight: 400;
+}
+
+.entry-kicker,
+.finale-kicker,
+.finale-lock-label,
+.lang-switch-btn,
+.entry-trigger,
+.finale-btn,
+.install-card-btn {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.26em;
+}
+
+.finale-countdown {
+  font-family: var(--mono);
+  font-weight: 400;
+  letter-spacing: 0.14em;
+}
+
+.finale-actions {
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.finale-actions .finale-btn--glass {
+  flex: 1 1 210px;
+}
+
+#save-dream-frame {
+  opacity: 0.82;
+}
+
+.install-card-mark {
+  display: block;
+  margin-bottom: 0.75rem;
+  color: var(--champagne);
+  font-family: var(--serif);
+  font-size: 24px;
+  line-height: 1;
+}
+
+.install-card--final {
+  z-index: 46;
+}
+
+/* night pupil */
+[data-night-pupil="true"] .clip {
+  filter: brightness(0.76) contrast(0.96) sepia(0.08) !important;
+}
+
+
+/* v34 final anchor veil and save-frame button */
+.finale-session-video {
+  filter: blur(2px) saturate(0.72) contrast(1.02) brightness(0.58);
+}
+
+#save-dream-frame {
+  opacity: 0.82;
+}
+
+.install-card--final {
+  z-index: 46;
+}
+
+
+/* ------------------------------------------------------------ maintenance */
+#maintenance-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  background:
+    radial-gradient(ellipse 55% 38% at 50% 42%, rgba(214, 199, 178, 0.035), transparent 72%),
+    #060607;
+  color: var(--silk, rgba(236, 234, 230, 0.9));
+}
+
+#maintenance-screen[hidden] {
+  display: none;
+}
+
+[data-maintenance="true"] .stage,
+[data-maintenance="true"] .entry,
+[data-maintenance="true"] .finale,
+[data-maintenance="true"] .install-card,
+[data-maintenance="true"] .lang-switch {
+  display: none !important;
+}
+
+.maintenance-inner {
+  width: min(100%, 520px);
+  text-align: center;
+}
+
+.maintenance-thread {
+  display: block;
+  width: 1px;
+  height: 64px;
+  margin: 0 auto 2rem;
+  background: linear-gradient(180deg, transparent, var(--champagne, rgba(214, 199, 178, 0.72)), transparent);
+}
+
+.maintenance-kicker {
+  margin: 0 0 1.6rem;
+  color: var(--champagne, rgba(214, 199, 178, 0.72));
+  font-family: var(--mono, monospace);
+  font-size: 9px;
+  letter-spacing: 0.28em;
+}
+
+.maintenance-inner h1,
+.maintenance-inner h2 {
+  margin: 0;
+  color: var(--silk, rgba(236, 234, 230, 0.9));
+  font-family: var(--serif, Georgia, serif);
+  font-size: clamp(1.7rem, 5.5vw, 2.4rem);
+  font-weight: 400;
+  line-height: 1.25;
+  letter-spacing: 0.02em;
+}
+
+.maintenance-inner p {
+  margin: 0.8rem auto 1.8rem;
+  max-width: 420px;
+  color: var(--silk-dim, rgba(236, 234, 230, 0.5));
+  font-family: var(--sans, sans-serif);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.maintenance-rule {
+  display: block;
+  width: 120px;
+  height: 0.5px;
+  margin: 0 auto 1.8rem;
+  background: linear-gradient(90deg, transparent, var(--champagne, rgba(214, 199, 178, 0.72)), transparent);
 }
