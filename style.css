@@ -2996,3 +2996,50 @@ html:not([data-maintenance="true"]) #maintenance-screen {
 .install-card--ios {
   pointer-events: auto;
 }
+
+
+/* ================================================== v40 ENTRY / INSTALL */
+html,
+body,
+.stage,
+.viewport {
+  overscroll-behavior: none;
+  touch-action: none;
+  overflow: hidden;
+}
+
+/* install is the primary step, above the quiet entry button */
+.install-card:not(.install-card--ios) {
+  top: max(16vh, calc(env(safe-area-inset-top) + 64px));
+  bottom: auto;
+}
+
+.install-card--ios {
+  top: max(12vh, calc(env(safe-area-inset-top) + 56px));
+  bottom: auto;
+}
+
+/* the browser choice is the quiet secondary action, anchored low */
+.entry-actions {
+  left: 0;
+  right: 0;
+  bottom: max(20px, env(safe-area-inset-bottom));
+  width: 100%;
+  padding: 0 7vw;
+  transform: none;
+}
+
+.entry-actions .entry-trigger {
+  width: min(86vw, 280px);
+  max-width: 280px;
+  margin: 0 auto;
+}
+
+.entry.has-install-card .entry-actions {
+  bottom: max(20px, env(safe-area-inset-bottom));
+  transform: none;
+}
+
+.entry.has-install-card .entry-actions::before {
+  display: none;
+}

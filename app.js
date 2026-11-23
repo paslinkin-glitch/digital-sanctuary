@@ -97,7 +97,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       entryKicker: 'ЦИФРОВОЕ УБЕЖИЩЕ',
       entryTitle: 'Закрытое пространство<br>тишины и созерцания',
       entrySub: 'Без слов, оценок и попыток<br>тебя исправить',
-      enter: 'Войти в сон',
+      enter: 'Войти',
       nav: 'Листай вверх как сон · Задержи палец, если кадр отзывается',
       installApp: 'Установить приложение на экран',
       installHint: 'Нажмите «Поделиться» → «На экран Домой»',
@@ -138,7 +138,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       entryKicker: 'DIGITAL SANCTUARY',
       entryTitle: 'A private space<br>of silence and stillness',
       entrySub: 'No words, no judgments,<br>no attempts to fix you',
-      enter: 'Enter the dream',
+      enter: 'Enter',
       nav: 'Swipe up like a dream · Hold when a frame resonates',
       installApp: 'Add the app to your screen',
       installHint: 'Tap Share → Add to Home Screen',
@@ -898,6 +898,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
 
   let gesture = null;
   let isTransitioning = false;
+  let pointerGestureSeen = false;
+  let touchOrigin = null;
   let holdTimer = 0;
   let lastSwipeAt = 0;
   let lastBottomTapAt = 0;
@@ -980,6 +982,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   let installHintTimer = 0;
   let installNudgeTimer = 0;
   let installCardDismissed = false;
+  const INSTALL_SESSION_KEY = 'sanctuary_install_skipped';
+  const INSTALLED_KEY = 'sanctuary_installed';
 
   function resetViewClock() {
     state.viewStart = now();
@@ -4710,6 +4714,7 @@ ${JSON.stringify(events, null, 2)}`;
   }
 
   stage.addEventListener('pointerdown', (event) => {
+    pointerGestureSeen = true;
     enableSoundscape();
     wakePlayback();
 
@@ -4828,6 +4833,53 @@ ${JSON.stringify(events, null, 2)}`;
       abortGesture();
     }
   });
+
+  stage.addEventListener('touchstart', (event) => {
+    if (event.touches.length !== 1) {
+      touchOrigin = null;
+      return;
+    }
+    const touch = event.touches[0];
+    touchOrigin = {
+      x: touch.clientX,
+      y: touch.clientY,
+      t: now(),
+      prevent: !pointerGestureSeen,
+    };
+    if (touchOrigin.prevent && event.cancelable) event.preventDefault();
+  }, { passive: false });
+
+  stage.addEventListener('touchmove', (event) => {
+    if (!touchOrigin || event.touches.length !== 1) return;
+    const touch = event.touches[0];
+    const dx = touch.clientX - touchOrigin.x;
+    const dy = touch.clientY - touchOrigin.y;
+    if (Math.abs(dy) > 10 && event.cancelable) event.preventDefault();
+    if (pointerGestureSeen) return;
+    if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 10) {
+      setBreath(clamp(-dy / 140, -1, 1));
+    }
+  }, { passive: false });
+
+  stage.addEventListener('touchend', (event) => {
+    if (!touchOrigin) return;
+    const changed = event.changedTouches && event.changedTouches[0];
+    const origin = touchOrigin;
+    touchOrigin = null;
+    if (!changed || pointerGestureSeen) return;
+    const dx = changed.clientX - origin.x;
+    const dy = changed.clientY - origin.y;
+    setBreath(0);
+    abortGesture();
+    if (dy < -36 && Math.abs(dy) > Math.abs(dx)) {
+      go('up');
+    }
+  }, { passive: false });
+
+  stage.addEventListener('touchcancel', () => {
+    touchOrigin = null;
+    setBreath(0);
+  }, { passive: true });
 
   stage.addEventListener('contextmenu', (event) => {
     event.preventDefault();
@@ -4959,8 +5011,29 @@ ${JSON.stringify(events, null, 2)}`;
   const entryGate = document.querySelector('.entry');
 
   function isStandaloneMode() {
+    try {
+      if (localStorage.getItem(INSTALLED_KEY) === '1') return true;
+    } catch (_) {}
     return window.matchMedia('(display-mode: standalone)').matches
       || window.navigator.standalone === true;
+  }
+
+  function installChoiceMade() {
+    try {
+      return sessionStorage.getItem(INSTALL_SESSION_KEY) === '1';
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function rememberInstallChoice() {
+    try { sessionStorage.setItem(INSTALL_SESSION_KEY, '1'); } catch (_) {}
+  }
+
+  function rememberInstalled() {
+    try { localStorage.setItem(INSTALLED_KEY, '1'); } catch (_) {}
+    installCardDismissed = true;
+    hideInstallCard();
   }
 
   function isIos() {
@@ -4992,7 +5065,7 @@ ${JSON.stringify(events, null, 2)}`;
   }
 
   function showInstallCard(force = false, finalContext = false) {
-    if (isStandaloneMode()) return;
+    if (isStandaloneMode() || installChoiceMade()) return;
     if (!force && (installCardDismissed || gateOpen)) return;
     if (isIos() && iosInstallCard) {
       if (installCard) { installCard.hidden = true; installCard.classList.remove('is-visible'); }
@@ -5098,8 +5171,7 @@ ${JSON.stringify(events, null, 2)}`;
 
   window.addEventListener('appinstalled', () => {
     deferredPrompt = null;
-    installCardDismissed = true;
-    hideInstallCard();
+    rememberInstalled();
     if (entryInstallButton) entryInstallButton.hidden = true;
     if (entryInstallHint) entryInstallHint.hidden = true;
   });
@@ -5119,6 +5191,7 @@ ${JSON.stringify(events, null, 2)}`;
   if (installCardInstall) installCardInstall.addEventListener('click', handleInstallClick);
   if (installCardLater) {
     installCardLater.addEventListener('click', () => {
+      rememberInstallChoice();
       installCardDismissed = true;
       hideInstallCard();
     });
@@ -5126,13 +5199,16 @@ ${JSON.stringify(events, null, 2)}`;
 
   if (iosInstallClose) {
     iosInstallClose.addEventListener('click', () => {
+      rememberInstallChoice();
       installCardDismissed = true;
       hideInstallCard();
     });
   }
 
-  if (!isIos() && deferredPrompt) showInstallCard();
-  nudgeInstallCard(3500, false);
+  if (isStandaloneMode()) {
+    try { localStorage.setItem(INSTALLED_KEY, '1'); } catch (_) {}
+  }
+  if (!isStandaloneMode() && !installChoiceMade()) showInstallCard(true);
   syncInstallButton();
 
   function unlockExperience() {
@@ -5145,6 +5221,7 @@ ${JSON.stringify(events, null, 2)}`;
     }
     gateOpen = true;
     isTransitioning = false;
+    rememberInstallChoice();
     requestWakeLock();
     trackEvent('session_start', { local_hour: new Date().getHours() });
     if (returnAfterLock) {
