@@ -17,7 +17,7 @@
   <link rel="stylesheet" href="style.css?v=70">
 </head>
 <body>
-  <script>window.SANCTUARY_MAINTENANCE = true; if (window.SANCTUARY_MAINTENANCE) document.documentElement.dataset.maintenance = 'true';</script>
+  <script>window.SANCTUARY_MAINTENANCE = false; if (window.SANCTUARY_MAINTENANCE) document.documentElement.dataset.maintenance = 'true';</script>
   <section id="maintenance-screen" aria-live="polite">
     <div class="maintenance-inner">
       <span class="maintenance-thread" aria-hidden="true"></span>
@@ -114,12 +114,15 @@
       <button class="entry-install" id="entry-install" type="button">Install app</button>
       <p class="entry-install-hint" id="entry-install-hint" hidden></p>
     </div>
-    <p class="entry-installed-note" id="entry-installed-note" hidden>Sanctuary installed. Close the browser and open it from your home screen</p>
+    <div class="entry-installed-note" id="entry-installed-note" hidden>
+      <h2 class="installed-title">Sanctuary installed</h2>
+      <p class="installed-sub">Close the browser and open it from your home screen</p>
+    </div>
 
 
   </div>
 
-  <section class="finale" id="finale" hidden aria-labelledby="finale-title">
+  <section class="finale" id="finale" hidden aria-label="Final reflection">
     <video class="finale-session-video" id="finale-session-video" muted loop playsinline preload="metadata" disablepictureinpicture aria-hidden="true"></video>
     <div class="ambient-mesh ambient-mesh--finale" aria-hidden="true">
       <span class="ambient-orb ambient-orb--indigo"></span>
@@ -128,26 +131,17 @@
     </div>
     <div class="finale-glow" aria-hidden="true"></div>
     <div class="finale-shell">
-      <p class="finale-kicker">SILENCE, STILL HERE</p>
-      <h2 class="finale-title" id="finale-title">You are here</h2>
-      <p class="finale-sub">THE SPACE REMAINS</p>
-      <div class="quiet-presence quiet-presence--finale" aria-live="polite">
-        <span class="presence-dot" aria-hidden="true"></span>
-        <span class="presence-text" data-presence>Quiet presence</span>
-      </div>
-      <div class="finale-rule" aria-hidden="true"></div>
       <p class="finale-reflection" id="finale-reflection" aria-live="polite">You lingered where the gaze usually slips past. The space remembered that response — the door will open again in two hours, when the silence settles.</p>
       <div class="finale-timer">
         <p class="finale-lock-label" id="finale-lock-label">CONTINUATION IN</p>
         <p class="finale-countdown" id="finale-countdown">02:00:00</p>
       </div>
+      <button class="finale-btn finale-btn--glass finale-notify" id="notify-return" type="button">Notify me in 2 hours</button>
+      <div class="finale-divider" aria-hidden="true"><span></span></div>
       <div class="finale-artifact" id="finale-artifact" hidden>
         <canvas id="session-artifact" width="1080" height="1350" aria-label="Your quiet artifact"></canvas>
       </div>
-      <div class="finale-actions">
-        <button class="finale-btn finale-btn--glass finale-btn--gift" id="share-silence" type="button">Gift silence to a friend</button>
-        <button class="finale-btn finale-btn--glass" id="notify-return" type="button">Notify me in 2 hours</button>
-      </div>
+      <button class="finale-gift" id="share-silence" type="button">Gift silence to a friend <span aria-hidden="true">↗</span></button>
       <div class="finale-install" id="finale-install-wrap" hidden>
         <button class="finale-install-link" id="finale-install" type="button">Add to screen</button>
         <p class="finale-install-hint" id="finale-install-hint" hidden></p>

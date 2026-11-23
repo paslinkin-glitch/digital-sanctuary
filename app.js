@@ -99,7 +99,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       installCardTitle: 'Сохранить убежище',
       install: 'Установить приложение',
       tapToBegin: 'Нажмите, чтобы начать',
+      installedTitle: 'Убежище установлено',
+      installedSub: 'Закройте браузер и откройте иконку с экрана телефона',
       installedNote: 'Убежище установлено. Закройте браузер и откройте иконку с экрана телефона',
+      inSilenceNow: 'СЕЙЧАС В ТИШИНЕ: {n}',
       installInApp: 'Откройте в Chrome (⋮ → Открыть в браузере), чтобы установить приложение',
       installHelp: 'Как установить',
       installManual: 'Меню браузера ⋮ → Установить приложение / На экран Домой',
@@ -165,7 +168,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       installCardTitle: 'Keep the sanctuary',
       install: 'Install app',
       tapToBegin: 'Tap to begin',
+      installedTitle: 'Sanctuary installed',
+      installedSub: 'Close the browser and open it from your home screen',
       installedNote: 'Sanctuary installed. Close the browser and open it from your home screen',
+      inSilenceNow: 'IN SILENCE NOW: {n}',
       installInApp: 'Open in Chrome (⋮ → Open in browser) to install',
       installHelp: 'How to install',
       installManual: 'Browser menu ⋮ → Install app / Add to Home Screen',
@@ -598,6 +604,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   const guideLine1 = document.getElementById('guide-line-1');
   const guideLine2 = document.getElementById('guide-line-2');
   const entryInstalledNote = document.getElementById('entry-installed-note');
+  const installedTitle = document.querySelector('.installed-title');
+  const installedSub = document.querySelector('.installed-sub');
   const entryInstallHint = document.getElementById('entry-install-hint');
   const installCard = document.getElementById('install-card');
   const installCardInstall = document.getElementById('install-card-install');
@@ -638,6 +646,32 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
 
 
 
+  let presenceCount = 0;
+  let presenceTimer = 0;
+
+  function presenceBaseForHour(hour) {
+    if (hour >= 7 && hour < 18) return 7 + Math.floor(Math.random() * 8);
+    return 18 + Math.floor(Math.random() * 17);
+  }
+
+  function updatePresenceCounter() {
+    const label = tr('inSilenceNow').replace('{n}', String(presenceCount));
+    for (const node of presenceTexts) node.textContent = label;
+  }
+
+  function startPresenceCounter() {
+    presenceCount = presenceBaseForHour(new Date().getHours());
+    updatePresenceCounter();
+    const tick = () => {
+      const drift = Math.random() < 0.5 ? -1 : 1;
+      presenceCount = Math.max(7, Math.min(34, presenceCount + drift));
+      updatePresenceCounter();
+      presenceTimer = window.setTimeout(tick, 25000 + Math.random() * 15000);
+    };
+    window.clearTimeout(presenceTimer);
+    presenceTimer = window.setTimeout(tick, 25000 + Math.random() * 15000);
+  }
+
   function applyLanguage() {
     document.documentElement.lang = currentLang;
     document.title = tr('docTitle');
@@ -656,7 +690,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     setHtml('.entry-sub', 'entrySub');
     if (entryBarrier) entryBarrier.innerHTML = tr('entryBarrier');
     if (entryBegin) entryBegin.textContent = tr('entryBegin');
-    for (const node of presenceTexts) node.textContent = tr('quietPresence');
+    if (installedTitle) installedTitle.textContent = tr('installedTitle');
+    if (installedSub) installedSub.textContent = tr('installedSub');
+    updatePresenceCounter();
     if (GIFT_MODE) {
       setText('.entry-kicker', 'giftKicker');
       setHtml('.entry-title', 'giftTitle');
@@ -687,7 +723,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (entryTapPrompt) entryTapPrompt.textContent = tr('tapToBegin');
     if (entryLockKicker) entryLockKicker.textContent = tr('lockEntryKicker');
     if (entryLockHint) entryLockHint.textContent = tr('lockEntryHint');
-    if (entryInstalledNote) entryInstalledNote.textContent = tr('installedNote');
+
     if (installCardHint) installCardHint.textContent = tr('installHint');
     if (installCardInfo) installCardInfo.textContent = tr('installInApp');
     if (iosInstallKicker) iosInstallKicker.textContent = tr('iosKicker');
@@ -3038,83 +3074,182 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     wakeLock = null;
   }
 
+  function artifactArchiveNumber() {
+    try {
+      const stored = localStorage.getItem('sanctuary-artifact-code');
+      if (stored && /^[0-9]{4}-[0-9A-Z]{2}$/.test(stored)) return stored;
+    } catch (_) {}
+    const digits = String(Math.floor(1000 + Math.random() * 9000));
+    const suffix = Math.random().toString(36).slice(2, 4).toUpperCase();
+    const code = `${digits}-${suffix}`;
+    try { localStorage.setItem('sanctuary-artifact-code', code); } catch (_) {}
+    return code;
+  }
+
   function drawSessionArtifact() {
     if (!artifactCanvas || !finaleArtifact) return;
     const ctx = artifactCanvas.getContext('2d');
     if (!ctx) return;
-    const width = artifactCanvas.width;
-    const height = artifactCanvas.height;
-    const gradient = ctx.createLinearGradient(0, 0, 0, height);
-    gradient.addColorStop(0, '#141318');
-    gradient.addColorStop(0.55, '#070709');
-    gradient.addColorStop(1, '#070709');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, width, height);
-
+    const W = artifactCanvas.width;
+    const H = artifactCanvas.height;
     const clip = anchorClip || activeClip();
-    const video = clip && clip.el && clip.el.readyState >= 2 ? clip.el : null;
-    if (video) {
-      try {
-        const scale = Math.max(width / video.videoWidth, height / video.videoHeight);
-        const w = video.videoWidth * scale;
-        const h = video.videoHeight * scale;
-        ctx.globalAlpha = 0.78;
-        ctx.drawImage(video, (width - w) / 2, (height - h) / 2, w, h);
-        ctx.globalAlpha = 1;
-      } catch (_) {}
+    const archive = artifactArchiveNumber();
+    const seedSource = `${archive}|${(clip && clip.id) || ''}|${new Date().toDateString()}`;
+    let seed = 0;
+    for (let i = 0; i < seedSource.length; i += 1) seed = (seed * 31 + seedSource.charCodeAt(i)) >>> 0;
+    const random = () => {
+      seed = (seed * 1664525 + 1013904223) >>> 0;
+      return seed / 4294967296;
+    };
+
+    ctx.fillStyle = '#ECE6DA';
+    ctx.fillRect(0, 0, W, H);
+
+    // Grain and paper texture.
+    for (let i = 0; i < 9000; i += 1) {
+      const x = random() * W;
+      const y = random() * H;
+      const a = 0.018 + random() * 0.04;
+      ctx.fillStyle = random() > 0.5 ? `rgba(184, 178, 166, ${a})` : `rgba(255, 250, 240, ${a})`;
+      ctx.fillRect(x, y, 1 + random() * 2, 1 + random() * 2);
     }
 
-    const shade = ctx.createLinearGradient(0, 0, 0, height);
-    shade.addColorStop(0, 'rgba(7, 7, 9, 0.12)');
-    shade.addColorStop(0.55, 'rgba(7, 7, 9, 0.28)');
-    shade.addColorStop(1, 'rgba(7, 7, 9, 0.94)');
-    ctx.fillStyle = shade;
-    ctx.fillRect(0, 0, width, height);
+    // Soft pigment washes.
+    const washes = [
+      { x: W * 0.22, y: H * 0.24, r: W * 0.42, color: '216, 188, 148', a: 0.24 },
+      { x: W * 0.78, y: H * 0.30, r: W * 0.38, color: '110, 140, 137', a: 0.16 },
+      { x: W * 0.55, y: H * 0.78, r: W * 0.50, color: '184, 178, 166', a: 0.22 },
+    ];
+    for (const wash of washes) {
+      const g = ctx.createRadialGradient(wash.x, wash.y, 0, wash.x, wash.y, wash.r);
+      g.addColorStop(0, `rgba(${wash.color}, ${wash.a})`);
+      g.addColorStop(0.55, `rgba(${wash.color}, ${wash.a * 0.55})`);
+      g.addColorStop(1, `rgba(${wash.color}, 0)`);
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
+    }
 
-    ctx.strokeStyle = 'rgba(214, 199, 178, 0.7)';
+    const motif = seed % 3;
+    ctx.save();
+    ctx.translate(W / 2, H * 0.47);
+
+    if (motif === 0) {
+      // Bird in flight with a soft wall shadow.
+      ctx.save();
+      ctx.translate(34, 46);
+      ctx.globalAlpha = 0.12;
+      ctx.fillStyle = '#1A1B1E';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 132, 52, -0.18, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(-18, -4);
+      ctx.quadraticCurveTo(60, -146, 184, -72);
+      ctx.quadraticCurveTo(80, -58, 28, 10);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+
+      ctx.globalAlpha = 0.82;
+      ctx.fillStyle = '#1A1B1E';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 118, 42, -0.18, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(-22, -2);
+      ctx.quadraticCurveTo(64, -158, 202, -86);
+      ctx.quadraticCurveTo(94, -42, 34, 22);
+      ctx.closePath();
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(-16, 6);
+      ctx.quadraticCurveTo(-98, -40, -150, -14);
+      ctx.quadraticCurveTo(-82, 36, -18, 24);
+      ctx.closePath();
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.beginPath();
+      ctx.moveTo(112, 6); ctx.lineTo(150, 22); ctx.lineTo(110, 26); ctx.closePath();
+      ctx.fillStyle = 'rgba(216, 188, 148, .9)'; ctx.fill();
+    } else if (motif === 1) {
+      // Grove: thin trunks on a pale ground.
+      ctx.globalAlpha = 0.9;
+      for (let i = 0; i < 7; i += 1) {
+        const x = -230 + i * 76 + random() * 20;
+        const lean = (random() - 0.5) * 34;
+        ctx.strokeStyle = i % 2 ? 'rgba(26, 27, 30, .66)' : 'rgba(110, 140, 137, .6)';
+        ctx.lineWidth = 2 + random() * 3;
+        ctx.beginPath();
+        ctx.moveTo(x, 190);
+        ctx.quadraticCurveTo(x + lean, -40, x + lean * 0.4, -230);
+        ctx.stroke();
+        ctx.globalAlpha = 0.18;
+        ctx.fillStyle = '#D8BC94';
+        ctx.beginPath();
+        ctx.ellipse(x + lean * 0.4, -230 + random() * 50, 54, 26, 0.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 0.9;
+      }
+      const ground = ctx.createLinearGradient(0, 160, 0, 280);
+      ground.addColorStop(0, 'rgba(216, 188, 148, .15)');
+      ground.addColorStop(1, 'rgba(216, 188, 148, 0)');
+      ctx.fillStyle = ground;
+      ctx.fillRect(-300, 160, 600, 120);
+    } else {
+      // Single feather.
+      ctx.translate(-10, -18);
+      ctx.rotate(-0.28);
+      ctx.globalAlpha = 0.88;
+      const feather = ctx.createLinearGradient(0, -220, 0, 190);
+      feather.addColorStop(0, 'rgba(255, 250, 240, .9)');
+      feather.addColorStop(0.65, 'rgba(236, 230, 218, .92)');
+      feather.addColorStop(1, 'rgba(216, 188, 148, .5)');
+      ctx.fillStyle = feather;
+      ctx.beginPath();
+      ctx.moveTo(0, -230);
+      ctx.bezierCurveTo(96, -118, 104, 52, 0, 200);
+      ctx.bezierCurveTo(-104, 52, -96, -118, 0, -230);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(26, 27, 30, .5)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(0, -210);
+      ctx.quadraticCurveTo(8, 0, 0, 188);
+      ctx.stroke();
+      for (let i = -8; i <= 8; i += 1) {
+        const y = i * 22;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.quadraticCurveTo(42, y - 18, 74, y - 6);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.quadraticCurveTo(-42, y - 18, -74, y - 6);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+
+    // Archive number.
+    ctx.fillStyle = 'rgba(26, 27, 30, .72)';
+    ctx.font = '400 22px "JetBrains Mono", monospace';
+    ctx.fillText(`ARCHIVE № ${archive}`, 74, 92);
+    ctx.strokeStyle = 'rgba(214, 199, 178, .8)';
     ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(90, 108);
-    ctx.lineTo(150, 108);
-    ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(74, 116); ctx.lineTo(144, 116); ctx.stroke();
 
-    ctx.fillStyle = 'rgba(245, 245, 240, 0.72)';
-    ctx.font = '300 24px Georgia, serif';
-    ctx.letterSpacing = '8px';
-    ctx.fillText(currentLang === 'en' ? 'A QUIET ARTIFACT' : 'ТИХИЙ ОТПЕЧАТОК', 90, 84);
-
+    // Poetic imprint.
     const phrase = (clip && (currentLang === 'en' ? clip.caption_en : clip.caption_ru))
-      || (currentLang === 'en' ? 'You are still here' : 'Ты всё ещё здесь');
-    ctx.fillStyle = '#F5F5F0';
-    ctx.font = '300 58px Georgia, serif';
-    const words = String(phrase).split(/\s+/);
-    let line = '';
-    const lines = [];
-    for (const word of words) {
-      const test = line ? `${line} ${word}` : word;
-      if (ctx.measureText(test).width > 760 && line) { lines.push(line); line = word; }
-      else line = test;
-    }
-    if (line) lines.push(line);
-    lines.slice(0, 3).forEach((text, index) => ctx.fillText(text, 90, 760 + index * 82));
+      || (currentLang === 'en' ? 'Stillness remains' : 'Тишина остаётся');
+    ctx.fillStyle = 'rgba(26, 27, 30, .86)';
+    ctx.font = '300 60px "Cormorant Garamond", Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(String(phrase), W / 2, H - 170);
+    ctx.fillStyle = 'rgba(26, 27, 30, .46)';
+    ctx.font = '400 18px "JetBrains Mono", monospace';
+    ctx.fillText('YOURSANCTUARY.RU', W / 2, H - 90);
+    ctx.textAlign = 'left';
 
-    ctx.fillStyle = 'rgba(214, 199, 178, 0.8)';
-    ctx.font = '300 22px Georgia, serif';
-    const hour = new Date().getHours();
-    const moment = hour >= 22 || hour < 6 ? (currentLang === 'en' ? 'NIGHT' : 'НОЧЬ')
-      : hour < 12 ? (currentLang === 'en' ? 'MORNING' : 'УТРО')
-        : hour < 18 ? (currentLang === 'en' ? 'DAY' : 'ДЕНЬ') : (currentLang === 'en' ? 'EVENING' : 'ВЕЧЕР');
-    ctx.fillText(`${moment}  ·  ${currentLang === 'en' ? 'A SPACE BESIDE YOU' : 'ПРОСТРАНСТВО РЯДОМ'}`, 90, 1110);
-
-    ctx.strokeStyle = 'rgba(245, 245, 240, 0.22)';
-    ctx.beginPath();
-    ctx.moveTo(90, 1160);
-    ctx.lineTo(width - 90, 1160);
-    ctx.stroke();
-
-    ctx.fillStyle = 'rgba(245, 245, 240, 0.46)';
-    ctx.font = '300 20px Georgia, serif';
-    ctx.fillText('yoursanctuary.ru', 90, 1212);
     finaleArtifact.hidden = false;
   }
 
@@ -5038,6 +5173,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
   returnAfterLock = Boolean(sessionLockAt && sessionLockAt <= Date.now());
   startSessionLockTicker();
   applyLanguage();
+  startPresenceCounter();
   window.addEventListener('load', () => trackEvent('threshold_open'), { once: true });
 
 
