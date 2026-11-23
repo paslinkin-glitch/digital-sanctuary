@@ -80,15 +80,18 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   const LANG_STORAGE_KEY = 'sanctuary-lang';
   const I18N = {
     ru: {
-      docTitle: 'Digital Sanctuary — интерактивное убежище',
+      docTitle: 'Quiet Space — когда мысли не останавливаются',
       entryAria: 'Вход в убежище',
-      entryKicker: 'ЦИФРОВОЕ УБЕЖИЩЕ',
+      entryKicker: 'ТИХОЕ ПРОСТРАНСТВО',
       appKicker: 'ПОРОГ ТИШИНЫ',
       appTitle: 'Оставь шум снаружи.<br>Войди в сон без слов',
       guideSwipe: 'Потяни вверх — чтобы войти и листать',
       guideHold: 'Удерживай — чтобы замедлить время',
-      entryTitle: 'Закрытое пространство<br>тишины и созерцания',
-      entrySub: 'Без слов, оценок и попыток<br>тебя исправить',
+      entryTitle: 'Когда мысли<br>не останавливаются',
+      entrySub: 'Перед сном, после тяжёлого дня<br>или между созвонами',
+      entryBarrier: 'Ничего не нужно делать — просто смотри.<br>Бесплатно и без регистрации.',
+      entryBegin: 'Войти в тишину',
+      quietPresence: 'Тихое присутствие',
       enter: 'Войти',
       nav: 'Листай вверх как сон · Задержи палец, если кадр отзывается',
       installApp: 'Установить приложение на экран',
@@ -100,6 +103,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       installInApp: 'Откройте в Chrome (⋮ → Открыть в браузере), чтобы установить приложение',
       installHelp: 'Как установить',
       installManual: 'Меню браузера ⋮ → Установить приложение / На экран Домой',
+      finaleInstall: 'Добавить на экран',
+      finaleGift: 'Подарить тишину другу',
+      installAccepted: 'Приложение добавлено на экран',
       iosKicker: 'СОХРАНИТЬ УБЕЖИЩЕ',
       iosSafari1: 'Нажмите «Поделиться» на нижней панели',
       iosSafari2: 'Выберите «На экран Домой»',
@@ -109,9 +115,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       copy: 'Скопировать',
       copied: 'Скопировано',
       swipe: 'Потяни вверх · Удерживай, чтобы замедлить',
-      finaleKicker: 'ТИШИНА',
-      finaleTitle: 'Сон завершён',
-      finaleSub: 'ПРОСТРАНСТВО РЯДОМ',
+      finaleKicker: 'ТИШИНА РЯДОМ',
+      finaleTitle: 'Ты здесь',
+      finaleSub: 'ПРОСТРАНСТВО ОСТАЁТСЯ',
       finaleBody1: 'Здесь ничего не нужно объяснять или исправлять.',
       finaleBody2: 'Тишина просто побыла рядом — ты можешь остаться в ней или вернуться в любой момент.',
       loading: 'ТИШИНА...',
@@ -132,17 +138,26 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       captionFallback: 'В этот час лучше просто дышать.',
       saveFrame: 'Сохранить образ сна',
       saveUnavailable: 'Образ пока недоступен',
+      giftKicker: 'ТИХИЙ ПОДАРОК',
+      giftTitle: 'Тебе передали<br>3 минуты тишины',
+      giftSub: 'Ничего не нужно делать — просто смотри.',
+      giftBarrier: 'Бесплатно и без регистрации.',
+      giftShareText: 'Тебе передали 3 минуты тишины. Просто смотри.',
+      giftShareTitle: 'Тишина для тебя',
     },
     en: {
-      docTitle: 'Digital Sanctuary — an interactive sanctuary',
+      docTitle: 'Quiet Space — when thoughts won’t stop',
       entryAria: 'Entrance to the sanctuary',
-      entryKicker: 'DIGITAL SANCTUARY',
+      entryKicker: 'A QUIET SPACE',
       appKicker: 'THRESHOLD OF STILLNESS',
       appTitle: 'Leave the noise outside.<br>Enter a dream without words',
       guideSwipe: 'Swipe up — to enter and shift',
       guideHold: 'Hold — to slow down time',
-      entryTitle: 'A private space<br>of silence and stillness',
-      entrySub: 'No words, no judgments,<br>no attempts to fix you',
+      entryTitle: 'When thoughts<br>won’t stop',
+      entrySub: 'Before sleep, after a hard day,<br>or between calls',
+      entryBarrier: 'Nothing to do — just watch.<br>Free, no sign-up.',
+      entryBegin: 'Enter the quiet',
+      quietPresence: 'Quiet presence',
       enter: 'Enter',
       nav: 'Swipe up like a dream · Hold when a frame resonates',
       installApp: 'Add the app to your screen',
@@ -154,6 +169,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       installInApp: 'Open in Chrome (⋮ → Open in browser) to install',
       installHelp: 'How to install',
       installManual: 'Browser menu ⋮ → Install app / Add to Home Screen',
+      finaleInstall: 'Add to screen',
+      finaleGift: 'Gift silence to a friend',
+      installAccepted: 'App added to your screen',
       iosKicker: 'SAVE THE SANCTUARY',
       iosSafari1: 'Tap Share in the bottom bar',
       iosSafari2: 'Select «Add to Home Screen»',
@@ -163,8 +181,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       copy: 'Copy',
       copied: 'Copied',
       swipe: 'Swipe up · Hold to sink deeper',
-      finaleKicker: 'SILENCE',
-      finaleTitle: 'The dream is complete',
+      finaleKicker: 'SILENCE, STILL HERE',
+      finaleTitle: 'You are here',
       finaleSub: 'THE SPACE BESIDE YOU',
       finaleBody1: 'Nothing here needs to be explained or repaired.',
       finaleBody2: 'Silence simply stayed beside you — you can remain in it or return at any moment.',
@@ -186,6 +204,12 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       captionFallback: 'Right now, it is enough to breathe.',
       saveFrame: 'Save dream frame',
       saveUnavailable: 'Frame is not available yet',
+      giftKicker: 'A QUIET GIFT',
+      giftTitle: 'Someone sent you<br>3 minutes of silence',
+      giftSub: 'Nothing to do — just watch.',
+      giftBarrier: 'Free, no sign-up.',
+      giftShareText: 'Someone sent you 3 minutes of silence. Just watch.',
+      giftShareTitle: 'Silence for you',
     },
   };
 
@@ -264,7 +288,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     } catch (_) {
       
     }
-    return 'en';
+    const language = String((navigator.languages && navigator.languages[0]) || navigator.language || '').toLowerCase();
+    return language.startsWith('ru') ? 'ru' : 'en';
   }
 
   function detectScreenTier() {
@@ -282,6 +307,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
 
   const SCREEN_TIER = detectScreenTier();
+  const GIFT_MODE = new URLSearchParams(location.search).get('gift') === '1';
   document.documentElement.dataset.tier = SCREEN_TIER;
 
   function timeOfDayFor(hour) {
@@ -600,6 +626,15 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   const backToStartButton = document.getElementById('back-to-start');
   const langSwitch = document.getElementById('lang-switch');
   const langButtons = Array.from(document.querySelectorAll('.lang-switch-btn'));
+  const entryBegin = document.getElementById('entry-begin');
+  const entryBarrier = document.querySelector('.entry-barrier');
+  const presenceTexts = Array.from(document.querySelectorAll('[data-presence]'));
+  const finaleArtifact = document.getElementById('finale-artifact');
+  const artifactCanvas = document.getElementById('session-artifact');
+  const shareSilenceButton = document.getElementById('share-silence');
+  const finaleInstallWrap = document.getElementById('finale-install-wrap');
+  const finaleInstallButton = document.getElementById('finale-install');
+  const finaleInstallHint = document.getElementById('finale-install-hint');
 
 
 
@@ -619,9 +654,15 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     setText('.entry-kicker', 'entryKicker');
     setHtml('.entry-title', 'entryTitle');
     setHtml('.entry-sub', 'entrySub');
-    const appMode = isStandaloneMode();
-    setText('.entry-kicker', appMode ? 'appKicker' : 'entryKicker');
-    setHtml('.entry-title', appMode ? 'appTitle' : 'entryTitle');
+    if (entryBarrier) entryBarrier.innerHTML = tr('entryBarrier');
+    if (entryBegin) entryBegin.textContent = tr('entryBegin');
+    for (const node of presenceTexts) node.textContent = tr('quietPresence');
+    if (GIFT_MODE) {
+      setText('.entry-kicker', 'giftKicker');
+      setHtml('.entry-title', 'giftTitle');
+      setHtml('.entry-sub', 'giftSub');
+      if (entryBarrier) entryBarrier.innerHTML = tr('giftBarrier');
+    }
     if (guideLine1) guideLine1.textContent = tr('guideSwipe');
     if (guideLine2) guideLine2.textContent = tr('guideHold');
     setText('.entry-nav-hint', 'nav');
@@ -657,6 +698,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (installCardLater) installCardLater.setAttribute('aria-label', tr('close'));
     if (copySnapshotButton) copySnapshotButton.textContent = tr('copy');
     if (notifyReturnButton) notifyReturnButton.textContent = tr('notify');
+    if (shareSilenceButton) shareSilenceButton.textContent = tr('finaleGift');
+    if (finaleInstallButton) finaleInstallButton.textContent = tr('finaleInstall');
     if (finaleLockLabel) finaleLockLabel.textContent = tr('lockLabel');
     if (backToStartButton) backToStartButton.textContent = tr('back');
 
@@ -2995,6 +3038,147 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     wakeLock = null;
   }
 
+  function drawSessionArtifact() {
+    if (!artifactCanvas || !finaleArtifact) return;
+    const ctx = artifactCanvas.getContext('2d');
+    if (!ctx) return;
+    const width = artifactCanvas.width;
+    const height = artifactCanvas.height;
+    const gradient = ctx.createLinearGradient(0, 0, 0, height);
+    gradient.addColorStop(0, '#141318');
+    gradient.addColorStop(0.55, '#070709');
+    gradient.addColorStop(1, '#070709');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, width, height);
+
+    const clip = anchorClip || activeClip();
+    const video = clip && clip.el && clip.el.readyState >= 2 ? clip.el : null;
+    if (video) {
+      try {
+        const scale = Math.max(width / video.videoWidth, height / video.videoHeight);
+        const w = video.videoWidth * scale;
+        const h = video.videoHeight * scale;
+        ctx.globalAlpha = 0.78;
+        ctx.drawImage(video, (width - w) / 2, (height - h) / 2, w, h);
+        ctx.globalAlpha = 1;
+      } catch (_) {}
+    }
+
+    const shade = ctx.createLinearGradient(0, 0, 0, height);
+    shade.addColorStop(0, 'rgba(7, 7, 9, 0.12)');
+    shade.addColorStop(0.55, 'rgba(7, 7, 9, 0.28)');
+    shade.addColorStop(1, 'rgba(7, 7, 9, 0.94)');
+    ctx.fillStyle = shade;
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.strokeStyle = 'rgba(214, 199, 178, 0.7)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(90, 108);
+    ctx.lineTo(150, 108);
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(245, 245, 240, 0.72)';
+    ctx.font = '300 24px Georgia, serif';
+    ctx.letterSpacing = '8px';
+    ctx.fillText(currentLang === 'en' ? 'A QUIET ARTIFACT' : 'ТИХИЙ ОТПЕЧАТОК', 90, 84);
+
+    const phrase = (clip && (currentLang === 'en' ? clip.caption_en : clip.caption_ru))
+      || (currentLang === 'en' ? 'You are still here' : 'Ты всё ещё здесь');
+    ctx.fillStyle = '#F5F5F0';
+    ctx.font = '300 58px Georgia, serif';
+    const words = String(phrase).split(/\s+/);
+    let line = '';
+    const lines = [];
+    for (const word of words) {
+      const test = line ? `${line} ${word}` : word;
+      if (ctx.measureText(test).width > 760 && line) { lines.push(line); line = word; }
+      else line = test;
+    }
+    if (line) lines.push(line);
+    lines.slice(0, 3).forEach((text, index) => ctx.fillText(text, 90, 760 + index * 82));
+
+    ctx.fillStyle = 'rgba(214, 199, 178, 0.8)';
+    ctx.font = '300 22px Georgia, serif';
+    const hour = new Date().getHours();
+    const moment = hour >= 22 || hour < 6 ? (currentLang === 'en' ? 'NIGHT' : 'НОЧЬ')
+      : hour < 12 ? (currentLang === 'en' ? 'MORNING' : 'УТРО')
+        : hour < 18 ? (currentLang === 'en' ? 'DAY' : 'ДЕНЬ') : (currentLang === 'en' ? 'EVENING' : 'ВЕЧЕР');
+    ctx.fillText(`${moment}  ·  ${currentLang === 'en' ? 'A SPACE BESIDE YOU' : 'ПРОСТРАНСТВО РЯДОМ'}`, 90, 1110);
+
+    ctx.strokeStyle = 'rgba(245, 245, 240, 0.22)';
+    ctx.beginPath();
+    ctx.moveTo(90, 1160);
+    ctx.lineTo(width - 90, 1160);
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(245, 245, 240, 0.46)';
+    ctx.font = '300 20px Georgia, serif';
+    ctx.fillText('yoursanctuary.ru', 90, 1212);
+    finaleArtifact.hidden = false;
+  }
+
+  function artifactBlob() {
+    return new Promise((resolve) => {
+      if (!artifactCanvas) { resolve(null); return; }
+      try { artifactCanvas.toBlob((blob) => resolve(blob), 'image/png'); }
+      catch (_) { resolve(null); }
+    });
+  }
+
+  async function copyGiftLink() {
+    const link = 'https://yoursanctuary.ru/?gift=1';
+    try {
+      await navigator.clipboard.writeText(link);
+      if (shareSilenceButton) {
+        shareSilenceButton.textContent = tr('copied');
+        window.setTimeout(() => { shareSilenceButton.textContent = tr('finaleGift'); }, 2200);
+      }
+    } catch (_) {}
+  }
+
+  async function shareSilence() {
+    const url = 'https://yoursanctuary.ru/?gift=1';
+    try {
+      const blob = await artifactBlob();
+      const file = blob ? new File([blob], 'sanctuary-quiet.png', { type: 'image/png' }) : null;
+      const data = { title: tr('giftShareTitle'), text: tr('giftShareText'), url };
+      if (file && navigator.canShare && navigator.canShare({ files: [file] })) data.files = [file];
+      if (navigator.share) {
+        await navigator.share(data);
+        return;
+      }
+    } catch (error) {
+      if (error && error.name === 'AbortError') return;
+    }
+    await copyGiftLink();
+  }
+
+  function showFinaleInstall() {
+    if (!finaleInstallWrap) return;
+    finaleInstallWrap.hidden = isStandaloneMode() || installChoiceMade();
+  }
+
+  async function handleFinaleInstall() {
+    if (!deferredPrompt) {
+      if (finaleInstallHint) {
+        finaleInstallHint.textContent = isIos() ? tr('installHint') : tr('installManual');
+        finaleInstallHint.hidden = false;
+      }
+      return;
+    }
+    const prompt = deferredPrompt;
+    deferredPrompt = null;
+    try {
+      await prompt.prompt();
+      const choice = await prompt.userChoice;
+      if (choice && choice.outcome === 'accepted') {
+        if (finaleInstallButton) finaleInstallButton.textContent = tr('installAccepted');
+        if (finaleInstallHint) finaleInstallHint.hidden = true;
+      }
+    } catch (_) {}
+  }
+
   function finishSession() {
     if (sessionComplete) return;
 
@@ -3011,18 +3195,21 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
 
     stage.classList.add('is-finalizing');
     releaseWakeLock();
-    showInstallCard(true, true);
     if (stageLabelEl) stageLabelEl.textContent = '30 // ТИШИНА';
     setSessionLock();
     updateSessionProgress();
     updateSessionLockUI();
     requestFinaleReflection();
+    showFinaleInstall();
 
     if (finaleEl) {
       finaleEl.hidden = false;
       finaleEl.setAttribute('aria-hidden', 'false');
       syncFinaleSessionVideo();
-      window.requestAnimationFrame(() => finaleEl.classList.add('is-visible'));
+      window.requestAnimationFrame(() => {
+        finaleEl.classList.add('is-visible');
+        window.setTimeout(drawSessionArtifact, 260);
+      });
     }
 
   }
@@ -4165,7 +4352,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       captionStartDelayOverride = 0;
       cycleCaptionBlocked = true;
       showCycleWhisper(completedCycle);
-      showInstallCard(true, false);
     } else {
       captionStartDelayOverride = 0;
     }
@@ -4698,7 +4884,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     if (installCard) installCard.classList.remove('install-card--info');
     if (installCardInfo) installCardInfo.hidden = true;
     if (installCardInstall) installCardInstall.hidden = false;
-    showInstallCard(true);
   });
 
   deferredPrompt = window.__deferredInstallPrompt || deferredPrompt;
@@ -4759,20 +4944,15 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
 
   if (installCardInstall) installCardInstall.hidden = true;
   if (entryGate) {
+    entryGate.classList.toggle('is-gift', GIFT_MODE);
     entryGate.classList.toggle('is-standalone', isStandaloneMode());
     entryGate.classList.toggle('is-browser', !isStandaloneMode());
     entryGate.classList.toggle('entry-app-mode', isStandaloneMode());
     entryGate.classList.toggle('entry-browser-mode', !isStandaloneMode());
   }
-  if (isStandaloneMode()) {
-    hideInstallCard();
-    if (entryTapPrompt) entryTapPrompt.hidden = false;
-    if (entryInstalledNote) entryInstalledNote.hidden = true;
-  } else if (!installChoiceMade()) {
-    if (isIos()) showInstallCard(true);
-    else if (isAndroidInApp()) showAndroidInfoCard();
-    else showAndroidFallbackCard();
-  }
+  hideInstallCard();
+  if (entryTapPrompt) entryTapPrompt.hidden = true;
+  if (entryInstalledNote) entryInstalledNote.hidden = true;
   syncInstallButton();
 
   function unlockExperience() {
@@ -4815,10 +4995,10 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     }
   }
 
-  if (entryGate && isStandaloneMode()) {
+  if (entryGate) {
     let entryStart = null;
     entryGate.addEventListener('touchstart', (event) => {
-      if (event.touches.length !== 1 || event.target.closest('.lang-switch, .install-card, .install-card--ios')) {
+      if (event.touches.length !== 1 || event.target.closest('.lang-switch, .install-card, .install-card--ios, .entry-begin, button')) {
         entryStart = null;
         return;
       }
@@ -4853,6 +5033,8 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     gateOpen = true;
   }
 
+  if (entryBegin) entryBegin.addEventListener('click', unlockExperience);
+
   sessionLockAt = readSessionLock();
   returnAfterLock = Boolean(sessionLockAt && sessionLockAt <= Date.now());
   startSessionLockTicker();
@@ -4863,6 +5045,9 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
   if (notifyReturnButton) {
     notifyReturnButton.addEventListener('click', enableReturnNotification);
   }
+
+  if (shareSilenceButton) shareSilenceButton.addEventListener('click', shareSilence);
+  if (finaleInstallButton) finaleInstallButton.addEventListener('click', handleFinaleInstall);
 
   if (backToStartButton) {
     backToStartButton.addEventListener('click', returnToStart);

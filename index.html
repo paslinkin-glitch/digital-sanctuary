@@ -14,10 +14,10 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
   <link rel="preconnect" href="https://s3.twcstorage.ru" crossorigin>
-  <link rel="stylesheet" href="style.css?v=66">
+  <link rel="stylesheet" href="style.css?v=67">
 </head>
 <body>
-  <script>window.SANCTUARY_MAINTENANCE = true; if (window.SANCTUARY_MAINTENANCE) document.documentElement.dataset.maintenance = 'true';</script>
+  <script>window.SANCTUARY_MAINTENANCE = false; if (window.SANCTUARY_MAINTENANCE) document.documentElement.dataset.maintenance = 'true';</script>
   <section id="maintenance-screen" aria-live="polite">
     <div class="maintenance-inner">
       <span class="maintenance-thread" aria-hidden="true"></span>
@@ -88,10 +88,16 @@
       <button class="lang-switch-btn" type="button" data-lang="en">EN</button>
     </div>
     <div class="entry-copy">
-      <p class="entry-kicker">DIGITAL SANCTUARY</p>
-      <h1 class="entry-title">A private space<br>of silence and stillness</h1>
-      <p class="entry-sub">No words, no judgments,<br>no attempts to fix you</p>
+      <p class="entry-kicker">A QUIET SPACE</p>
+      <h1 class="entry-title">When thoughts<br>won’t stop</h1>
+      <p class="entry-sub">Before sleep, after a hard day,<br>or between calls</p>
+      <p class="entry-barrier">Nothing to do — just watch.<br>Free, no sign-up.</p>
     </div>
+    <div class="quiet-presence" id="entry-presence" aria-live="polite">
+      <span class="presence-dot" aria-hidden="true"></span>
+      <span class="presence-text" data-presence>Quiet presence</span>
+    </div>
+    <button class="entry-begin" id="entry-begin" type="button">Enter the quiet</button>
     <div class="entry-lock" id="entry-lock" hidden aria-live="polite">
       <p class="entry-lock-kicker" id="entry-lock-kicker">ДВЕРЬ ЗАКРЫТА</p>
       <span class="entry-lock-rail" aria-hidden="true"><i id="entry-lock-light"></i></span>
@@ -169,17 +175,29 @@
     </div>
     <div class="finale-glow" aria-hidden="true"></div>
     <div class="finale-shell">
-      <p class="finale-kicker">SILENCE</p>
-      <h2 class="finale-title" id="finale-title">The dream is complete</h2>
-      <p class="finale-sub">THE SPACE BESIDE YOU</p>
+      <p class="finale-kicker">SILENCE, STILL HERE</p>
+      <h2 class="finale-title" id="finale-title">You are here</h2>
+      <p class="finale-sub">THE SPACE REMAINS</p>
+      <div class="quiet-presence quiet-presence--finale" aria-live="polite">
+        <span class="presence-dot" aria-hidden="true"></span>
+        <span class="presence-text" data-presence>Quiet presence</span>
+      </div>
       <div class="finale-rule" aria-hidden="true"></div>
       <p class="finale-reflection" id="finale-reflection" aria-live="polite">You lingered where the gaze usually slips past. The space remembered that response — the door will open again in two hours, when the silence settles.</p>
       <div class="finale-timer">
         <p class="finale-lock-label" id="finale-lock-label">CONTINUATION IN</p>
         <p class="finale-countdown" id="finale-countdown">02:00:00</p>
       </div>
+      <div class="finale-artifact" id="finale-artifact" hidden>
+        <canvas id="session-artifact" width="1080" height="1350" aria-label="Your quiet artifact"></canvas>
+      </div>
       <div class="finale-actions">
+        <button class="finale-btn finale-btn--glass finale-btn--gift" id="share-silence" type="button">Gift silence to a friend</button>
         <button class="finale-btn finale-btn--glass" id="notify-return" type="button">Notify me in 2 hours</button>
+      </div>
+      <div class="finale-install" id="finale-install-wrap" hidden>
+        <button class="finale-install-link" id="finale-install" type="button">Add to screen</button>
+        <p class="finale-install-hint" id="finale-install-hint" hidden></p>
       </div>
     </div>
   </section>
@@ -191,7 +209,7 @@
       window.__deferredInstallPrompt = event;
     });
   </script>
-  <script src="videos-data.js?v=66"></script>
-  <script src="app.js?v=66"></script>
+  <script src="videos-data.js?v=67"></script>
+  <script src="app.js?v=67"></script>
 </body>
 </html>

@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "Digital Sanctuary",
-  "short_name": "Sanctuary",
-  "description": "Закрытое пространство тишины и созерцания.",
+  "name": "Quiet Space",
+  "short_name": "Quiet",
+  "description": "Место, где мысли замедляются. Бесплатно, без регистрации.",
   "lang": "ru",
   "dir": "ltr",
   "start_url": "./?app=1",
