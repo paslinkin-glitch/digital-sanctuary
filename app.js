@@ -95,7 +95,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       entryKicker: 'ЦИФРОВОЕ УБЕЖИЩЕ',
       appKicker: 'ПОРОГ ТИШИНЫ',
       appTitle: 'Оставь шум снаружи.<br>Войди в сон без слов',
-      guideSwipe: 'Потяни вверх — чтобы сменить кадр',
+      guideSwipe: 'Потяни вверх — чтобы войти и листать',
       guideHold: 'Удерживай — чтобы замедлить время',
       entryTitle: 'Закрытое пространство<br>тишины и созерцания',
       entrySub: 'Без слов, оценок и попыток<br>тебя исправить',
@@ -145,7 +145,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       entryKicker: 'DIGITAL SANCTUARY',
       appKicker: 'THRESHOLD OF STILLNESS',
       appTitle: 'Leave the noise outside.<br>Enter a dream without words',
-      guideSwipe: 'Swipe up — to shift the frame',
+      guideSwipe: 'Swipe up — to enter and shift',
       guideHold: 'Hold — to slow down time',
       entryTitle: 'A private space<br>of silence and stillness',
       entrySub: 'No words, no judgments,<br>no attempts to fix you',
@@ -4229,6 +4229,25 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
 
     recordSessionEvent(record);
 
+    if (direction === 'down') {
+      if (pathPos <= 0) return;
+      pathPos -= 1;
+      const previous = pathPlan[pathPos];
+      if (!previous) return;
+      sceneContext.stage = previous.stage;
+      updateStageLabel(previous.stage);
+      trackStageReached(previous.stage);
+      preparePlaybackWindow(previous, pathPlan[pathPos + 1]);
+      navigateTo(
+        previous.category.index,
+        'down',
+        fadeDurationFor(record.viewedMs, speed),
+        previous.clip.id,
+        sceneContext
+      );
+      return;
+    }
+
     if (pathPos < 2) firstShadowDurations.push(record.viewedMs);
     if (
       pathPos === 1
@@ -4488,8 +4507,8 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     setActivePlaybackRate(1);
     setBreath(0);
     abortGesture();
-    if (dy < -35 && Math.abs(dy) > Math.abs(dx)) {
-      go('up', velocity);
+    if (Math.abs(dy) > 35 && Math.abs(dy) > Math.abs(dx)) {
+      go(dy < 0 ? 'up' : 'down', velocity);
     }
   }, { passive: false });
 
@@ -4952,13 +4971,39 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
   }
 
   if (entryGate && isStandaloneMode()) {
-    const beginFromEntry = (event) => {
-      if (event.target.closest('.lang-switch, .install-card, .install-card--ios')) return;
-      event.preventDefault();
-      unlockExperience();
-    };
-    entryGate.addEventListener('pointerdown', beginFromEntry, { passive: false });
-    entryGate.addEventListener('touchstart', beginFromEntry, { passive: false });
+    let entryStart = null;
+    entryGate.addEventListener('touchstart', (event) => {
+      if (event.touches.length !== 1 || event.target.closest('.lang-switch, .install-card, .install-card--ios')) {
+        entryStart = null;
+        return;
+      }
+      const touch = event.touches[0];
+      entryStart = { x: touch.clientX, y: touch.clientY };
+    }, { passive: true });
+    entryGate.addEventListener('touchend', (event) => {
+      if (!entryStart) return;
+      const touch = event.changedTouches && event.changedTouches[0];
+      const start = entryStart;
+      entryStart = null;
+      if (!touch) return;
+      const dx = touch.clientX - start.x;
+      const dy = touch.clientY - start.y;
+      if (dy < -35 && Math.abs(dy) > Math.abs(dx)) {
+        unlockExperience();
+      }
+    }, { passive: false });
+    entryGate.addEventListener('wheel', (event) => {
+      if (event.deltaY < 0) {
+        event.preventDefault();
+        unlockExperience();
+      }
+    }, { passive: false });
+    window.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowUp' && !gateOpen) {
+        event.preventDefault();
+        unlockExperience();
+      }
+    });
   } else if (!entryGate) {
     gateOpen = true;
   }

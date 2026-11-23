@@ -3780,3 +3780,65 @@ body .entry.is-installed .entry-actions {
   display: none !important;
   pointer-events: none !important;
 }
+
+
+/* v55 editorial app threshold */
+.entry.is-standalone {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0 !important;
+  padding-top: max(20px, env(safe-area-inset-top)) !important;
+}
+
+.entry.is-standalone .lang-switch {
+  position: absolute !important;
+  top: max(20px, env(safe-area-inset-top)) !important;
+  left: clamp(18px, 6vw, 48px) !important;
+  right: auto !important;
+  align-self: flex-start !important;
+}
+
+.entry.is-standalone .entry-copy {
+  flex: 0 0 auto;
+  margin: 0 !important;
+  align-self: center;
+}
+
+.entry.is-standalone .entry-copy::before,
+.entry.is-standalone .entry-copy::after {
+  display: none !important;
+}
+
+.entry.is-standalone .entry-gesture-guide {
+  flex: 0 0 auto;
+  order: 2 !important;
+  margin: 18px auto 0 !important;
+  gap: 0;
+}
+
+.entry.is-standalone .entry-copy {
+  order: 1 !important;
+}
+
+.entry.is-standalone .guide-thread {
+  width: 0.5px !important;
+  height: 40px !important;
+  margin: 24px auto !important;
+}
+
+.entry.is-standalone .guide-line {
+  margin: 0 0 9px;
+}
+
+.entry.is-open {
+  transform: translateY(-24px);
+}
+
+.entry {
+  transition:
+    opacity 1s var(--organic),
+    filter 1s var(--organic),
+    transform 1s var(--organic);
+}
