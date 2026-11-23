@@ -1,5 +1,5 @@
 {
-  "id": "/digital-sanctuary/",
+  "id": "./",
   "name": "Digital Sanctuary",
   "short_name": "Sanctuary",
   "description": "Тихая интерактивная видео-лента: юнгианские образы, замедление и эмбиент.",
@@ -8,11 +8,18 @@
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "display_override": ["fullscreen", "standalone", "minimal-ui"],
+  "display_override": [
+    "fullscreen",
+    "standalone",
+    "minimal-ui"
+  ],
   "orientation": "portrait",
   "background_color": "#050507",
   "theme_color": "#050507",
-  "categories": ["entertainment", "lifestyle"],
+  "categories": [
+    "entertainment",
+    "lifestyle"
+  ],
   "prefer_related_applications": false,
   "icons": [
     {

@@ -3151,3 +3151,33 @@ body,
   letter-spacing: 0.28em;
   text-transform: uppercase;
 }
+
+
+/* v44: install card lives in grid row 3, between copy and entry action */
+.entry > .install-card,
+.entry > .install-card--ios {
+  position: relative;
+  grid-row: 3;
+  top: auto;
+  bottom: auto;
+  left: auto;
+  right: auto;
+  transform: none;
+  margin: auto;
+  align-self: center;
+  z-index: 6;
+  width: min(calc(100vw - 32px), 380px);
+}
+
+.entry > .install-card:not(.install-card--ios):active {
+  transform: scale(0.985);
+}
+
+.install-card--final {
+  position: fixed;
+  left: 50%;
+  top: auto;
+  bottom: calc(env(safe-area-inset-bottom) + 96px);
+  transform: translateX(-50%);
+  z-index: 61;
+}

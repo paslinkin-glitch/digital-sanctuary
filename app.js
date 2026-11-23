@@ -1384,6 +1384,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
 
   async function callDeepSeek(messages, temperature) {
     if (location.protocol === 'file:') return null;
+    if (location.hostname === 'yoursanctuary.ru' || location.hostname.endsWith('.github.io') || location.hostname === 's3.twcstorage.ru') return null;
     if (captionApiUnavailable) return null;
 
     const controller = new AbortController();
@@ -1409,7 +1410,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         return null;
       }
 
-      if (!response.ok) return null;
+      if (!response.ok) {
+        captionApiUnavailable = true;
+        return null;
+      }
 
       const payload = await response.json();
       const content = payload
@@ -1420,6 +1424,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
 
       return typeof content === 'string' ? content : null;
     } catch (_) {
+      captionApiUnavailable = true;
       return null;
     } finally {
       window.clearTimeout(timer);
