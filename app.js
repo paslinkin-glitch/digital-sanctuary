@@ -102,6 +102,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       installCardTitle: 'Сохранить убежище',
       install: 'Добавить на экран',
       installInApp: 'Откройте в Chrome (⋮ → Открыть в браузере), чтобы установить приложение',
+      installHelp: 'Как установить',
+      installManual: 'Меню браузера ⋮ → Установить приложение / На экран Домой',
       iosKicker: 'СОХРАНИТЬ УБЕЖИЩЕ',
       iosSafari1: 'Нажмите «Поделиться» на нижней панели',
       iosSafari2: 'Выберите «На экран Домой»',
@@ -144,6 +146,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       installCardTitle: 'Keep the sanctuary',
       install: 'Add to screen',
       installInApp: 'Open in Chrome (⋮ → Open in browser) to install',
+      installHelp: 'How to install',
+      installManual: 'Browser menu ⋮ → Install app / Add to Home Screen',
       iosKicker: 'SAVE THE SANCTUARY',
       iosSafari1: 'Tap Share in the bottom bar',
       iosSafari2: 'Select «Add to Home Screen»',
@@ -458,41 +462,44 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   // Ниже 25 уникальных preview.mp3 из ответов /audios: по пять треков на
   // категорию. Ссылки зафиксированы, чтобы музыка не зависела от лимита
   // поисковых запросов API, и чередуются под каждый новый кадр.
-  const MUSIC_CATALOG = {
+    const MUSIC_CATALOG = {
     Shadow: [
       { id: 'HDgXJpCNph', title: 'Whisper Canyon', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/whisper-canyon-HDgXJpCNph.mp3' },
       { id: 'DoetucQLKg', title: 'Monolith', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/monolith-DoetucQLKg.mp3' },
       { id: '2v8dZRPll8', title: 'inner world', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/inner-world-2v8dZRPll8.mp3' },
       { id: 'mvh5rImd1R', title: 'clouds', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/clouds-mvh5rImd1R.mp3' },
+      { id: 'ash-garden', title: 'Ash Garden', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/ash-garden.mp3' },
     ],
     Calm: [
       { id: 'HTzsyicaIT', title: 'crystal rain', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/crystal-rain-HTzsyicaIT.mp3' },
       { id: 'WUzwP3T0HC', title: 'tokio rain', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/tokio-rain-WUzwP3T0HC.mp3' },
-      { id: '2v8dZRPll8', title: 'inner world', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/inner-world-2v8dZRPll8.mp3' },
-      { id: 'mvh5rImd1R', title: 'clouds', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/clouds-mvh5rImd1R.mp3' },
+      { id: 'still-water', title: 'Still Water', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/still-water.mp3' },
+      { id: 'distant-rain', title: 'Distant Rain', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/distant-rain.mp3' },
+      { id: 'deep-green', title: 'Deep Green', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/deep-green.mp3' },
     ],
     Abyss: [
       { id: '5nxzquf11g', title: 'The Color of Space', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/the-color-of-space-5nxzquf11g.mp3' },
       { id: 'AeWsKx2z16', title: 'A Look At The Sky', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/a-look-at-the-sky-AeWsKx2z16.mp3' },
       { id: 'sGPevMbGzP', title: 'Deep Meditation', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/deep-meditation-sGPevMbGzP.mp3' },
-      { id: 'mvh5rImd1R', title: 'clouds', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/clouds-mvh5rImd1R.mp3' },
+      { id: 'night-current', title: 'Night Current', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/night-current.mp3' },
+      { id: 'long-exposure', title: 'Long Exposure', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/long-exposure.mp3' },
     ],
     Trickster: [
       { id: 'EX6e6IkDGx', title: 'A Piano For Travel', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/a-piano-for-travel-EX6e6IkDGx.mp3' },
       { id: 'aUHfXkgixI', title: 'Cinematic Visions', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/cinematic-visions-aUHfXkgixI.mp3' },
       { id: 'yutSfOSE7l', title: 'Lotus Flower', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/lotus-flower-yutSfOSE7l.mp3' },
       { id: 'p2sexNoWO6', title: 'horizons', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/horizons-p2sexNoWO6.mp3' },
+      { id: 'ember-breath', title: 'Ember Breath', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/ember-breath.mp3' },
     ],
     Path: [
-      { id: 'EX6e6IkDGx', title: 'A Piano For Travel', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/a-piano-for-travel-EX6e6IkDGx.mp3' },
-      { id: 'aUHfXkgixI', title: 'Cinematic Visions', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/cinematic-visions-aUHfXkgixI.mp3' },
-      { id: 'yutSfOSE7l', title: 'Lotus Flower', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/lotus-flower-yutSfOSE7l.mp3' },
-      { id: 'p2sexNoWO6', title: 'horizons', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/horizons-p2sexNoWO6.mp3' },
       { id: 'Ou9ZrAwafj', title: 'Through The Looking Glass', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/through-the-looking-glass-Ou9ZrAwafj.mp3' },
+      { id: 'pale-horizon', title: 'Pale Horizon', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/pale-horizon.mp3' },
+      { id: 'low-tide', title: 'Low Tide', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/low-tide.mp3' },
+      { id: 'quiet-ember', title: 'Quiet Ember', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/quiet-ember.mp3' },
+      { id: 'open-sky', title: 'Open Sky', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/open-sky.mp3' },
     ],
   };
-
-  /* ------------------------------------------------------------------ DOM */
+/* ------------------------------------------------------------------ DOM */
 
   const ELEMENT_DEFAULT = {
     Shadow: 'fog',
@@ -1954,6 +1961,17 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (sound.windDepth) sound.windDepth.gain.linearRampToValueAtTime(profile.depth, now + 0.8);
   }
 
+  function setStageOvertone(stageId) {
+    if (!sound || !sound.overtone) return;
+    const frequencies = [110, 146.83, 174.61, 196];
+    const frequency = frequencies[Math.max(0, Math.min(3, Number(stageId) - 1))];
+    const now = sound.ctx.currentTime;
+    sound.overtone.frequency.cancelScheduledValues(now);
+    sound.overtone.frequency.setValueAtTime(sound.overtone.frequency.value, now);
+    sound.overtone.frequency.linearRampToValueAtTime(frequency, now + 1.2);
+    sound.overtoneGain.gain.linearRampToValueAtTime(0.008, now + 1.2);
+  }
+
   function enableSoundscape() {
     if (sound) {
       if (sound.ctx.state === 'suspended') sound.ctx.resume().catch(() => {});
@@ -2039,6 +2057,15 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       windDepth.connect(noiseTone.frequency);
       wind.start();
 
+      const overtone = ctx.createOscillator();
+      overtone.type = 'sine';
+      overtone.frequency.value = 110;
+      const overtoneGain = ctx.createGain();
+      overtoneGain.gain.value = 0.008;
+      overtone.connect(overtoneGain);
+      overtoneGain.connect(bus);
+      overtone.start();
+
       sound = {
         ctx,
         bus,
@@ -2053,6 +2080,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         noiseGain,
         wind,
         windDepth,
+        overtone,
+        overtoneGain,
         elementalGain: NOISE_GAIN,
         bank: soundBank,
         channels: new Map(),
@@ -2065,6 +2094,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
 
       if (ctx.state === 'suspended') ctx.resume().catch(() => {});
       setElementalNoise(currentOpticElement);
+      setStageOvertone(sessionStage);
 
       // Первый жест: первые треки всех категорий идут в preload сразу.
       preloadFirstTracks();
@@ -2593,6 +2623,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
 
   function updateStageLabel(stageId) {
     sessionStage = stageId || sessionStage;
+    setStageOvertone(sessionStage);
     if (stageLabelEl) stageLabelEl.textContent = stageLabelFor(sessionStage);
   }
 
@@ -4617,6 +4648,20 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     syncInstallButton();
   }
 
+  function showAndroidFallbackCard() {
+    if (isStandaloneMode() || installChoiceMade() || !installCard) return;
+    installCard.classList.remove('install-card--info');
+    if (installCardInfo) installCardInfo.hidden = true;
+    if (installCardHint) installCardHint.hidden = true;
+    if (installCardInstall) {
+      installCardInstall.hidden = false;
+      installCardInstall.textContent = tr('installHelp');
+    }
+    installCard.hidden = false;
+    installCard.classList.add('is-visible');
+    syncInstallButton();
+  }
+
   function showInstallCard(force = false, finalContext = false) {
     if (isStandaloneMode() || installChoiceMade()) return;
     if (!isIos() && !deferredPrompt) return;
@@ -4715,7 +4760,18 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       return;
     }
 
-    if (isIos()) showIosInstallHint();
+    if (isIos()) {
+      showIosInstallHint();
+      return;
+    }
+
+    if (installCard && !installCard.hidden) {
+      if (installCardInfo) {
+        installCardInfo.textContent = tr('installManual');
+        installCardInfo.hidden = false;
+      }
+      if (installCardHint) installCardHint.hidden = true;
+    }
   }
 
   window.addEventListener('beforeinstallprompt', (event) => {
@@ -4748,6 +4804,12 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     entryInstallButton.addEventListener('click', handleInstallClick);
   }
 
+  for (const card of [installCard, iosInstallCard]) {
+    if (!card) continue;
+    card.addEventListener('pointerdown', (event) => event.stopPropagation());
+    card.addEventListener('click', (event) => event.stopPropagation());
+  }
+
   if (installCardInstall) installCardInstall.addEventListener('click', handleInstallClick);
   function closeInstallPrompt(event) {
     event.preventDefault();
@@ -4770,6 +4832,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
   if (!isStandaloneMode() && !installChoiceMade()) {
     if (isIos()) showInstallCard(true);
     else if (isAndroidInApp()) showAndroidInfoCard();
+    else showAndroidFallbackCard();
   }
   syncInstallButton();
 
@@ -4816,6 +4879,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
 
   if (entryGate) {
     entryGate.addEventListener('pointerdown', (event) => {
+      if (event.target.closest('.install-card, .install-card--ios, .lang-switch')) return;
       event.preventDefault();
       unlockExperience();
     }, { passive: false });

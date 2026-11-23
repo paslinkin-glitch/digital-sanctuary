@@ -2977,7 +2977,10 @@ html:not([data-maintenance="true"]) #maintenance-screen {
 
 .entry:not(.is-open) .entry-actions,
 .entry:not(.is-open) .entry-trigger,
-.entry:not(.is-open) .entry-install {
+.entry:not(.is-open) .entry-install,
+.entry:not(.is-open) .lang-switch,
+.entry:not(.is-open) .install-card,
+.entry:not(.is-open) .install-card--ios {
   pointer-events: auto;
 }
 
@@ -3366,4 +3369,141 @@ body,
   padding: 12px 24px;
   border-radius: 999px;
   text-align: center;
+}
+
+
+/* ================================================== v49 FINAL PRODUCT PASS */
+.entry {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  text-align: center;
+  padding:
+    max(24px, calc(env(safe-area-inset-top) + 12px))
+    24px
+    max(28px, calc(env(safe-area-inset-bottom) + 16px));
+  background:
+    radial-gradient(circle at 50% 45%, rgba(214, 199, 178, 0.09) 0%, transparent 65%),
+    var(--void);
+}
+
+.entry .lang-switch { order: 0; }
+.entry .entry-copy { order: 1; margin: 0 auto; }
+.entry > .install-card,
+.entry > .install-card--ios { order: 2; }
+.entry .entry-actions { order: 3; }
+
+.entry .entry-trigger {
+  width: auto !important;
+  min-width: 180px;
+  max-width: 240px;
+  padding: 14px 42px;
+  border-radius: 999px;
+  margin: 0 auto;
+  background: rgba(12, 12, 15, 0.34);
+  border: 0.5px solid rgba(234, 229, 220, 0.15);
+  border-top-color: rgba(234, 229, 220, 0.4);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: rgba(234, 229, 220, 0.72);
+  opacity: 0.86;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.entry > .install-card,
+.entry > .install-card--ios {
+  position: relative;
+  left: auto;
+  right: auto;
+  top: auto;
+  bottom: auto;
+  transform: none;
+  width: min(100%, 340px);
+  max-width: 340px;
+  margin: 0 auto;
+}
+
+.caption,
+.caption-line {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(18px, 4.8vw, 21px);
+  line-height: 1.45;
+  letter-spacing: 0.02em;
+  color: rgba(248, 246, 242, 0.94);
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.92);
+}
+
+.cycle-whisper {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(84vw, 390px);
+  text-align: center;
+}
+
+.cycle-whisper-rule {
+  display: block;
+  width: min(120px, 30%);
+  height: 0.5px;
+  margin: 0.9rem auto;
+  background: linear-gradient(90deg, transparent, rgba(214, 199, 178, 0.72), transparent);
+  opacity: 0.9;
+}
+
+.finale-shell {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  width: min(88vw, 440px) !important;
+  max-width: 440px !important;
+  left: auto !important;
+  right: auto !important;
+  margin: 0 auto !important;
+  transform: none !important;
+  text-align: center;
+  justify-items: center;
+  align-items: center;
+}
+
+.finale-reflection {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 440px;
+}
+
+.finale-actions {
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin: 1.4rem auto 0;
+}
+
+.finale-actions .finale-btn--glass {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 190px;
+  max-width: 250px;
+  padding: 12px 24px;
+  border-radius: 999px;
+  text-align: center;
+}
+
+
+/* entry cards: no spring transform or inherited off-screen left */
+.entry > .install-card,
+.entry > .install-card--ios {
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  animation: none !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
 }
