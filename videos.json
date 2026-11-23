@@ -16,22 +16,6 @@
     "title_ru": "Тень 01"
   },
   {
-    "id": "vecteezy:41638597",
-    "title": "Verical Video of People at the Night Concert",
-    "description": "Verical Video of People at the Night Concert",
-    "url": "https://raw.githubusercontent.com/paslinkin-glitch/digital-sanctuary-media/main/shadow_02_vecteezy-41638597.mp4",
-    "stage": "shadow",
-    "archetype": "Тень",
-    "is_finale": false,
-    "source": "jsdelivr",
-    "vertical": true,
-    "width": 1080,
-    "height": 1920,
-    "duration": 10.0,
-    "size": 4171283,
-    "title_ru": "Тень 02"
-  },
-  {
     "id": "vecteezy:21570169",
     "title": "Aerial view of night city line. Vancouver, Canada.",
     "description": "Aerial view of night city line. Vancouver, Canada.",
@@ -320,22 +304,6 @@
     "title_ru": "Тень 20"
   },
   {
-    "id": "coverr:coverr-thai-berry-ice-cream-3877",
-    "title": "Thai Berry Ice Cream",
-    "description": "Thai Berry Ice Cream",
-    "url": "https://raw.githubusercontent.com/paslinkin-glitch/digital-sanctuary-media/main/shadow_21_coverr-coverr-thai-berry-ice-cream-3877.mp4",
-    "stage": "shadow",
-    "archetype": "Тень",
-    "is_finale": false,
-    "source": "jsdelivr",
-    "vertical": true,
-    "width": 1080,
-    "height": 1920,
-    "duration": 10.0,
-    "size": 5874233,
-    "title_ru": "Тень 21"
-  },
-  {
     "id": "vecteezy:50124393",
     "title": "View from a drone vertically down onto an ice floe with sup surfers",
     "description": "View from a drone vertically down onto an ice floe with sup surfers",
@@ -350,22 +318,6 @@
     "duration": 10.0,
     "size": 5902083,
     "title_ru": "Тень 22"
-  },
-  {
-    "id": "coverr:coverr-having-fun-at-a-concert-3590",
-    "title": "Having Fun At A Concert",
-    "description": "Having Fun At A Concert",
-    "url": "https://raw.githubusercontent.com/paslinkin-glitch/digital-sanctuary-media/main/shadow_23_coverr-coverr-having-fun-at-a-concert-3590.mp4",
-    "stage": "shadow",
-    "archetype": "Тень",
-    "is_finale": false,
-    "source": "jsdelivr",
-    "vertical": true,
-    "width": 1080,
-    "height": 1920,
-    "duration": 10.0,
-    "size": 5930208,
-    "title_ru": "Тень 23"
   },
   {
     "id": "vecteezy:48229330",
@@ -398,38 +350,6 @@
     "duration": 11.606,
     "size": 6403198,
     "title_ru": "Тень 25"
-  },
-  {
-    "id": "coverr:coverr-blueberries-and-strawberries-8320",
-    "title": "Blueberries And Strawberries",
-    "description": "Blueberries And Strawberries",
-    "url": "https://raw.githubusercontent.com/paslinkin-glitch/digital-sanctuary-media/main/shadow_26_coverr-coverr-blueberries-and-strawberries-8320.mp4",
-    "stage": "shadow",
-    "archetype": "Тень",
-    "is_finale": false,
-    "source": "jsdelivr",
-    "vertical": true,
-    "width": 1080,
-    "height": 1920,
-    "duration": 10.0,
-    "size": 7167398,
-    "title_ru": "Тень 26"
-  },
-  {
-    "id": "coverr:coverr-kids-playing-with-bubbles-930",
-    "title": "Kids Playing With Bubbles",
-    "description": "Kids Playing With Bubbles",
-    "url": "https://raw.githubusercontent.com/paslinkin-glitch/digital-sanctuary-media/main/shadow_27_coverr-coverr-kids-playing-with-bubbles-930.mp4",
-    "stage": "shadow",
-    "archetype": "Тень",
-    "is_finale": false,
-    "source": "jsdelivr",
-    "vertical": true,
-    "width": 1080,
-    "height": 1920,
-    "duration": 10.0,
-    "size": 7337779,
-    "title_ru": "Тень 27"
   },
   {
     "id": "coverr:coverr-cars-on-the-highway-2993",
@@ -1902,21 +1822,5 @@
     "duration": 10.0,
     "size": 9817151,
     "title_ru": "Путь 29"
-  },
-  {
-    "id": "coverr:coverr-temp-r6fbualnssmg3ckepdqr6output-mp4-7424",
-    "title": "Temp R6Fbualnssmg3Ckepdqr6Output Mp4",
-    "description": "Temp R6Fbualnssmg3Ckepdqr6Output Mp4",
-    "url": "https://raw.githubusercontent.com/paslinkin-glitch/digital-sanctuary-media/main/path_30_err-coverr-temp-r6fbualnssmg3ckepdqr6output-mp4-7424.mp4",
-    "stage": "path",
-    "archetype": "Путь / Самость",
-    "is_finale": false,
-    "source": "jsdelivr",
-    "vertical": true,
-    "width": 1080,
-    "height": 1920,
-    "duration": 10.0,
-    "size": 8405968,
-    "title_ru": "Путь 30"
   }
 ]
