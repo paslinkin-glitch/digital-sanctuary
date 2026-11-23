@@ -118,6 +118,52 @@
     <button class="install-card-close" id="install-card-later" type="button" aria-label="Close">×</button>
   </aside>
 
+  <aside class="install-card install-card--ios" id="ios-install-card" hidden aria-live="polite">
+    <button class="ios-install-close" id="ios-install-close" type="button" aria-label="Close">×</button>
+    <p class="ios-install-kicker" id="ios-install-kicker">SAVE THE SANCTUARY</p>
+    <div class="ios-steps" id="ios-steps-safari">
+      <div class="ios-step">
+        <span class="ios-step-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+            <rect x="4" y="9" width="16" height="12" rx="2"></rect>
+            <path d="M12 3v11M8 7l4-4 4 4"></path>
+          </svg>
+        </span>
+        <span class="ios-step-text" id="ios-safari-1">Tap Share in the bottom bar</span>
+      </div>
+      <div class="ios-step">
+        <span class="ios-step-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+            <rect x="4" y="4" width="16" height="16" rx="2"></rect>
+            <path d="M12 8v8M8 12h8"></path>
+          </svg>
+        </span>
+        <span class="ios-step-text" id="ios-safari-2">Select «Add to Home Screen»</span>
+      </div>
+    </div>
+    <div class="ios-steps" id="ios-steps-inapp" hidden>
+      <div class="ios-step">
+        <span class="ios-step-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M15.5 8.5l-2 5-5 2 2-5z"></path>
+          </svg>
+        </span>
+        <span class="ios-step-text" id="ios-inapp-1">Open this page in Safari</span>
+      </div>
+      <div class="ios-step">
+        <span class="ios-step-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+            <rect x="4" y="4" width="16" height="16" rx="2"></rect>
+            <path d="M12 8v8M8 12h8"></path>
+          </svg>
+        </span>
+        <span class="ios-step-text" id="ios-inapp-2">Then tap Share → Add to Home Screen</span>
+      </div>
+    </div>
+    <span class="ios-install-ray" aria-hidden="true"></span>
+  </aside>
+
   <section class="finale" id="finale" hidden aria-labelledby="finale-title">
     <video class="finale-session-video" id="finale-session-video" muted loop playsinline preload="metadata" disablepictureinpicture aria-hidden="true"></video>
     <div class="ambient-mesh ambient-mesh--finale" aria-hidden="true">

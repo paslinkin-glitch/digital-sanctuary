@@ -103,6 +103,11 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       installHint: 'Нажмите «Поделиться» → «На экран Домой»',
       installCardTitle: 'Сохранить убежище',
       install: 'Добавить на экран',
+      iosKicker: 'СОХРАНИТЬ УБЕЖИЩЕ',
+      iosSafari1: 'Нажмите «Поделиться» на нижней панели',
+      iosSafari2: 'Выберите «На экран Домой»',
+      iosInapp1: 'Откройте эту страницу в Safari',
+      iosInapp2: 'Затем нажмите «Поделиться» → «На экран Домой»',
       close: 'Закрыть',
       swipe: 'Потяни вверх · Удерживай, чтобы замедлить',
       finaleKicker: 'ТИШИНА',
@@ -139,6 +144,11 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       installHint: 'Tap Share → Add to Home Screen',
       installCardTitle: 'Keep the sanctuary',
       install: 'Add to home screen',
+      iosKicker: 'SAVE THE SANCTUARY',
+      iosSafari1: 'Tap Share in the bottom bar',
+      iosSafari2: 'Select «Add to Home Screen»',
+      iosInapp1: 'Open this page in Safari',
+      iosInapp2: 'Then tap Share → Add to Home Screen',
       close: 'Close',
       swipe: 'Swipe up · Hold to sink deeper',
       finaleKicker: 'SILENCE',
@@ -296,7 +306,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
 
     const controller = new AbortController();
-    const timer = window.setTimeout(() => controller.abort(), 2500);
+    const timer = window.setTimeout(() => controller.abort(), 1800);
     try {
       const geoResponse = await fetch('https://get.geojs.io/v1/ip/geo.json', {
         signal: controller.signal,
@@ -589,6 +599,15 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   const installCardInstall = document.getElementById('install-card-install');
   const installCardLater = document.getElementById('install-card-later');
   const installCardHint = document.getElementById('install-card-hint');
+  const iosInstallCard = document.getElementById('ios-install-card');
+  const iosInstallClose = document.getElementById('ios-install-close');
+  const iosInstallKicker = document.getElementById('ios-install-kicker');
+  const iosStepsSafari = document.getElementById('ios-steps-safari');
+  const iosStepsInapp = document.getElementById('ios-steps-inapp');
+  const iosSafari1 = document.getElementById('ios-safari-1');
+  const iosSafari2 = document.getElementById('ios-safari-2');
+  const iosInapp1 = document.getElementById('ios-inapp-1');
+  const iosInapp2 = document.getElementById('ios-inapp-2');
   const finaleEl = document.getElementById('finale');
   const finaleSessionVideo = document.getElementById('finale-session-video');
   const finalePortraitEl = document.getElementById('finale-portrait');
@@ -641,6 +660,11 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (entryInstallHint) entryInstallHint.textContent = tr('installHint');
     if (installCardInstall) installCardInstall.textContent = tr('install');
     if (installCardHint) installCardHint.textContent = tr('installHint');
+    if (iosInstallKicker) iosInstallKicker.textContent = tr('iosKicker');
+    if (iosSafari1) iosSafari1.textContent = tr('iosSafari1');
+    if (iosSafari2) iosSafari2.textContent = tr('iosSafari2');
+    if (iosInapp1) iosInapp1.textContent = tr('iosInapp1');
+    if (iosInapp2) iosInapp2.textContent = tr('iosInapp2');
     if (installCardLater) installCardLater.setAttribute('aria-label', tr('close'));
     if (copySnapshotButton) copySnapshotButton.textContent = tr('copy');
     if (notifyReturnButton) notifyReturnButton.textContent = tr('notify');
@@ -4907,6 +4931,15 @@ ${JSON.stringify(events, null, 2)}`;
     }
   });
 
+  window.addEventListener('online', () => {
+    if (!gateOpen || document.hidden) return;
+    const clip = activeClip();
+    const video = clip && clip.el;
+    if (!video || !video.paused) return;
+    if (gesture && gesture.holding) return;
+    video.play().catch(() => {});
+  });
+
   /* ------------------------------------------------------------ инициализация */
 
   try {
@@ -4933,10 +4966,23 @@ ${JSON.stringify(events, null, 2)}`;
       || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   }
 
+  function isInAppBrowser() {
+    return /Telegram|Instagram|FBAN|FBAV|VK|VKApp|Snapchat/i.test(navigator.userAgent);
+  }
+
+  function syncIosInstallCard() {
+    if (!iosInstallCard) return;
+    const inApp = isInAppBrowser();
+    if (iosStepsSafari) iosStepsSafari.hidden = inApp;
+    if (iosStepsInapp) iosStepsInapp.hidden = !inApp;
+  }
+
   function syncInstallButton() {
     if (!entryInstallButton) return;
     const available = !isStandaloneMode() && (Boolean(deferredPrompt) || isIos());
-    const cardVisible = installCard && !installCard.hidden;
+    const cardVisible = Boolean(
+      (installCard && !installCard.hidden) || (iosInstallCard && !iosInstallCard.hidden)
+    );
     entryInstallButton.hidden = !available || cardVisible;
     if (!available && entryInstallHint) {
       entryInstallHint.hidden = true;
@@ -4944,8 +4990,18 @@ ${JSON.stringify(events, null, 2)}`;
   }
 
   function showInstallCard(force = false, finalContext = false) {
-    if (!installCard || isStandaloneMode()) return;
+    if (isStandaloneMode()) return;
     if (!force && (installCardDismissed || gateOpen)) return;
+    if (isIos() && iosInstallCard) {
+      if (installCard) installCard.hidden = true;
+      iosInstallCard.hidden = false;
+      iosInstallCard.classList.toggle('install-card--final', Boolean(finalContext));
+      syncIosInstallCard();
+      syncInstallButton();
+      return;
+    }
+    if (iosInstallCard) iosInstallCard.hidden = true;
+    if (!installCard) return;
     installCard.classList.toggle('install-card--final', Boolean(finalContext));
     installCard.hidden = false;
     syncInstallButton();
@@ -4955,6 +5011,10 @@ ${JSON.stringify(events, null, 2)}`;
     if (installCard) {
       installCard.hidden = true;
       installCard.classList.remove('install-card--final');
+    }
+    if (iosInstallCard) {
+      iosInstallCard.hidden = true;
+      iosInstallCard.classList.remove('install-card--final');
     }
     if (installCardHint) installCardHint.hidden = true;
     syncInstallButton();
@@ -5043,8 +5103,15 @@ ${JSON.stringify(events, null, 2)}`;
     });
   }
 
-  if (isIos()) showInstallCard();
-  else if (deferredPrompt) showInstallCard();
+  if (iosInstallClose) {
+    iosInstallClose.addEventListener('click', () => {
+      installCardDismissed = true;
+      hideInstallCard();
+    });
+  }
+
+  if (!isIos() && deferredPrompt) showInstallCard();
+  nudgeInstallCard(1500, false);
   syncInstallButton();
 
   function unlockExperience() {
