@@ -1945,9 +1945,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
 
   function disposeTrackChannel(channel) {
     if (!channel) return;
-    const { track, audio, source, gain } = channel;
-    try { source.disconnect(); } catch (_) {}
-    try { gain.disconnect(); } catch (_) {}
+    const { track, audio } = channel;
+    if (channel.fadeRaf) cancelAnimationFrame(channel.fadeRaf);
     try { audio.pause(); } catch (_) {}
     try { audio.removeAttribute('src'); audio.load(); } catch (_) {}
     try { audio.remove(); } catch (_) {}
@@ -1955,6 +1954,22 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       if (trackAudio.get(track.id) === audio) trackAudio.delete(track.id);
       if (sound && sound.channels.get(track.id) === channel) sound.channels.delete(track.id);
     }
+  }
+
+  function fadeChannelVolume(channel, target, ms) {
+    if (!channel || !channel.audio) return;
+    if (channel.fadeRaf) cancelAnimationFrame(channel.fadeRaf);
+    const from = Number(channel.audio.volume) || 0;
+    const duration = Math.max(80, ms || 400);
+    const started = performance.now();
+    const step = (ts) => {
+      const p = Math.min(1, (ts - started) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      channel.audio.volume = Math.max(0, Math.min(1, from + (target - from) * eased));
+      if (p < 1) channel.fadeRaf = requestAnimationFrame(step);
+      else channel.fadeRaf = 0;
+    };
+    channel.fadeRaf = requestAnimationFrame(step);
   }
 
   function ensureTrackChannel(track) {
@@ -1969,21 +1984,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const audio = trackAudio.get(track.id) || createTrackAudio(track);
     if (!audio) return null;
 
-    try {
-      const source = sound.ctx.createMediaElementSource(audio);
-      const gain = sound.ctx.createGain();
-      gain.gain.value = 0;
-      source.connect(gain);
-      gain.connect(sound.bus);
-
-      const channel = { track, audio, source, gain };
-      sound.channels.set(track.id, channel);
-      return channel;
-    } catch (error) {
-
-      track.failed = true;
-      return null;
-    }
+    audio.volume = 0;
+    const channel = { track, audio, fadeRaf: 0 };
+    sound.channels.set(track.id, channel);
+    return channel;
   }
 
   const ELEMENTAL_NOISE = {
@@ -2212,8 +2216,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   function startSoundCrossfade(channel, fadeMs) {
     if (!sound) return;
 
-    const duration = Math.max(0.05, (fadeMs || SLOW_FADE_MS) / 1000);
-    const now = sound.ctx.currentTime;
+    const duration = Math.max(120, fadeMs || SLOW_FADE_MS);
     const targetId = channel ? channel.track.id : null;
     const fadeToken = ++sound.fadeToken;
 
@@ -2226,38 +2229,46 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
 
     for (const [id, item] of sound.channels) {
-      const target = channel && id === targetId ? MUSIC_GAIN : 0;
-      item.gain.gain.cancelScheduledValues(now);
-      item.gain.gain.setValueAtTime(item.gain.gain.value, now);
-      item.gain.gain.linearRampToValueAtTime(target, now + duration);
+      if (channel && id === targetId) {
+        item.audio.volume = 0;
+        fadeChannelVolume(item, 0, duration);
+      } else {
+        fadeChannelVolume(item, 0, duration);
+      }
     }
 
+    const now = sound.ctx.currentTime;
     sound.noiseGain.gain.cancelScheduledValues(now);
     sound.noiseGain.gain.setValueAtTime(sound.noiseGain.gain.value, now);
     sound.noiseGain.gain.linearRampToValueAtTime(
       channel ? 0 : (sound.noiseBaseGain || NOISE_GAIN),
-      now + duration
+      now + duration / 1000
     );
 
     if (channel) {
       channel.audio.playbackRate = SCREEN_TIER === 'low' ? 1 : (sound.held ? SLOW_RATE : 1);
-      const promise = channel.audio.play();
-      if (promise && typeof promise.catch === 'function') {
-        promise.catch(() => {
-          if (!sound || sound.activeTrackId !== targetId) return;
-          startSoundCrossfade(null, fadeMs);
-        });
-      }
+      channel.audio.volume = 0;
+      window.setTimeout(() => {
+        if (!sound || fadeToken !== sound.fadeToken) return;
+        const promise = channel.audio.play();
+        if (promise && typeof promise.catch === 'function') {
+          promise.catch(() => {
+            if (!sound || sound.activeTrackId !== targetId) return;
+            startSoundCrossfade(null, fadeMs);
+          });
+        }
+        fadeChannelVolume(channel, MUSIC_GAIN, duration);
+      }, 120);
     }
 
     window.setTimeout(() => {
       if (!sound || fadeToken !== sound.fadeToken) return;
       for (const [id, item] of [...sound.channels]) {
-        if ((!channel || id !== targetId) && item.gain.gain.value < 0.01) {
+        if ((!channel || id !== targetId) && item.audio.volume < 0.01) {
           disposeTrackChannel(item);
         }
       }
-    }, (duration + 0.1) * 1000);
+    }, duration + 260);
   }
 
   function setSoundDepth(deep) {
@@ -2277,6 +2288,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
 
     for (const channel of sound.channels.values()) {
       channel.audio.playbackRate = SCREEN_TIER === 'low' ? 1 : (deep ? SLOW_RATE : 1);
+      fadeChannelVolume(channel, deep ? MUSIC_GAIN * 0.55 : MUSIC_GAIN, 420);
     }
     setElementalNoise();
   }
@@ -3880,6 +3892,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
   }
 
   function showFrameAfterglow() {
+    if (SCREEN_TIER !== 'high') return;
     if (!gateOpen || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const video = document.querySelector('.slide.is-active video');
     if (!video || !video.src) return;
