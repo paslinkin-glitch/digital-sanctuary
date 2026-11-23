@@ -575,7 +575,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   const finaleLockLabel = document.getElementById('finale-lock-label');
   const copySnapshotButton = document.getElementById('copy-snapshot');
   const notifyReturnButton = document.getElementById('notify-return');
-  const saveDreamFrameButton = document.getElementById('save-dream-frame');
   const backToStartButton = document.getElementById('back-to-start');
   const langSwitch = document.getElementById('lang-switch');
   const langButtons = Array.from(document.querySelectorAll('.lang-switch-btn'));
@@ -627,7 +626,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (installCardLater) installCardLater.setAttribute('aria-label', tr('close'));
     if (copySnapshotButton) copySnapshotButton.textContent = tr('copy');
     if (notifyReturnButton) notifyReturnButton.textContent = tr('notify');
-    if (saveDreamFrameButton) saveDreamFrameButton.textContent = tr('saveFrame');
+    if (finaleLockLabel) finaleLockLabel.textContent = tr('lockLabel');
     if (backToStartButton) backToStartButton.textContent = tr('back');
 
     const loading = finalePortraitEl && finalePortraitEl.querySelector('.finale-loading');
@@ -2886,6 +2885,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const fallback = finaleFallbackReflection();
     if (finaleReflectionEl) finaleReflectionEl.textContent = fallback;
     if (location.protocol === 'file:') return;
+    if (location.hostname === 'yoursanctuary.ru' || location.hostname.endsWith('.github.io') || location.hostname === 's3.twcstorage.ru' || location.hostname === 'localhost' || location.hostname === '127.0.0.1') return;
 
     const heldFrames = sessionEvents.filter((event) => event.held || event.heldMs > 0).length;
     const fastFrames = sessionEvents.filter((event) => event.fast || event.early).length;
@@ -2948,34 +2948,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     if (!wakeLock) return;
     try { wakeLock.release(); } catch (_) { /* already released */ }
     wakeLock = null;
-  }
-
-  async function saveDreamFrame() {
-    const clip = anchorClip || activeClip();
-    const video = clip && clip.el;
-    if (!video || !video.videoWidth) {
-      if (saveDreamFrameButton) saveDreamFrameButton.textContent = tr('saveUnavailable');
-      return;
-    }
-    try {
-      const canvas = document.createElement('canvas');
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const context = canvas.getContext('2d');
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
-      if (!blob) throw new Error('empty canvas');
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = 'digital-sanctuary-frame.png';
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.setTimeout(() => URL.revokeObjectURL(link.href), 1000);
-      trackEvent('dream_frame_saved');
-    } catch (_) {
-      if (saveDreamFrameButton) saveDreamFrameButton.textContent = tr('saveUnavailable');
-    }
   }
 
   function finishSession() {
@@ -4863,10 +4835,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
 
   if (notifyReturnButton) {
     notifyReturnButton.addEventListener('click', enableReturnNotification);
-  }
-
-  if (saveDreamFrameButton) {
-    saveDreamFrameButton.addEventListener('click', saveDreamFrame);
   }
 
   if (backToStartButton) {

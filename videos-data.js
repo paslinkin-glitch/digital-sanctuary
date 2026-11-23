@@ -1,4 +1,4 @@
-/* Generated for v43; Timeweb S3 cinematic catalog. */
+/* Generated for v48; Timeweb S3 cinematic catalog. */
 window.VIDEOS_DATA = [
   {
     "id": "s3:shadow_01_vecteezy-50527364",
@@ -6,7 +6,7 @@ window.VIDEOS_DATA = [
     "description": "Bokeh of cars and traffic lights at night. Bokeh of City Night Traffic. Round colorful bokeh shine from car lights in traffic jam on city street.",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/shadow_01_vecteezy-50527364.mp4",
     "stage": "shadow",
-    "archetype": "Тень",
+    "archetype": "РўРµРЅСЊ",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -14,7 +14,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 3532954,
-    "title_ru": "Тень 01"
+    "title_ru": "РўРµРЅСЊ 01"
   },
   {
     "id": "s3:shadow_03_vecteezy-21570169",
@@ -22,7 +22,7 @@ window.VIDEOS_DATA = [
     "description": "Aerial view of night city line. Vancouver, Canada.",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/shadow_03_vecteezy-21570169.mp4",
     "stage": "shadow",
-    "archetype": "Тень",
+    "archetype": "РўРµРЅСЊ",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -30,7 +30,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 5272093,
-    "title_ru": "Тень 02"
+    "title_ru": "РўРµРЅСЊ 02"
   },
   {
     "id": "s3:shadow_04_g9re0sruya",
@@ -38,7 +38,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic shadow film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/shadow_04_g9re0sruya.mp4",
     "stage": "shadow",
-    "archetype": "Тень",
+    "archetype": "РўРµРЅСЊ",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -46,7 +46,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 6218807,
-    "title_ru": "Тень 03"
+    "title_ru": "РўРµРЅСЊ 03"
   },
   {
     "id": "s3:shadow_05_zqeb9bkb8p",
@@ -54,7 +54,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic shadow film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/shadow_05_zqeb9bkb8p.mp4",
     "stage": "shadow",
-    "archetype": "Тень",
+    "archetype": "РўРµРЅСЊ",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -62,7 +62,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 6442974,
-    "title_ru": "Тень 04"
+    "title_ru": "РўРµРЅСЊ 04"
   },
   {
     "id": "s3:shadow_06_coverr-blue-subway-5836",
@@ -70,7 +70,7 @@ window.VIDEOS_DATA = [
     "description": "Blue subway departing",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/shadow_06_coverr-blue-subway-5836.mp4",
     "stage": "shadow",
-    "archetype": "Тень",
+    "archetype": "РўРµРЅСЊ",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -78,7 +78,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 6844902,
-    "title_ru": "Тень 05"
+    "title_ru": "РўРµРЅСЊ 05"
   },
   {
     "id": "s3:shadow_07_vecteezy-48120369",
@@ -86,7 +86,7 @@ window.VIDEOS_DATA = [
     "description": "Rain falling on window in skyscraper apartment. Dark and stormy rainy day in big city life. View of dreary Hong Kong cityscape whilst rain drops fall on the window. Abstract somber moody background.",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/shadow_07_vecteezy-48120369.mp4",
     "stage": "shadow",
-    "archetype": "Тень",
+    "archetype": "РўРµРЅСЊ",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -94,7 +94,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 18.436,
     "size": 7862858,
-    "title_ru": "Тень 06"
+    "title_ru": "РўРµРЅСЊ 06"
   },
   {
     "id": "s3:shadow_08_vecteezy-50527423",
@@ -102,7 +102,7 @@ window.VIDEOS_DATA = [
     "description": "Bokeh of cars and traffic lights at night. Bokeh of City Night Traffic. Round colorful bokeh shine from car lights in traffic jam on city street.",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/shadow_08_vecteezy-50527423.mp4",
     "stage": "shadow",
-    "archetype": "Тень",
+    "archetype": "РўРµРЅСЊ",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -110,7 +110,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 8301239,
-    "title_ru": "Тень 07"
+    "title_ru": "РўРµРЅСЊ 07"
   },
   {
     "id": "s3:shadow_09_vecteezy-38594556",
@@ -118,7 +118,7 @@ window.VIDEOS_DATA = [
     "description": "pouring water into a glass cup",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/shadow_09_vecteezy-38594556.mp4",
     "stage": "shadow",
-    "archetype": "Тень",
+    "archetype": "РўРµРЅСЊ",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -126,7 +126,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 3662571,
-    "title_ru": "Тень 08"
+    "title_ru": "РўРµРЅСЊ 08"
   },
   {
     "id": "s3:shadow_10_vecteezy-29868578",
@@ -134,7 +134,7 @@ window.VIDEOS_DATA = [
     "description": "The Passer flows through a narrow part of the Passer Gorge in the Passeier Valley, South Tyrol, Italy",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/shadow_10_vecteezy-29868578.mp4",
     "stage": "shadow",
-    "archetype": "Тень",
+    "archetype": "РўРµРЅСЊ",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -142,7 +142,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 4964548,
-    "title_ru": "Тень 09"
+    "title_ru": "РўРµРЅСЊ 09"
   },
   {
     "id": "s3:shadow_11_pibfpdhvox",
@@ -150,7 +150,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic shadow film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/shadow_11_pibfpdhvox.mp4",
     "stage": "shadow",
-    "archetype": "Тень",
+    "archetype": "РўРµРЅСЊ",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -158,7 +158,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 5813310,
-    "title_ru": "Тень 10"
+    "title_ru": "РўРµРЅСЊ 10"
   },
   {
     "id": "s3:shadow_12_qlz28yfl9f",
@@ -166,7 +166,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic shadow film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/shadow_12_qlz28yfl9f.mp4",
     "stage": "shadow",
-    "archetype": "Тень",
+    "archetype": "РўРµРЅСЊ",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -174,7 +174,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 5839402,
-    "title_ru": "Тень 11"
+    "title_ru": "РўРµРЅСЊ 11"
   },
   {
     "id": "s3:shadow_13_coverr-9ejgoxnsm3",
@@ -182,7 +182,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic shadow film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/shadow_13_coverr-9ejgoxnsm3.mp4",
     "stage": "shadow",
-    "archetype": "Тень",
+    "archetype": "РўРµРЅСЊ",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -190,7 +190,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 7370590,
-    "title_ru": "Тень 12"
+    "title_ru": "РўРµРЅСЊ 12"
   },
   {
     "id": "s3:shadow_15_vecteezy-45709951",
@@ -198,7 +198,7 @@ window.VIDEOS_DATA = [
     "description": "stream running through stone boulders. Abundant river flowing in coniferous forest. Wild mountain river water splashing in summer day. Green trees and sun rays nature",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/shadow_15_vecteezy-45709951.mp4",
     "stage": "shadow",
-    "archetype": "Тень",
+    "archetype": "РўРµРЅСЊ",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -206,7 +206,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 6.547,
     "size": 9375455,
-    "title_ru": "Тень 13"
+    "title_ru": "РўРµРЅСЊ 13"
   },
   {
     "id": "s3:shadow_16_coverr-gukaxin4fr",
@@ -214,7 +214,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic shadow film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/shadow_16_coverr-gukaxin4fr.mp4",
     "stage": "shadow",
-    "archetype": "Тень",
+    "archetype": "РўРµРЅСЊ",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -222,7 +222,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 10455733,
-    "title_ru": "Тень 14"
+    "title_ru": "РўРµРЅСЊ 14"
   },
   {
     "id": "s3:shadow_17_coverr-0pab3nr95c",
@@ -230,7 +230,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic shadow film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/shadow_17_coverr-0pab3nr95c.mp4",
     "stage": "shadow",
-    "archetype": "Тень",
+    "archetype": "РўРµРЅСЊ",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -238,7 +238,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 9039976,
-    "title_ru": "Тень 15"
+    "title_ru": "РўРµРЅСЊ 15"
   },
   {
     "id": "s3:shadow_18_coverr-qideiywgzv",
@@ -246,7 +246,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic shadow film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/shadow_18_coverr-qideiywgzv.mp4",
     "stage": "shadow",
-    "archetype": "Тень",
+    "archetype": "РўРµРЅСЊ",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -254,7 +254,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 10455515,
-    "title_ru": "Тень 16"
+    "title_ru": "РўРµРЅСЊ 16"
   },
   {
     "id": "s3:shadow_19_vecteezy-9006691",
@@ -262,7 +262,7 @@ window.VIDEOS_DATA = [
     "description": "The yellow scale measures the height of the water in the dam. The water in the reservoir is plentiful and is used for agriculture and the village consumption.Reserving water nature in Thailand",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/shadow_19_vecteezy-9006691.mp4",
     "stage": "shadow",
-    "archetype": "Тень",
+    "archetype": "РўРµРЅСЊ",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -270,7 +270,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 3890416,
-    "title_ru": "Тень 17"
+    "title_ru": "РўРµРЅСЊ 17"
   },
   {
     "id": "s3:shadow_20_vecteezy-34827118",
@@ -278,7 +278,7 @@ window.VIDEOS_DATA = [
     "description": "a vertical shot of a irrigation system with a watering can",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/shadow_20_vecteezy-34827118.mp4",
     "stage": "shadow",
-    "archetype": "Тень",
+    "archetype": "РўРµРЅСЊ",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -286,7 +286,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 5562007,
-    "title_ru": "Тень 18"
+    "title_ru": "РўРµРЅСЊ 18"
   },
   {
     "id": "s3:shadow_22_vecteezy-50124393",
@@ -294,7 +294,7 @@ window.VIDEOS_DATA = [
     "description": "View from a drone vertically down onto an ice floe with sup surfers",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/shadow_22_vecteezy-50124393.mp4",
     "stage": "shadow",
-    "archetype": "Тень",
+    "archetype": "РўРµРЅСЊ",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -302,7 +302,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 5902083,
-    "title_ru": "Тень 19"
+    "title_ru": "РўРµРЅСЊ 19"
   },
   {
     "id": "s3:shadow_24_vecteezy-48229330",
@@ -310,7 +310,7 @@ window.VIDEOS_DATA = [
     "description": "Matsumoto, Japan, 2023. A calm morning at Matsumoto Castle",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/shadow_24_vecteezy-48229330.mp4",
     "stage": "shadow",
-    "archetype": "Тень",
+    "archetype": "РўРµРЅСЊ",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -318,7 +318,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 6061015,
-    "title_ru": "Тень 20"
+    "title_ru": "РўРµРЅСЊ 20"
   },
   {
     "id": "s3:shadow_25_wgwktmpmx7",
@@ -326,7 +326,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic shadow film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/shadow_25_wgwktmpmx7.mp4",
     "stage": "shadow",
-    "archetype": "Тень",
+    "archetype": "РўРµРЅСЊ",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -334,7 +334,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 6403198,
-    "title_ru": "Тень 21"
+    "title_ru": "РўРµРЅСЊ 21"
   },
   {
     "id": "s3:shadow_28_coverr-coverr-cars-on-the-highway-2993",
@@ -342,7 +342,7 @@ window.VIDEOS_DATA = [
     "description": "Cars On The Highway",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/shadow_28_coverr-coverr-cars-on-the-highway-2993.mp4",
     "stage": "shadow",
-    "archetype": "Тень",
+    "archetype": "РўРµРЅСЊ",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -350,7 +350,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 7515847,
-    "title_ru": "Тень 22"
+    "title_ru": "РўРµРЅСЊ 22"
   },
   {
     "id": "s3:shadow_30_coverr-t9mmfvmoau",
@@ -358,7 +358,7 @@ window.VIDEOS_DATA = [
     "description": "Door covered in graffiti",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/shadow_30_coverr-t9mmfvmoau.mp4",
     "stage": "shadow",
-    "archetype": "Тень",
+    "archetype": "РўРµРЅСЊ",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -366,7 +366,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 14.147,
     "size": 8123841,
-    "title_ru": "Тень 23"
+    "title_ru": "РўРµРЅСЊ 23"
   },
   {
     "id": "s3:shadow_31_vecteezy-41638597",
@@ -374,7 +374,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic shadow film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/shadow_31_vecteezy-41638597.mp4",
     "stage": "shadow",
-    "archetype": "Тень",
+    "archetype": "РўРµРЅСЊ",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -382,7 +382,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 4171283,
-    "title_ru": "Тень 24"
+    "title_ru": "РўРµРЅСЊ 24"
   },
   {
     "id": "s3:shadow_32_vecteezy-36195382",
@@ -390,7 +390,7 @@ window.VIDEOS_DATA = [
     "description": "Fisherman silhouette on his boat",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/shadow_32_vecteezy-36195382.mp4",
     "stage": "shadow",
-    "archetype": "Тень",
+    "archetype": "РўРµРЅСЊ",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -398,55 +398,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 7932625,
-    "title_ru": "Тень 25"
-  },
-  {
-    "id": "s3:shadow_33_vecteezy-34213914",
-    "title": "Cinematic shadow film",
-    "description": "Cinematic shadow film",
-    "url": "https://s3.twcstorage.ru/digital-sanctuary/shadow_33_vecteezy-34213914.mp4",
-    "stage": "shadow",
-    "archetype": "Тень",
-    "is_finale": false,
-    "source": "s3",
-    "vertical": true,
-    "width": 1080,
-    "height": 1920,
-    "duration": 10.0,
-    "size": 3559576,
-    "title_ru": "Тень 26"
-  },
-  {
-    "id": "s3:shadow_33_vecteezy-49757118",
-    "title": "Cinematic shadow film",
-    "description": "Cinematic shadow film",
-    "url": "https://s3.twcstorage.ru/digital-sanctuary/shadow_33_vecteezy-49757118.mp4",
-    "stage": "shadow",
-    "archetype": "Тень",
-    "is_finale": false,
-    "source": "s3",
-    "vertical": true,
-    "width": 1080,
-    "height": 1920,
-    "duration": 10.0,
-    "size": 4017319,
-    "title_ru": "Тень 27"
-  },
-  {
-    "id": "s3:shadow_34_vecteezy-34213914",
-    "title": "Cinematic shadow film",
-    "description": "Cinematic shadow film",
-    "url": "https://s3.twcstorage.ru/digital-sanctuary/shadow_34_vecteezy-34213914.mp4",
-    "stage": "shadow",
-    "archetype": "Тень",
-    "is_finale": false,
-    "source": "s3",
-    "vertical": true,
-    "width": 1080,
-    "height": 1920,
-    "duration": 10.0,
-    "size": 3559576,
-    "title_ru": "Тень 28"
+    "title_ru": "РўРµРЅСЊ 25"
   },
   {
     "id": "s3:shadow_35_vecteezy-42239858",
@@ -454,7 +406,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic shadow film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/shadow_35_vecteezy-42239858.mp4",
     "stage": "shadow",
-    "archetype": "Тень",
+    "archetype": "РўРµРЅСЊ",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -462,7 +414,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 4888856,
-    "title_ru": "Тень 29"
+    "title_ru": "РўРµРЅСЊ 29"
   },
   {
     "id": "s3:shadow_36_vecteezy-22187669",
@@ -470,7 +422,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic shadow film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/shadow_36_vecteezy-22187669.mp4",
     "stage": "shadow",
-    "archetype": "Тень",
+    "archetype": "РўРµРЅСЊ",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -478,7 +430,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 4375124,
-    "title_ru": "Тень 30"
+    "title_ru": "РўРµРЅСЊ 30"
   },
   {
     "id": "s3:shadow_37_vecteezy-40722016",
@@ -486,7 +438,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic shadow film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/shadow_37_vecteezy-40722016.mp4",
     "stage": "shadow",
-    "archetype": "Тень",
+    "archetype": "РўРµРЅСЊ",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -494,7 +446,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 5357026,
-    "title_ru": "Тень 31"
+    "title_ru": "РўРµРЅСЊ 31"
   },
   {
     "id": "s3:shadow_38_vecteezy-23006125",
@@ -502,7 +454,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic shadow film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/shadow_38_vecteezy-23006125.mp4",
     "stage": "shadow",
-    "archetype": "Тень",
+    "archetype": "РўРµРЅСЊ",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -510,7 +462,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 3507612,
-    "title_ru": "Тень 32"
+    "title_ru": "РўРµРЅСЊ 32"
   },
   {
     "id": "s3:shadow_39_vecteezy-36195382",
@@ -518,7 +470,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic shadow film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/shadow_39_vecteezy-36195382.mp4",
     "stage": "shadow",
-    "archetype": "Тень",
+    "archetype": "РўРµРЅСЊ",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -526,7 +478,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 7932625,
-    "title_ru": "Тень 33"
+    "title_ru": "РўРµРЅСЊ 33"
   },
   {
     "id": "s3:trickster_abyss_01_vecteezy-23006125",
@@ -534,7 +486,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic trickster abyss film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/trickster_abyss_01_vecteezy-23006125.mp4",
     "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
+    "archetype": "РўСЂРёРєСЃС‚РµСЂ Рё Р‘РµР·РґРЅР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -542,7 +494,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 3507612,
-    "title_ru": "Трикстер 01"
+    "title_ru": "РўСЂРёРєСЃС‚РµСЂ 01"
   },
   {
     "id": "s3:trickster_abyss_02_vecteezy-1616756",
@@ -550,7 +502,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic trickster abyss film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/trickster_abyss_02_vecteezy-1616756.mp4",
     "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
+    "archetype": "РўСЂРёРєСЃС‚РµСЂ Рё Р‘РµР·РґРЅР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -558,7 +510,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 4065494,
-    "title_ru": "Трикстер 02"
+    "title_ru": "РўСЂРёРєСЃС‚РµСЂ 02"
   },
   {
     "id": "s3:trickster_abyss_03_vecteezy-23002431",
@@ -566,7 +518,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic trickster abyss film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/trickster_abyss_03_vecteezy-23002431.mp4",
     "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
+    "archetype": "РўСЂРёРєСЃС‚РµСЂ Рё Р‘РµР·РґРЅР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -574,7 +526,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 4206879,
-    "title_ru": "Трикстер 03"
+    "title_ru": "РўСЂРёРєСЃС‚РµСЂ 03"
   },
   {
     "id": "s3:trickster_abyss_04_vecteezy-33573845",
@@ -582,7 +534,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic trickster abyss film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/trickster_abyss_04_vecteezy-33573845.mp4",
     "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
+    "archetype": "РўСЂРёРєСЃС‚РµСЂ Рё Р‘РµР·РґРЅР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -590,7 +542,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 4883329,
-    "title_ru": "Трикстер 04"
+    "title_ru": "РўСЂРёРєСЃС‚РµСЂ 04"
   },
   {
     "id": "s3:trickster_abyss_05_vecteezy-27163190",
@@ -598,7 +550,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic trickster abyss film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/trickster_abyss_05_vecteezy-27163190.mp4",
     "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
+    "archetype": "РўСЂРёРєСЃС‚РµСЂ Рё Р‘РµР·РґРЅР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -606,7 +558,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 6457409,
-    "title_ru": "Трикстер 05"
+    "title_ru": "РўСЂРёРєСЃС‚РµСЂ 05"
   },
   {
     "id": "s3:trickster_abyss_06_vecteezy-20287073",
@@ -614,7 +566,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic trickster abyss film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/trickster_abyss_06_vecteezy-20287073.mp4",
     "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
+    "archetype": "РўСЂРёРєСЃС‚РµСЂ Рё Р‘РµР·РґРЅР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -622,7 +574,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 6620511,
-    "title_ru": "Трикстер 06"
+    "title_ru": "РўСЂРёРєСЃС‚РµСЂ 06"
   },
   {
     "id": "s3:trickster_abyss_07_2bfirk705y",
@@ -630,7 +582,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic trickster abyss film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/trickster_abyss_07_2bfirk705y.mp4",
     "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
+    "archetype": "РўСЂРёРєСЃС‚РµСЂ Рё Р‘РµР·РґРЅР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -638,7 +590,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 6673908,
-    "title_ru": "Трикстер 07"
+    "title_ru": "РўСЂРёРєСЃС‚РµСЂ 07"
   },
   {
     "id": "s3:trickster_abyss_08_vecteezy-28326594",
@@ -646,7 +598,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic trickster abyss film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/trickster_abyss_08_vecteezy-28326594.mp4",
     "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
+    "archetype": "РўСЂРёРєСЃС‚РµСЂ Рё Р‘РµР·РґРЅР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -654,7 +606,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 6742580,
-    "title_ru": "Трикстер 08"
+    "title_ru": "РўСЂРёРєСЃС‚РµСЂ 08"
   },
   {
     "id": "s3:trickster_abyss_09_vecteezy-24514776",
@@ -662,7 +614,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic trickster abyss film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/trickster_abyss_09_vecteezy-24514776.mp4",
     "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
+    "archetype": "РўСЂРёРєСЃС‚РµСЂ Рё Р‘РµР·РґРЅР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -670,7 +622,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 7495696,
-    "title_ru": "Трикстер 09"
+    "title_ru": "РўСЂРёРєСЃС‚РµСЂ 09"
   },
   {
     "id": "s3:trickster_abyss_10_vecteezy-23413773",
@@ -678,7 +630,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic trickster abyss film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/trickster_abyss_10_vecteezy-23413773.mp4",
     "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
+    "archetype": "РўСЂРёРєСЃС‚РµСЂ Рё Р‘РµР·РґРЅР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -686,7 +638,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 8491372,
-    "title_ru": "Трикстер 10"
+    "title_ru": "РўСЂРёРєСЃС‚РµСЂ 10"
   },
   {
     "id": "s3:trickster_abyss_11_vecteezy-22524485",
@@ -694,7 +646,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic trickster abyss film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/trickster_abyss_11_vecteezy-22524485.mp4",
     "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
+    "archetype": "РўСЂРёРєСЃС‚РµСЂ Рё Р‘РµР·РґРЅР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -702,7 +654,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 9108433,
-    "title_ru": "Трикстер 11"
+    "title_ru": "РўСЂРёРєСЃС‚РµСЂ 11"
   },
   {
     "id": "s3:trickster_abyss_12_vecteezy-44572320",
@@ -710,7 +662,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic trickster abyss film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/trickster_abyss_12_vecteezy-44572320.mp4",
     "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
+    "archetype": "РўСЂРёРєСЃС‚РµСЂ Рё Р‘РµР·РґРЅР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -718,7 +670,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 9293459,
-    "title_ru": "Трикстер 12"
+    "title_ru": "РўСЂРёРєСЃС‚РµСЂ 12"
   },
   {
     "id": "s3:trickster_abyss_13_vecteezy-42851671",
@@ -726,7 +678,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic trickster abyss film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/trickster_abyss_13_vecteezy-42851671.mp4",
     "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
+    "archetype": "РўСЂРёРєСЃС‚РµСЂ Рё Р‘РµР·РґРЅР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -734,7 +686,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 9396777,
-    "title_ru": "Трикстер 13"
+    "title_ru": "РўСЂРёРєСЃС‚РµСЂ 13"
   },
   {
     "id": "s3:trickster_abyss_14_vecteezy-50636732",
@@ -742,7 +694,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic trickster abyss film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/trickster_abyss_14_vecteezy-50636732.mp4",
     "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
+    "archetype": "РўСЂРёРєСЃС‚РµСЂ Рё Р‘РµР·РґРЅР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -750,7 +702,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 10086016,
-    "title_ru": "Трикстер 14"
+    "title_ru": "РўСЂРёРєСЃС‚РµСЂ 14"
   },
   {
     "id": "s3:trickster_abyss_15_vecteezy-24210863",
@@ -758,7 +710,7 @@ window.VIDEOS_DATA = [
     "description": "rows of crystal sticks in wave from by 3d rendering. Glowing light from ground",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/trickster_abyss_15_vecteezy-24210863.mp4",
     "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
+    "archetype": "РўСЂРёРєСЃС‚РµСЂ Рё Р‘РµР·РґРЅР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -766,7 +718,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 10220025,
-    "title_ru": "Трикстер 15"
+    "title_ru": "РўСЂРёРєСЃС‚РµСЂ 15"
   },
   {
     "id": "s3:trickster_abyss_16_vecteezy-39159769",
@@ -774,7 +726,7 @@ window.VIDEOS_DATA = [
     "description": "Wheat Plants In The Green Of The Nature",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/trickster_abyss_16_vecteezy-39159769.mp4",
     "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
+    "archetype": "РўСЂРёРєСЃС‚РµСЂ Рё Р‘РµР·РґРЅР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -782,7 +734,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 3588536,
-    "title_ru": "Трикстер 16"
+    "title_ru": "РўСЂРёРєСЃС‚РµСЂ 16"
   },
   {
     "id": "s3:trickster_abyss_17_vecteezy-37190062",
@@ -790,7 +742,7 @@ window.VIDEOS_DATA = [
     "description": "rough cracked bark, huge old tree abstract background, zoom out",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/trickster_abyss_17_vecteezy-37190062.mp4",
     "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
+    "archetype": "РўСЂРёРєСЃС‚РµСЂ Рё Р‘РµР·РґРЅР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -798,7 +750,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 3655384,
-    "title_ru": "Трикстер 17"
+    "title_ru": "РўСЂРёРєСЃС‚РµСЂ 17"
   },
   {
     "id": "s3:trickster_abyss_26_vecteezy-39160369",
@@ -806,7 +758,7 @@ window.VIDEOS_DATA = [
     "description": "Background vertical various manuscript papers",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/trickster_abyss_26_vecteezy-39160369.mp4",
     "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
+    "archetype": "РўСЂРёРєСЃС‚РµСЂ Рё Р‘РµР·РґРЅР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -814,7 +766,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 4809427,
-    "title_ru": "Трикстер 18"
+    "title_ru": "РўСЂРёРєСЃС‚РµСЂ 18"
   },
   {
     "id": "s3:trickster_abyss_31_vecteezy-23006125",
@@ -822,7 +774,7 @@ window.VIDEOS_DATA = [
     "description": "Cloudy sky before storm vertical video time lapse on a cloudy day.",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/trickster_abyss_31_vecteezy-23006125.mp4",
     "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
+    "archetype": "РўСЂРёРєСЃС‚РµСЂ Рё Р‘РµР·РґРЅР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -830,7 +782,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 3507612,
-    "title_ru": "Трикстер 19"
+    "title_ru": "РўСЂРёРєСЃС‚РµСЂ 19"
   },
   {
     "id": "s3:trickster_abyss_32_vecteezy-25413582",
@@ -838,7 +790,7 @@ window.VIDEOS_DATA = [
     "description": "Fire flame in darkness",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/trickster_abyss_32_vecteezy-25413582.mp4",
     "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
+    "archetype": "РўСЂРёРєСЃС‚РµСЂ Рё Р‘РµР·РґРЅР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -846,7 +798,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 4189178,
-    "title_ru": "Трикстер 20"
+    "title_ru": "РўСЂРёРєСЃС‚РµСЂ 20"
   },
   {
     "id": "s3:trickster_abyss_33_vecteezy-46285849",
@@ -854,7 +806,7 @@ window.VIDEOS_DATA = [
     "description": "Behind a massive waterfall",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/trickster_abyss_33_vecteezy-46285849.mp4",
     "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
+    "archetype": "РўСЂРёРєСЃС‚РµСЂ Рё Р‘РµР·РґРЅР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -862,7 +814,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 7052576,
-    "title_ru": "Трикстер 21"
+    "title_ru": "РўСЂРёРєСЃС‚РµСЂ 21"
   },
   {
     "id": "s3:trickster_abyss_34_vecteezy-26744510",
@@ -870,7 +822,7 @@ window.VIDEOS_DATA = [
     "description": "Klong Lan waterfall",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/trickster_abyss_34_vecteezy-26744510.mp4",
     "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
+    "archetype": "РўСЂРёРєСЃС‚РµСЂ Рё Р‘РµР·РґРЅР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -878,7 +830,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 7444334,
-    "title_ru": "Трикстер 22"
+    "title_ru": "РўСЂРёРєСЃС‚РµСЂ 22"
   },
   {
     "id": "s3:trickster_abyss_35_vecteezy-25413582",
@@ -886,7 +838,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic trickster abyss film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/trickster_abyss_35_vecteezy-25413582.mp4",
     "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
+    "archetype": "РўСЂРёРєСЃС‚РµСЂ Рё Р‘РµР·РґРЅР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -894,7 +846,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 4189178,
-    "title_ru": "Трикстер 23"
+    "title_ru": "РўСЂРёРєСЃС‚РµСЂ 23"
   },
   {
     "id": "s3:trickster_abyss_36_vecteezy-20287073",
@@ -902,7 +854,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic trickster abyss film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/trickster_abyss_36_vecteezy-20287073.mp4",
     "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
+    "archetype": "РўСЂРёРєСЃС‚РµСЂ Рё Р‘РµР·РґРЅР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -910,7 +862,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 6620511,
-    "title_ru": "Трикстер 24"
+    "title_ru": "РўСЂРёРєСЃС‚РµСЂ 24"
   },
   {
     "id": "s3:trickster_abyss_37_vecteezy-24514776",
@@ -918,7 +870,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic trickster abyss film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/trickster_abyss_37_vecteezy-24514776.mp4",
     "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
+    "archetype": "РўСЂРёРєСЃС‚РµСЂ Рё Р‘РµР·РґРЅР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -926,7 +878,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 7495696,
-    "title_ru": "Трикстер 25"
+    "title_ru": "РўСЂРёРєСЃС‚РµСЂ 25"
   },
   {
     "id": "s3:trickster_abyss_38_vecteezy-23413773",
@@ -934,7 +886,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic trickster abyss film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/trickster_abyss_38_vecteezy-23413773.mp4",
     "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
+    "archetype": "РўСЂРёРєСЃС‚РµСЂ Рё Р‘РµР·РґРЅР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -942,7 +894,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 8491372,
-    "title_ru": "Трикстер 26"
+    "title_ru": "РўСЂРёРєСЃС‚РµСЂ 26"
   },
   {
     "id": "s3:trickster_abyss_39_vecteezy-23006125",
@@ -950,7 +902,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic trickster abyss film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/trickster_abyss_39_vecteezy-23006125.mp4",
     "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
+    "archetype": "РўСЂРёРєСЃС‚РµСЂ Рё Р‘РµР·РґРЅР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -958,7 +910,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 3507612,
-    "title_ru": "Трикстер 27"
+    "title_ru": "РўСЂРёРєСЃС‚РµСЂ 27"
   },
   {
     "id": "s3:trickster_abyss_40_vecteezy-23002431",
@@ -966,7 +918,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic trickster abyss film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/trickster_abyss_40_vecteezy-23002431.mp4",
     "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
+    "archetype": "РўСЂРёРєСЃС‚РµСЂ Рё Р‘РµР·РґРЅР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -974,7 +926,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 4206879,
-    "title_ru": "Трикстер 28"
+    "title_ru": "РўСЂРёРєСЃС‚РµСЂ 28"
   },
   {
     "id": "s3:trickster_abyss_41_vecteezy-46285849",
@@ -982,7 +934,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic trickster abyss film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/trickster_abyss_41_vecteezy-46285849.mp4",
     "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
+    "archetype": "РўСЂРёРєСЃС‚РµСЂ Рё Р‘РµР·РґРЅР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -990,7 +942,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 7052576,
-    "title_ru": "Трикстер 29"
+    "title_ru": "РўСЂРёРєСЃС‚РµСЂ 29"
   },
   {
     "id": "s3:trickster_abyss_42_vecteezy-26744510",
@@ -998,7 +950,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic trickster abyss film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/trickster_abyss_42_vecteezy-26744510.mp4",
     "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
+    "archetype": "РўСЂРёРєСЃС‚РµСЂ Рё Р‘РµР·РґРЅР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -1006,7 +958,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 7444334,
-    "title_ru": "Трикстер 30"
+    "title_ru": "РўСЂРёРєСЃС‚РµСЂ 30"
   },
   {
     "id": "s3:trickster_abyss_43_vecteezy-22187669",
@@ -1014,7 +966,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic trickster abyss film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/trickster_abyss_43_vecteezy-22187669.mp4",
     "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
+    "archetype": "РўСЂРёРєСЃС‚РµСЂ Рё Р‘РµР·РґРЅР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -1022,7 +974,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 4375124,
-    "title_ru": "Трикстер 31"
+    "title_ru": "РўСЂРёРєСЃС‚РµСЂ 31"
   },
   {
     "id": "s3:trickster_abyss_44_vecteezy-40722016",
@@ -1030,7 +982,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic trickster abyss film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/trickster_abyss_44_vecteezy-40722016.mp4",
     "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
+    "archetype": "РўСЂРёРєСЃС‚РµСЂ Рё Р‘РµР·РґРЅР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -1038,7 +990,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 5357026,
-    "title_ru": "Трикстер 32"
+    "title_ru": "РўСЂРёРєСЃС‚РµСЂ 32"
   },
   {
     "id": "s3:trickster_abyss_46_vecteezy-20287073",
@@ -1046,7 +998,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic trickster abyss film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/trickster_abyss_46_vecteezy-20287073.mp4",
     "stage": "trickster_abyss",
-    "archetype": "Трикстер и Бездна",
+    "archetype": "РўСЂРёРєСЃС‚РµСЂ Рё Р‘РµР·РґРЅР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -1054,7 +1006,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 6620511,
-    "title_ru": "Трикстер 33"
+    "title_ru": "РўСЂРёРєСЃС‚РµСЂ 33"
   },
   {
     "id": "s3:calm_01_vecteezy-18761237",
@@ -1062,7 +1014,7 @@ window.VIDEOS_DATA = [
     "description": "Flowers at sunset",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/calm_01_vecteezy-18761237.mp4",
     "stage": "calm",
-    "archetype": "Покой / Анима",
+    "archetype": "РџРѕРєРѕР№ / РђРЅРёРјР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -1070,7 +1022,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 3522722,
-    "title_ru": "Покой 01"
+    "title_ru": "РџРѕРєРѕР№ 01"
   },
   {
     "id": "s3:calm_02_vecteezy-27482214",
@@ -1078,7 +1030,7 @@ window.VIDEOS_DATA = [
     "description": "sunset landscape beautiful tropical beach",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/calm_02_vecteezy-27482214.mp4",
     "stage": "calm",
-    "archetype": "Покой / Анима",
+    "archetype": "РџРѕРєРѕР№ / РђРЅРёРјР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -1086,7 +1038,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 3575419,
-    "title_ru": "Покой 02"
+    "title_ru": "РџРѕРєРѕР№ 02"
   },
   {
     "id": "s3:calm_03_vecteezy-18761245",
@@ -1094,7 +1046,7 @@ window.VIDEOS_DATA = [
     "description": "Field flowers at sunset summer",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/calm_03_vecteezy-18761245.mp4",
     "stage": "calm",
-    "archetype": "Покой / Анима",
+    "archetype": "РџРѕРєРѕР№ / РђРЅРёРјР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -1102,7 +1054,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 3770400,
-    "title_ru": "Покой 03"
+    "title_ru": "РџРѕРєРѕР№ 03"
   },
   {
     "id": "s3:calm_04_vecteezy-78882544",
@@ -1110,7 +1062,7 @@ window.VIDEOS_DATA = [
     "description": "A beach with palm trees and water at sunset",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/calm_04_vecteezy-78882544.mp4",
     "stage": "calm",
-    "archetype": "Покой / Анима",
+    "archetype": "РџРѕРєРѕР№ / РђРЅРёРјР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -1118,7 +1070,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 3799265,
-    "title_ru": "Покой 04"
+    "title_ru": "РџРѕРєРѕР№ 04"
   },
   {
     "id": "s3:calm_05_vecteezy-27272805",
@@ -1126,7 +1078,7 @@ window.VIDEOS_DATA = [
     "description": "sunset landscape beautiful tropical beach",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/calm_05_vecteezy-27272805.mp4",
     "stage": "calm",
-    "archetype": "Покой / Анима",
+    "archetype": "РџРѕРєРѕР№ / РђРЅРёРјР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -1134,7 +1086,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 3965194,
-    "title_ru": "Покой 05"
+    "title_ru": "РџРѕРєРѕР№ 05"
   },
   {
     "id": "s3:calm_06_vecteezy-49924671",
@@ -1142,7 +1094,7 @@ window.VIDEOS_DATA = [
     "description": "An aerial view of the Pagoda stands prominently at Wat Arun Temple with Chao Phraya River, The most famous tourist attraction in Bangkok, Thailand",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/calm_06_vecteezy-49924671.mp4",
     "stage": "calm",
-    "archetype": "Покой / Анима",
+    "archetype": "РџРѕРєРѕР№ / РђРЅРёРјР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -1150,7 +1102,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 4131702,
-    "title_ru": "Покой 06"
+    "title_ru": "РџРѕРєРѕР№ 06"
   },
   {
     "id": "s3:calm_07_vecteezy-20831039",
@@ -1158,7 +1110,7 @@ window.VIDEOS_DATA = [
     "description": "Flying above Snowy Mountains",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/calm_07_vecteezy-20831039.mp4",
     "stage": "calm",
-    "archetype": "Покой / Анима",
+    "archetype": "РџРѕРєРѕР№ / РђРЅРёРјР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -1166,7 +1118,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 4240025,
-    "title_ru": "Покой 07"
+    "title_ru": "РџРѕРєРѕР№ 07"
   },
   {
     "id": "s3:calm_08_vecteezy-24955868",
@@ -1174,7 +1126,7 @@ window.VIDEOS_DATA = [
     "description": "Snow scene in the peaks of the Chefchaouen mountains Morocco",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/calm_08_vecteezy-24955868.mp4",
     "stage": "calm",
-    "archetype": "Покой / Анима",
+    "archetype": "РџРѕРєРѕР№ / РђРЅРёРјР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -1182,7 +1134,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 4255986,
-    "title_ru": "Покой 08"
+    "title_ru": "РџРѕРєРѕР№ 08"
   },
   {
     "id": "s3:calm_09_vecteezy-22187669",
@@ -1190,7 +1142,7 @@ window.VIDEOS_DATA = [
     "description": "Time Lapse of Fast Moving Dramatic and Rain Clouds over England",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/calm_09_vecteezy-22187669.mp4",
     "stage": "calm",
-    "archetype": "Покой / Анима",
+    "archetype": "РџРѕРєРѕР№ / РђРЅРёРјР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -1198,7 +1150,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 4375124,
-    "title_ru": "Покой 09"
+    "title_ru": "РџРѕРєРѕР№ 09"
   },
   {
     "id": "s3:calm_10_vecteezy-11705699",
@@ -1206,7 +1158,7 @@ window.VIDEOS_DATA = [
     "description": "in cloudy weather we sit on the shore of the lake and throw pebbles into the water",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/calm_10_vecteezy-11705699.mp4",
     "stage": "calm",
-    "archetype": "Покой / Анима",
+    "archetype": "РџРѕРєРѕР№ / РђРЅРёРјР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -1214,7 +1166,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 4463488,
-    "title_ru": "Покой 10"
+    "title_ru": "РџРѕРєРѕР№ 10"
   },
   {
     "id": "s3:calm_11_vecteezy-37989279",
@@ -1222,7 +1174,7 @@ window.VIDEOS_DATA = [
     "description": "Mountains Peaks Over The Clouds Sunset",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/calm_11_vecteezy-37989279.mp4",
     "stage": "calm",
-    "archetype": "Покой / Анима",
+    "archetype": "РџРѕРєРѕР№ / РђРЅРёРјР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -1230,7 +1182,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 4464549,
-    "title_ru": "Покой 11"
+    "title_ru": "РџРѕРєРѕР№ 11"
   },
   {
     "id": "s3:calm_12_vecteezy-15957810",
@@ -1238,7 +1190,7 @@ window.VIDEOS_DATA = [
     "description": "goat on a meadow free to downloads",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/calm_12_vecteezy-15957810.mp4",
     "stage": "calm",
-    "archetype": "Покой / Анима",
+    "archetype": "РџРѕРєРѕР№ / РђРЅРёРјР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -1246,7 +1198,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 4471087,
-    "title_ru": "Покой 12"
+    "title_ru": "РџРѕРєРѕР№ 12"
   },
   {
     "id": "s3:calm_13_vecteezy-26369703",
@@ -1254,7 +1206,7 @@ window.VIDEOS_DATA = [
     "description": "A beautiful field or lawn with blooming red tulip flowers. Natural colored background",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/calm_13_vecteezy-26369703.mp4",
     "stage": "calm",
-    "archetype": "Покой / Анима",
+    "archetype": "РџРѕРєРѕР№ / РђРЅРёРјР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -1262,7 +1214,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 4661530,
-    "title_ru": "Покой 13"
+    "title_ru": "РџРѕРєРѕР№ 13"
   },
   {
     "id": "s3:calm_14_vecteezy-10366500",
@@ -1270,7 +1222,7 @@ window.VIDEOS_DATA = [
     "description": "Sea Sunrise - Sunset",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/calm_14_vecteezy-10366500.mp4",
     "stage": "calm",
-    "archetype": "Покой / Анима",
+    "archetype": "РџРѕРєРѕР№ / РђРЅРёРјР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -1278,7 +1230,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 4689580,
-    "title_ru": "Покой 14"
+    "title_ru": "РџРѕРєРѕР№ 14"
   },
   {
     "id": "s3:calm_15_vecteezy-50096613",
@@ -1286,7 +1238,7 @@ window.VIDEOS_DATA = [
     "description": "Beautiful black white horses on the lakeside field at sunset, wildlife and animals, nature background, Ireland, 4k",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/calm_15_vecteezy-50096613.mp4",
     "stage": "calm",
-    "archetype": "Покой / Анима",
+    "archetype": "РџРѕРєРѕР№ / РђРЅРёРјР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -1294,7 +1246,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 9.521,
     "size": 4797618,
-    "title_ru": "Покой 15"
+    "title_ru": "РџРѕРєРѕР№ 15"
   },
   {
     "id": "s3:calm_16_vecteezy-23624434",
@@ -1302,7 +1254,7 @@ window.VIDEOS_DATA = [
     "description": "Church steeple in Lake Reschen - Resia, South Tyrol, Italy",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/calm_16_vecteezy-23624434.mp4",
     "stage": "calm",
-    "archetype": "Покой / Анима",
+    "archetype": "РџРѕРєРѕР№ / РђРЅРёРјР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -1310,7 +1262,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 5033763,
-    "title_ru": "Покой 16"
+    "title_ru": "РџРѕРєРѕР№ 16"
   },
   {
     "id": "s3:calm_17_vecteezy-40722016",
@@ -1318,7 +1270,7 @@ window.VIDEOS_DATA = [
     "description": "Grey cumulus clouds covering the sky. Dull cloudscape gathering for rain. Low angle view timelapse. Vertical video",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/calm_17_vecteezy-40722016.mp4",
     "stage": "calm",
-    "archetype": "Покой / Анима",
+    "archetype": "РџРѕРєРѕР№ / РђРЅРёРјР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -1326,7 +1278,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 5357026,
-    "title_ru": "Покой 17"
+    "title_ru": "РџРѕРєРѕР№ 17"
   },
   {
     "id": "s3:calm_18_vecteezy-21244998",
@@ -1334,7 +1286,7 @@ window.VIDEOS_DATA = [
     "description": "Sheep walking in early sunlight beams",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/calm_18_vecteezy-21244998.mp4",
     "stage": "calm",
-    "archetype": "Покой / Анима",
+    "archetype": "РџРѕРєРѕР№ / РђРЅРёРјР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -1342,7 +1294,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 5490630,
-    "title_ru": "Покой 18"
+    "title_ru": "РџРѕРєРѕР№ 18"
   },
   {
     "id": "s3:calm_19_vecteezy-44308857",
@@ -1350,7 +1302,7 @@ window.VIDEOS_DATA = [
     "description": "Golden Sunset Beach Escape. Relax with the serene beauty of a golden sunset over the peaceful beaches of Bali. Peaceful times await",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/calm_19_vecteezy-44308857.mp4",
     "stage": "calm",
-    "archetype": "Покой / Анима",
+    "archetype": "РџРѕРєРѕР№ / РђРЅРёРјР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -1358,7 +1310,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 5845023,
-    "title_ru": "Покой 19"
+    "title_ru": "РџРѕРєРѕР№ 19"
   },
   {
     "id": "s3:calm_20_vecteezy-31688932",
@@ -1366,7 +1318,7 @@ window.VIDEOS_DATA = [
     "description": "Water wave textured background.Reflection of blue sky with clouds.Vertical.",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/calm_20_vecteezy-31688932.mp4",
     "stage": "calm",
-    "archetype": "Покой / Анима",
+    "archetype": "РџРѕРєРѕР№ / РђРЅРёРјР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -1374,7 +1326,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 5869438,
-    "title_ru": "Покой 20"
+    "title_ru": "РџРѕРєРѕР№ 20"
   },
   {
     "id": "s3:calm_21_vecteezy-39898433",
@@ -1382,7 +1334,7 @@ window.VIDEOS_DATA = [
     "description": "Green Field Meadow In The Sicily Countryside",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/calm_21_vecteezy-39898433.mp4",
     "stage": "calm",
-    "archetype": "Покой / Анима",
+    "archetype": "РџРѕРєРѕР№ / РђРЅРёРјР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -1390,7 +1342,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 5968569,
-    "title_ru": "Покой 21"
+    "title_ru": "РџРѕРєРѕР№ 21"
   },
   {
     "id": "s3:calm_22_vecteezy-28660818",
@@ -1398,7 +1350,7 @@ window.VIDEOS_DATA = [
     "description": "Sunrise at the Ionic sea in Sicily, Italy",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/calm_22_vecteezy-28660818.mp4",
     "stage": "calm",
-    "archetype": "Покой / Анима",
+    "archetype": "РџРѕРєРѕР№ / РђРЅРёРјР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -1406,7 +1358,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 6160581,
-    "title_ru": "Покой 22"
+    "title_ru": "РџРѕРєРѕР№ 22"
   },
   {
     "id": "s3:calm_23_vecteezy-22675470",
@@ -1414,7 +1366,7 @@ window.VIDEOS_DATA = [
     "description": "Bee on a guava flower",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/calm_23_vecteezy-22675470.mp4",
     "stage": "calm",
-    "archetype": "Покой / Анима",
+    "archetype": "РџРѕРєРѕР№ / РђРЅРёРјР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -1422,7 +1374,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 6319773,
-    "title_ru": "Покой 23"
+    "title_ru": "РџРѕРєРѕР№ 23"
   },
   {
     "id": "s3:calm_24_vecteezy-26673477",
@@ -1430,7 +1382,7 @@ window.VIDEOS_DATA = [
     "description": "Nature background, landscape background, sunset background",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/calm_24_vecteezy-26673477.mp4",
     "stage": "calm",
-    "archetype": "Покой / Анима",
+    "archetype": "РџРѕРєРѕР№ / РђРЅРёРјР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -1438,7 +1390,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 6819996,
-    "title_ru": "Покой 24"
+    "title_ru": "РџРѕРєРѕР№ 24"
   },
   {
     "id": "s3:calm_25_vecteezy-49319867",
@@ -1446,7 +1398,7 @@ window.VIDEOS_DATA = [
     "description": "Beautiful sunset at sea and dramatic clouds on background",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/calm_25_vecteezy-49319867.mp4",
     "stage": "calm",
-    "archetype": "Покой / Анима",
+    "archetype": "РџРѕРєРѕР№ / РђРЅРёРјР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -1454,7 +1406,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 6883780,
-    "title_ru": "Покой 25"
+    "title_ru": "РџРѕРєРѕР№ 25"
   },
   {
     "id": "s3:calm_26_vecteezy-21798334",
@@ -1462,7 +1414,7 @@ window.VIDEOS_DATA = [
     "description": "Vertical video of horses on a sunny day on a farm",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/calm_26_vecteezy-21798334.mp4",
     "stage": "calm",
-    "archetype": "Покой / Анима",
+    "archetype": "РџРѕРєРѕР№ / РђРЅРёРјР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -1470,7 +1422,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 6936621,
-    "title_ru": "Покой 26"
+    "title_ru": "РџРѕРєРѕР№ 26"
   },
   {
     "id": "s3:calm_27_vecteezy-47385242",
@@ -1478,7 +1430,7 @@ window.VIDEOS_DATA = [
     "description": "Turtle lake view in summer from above",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/calm_27_vecteezy-47385242.mp4",
     "stage": "calm",
-    "archetype": "Покой / Анима",
+    "archetype": "РџРѕРєРѕР№ / РђРЅРёРјР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -1486,7 +1438,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 7477310,
-    "title_ru": "Покой 27"
+    "title_ru": "РџРѕРєРѕР№ 27"
   },
   {
     "id": "s3:calm_28_055zcwp14t",
@@ -1494,7 +1446,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic calm film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/calm_28_055zcwp14t.mp4",
     "stage": "calm",
-    "archetype": "Покой / Анима",
+    "archetype": "РџРѕРєРѕР№ / РђРЅРёРјР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -1502,7 +1454,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 8395743,
-    "title_ru": "Покой 28"
+    "title_ru": "РџРѕРєРѕР№ 28"
   },
   {
     "id": "s3:calm_29_coverr-eq54utb0v7",
@@ -1510,7 +1462,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic calm film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/calm_29_coverr-eq54utb0v7.mp4",
     "stage": "calm",
-    "archetype": "Покой / Анима",
+    "archetype": "РџРѕРєРѕР№ / РђРЅРёРјР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -1518,7 +1470,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 8545836,
-    "title_ru": "Покой 29"
+    "title_ru": "РџРѕРєРѕР№ 29"
   },
   {
     "id": "s3:calm_30_8lsbvwzhox",
@@ -1526,7 +1478,7 @@ window.VIDEOS_DATA = [
     "description": "A lake near mountains",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/calm_30_8lsbvwzhox.mp4",
     "stage": "calm",
-    "archetype": "Покой / Анима",
+    "archetype": "РџРѕРєРѕР№ / РђРЅРёРјР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -1534,7 +1486,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 15.249,
     "size": 8695238,
-    "title_ru": "Покой 30"
+    "title_ru": "РџРѕРєРѕР№ 30"
   },
   {
     "id": "s3:calm_31_vecteezy-17202055",
@@ -1542,7 +1494,7 @@ window.VIDEOS_DATA = [
     "description": "Mustard flower in soft light",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/calm_31_vecteezy-17202055.mp4",
     "stage": "calm",
-    "archetype": "Покой / Анима",
+    "archetype": "РџРѕРєРѕР№ / РђРЅРёРјР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -1550,7 +1502,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 3593694,
-    "title_ru": "Покой 31"
+    "title_ru": "РџРѕРєРѕР№ 31"
   },
   {
     "id": "s3:calm_32_vecteezy-11733811",
@@ -1558,7 +1510,7 @@ window.VIDEOS_DATA = [
     "description": "Clear turquoise mountain lake",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/calm_32_vecteezy-11733811.mp4",
     "stage": "calm",
-    "archetype": "Покой / Анима",
+    "archetype": "РџРѕРєРѕР№ / РђРЅРёРјР°",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -1566,7 +1518,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 6366257,
-    "title_ru": "Покой 32"
+    "title_ru": "РџРѕРєРѕР№ 32"
   },
   {
     "id": "s3:path_01_vecteezy-26167264",
@@ -1574,7 +1526,7 @@ window.VIDEOS_DATA = [
     "description": "Timelapse drom the sand beach in Vila Nova de Gaia, Portugal, in Portrait mode",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/path_01_vecteezy-26167264.mp4",
     "stage": "path",
-    "archetype": "Путь / Самость",
+    "archetype": "РџСѓС‚СЊ / РЎР°РјРѕСЃС‚СЊ",
     "is_finale": true,
     "source": "s3",
     "vertical": true,
@@ -1582,7 +1534,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 3712807,
-    "title_ru": "Путь 01"
+    "title_ru": "РџСѓС‚СЊ 01"
   },
   {
     "id": "s3:path_02_vecteezy-39227242",
@@ -1590,7 +1542,7 @@ window.VIDEOS_DATA = [
     "description": "4k nature of clouds, View from an airplane window. Travel concept. traveler, trip, vacation, tourism, landscape. Aerial view sky",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/path_02_vecteezy-39227242.mp4",
     "stage": "path",
-    "archetype": "Путь / Самость",
+    "archetype": "РџСѓС‚СЊ / РЎР°РјРѕСЃС‚СЊ",
     "is_finale": true,
     "source": "s3",
     "vertical": true,
@@ -1598,7 +1550,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 3736950,
-    "title_ru": "Путь 02"
+    "title_ru": "РџСѓС‚СЊ 02"
   },
   {
     "id": "s3:path_03_vecteezy-49924669",
@@ -1606,7 +1558,7 @@ window.VIDEOS_DATA = [
     "description": "Aerial drone view of the tropical beach with white sand and palm tree",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/path_03_vecteezy-49924669.mp4",
     "stage": "path",
-    "archetype": "Путь / Самость",
+    "archetype": "РџСѓС‚СЊ / РЎР°РјРѕСЃС‚СЊ",
     "is_finale": true,
     "source": "s3",
     "vertical": true,
@@ -1614,7 +1566,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 3842925,
-    "title_ru": "Путь 03"
+    "title_ru": "РџСѓС‚СЊ 03"
   },
   {
     "id": "s3:path_04_vecteezy-49757118",
@@ -1622,7 +1574,7 @@ window.VIDEOS_DATA = [
     "description": "Time lapse shot of Milky Way over mountain and trees against sky at night",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/path_04_vecteezy-49757118.mp4",
     "stage": "path",
-    "archetype": "Путь / Самость",
+    "archetype": "РџСѓС‚СЊ / РЎР°РјРѕСЃС‚СЊ",
     "is_finale": true,
     "source": "s3",
     "vertical": true,
@@ -1630,7 +1582,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 4017319,
-    "title_ru": "Путь 04"
+    "title_ru": "РџСѓС‚СЊ 04"
   },
   {
     "id": "s3:path_05_vecteezy-25251767",
@@ -1638,7 +1590,7 @@ window.VIDEOS_DATA = [
     "description": "Beach Coast flyby",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/path_05_vecteezy-25251767.mp4",
     "stage": "path",
-    "archetype": "Путь / Самость",
+    "archetype": "РџСѓС‚СЊ / РЎР°РјРѕСЃС‚СЊ",
     "is_finale": true,
     "source": "s3",
     "vertical": true,
@@ -1646,7 +1598,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 4244001,
-    "title_ru": "Путь 05"
+    "title_ru": "РџСѓС‚СЊ 05"
   },
   {
     "id": "s3:path_06_vecteezy-48665208",
@@ -1654,7 +1606,7 @@ window.VIDEOS_DATA = [
     "description": "Breathtaking aerial view dramatic mountains",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/path_06_vecteezy-48665208.mp4",
     "stage": "path",
-    "archetype": "Путь / Самость",
+    "archetype": "РџСѓС‚СЊ / РЎР°РјРѕСЃС‚СЊ",
     "is_finale": true,
     "source": "s3",
     "vertical": true,
@@ -1662,7 +1614,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 4556449,
-    "title_ru": "Путь 06"
+    "title_ru": "РџСѓС‚СЊ 06"
   },
   {
     "id": "s3:path_07_vecteezy-47104840",
@@ -1670,7 +1622,7 @@ window.VIDEOS_DATA = [
     "description": "Vertical Drone Footage of fog in the mountain at Gorontalo, Indonesia",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/path_07_vecteezy-47104840.mp4",
     "stage": "path",
-    "archetype": "Путь / Самость",
+    "archetype": "РџСѓС‚СЊ / РЎР°РјРѕСЃС‚СЊ",
     "is_finale": true,
     "source": "s3",
     "vertical": true,
@@ -1678,7 +1630,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 4614285,
-    "title_ru": "Путь 07"
+    "title_ru": "РџСѓС‚СЊ 07"
   },
   {
     "id": "s3:path_08_vecteezy-16766057",
@@ -1686,7 +1638,7 @@ window.VIDEOS_DATA = [
     "description": "Seagull hovering over the sea, sea bird levitation in the air, gull flying over the ocean.",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/path_08_vecteezy-16766057.mp4",
     "stage": "path",
-    "archetype": "Путь / Самость",
+    "archetype": "РџСѓС‚СЊ / РЎР°РјРѕСЃС‚СЊ",
     "is_finale": true,
     "source": "s3",
     "vertical": true,
@@ -1694,7 +1646,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 8.676,
     "size": 4879249,
-    "title_ru": "Путь 08"
+    "title_ru": "РџСѓС‚СЊ 08"
   },
   {
     "id": "s3:path_09_vecteezy-42239858",
@@ -1702,7 +1654,7 @@ window.VIDEOS_DATA = [
     "description": "Vertical video night sky in the mountain",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/path_09_vecteezy-42239858.mp4",
     "stage": "path",
-    "archetype": "Путь / Самость",
+    "archetype": "РџСѓС‚СЊ / РЎР°РјРѕСЃС‚СЊ",
     "is_finale": true,
     "source": "s3",
     "vertical": true,
@@ -1710,7 +1662,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 4888856,
-    "title_ru": "Путь 09"
+    "title_ru": "РџСѓС‚СЊ 09"
   },
   {
     "id": "s3:path_10_vecteezy-42408065",
@@ -1718,7 +1670,7 @@ window.VIDEOS_DATA = [
     "description": "A flock of sheep graze on grass on a hillside. The green landscape stretches along the mountains in the Ukrainian Carpathians. vertical",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/path_10_vecteezy-42408065.mp4",
     "stage": "path",
-    "archetype": "Путь / Самость",
+    "archetype": "РџСѓС‚СЊ / РЎР°РјРѕСЃС‚СЊ",
     "is_finale": true,
     "source": "s3",
     "vertical": true,
@@ -1726,7 +1678,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 4960460,
-    "title_ru": "Путь 10"
+    "title_ru": "РџСѓС‚СЊ 10"
   },
   {
     "id": "s3:path_11_vecteezy-13129372",
@@ -1734,7 +1686,7 @@ window.VIDEOS_DATA = [
     "description": "Beautiful vertical aerial view of blue waves breaking over a rockey shoreline at",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/path_11_vecteezy-13129372.mp4",
     "stage": "path",
-    "archetype": "Путь / Самость",
+    "archetype": "РџСѓС‚СЊ / РЎР°РјРѕСЃС‚СЊ",
     "is_finale": true,
     "source": "s3",
     "vertical": true,
@@ -1742,7 +1694,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 5295649,
-    "title_ru": "Путь 11"
+    "title_ru": "РџСѓС‚СЊ 11"
   },
   {
     "id": "s3:path_12_vecteezy-44308850",
@@ -1750,7 +1702,7 @@ window.VIDEOS_DATA = [
     "description": "Suburban Tranquility A Quiet Road Trip decorated with blue skies and few clouds",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/path_12_vecteezy-44308850.mp4",
     "stage": "path",
-    "archetype": "Путь / Самость",
+    "archetype": "РџСѓС‚СЊ / РЎР°РјРѕСЃС‚СЊ",
     "is_finale": true,
     "source": "s3",
     "vertical": true,
@@ -1758,7 +1710,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 8.499,
     "size": 5356719,
-    "title_ru": "Путь 12"
+    "title_ru": "РџСѓС‚СЊ 12"
   },
   {
     "id": "s3:path_13_vecteezy-48665200",
@@ -1766,7 +1718,7 @@ window.VIDEOS_DATA = [
     "description": "Breathtaking aerial view dramatic mountains",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/path_13_vecteezy-48665200.mp4",
     "stage": "path",
-    "archetype": "Путь / Самость",
+    "archetype": "РџСѓС‚СЊ / РЎР°РјРѕСЃС‚СЊ",
     "is_finale": true,
     "source": "s3",
     "vertical": true,
@@ -1774,7 +1726,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 5715123,
-    "title_ru": "Путь 13"
+    "title_ru": "РџСѓС‚СЊ 13"
   },
   {
     "id": "s3:path_14_vecteezy-26489445",
@@ -1782,7 +1734,7 @@ window.VIDEOS_DATA = [
     "description": "View of the sky and clouds from an airplane window..",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/path_14_vecteezy-26489445.mp4",
     "stage": "path",
-    "archetype": "Путь / Самость",
+    "archetype": "РџСѓС‚СЊ / РЎР°РјРѕСЃС‚СЊ",
     "is_finale": true,
     "source": "s3",
     "vertical": true,
@@ -1790,7 +1742,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 5800762,
-    "title_ru": "Путь 14"
+    "title_ru": "РџСѓС‚СЊ 14"
   },
   {
     "id": "s3:path_15_vecteezy-11733811",
@@ -1798,7 +1750,7 @@ window.VIDEOS_DATA = [
     "description": "clear turquoise mountain lake",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/path_15_vecteezy-11733811.mp4",
     "stage": "path",
-    "archetype": "Путь / Самость",
+    "archetype": "РџСѓС‚СЊ / РЎР°РјРѕСЃС‚СЊ",
     "is_finale": true,
     "source": "s3",
     "vertical": true,
@@ -1806,7 +1758,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 6366257,
-    "title_ru": "Путь 15"
+    "title_ru": "РџСѓС‚СЊ 15"
   },
   {
     "id": "s3:path_16_vecteezy-39227308",
@@ -1814,7 +1766,7 @@ window.VIDEOS_DATA = [
     "description": "4k nature of clouds, View from an airplane window. Travel concept. traveler, trip, vacation, tourism, landscape. Aerial view sky",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/path_16_vecteezy-39227308.mp4",
     "stage": "path",
-    "archetype": "Путь / Самость",
+    "archetype": "РџСѓС‚СЊ / РЎР°РјРѕСЃС‚СЊ",
     "is_finale": true,
     "source": "s3",
     "vertical": true,
@@ -1822,7 +1774,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 6814806,
-    "title_ru": "Путь 16"
+    "title_ru": "РџСѓС‚СЊ 16"
   },
   {
     "id": "s3:path_17_vecteezy-44851735",
@@ -1830,7 +1782,7 @@ window.VIDEOS_DATA = [
     "description": "View of sandy beach, sea and sky in summer with sea waves entering the natural white sandy beach. Chao Lao Beach sea area Chanthaburi Province, Thailand. 4K footage",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/path_17_vecteezy-44851735.mp4",
     "stage": "path",
-    "archetype": "Путь / Самость",
+    "archetype": "РџСѓС‚СЊ / РЎР°РјРѕСЃС‚СЊ",
     "is_finale": true,
     "source": "s3",
     "vertical": true,
@@ -1838,7 +1790,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 15.403,
     "size": 7134298,
-    "title_ru": "Путь 17"
+    "title_ru": "РџСѓС‚СЊ 17"
   },
   {
     "id": "s3:path_18_vecteezy-44308819",
@@ -1846,7 +1798,7 @@ window.VIDEOS_DATA = [
     "description": "Majestic Sky Dance Birds in Flight. Witness the mesmerizing dance of birds soaring against fluffy clouds and blue skies in an urban setting.",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/path_18_vecteezy-44308819.mp4",
     "stage": "path",
-    "archetype": "Путь / Самость",
+    "archetype": "РџСѓС‚СЊ / РЎР°РјРѕСЃС‚СЊ",
     "is_finale": true,
     "source": "s3",
     "vertical": true,
@@ -1854,7 +1806,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 7194682,
-    "title_ru": "Путь 18"
+    "title_ru": "РџСѓС‚СЊ 18"
   },
   {
     "id": "s3:path_19_coverr-porto-santo-coastline-2591",
@@ -1862,7 +1814,7 @@ window.VIDEOS_DATA = [
     "description": "Taking photos of Porto Santo coastline",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/path_19_coverr-porto-santo-coastline-2591.mp4",
     "stage": "path",
-    "archetype": "Путь / Самость",
+    "archetype": "РџСѓС‚СЊ / РЎР°РјРѕСЃС‚СЊ",
     "is_finale": true,
     "source": "s3",
     "vertical": true,
@@ -1870,7 +1822,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 7193387,
-    "title_ru": "Путь 19"
+    "title_ru": "РџСѓС‚СЊ 19"
   },
   {
     "id": "s3:path_20_faom7mmeif",
@@ -1878,7 +1830,7 @@ window.VIDEOS_DATA = [
     "description": "Cinematic path film",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/path_20_faom7mmeif.mp4",
     "stage": "path",
-    "archetype": "Путь / Самость",
+    "archetype": "РџСѓС‚СЊ / РЎР°РјРѕСЃС‚СЊ",
     "is_finale": true,
     "source": "s3",
     "vertical": true,
@@ -1886,7 +1838,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 7238560,
-    "title_ru": "Путь 20"
+    "title_ru": "РџСѓС‚СЊ 20"
   },
   {
     "id": "s3:path_21_vecteezy-24153650",
@@ -1894,7 +1846,7 @@ window.VIDEOS_DATA = [
     "description": "video of views of the mountains and rice fields from the bridge",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/path_21_vecteezy-24153650.mp4",
     "stage": "path",
-    "archetype": "Путь / Самость",
+    "archetype": "РџСѓС‚СЊ / РЎР°РјРѕСЃС‚СЊ",
     "is_finale": true,
     "source": "s3",
     "vertical": true,
@@ -1902,7 +1854,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.884,
     "size": 7585387,
-    "title_ru": "Путь 21"
+    "title_ru": "РџСѓС‚СЊ 21"
   },
   {
     "id": "s3:path_22_vecteezy-44308860",
@@ -1910,7 +1862,7 @@ window.VIDEOS_DATA = [
     "description": "Serenity by the Shore Ocean Waves and Sandy Beach. Find tranquility with ocean waves gently lapping on a sandy beach, a serene escape into nature.",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/path_22_vecteezy-44308860.mp4",
     "stage": "path",
-    "archetype": "Путь / Самость",
+    "archetype": "РџСѓС‚СЊ / РЎР°РјРѕСЃС‚СЊ",
     "is_finale": true,
     "source": "s3",
     "vertical": true,
@@ -1918,7 +1870,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.473,
     "size": 7797161,
-    "title_ru": "Путь 22"
+    "title_ru": "РџСѓС‚СЊ 22"
   },
   {
     "id": "s3:path_23_coverr-walking-mountain-top-8360",
@@ -1926,7 +1878,7 @@ window.VIDEOS_DATA = [
     "description": "Walking to the mountain top",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/path_23_coverr-walking-mountain-top-8360.mp4",
     "stage": "path",
-    "archetype": "Путь / Самость",
+    "archetype": "РџСѓС‚СЊ / РЎР°РјРѕСЃС‚СЊ",
     "is_finale": true,
     "source": "s3",
     "vertical": true,
@@ -1934,7 +1886,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 8797143,
-    "title_ru": "Путь 23"
+    "title_ru": "РџСѓС‚СЊ 23"
   },
   {
     "id": "s3:path_24_vecteezy-35353508",
@@ -1942,7 +1894,7 @@ window.VIDEOS_DATA = [
     "description": "Video of going up the ski lift to the ski slope at a winter mountain resort in the mountains. Active recreation in the winter season",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/path_24_vecteezy-35353508.mp4",
     "stage": "path",
-    "archetype": "Путь / Самость",
+    "archetype": "РџСѓС‚СЊ / РЎР°РјРѕСЃС‚СЊ",
     "is_finale": true,
     "source": "s3",
     "vertical": true,
@@ -1950,7 +1902,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 9156747,
-    "title_ru": "Путь 24"
+    "title_ru": "РџСѓС‚СЊ 24"
   },
   {
     "id": "s3:path_25_vecteezy-28800918",
@@ -1958,7 +1910,7 @@ window.VIDEOS_DATA = [
     "description": "little bird feeding on sandy beach",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/path_25_vecteezy-28800918.mp4",
     "stage": "path",
-    "archetype": "Путь / Самость",
+    "archetype": "РџСѓС‚СЊ / РЎР°РјРѕСЃС‚СЊ",
     "is_finale": true,
     "source": "s3",
     "vertical": true,
@@ -1966,7 +1918,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 13.114,
     "size": 9340076,
-    "title_ru": "Путь 25"
+    "title_ru": "РџСѓС‚СЊ 25"
   },
   {
     "id": "s3:path_26_vecteezy-48659846",
@@ -1974,7 +1926,7 @@ window.VIDEOS_DATA = [
     "description": "Long anamorphic light leak. Vertical size.",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/path_26_vecteezy-48659846.mp4",
     "stage": "path",
-    "archetype": "Путь / Самость",
+    "archetype": "РџСѓС‚СЊ / РЎР°РјРѕСЃС‚СЊ",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -1982,7 +1934,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 8738728,
-    "title_ru": "Путь 26"
+    "title_ru": "РџСѓС‚СЊ 26"
   },
   {
     "id": "s3:path_27_vecteezy-9978949",
@@ -1990,7 +1942,7 @@ window.VIDEOS_DATA = [
     "description": "Beautiful Aerial high angle Vertical View of England Great Britain's Landscape Cityscape",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/path_27_vecteezy-9978949.mp4",
     "stage": "path",
-    "archetype": "Путь / Самость",
+    "archetype": "РџСѓС‚СЊ / РЎР°РјРѕСЃС‚СЊ",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -1998,7 +1950,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 9067186,
-    "title_ru": "Путь 27"
+    "title_ru": "РџСѓС‚СЊ 27"
   },
   {
     "id": "s3:path_28_vecteezy-9687461",
@@ -2006,7 +1958,7 @@ window.VIDEOS_DATA = [
     "description": "Beautiful Aerial high angle Vertical View of England Great Britain's Landscape Cityscape",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/path_28_vecteezy-9687461.mp4",
     "stage": "path",
-    "archetype": "Путь / Самость",
+    "archetype": "РџСѓС‚СЊ / РЎР°РјРѕСЃС‚СЊ",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -2014,7 +1966,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 9745285,
-    "title_ru": "Путь 28"
+    "title_ru": "РџСѓС‚СЊ 28"
   },
   {
     "id": "s3:path_29_vecteezy-23156720",
@@ -2022,7 +1974,7 @@ window.VIDEOS_DATA = [
     "description": "Scenic view of natural area as sun shines",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/path_29_vecteezy-23156720.mp4",
     "stage": "path",
-    "archetype": "Путь / Самость",
+    "archetype": "РџСѓС‚СЊ / РЎР°РјРѕСЃС‚СЊ",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -2030,7 +1982,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 9817151,
-    "title_ru": "Путь 29"
+    "title_ru": "РџСѓС‚СЊ 29"
   },
   {
     "id": "s3:path_30_vecteezy-48665208",
@@ -2038,7 +1990,7 @@ window.VIDEOS_DATA = [
     "description": "Breathtaking aerial view dramatic mountains",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/path_30_vecteezy-48665208.mp4",
     "stage": "path",
-    "archetype": "Путь / Самость",
+    "archetype": "РџСѓС‚СЊ / РЎР°РјРѕСЃС‚СЊ",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -2046,7 +1998,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 4556449,
-    "title_ru": "Путь 30"
+    "title_ru": "РџСѓС‚СЊ 30"
   },
   {
     "id": "s3:path_31_vecteezy-24955868",
@@ -2054,7 +2006,7 @@ window.VIDEOS_DATA = [
     "description": "Snow scene in the peaks of the Chefchaouen mountains Morocco",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/path_31_vecteezy-24955868.mp4",
     "stage": "path",
-    "archetype": "Путь / Самость",
+    "archetype": "РџСѓС‚СЊ / РЎР°РјРѕСЃС‚СЊ",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -2062,7 +2014,7 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 4255986,
-    "title_ru": "Путь 31"
+    "title_ru": "РџСѓС‚СЊ 31"
   },
   {
     "id": "s3:path_32_vecteezy-47104840",
@@ -2070,7 +2022,7 @@ window.VIDEOS_DATA = [
     "description": "Fog in the mountain at Gorontalo",
     "url": "https://s3.twcstorage.ru/digital-sanctuary/path_32_vecteezy-47104840.mp4",
     "stage": "path",
-    "archetype": "Путь / Самость",
+    "archetype": "РџСѓС‚СЊ / РЎР°РјРѕСЃС‚СЊ",
     "is_finale": false,
     "source": "s3",
     "vertical": true,
@@ -2078,6 +2030,6 @@ window.VIDEOS_DATA = [
     "height": 1920,
     "duration": 10.0,
     "size": 4614285,
-    "title_ru": "Путь 32"
+    "title_ru": "РџСѓС‚СЊ 32"
   }
 ];

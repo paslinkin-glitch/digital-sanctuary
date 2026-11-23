@@ -2547,9 +2547,6 @@ textarea {
   flex: 1 1 210px;
 }
 
-#save-dream-frame {
-  opacity: 0.82;
-}
 
 .install-card-mark {
   display: block;
@@ -2575,9 +2572,6 @@ textarea {
   filter: blur(2px) saturate(0.72) contrast(1.02) brightness(0.58);
 }
 
-#save-dream-frame {
-  opacity: 0.82;
-}
 
 .install-card--final {
   z-index: 46;
@@ -3282,4 +3276,94 @@ body,
   bottom: calc(env(safe-area-inset-bottom) + 96px);
   transform: translateX(-50%);
   margin: 0;
+}
+
+
+/* ================================================== v48 QUIET LUXURY AUDIT */
+.entry {
+  align-items: center;
+  text-align: center;
+}
+
+.entry-copy,
+.entry-actions {
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+}
+
+.entry > .install-card,
+.entry > .install-card--ios {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.cycle-whisper {
+  top: 50%;
+  left: 50%;
+  width: min(84vw, 390px);
+  transform: translate(-50%, -50%);
+  text-align: center;
+  align-items: center;
+  justify-items: center;
+}
+
+.cycle-whisper-rule {
+  display: block;
+  width: min(120px, 30%);
+  height: 0.5px;
+  margin: 0.9rem auto;
+  background: linear-gradient(90deg, transparent, rgba(214, 199, 178, 0.72), transparent);
+  opacity: 0.9;
+}
+
+.finale {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.finale-shell {
+  left: auto !important;
+  right: auto !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  width: min(88vw, 440px) !important;
+  max-width: 440px;
+  transform: none !important;
+  text-align: center;
+  justify-items: center;
+  align-items: center;
+}
+
+.finale-title,
+.finale-sub,
+.finale-kicker,
+.finale-reflection,
+.finale-lock-label,
+.finale-countdown {
+  text-align: center;
+}
+
+.finale-reflection {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 440px;
+}
+
+.finale-actions {
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin: 1.4rem auto 0;
+}
+
+.finale-actions .finale-btn--glass {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 190px;
+  max-width: 250px;
+  padding: 12px 24px;
+  border-radius: 999px;
+  text-align: center;
 }
