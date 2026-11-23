@@ -536,6 +536,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     return best;
   }
 
+  const ALL_MUSIC_TRACKS = Object.values(MUSIC_CATALOG).flat();
+
   /* ------------------------------------------------------------------ DOM */
 
   const stage = document.querySelector('.stage');
@@ -869,6 +871,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   let swipeHintTimer = 0;
   let hasSwiped = false;
   let resonanceTimer = 0;
+  let recentTrackIds = [];
   let sound = null;
   let soundStarting = false;
   let gateOpen = false;
@@ -1892,17 +1895,18 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     preloadTrack(category.musicTracks[category.trackCursor % category.musicTracks.length]);
   }
 
+  let globalTrackCursor = 0;
   function nextTrackFor(category) {
-    const tracks = category.musicTracks || [];
+    const tracks = ALL_MUSIC_TRACKS.length ? ALL_MUSIC_TRACKS : (category.musicTracks || []);
     if (!tracks.length) return null;
-
+    let fallback = null;
     for (let i = 0; i < tracks.length; i += 1) {
-      const track = tracks[category.trackCursor % tracks.length];
-      category.trackCursor = (category.trackCursor + 1) % tracks.length;
-      if (!track.failed) return track;
+      const track = tracks[globalTrackCursor % tracks.length];
+      globalTrackCursor = (globalTrackCursor + 1) % tracks.length;
+      if (!track.failed && !recentTrackIds.includes(track.id)) return track;
+      if (!fallback && !track.failed) fallback = track;
     }
-
-    return null;
+    return fallback;
   }
 
   function ensureTrackChannel(track) {
@@ -1943,9 +1947,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const profile = ELEMENTAL_NOISE[key] || ELEMENTAL_NOISE.fog;
     const now = sound.ctx.currentTime;
     const held = Boolean(sound.held);
-    const targetGain = held
-      ? Math.max(0.06, profile.gain * 0.55)
-      : (sound.activeType === 'music' ? Math.max(0.025, profile.gain * 0.22) : profile.gain);
+    const targetGain = sound.activeType === 'music'
+      ? (held ? 0.018 : 0)
+      : (held ? Math.max(0.06, profile.gain * 0.55) : profile.gain);
     sound.elementalGain = profile.gain;
     sound.noiseBaseGain = targetGain;
     sound.noiseCut.frequency.cancelScheduledValues(now);
@@ -2141,6 +2145,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     sound.activeTrackId = targetId;
     sound.activeTrack = channel ? channel.track : null;
     sound.activeType = channel ? 'music' : 'noise';
+    if (channel && channel.track) {
+      recentTrackIds.push(channel.track.id);
+      recentTrackIds = recentTrackIds.slice(-18);
+    }
 
     for (const [id, item] of sound.channels) {
       const target = channel && id === targetId ? MUSIC_GAIN : 0;
@@ -2152,7 +2160,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     sound.noiseGain.gain.cancelScheduledValues(now);
     sound.noiseGain.gain.setValueAtTime(sound.noiseGain.gain.value, now);
     sound.noiseGain.gain.linearRampToValueAtTime(
-      channel ? Math.max(0.025, (sound.elementalGain || NOISE_GAIN) * 0.22) : (sound.noiseBaseGain || NOISE_GAIN),
+      channel ? 0 : (sound.noiseBaseGain || NOISE_GAIN),
       now + duration
     );
 
@@ -2366,6 +2374,17 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     return index;
   }
 
+  function contextAllowsClip(clip) {
+    const text = `${clip.title || ''} ${clip.description || ''}`.toLowerCase();
+    const darkContext = ['rain', 'fog', 'snow'].includes(envContext.weatherType)
+      || ['evening', 'night'].includes(envContext.timeOfDay);
+    const brightContext = envContext.weatherType === 'clear'
+      && ['morning', 'day'].includes(envContext.timeOfDay);
+    if (darkContext && /\b(beach|tropical|palm|summer|flower|sunny|sunlight|golden)\b/.test(text)) return false;
+    if (brightContext && /\b(snow|blizzard|storm|night|dark|fog|rain)\b/.test(text)) return false;
+    return true;
+  }
+
   function pickStageClips(stage, count, picked, allowSeen = false) {
     const stageCategories = categories.filter((category) => stage.categories.includes(category.tag));
     const pools = stageCategories.map((category) => {
@@ -2376,6 +2395,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         && !pathPicked.has(clip.id)
         && !picked.has(clip.id)
         && (allowSeen || !isVideoSeen(clip.id))
+        && contextAllowsClip(clip)
       ));
 
       const ordered = shuffleArray(filtered).sort((a, b) => (b.envScore || 0) - (a.envScore || 0));
@@ -3575,38 +3595,23 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
   }
 
   function preparePlaybackWindow(currentEntry, nextEntry) {
-    const current = currentEntry || pathPlan[Math.max(0, pathPos)] || pathPlan[0];
-    const next = nextEntry || pathPlan[pathPos + 1] || pathPlan[1];
+    const base = pathPos < 0 ? 0 : pathPos;
+    const windowEntries = [currentEntry || pathPlan[base], nextEntry || pathPlan[base + 1], pathPlan[base + 2]].filter(Boolean);
     const keep = new Set();
-
-    if (current && current.clip) {
-      keep.add(current.clip.id);
-      ensureClipVideo(current.category, current.clip);
-    }
-    if (next && next.clip) {
-      keep.add(next.clip.id);
-      ensureClipVideo(next.category, next.clip);
+    for (const entry of windowEntries) {
+      if (!entry || !entry.clip) continue;
+      keep.add(entry.clip.id);
+      ensureClipVideo(entry.category, entry.clip);
+      if (entry.clip.el) {
+        entry.clip.el.preload = 'auto';
+        if (entry.clip.el.readyState < 1) entry.clip.el.load();
+      }
     }
     if (anchorClip && anchorClip.id) {
       keep.add(anchorClip.id);
       ensureClipVideo(activeCategory(), anchorClip);
     }
-
     prunePlaybackVideos(keep);
-    if (current && current.clip && current.clip.el) current.clip.el.preload = 'auto';
-    if (next && next.clip && next.clip.el) {
-      next.clip.el.preload = 'metadata';
-    }
-
-    const currentVideo = current && current.clip && current.clip.el;
-    const nextVideo = next && next.clip && next.clip.el;
-    if (currentVideo && nextVideo) {
-      const promoteNext = () => {
-        if (next.clip.el && current.clip.el === currentVideo) next.clip.el.preload = 'auto';
-      };
-      if (currentVideo.readyState >= 3) promoteNext();
-      else currentVideo.addEventListener('canplay', promoteNext, { once: true });
-    }
   }
 
   function appendClips(category, clips) {
@@ -3727,6 +3732,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       const archetype = String(item.archetype || category.tag);
       const clip = {
         id,
+        fileHash: String(item.fileHash || id),
         title,
         url: item.url,
         duration: Number.isFinite(Number(item.duration)) ? Number(item.duration) : 10,
@@ -4916,8 +4922,11 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     startNewSessionAfterUnlock();
   });
 
-  const startupTasks = [loadVideoCatalog()];
-  loadEnvironment();
+  const environmentReady = Promise.race([
+    loadEnvironment(),
+    new Promise((resolve) => window.setTimeout(resolve, 1200)),
+  ]);
+  const startupTasks = [loadVideoCatalog(), environmentReady];
 
   Promise.allSettled(startupTasks).then(() => {
     try {
@@ -4951,6 +4960,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       }
 
       try {
+        preparePlaybackWindow(pathPlan[0], pathPlan[1]);
         const first = pathPlan[0];
         prefetchCaption(first.clip, first.category, behaviorContext(), first.stage);
       } catch (error) {
