@@ -3815,6 +3815,10 @@ ${JSON.stringify(events, null, 2)}`;
       keep.add(next.clip.id);
       ensureClipVideo(next.category, next.clip);
     }
+    if (anchorClip && anchorClip.id) {
+      keep.add(anchorClip.id);
+      ensureClipVideo(activeCategory(), anchorClip);
+    }
 
     prunePlaybackVideos(keep);
     if (current && current.clip && current.clip.el) current.clip.el.preload = 'auto';

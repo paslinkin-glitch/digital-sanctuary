@@ -2329,3 +2329,8 @@ textarea {
   margin: 0 auto 1.8rem;
   background: linear-gradient(90deg, transparent, var(--champagne, rgba(214, 199, 178, 0.72)), transparent);
 }
+
+
+html:not([data-maintenance="true"]) #maintenance-screen {
+  display: none;
+}
