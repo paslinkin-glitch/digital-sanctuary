@@ -100,7 +100,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       installApp: 'Установить приложение на экран',
       installHint: 'Нажмите «Поделиться» → «На экран Домой»',
       installCardTitle: 'Сохранить убежище',
-      install: 'Добавить на экран',
+      install: 'Установить приложение',
+      tapToBegin: 'Нажмите, чтобы начать',
+      installedNote: 'Убежище установлено. Закройте браузер и откройте иконку с экрана телефона',
       installInApp: 'Откройте в Chrome (⋮ → Открыть в браузере), чтобы установить приложение',
       installHelp: 'Как установить',
       installManual: 'Меню браузера ⋮ → Установить приложение / На экран Домой',
@@ -144,7 +146,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       installApp: 'Add the app to your screen',
       installHint: 'Tap Share → Add to Home Screen',
       installCardTitle: 'Keep the sanctuary',
-      install: 'Add to screen',
+      install: 'Install app',
+      tapToBegin: 'Tap to begin',
+      installedNote: 'Sanctuary installed. Close the browser and open it from your home screen',
       installInApp: 'Open in Chrome (⋮ → Open in browser) to install',
       installHelp: 'How to install',
       installManual: 'Browser menu ⋮ → Install app / Add to Home Screen',
@@ -560,6 +564,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   let swipeHint = document.getElementById('swipe-hint');
   const entryTrigger = document.getElementById('entry-trigger');
   const entryInstallButton = document.getElementById('entry-install');
+  const entryTapPrompt = document.getElementById('entry-tap-prompt');
+  const entryInstalledNote = document.getElementById('entry-installed-note');
   const entryInstallHint = document.getElementById('entry-install-hint');
   const installCard = document.getElementById('install-card');
   const installCardInstall = document.getElementById('install-card-install');
@@ -625,6 +631,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (entryInstallButton) entryInstallButton.textContent = tr('installApp');
     if (entryInstallHint) entryInstallHint.textContent = tr('installHint');
     if (installCardInstall) installCardInstall.textContent = tr('install');
+    if (entryTapPrompt) entryTapPrompt.textContent = tr('tapToBegin');
+    if (entryInstalledNote) entryInstalledNote.textContent = tr('installedNote');
     if (installCardHint) installCardHint.textContent = tr('installHint');
     if (installCardInfo) installCardInfo.textContent = tr('installInApp');
     if (iosInstallKicker) iosInstallKicker.textContent = tr('iosKicker');
@@ -4604,6 +4612,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
   const entryGate = document.querySelector('.entry');
 
   function isStandaloneMode() {
+    if (new URLSearchParams(location.search).get('app') === '1') return true;
     return window.matchMedia('(display-mode: standalone)').matches
       || window.navigator.standalone === true;
   }
@@ -4773,9 +4782,9 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
         await prompt.prompt();
         const choice = await prompt.userChoice;
         if (choice && choice.outcome === 'accepted') {
-          if (entryInstallButton) entryInstallButton.hidden = true;
-          hideInstallCard();
           installCardDismissed = true;
+          showInstalledState();
+          try { window.close(); } catch (_) {}
         }
       } catch (_) {
         /* установка может быть отменена системой */
@@ -4812,6 +4821,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
 
   window.addEventListener('appinstalled', () => {
     deferredPrompt = null;
+    showInstalledState();
     rememberInstalled();
     if (entryInstallButton) entryInstallButton.hidden = true;
     if (entryInstallHint) entryInstallHint.hidden = true;
@@ -4836,6 +4846,13 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
   }
 
   if (installCardInstall) installCardInstall.addEventListener('click', handleInstallClick);
+
+  function showInstalledState() {
+    hideInstallCard();
+    if (entryTapPrompt) entryTapPrompt.hidden = true;
+    if (entryInstalledNote) entryInstalledNote.hidden = false;
+  }
+
   function closeInstallPrompt(event) {
     event.preventDefault();
     event.stopPropagation();
@@ -4851,7 +4868,15 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
   }
 
   if (installCardInstall) installCardInstall.hidden = true;
-  if (!isStandaloneMode() && !installChoiceMade()) {
+  if (entryGate) {
+    entryGate.classList.toggle('is-standalone', isStandaloneMode());
+    entryGate.classList.toggle('is-browser', !isStandaloneMode());
+  }
+  if (isStandaloneMode()) {
+    hideInstallCard();
+    if (entryTapPrompt) entryTapPrompt.hidden = false;
+    if (entryInstalledNote) entryInstalledNote.hidden = true;
+  } else if (!installChoiceMade()) {
     if (isIos()) showInstallCard(true);
     else if (isAndroidInApp()) showAndroidInfoCard();
     else showAndroidFallbackCard();
@@ -4898,13 +4923,15 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     }
   }
 
-  if (entryGate) {
-    entryGate.addEventListener('pointerdown', (event) => {
-      if (event.target.closest('.install-card, .install-card--ios, .lang-switch')) return;
+  if (entryGate && isStandaloneMode()) {
+    const beginFromEntry = (event) => {
+      if (event.target.closest('.lang-switch, .install-card, .install-card--ios')) return;
       event.preventDefault();
       unlockExperience();
-    }, { passive: false });
-  } else {
+    };
+    entryGate.addEventListener('pointerdown', beginFromEntry, { passive: false });
+    entryGate.addEventListener('touchstart', beginFromEntry, { passive: false });
+  } else if (!entryGate) {
     gateOpen = true;
   }
 

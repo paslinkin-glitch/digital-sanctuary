@@ -17,7 +17,7 @@
   <link rel="stylesheet" href="style.css?v=52">
 </head>
 <body>
-  <script>window.SANCTUARY_MAINTENANCE = true; if (window.SANCTUARY_MAINTENANCE) document.documentElement.dataset.maintenance = 'true';</script>
+  <script>window.SANCTUARY_MAINTENANCE = false; if (window.SANCTUARY_MAINTENANCE) document.documentElement.dataset.maintenance = 'true';</script>
   <section id="maintenance-screen" aria-live="polite">
     <div class="maintenance-inner">
       <span class="maintenance-thread" aria-hidden="true"></span>
@@ -97,11 +97,10 @@
       <p class="entry-sub">No words, no judgments,<br>no attempts to fix you</p>
     </div>
     <div class="entry-actions">
-      <button class="entry-trigger" id="entry-trigger" type="button">Enter</button>
       <p class="entry-nav-hint">Swipe up like a dream · Hold when a frame resonates</p>
-      <button class="entry-install" id="entry-install" type="button" hidden>Add the app to your screen</button>
-      <p class="entry-install-hint" id="entry-install-hint" hidden>Tap Share → Add to Home Screen</p>
+      <p class="entry-tap-prompt" id="entry-tap-prompt" hidden>Tap to begin</p>
     </div>
+    <p class="entry-installed-note" id="entry-installed-note" hidden>Sanctuary installed. Close the browser and open it from your home screen</p>
   <aside class="install-card" id="install-card" hidden aria-live="polite">
     <div class="install-card-copy">
       <p class="install-card-title">Keep the sanctuary</p>

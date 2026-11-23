@@ -3511,3 +3511,55 @@ body,
 .finale.is-visible {
   pointer-events: auto;
 }
+
+
+/* v52 two-contour entry */
+.entry-tap-prompt {
+  display: none;
+  margin: 0;
+  color: rgba(234, 229, 220, 0.62);
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  text-align: center;
+  animation: tapBreathe 3.6s ease-in-out infinite;
+}
+
+.entry.is-standalone .entry-tap-prompt {
+  display: block;
+}
+
+.entry.is-standalone .entry-actions .entry-nav-hint {
+  display: none;
+}
+
+.entry.is-standalone .install-card,
+.entry.is-standalone .install-card--ios,
+.entry.is-standalone #entry-trigger {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+.entry.is-browser .entry-tap-prompt {
+  display: none;
+}
+
+.entry.is-browser .entry-actions {
+  display: none;
+}
+
+.entry-installed-note {
+  max-width: 320px;
+  margin: 0 auto;
+  color: rgba(234, 229, 220, 0.56);
+  font-family: var(--sans);
+  font-size: 12px;
+  line-height: 1.55;
+  text-align: center;
+}
+
+@keyframes tapBreathe {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 0.85; }
+}
