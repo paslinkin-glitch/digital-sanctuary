@@ -101,6 +101,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       installHint: 'Нажмите «Поделиться» → «На экран Домой»',
       installCardTitle: 'Сохранить убежище',
       install: 'Добавить на экран',
+      installInApp: 'Откройте в Chrome (⋮ → Открыть в браузере), чтобы установить приложение',
       iosKicker: 'СОХРАНИТЬ УБЕЖИЩЕ',
       iosSafari1: 'Нажмите «Поделиться» на нижней панели',
       iosSafari2: 'Выберите «На экран Домой»',
@@ -142,6 +143,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       installHint: 'Tap Share → Add to Home Screen',
       installCardTitle: 'Keep the sanctuary',
       install: 'Add to screen',
+      installInApp: 'Open in Chrome (⋮ → Open in browser) to install',
       iosKicker: 'SAVE THE SANCTUARY',
       iosSafari1: 'Tap Share in the bottom bar',
       iosSafari2: 'Select «Add to Home Screen»',
@@ -554,6 +556,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   const installCardInstall = document.getElementById('install-card-install');
   const installCardLater = document.getElementById('install-card-later');
   const installCardHint = document.getElementById('install-card-hint');
+  const installCardInfo = document.getElementById('install-card-info');
   const iosInstallCard = document.getElementById('ios-install-card');
   const iosInstallClose = document.getElementById('ios-install-close');
   const iosInstallKicker = document.getElementById('ios-install-kicker');
@@ -615,6 +618,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (entryInstallHint) entryInstallHint.textContent = tr('installHint');
     if (installCardInstall) installCardInstall.textContent = tr('install');
     if (installCardHint) installCardHint.textContent = tr('installHint');
+    if (installCardInfo) installCardInfo.textContent = tr('installInApp');
     if (iosInstallKicker) iosInstallKicker.textContent = tr('iosKicker');
     if (iosSafari1) iosSafari1.textContent = tr('iosSafari1');
     if (iosSafari2) iosSafari2.textContent = tr('iosSafari2');
@@ -1338,7 +1342,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
 
   async function callDeepSeek(messages, temperature) {
     if (location.protocol === 'file:') return null;
-    if (location.hostname === 'yoursanctuary.ru' || location.hostname.endsWith('.github.io') || location.hostname === 's3.twcstorage.ru') return null;
+    if (location.hostname === 'yoursanctuary.ru' || location.hostname.endsWith('.github.io') || location.hostname === 's3.twcstorage.ru' || location.hostname === 'localhost' || location.hostname === '127.0.0.1') return null;
     if (captionApiUnavailable) return null;
 
     const controller = new AbortController();
@@ -2045,6 +2049,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         breathPulse,
         master,
         noise,
+        noiseCut,
+        noiseTone,
         noiseGain,
         wind,
         windDepth,
@@ -4351,186 +4357,54 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     }
   }
 
-  stage.addEventListener('pointerdown', (event) => {
-    if (event.pointerType !== 'mouse') return;
-    enableSoundscape();
-    wakePlayback();
+  function isInterfaceTarget(target) {
+    return Boolean(target && target.closest('button, a, .install-card, .install-card--ios, .lang-switch, .finale'));
+  }
 
-    if (sound && gateOpen && !sound.activeTrack) {
-      const category = activeCategory();
-      const track = nextTrackFor(category);
-      switchSoundtrack(track, SLOW_FADE_MS);
-      preloadNextTrack(category);
-    }
-
-    if (gesture) {
-      if (gesture.id === event.pointerId) return;
-      abortGesture();
-    }
-    if (event.pointerType === 'mouse' && event.button !== 0) return;
-
-    if (gateOpen) {
-      markInteraction();
-      setSceneElement(activeClip());
-      startOptics(event);
-      setActivePlaybackRate(SLOW_RATE);
-      setBreath(0);
-      rememberAnchor('touch');
-      prefetchNextCaptions(behaviorContext());
-
-      if (captionSuppressed && currentCaption) {
-        window.clearTimeout(captionRevealTimer);
-        captionRevealTimer = window.setTimeout(() => {
-          captionRevealTimer = 0;
-          revealCaptionForHold();
-        }, CAPTION_HOLD_REVEAL_MS);
-      }
-    }
-
-    gesture = {
-      id: event.pointerId,
-      x0: event.clientX,
-      y0: event.clientY,
-      xPrev: event.clientX,
-      yPrev: event.clientY,
-      t0: now(),
-      tPrev: now(),
-      moved: false,
-      holding: false,
-      holdStart: 0,
-      holdCounted: false,
-      thresholdFelt: false,
-      peakSpeed: 0,
-    };
-
-    holdTimer = window.setTimeout(startHold, HOLD_MS);
-    resonanceTimer = window.setTimeout(() => {
-      if (gesture && !gesture.moved) {
-        rewardCategory(activeCategory(), 'hold');
-      }
-    }, RESONANCE_HOLD_MS);
-  });
-
-  stage.addEventListener('pointermove', (event) => {
-    if (!gesture || event.pointerId !== gesture.id) return;
-
-    const t = now();
-    const dt = Math.max(1, t - gesture.tPrev);
-    const stepY = Math.abs(event.clientY - gesture.yPrev);
-    const distance = Math.hypot(
-      event.clientX - gesture.x0,
-      event.clientY - gesture.y0
-    );
-
-    markInteraction();
-
-    if (gateOpen) {
-      updateOptics(event);
-
-      const dy = event.clientY - gesture.y0;
-      if (Math.abs(dy) > 8) {
-        setBreath(clamp(-dy / 140, -1, 1));
-      }
-    }
-
-    if (!gesture.moved && distance > 10) {
-      gesture.moved = true;
-      window.clearTimeout(holdTimer);
-      window.clearTimeout(resonanceTimer);
-      holdTimer = 0;
-      resonanceTimer = 0;
-    }
-
-    if (gesture.holding && distance > 30) {
-      stopHold();
-    }
-
-    if (!gesture.thresholdFelt && distance >= SWIPE_MIN_PX) {
-      gesture.thresholdFelt = true;
-    }
-
-    if (stepY > 0) {
-      gesture.peakSpeed = Math.max(gesture.peakSpeed, stepY / dt);
-    }
-
-    gesture.xPrev = event.clientX;
-    gesture.yPrev = event.clientY;
-    gesture.tPrev = t;
-  });
-
-  stage.addEventListener('pointerup', endGesture);
-
-  stage.addEventListener('pointercancel', (event) => {
-    if (gesture && event.pointerId === gesture.id) {
-      abortGesture();
-    }
-  });
-
-  stage.addEventListener('touchstart', (event) => {
-    if (event.touches.length !== 1) {
-      touchOrigin = null;
-      return;
-    }
+  document.addEventListener('touchstart', (event) => {
+    if (!gateOpen || sessionComplete) return;
+    if (event.touches.length !== 1 || isInterfaceTarget(event.target)) return;
     const touch = event.touches[0];
     if (gesture) abortGesture();
     enableSoundscape();
     wakePlayback();
     gesture = {
-      id: 'touch',
-      x0: touch.clientX,
-      y0: touch.clientY,
-      xPrev: touch.clientX,
-      yPrev: touch.clientY,
-      t0: now(),
-      tPrev: now(),
-      moved: false,
-      holding: false,
-      holdStart: 0,
-      holdCounted: false,
-      thresholdFelt: false,
-      peakSpeed: 0,
+      id: 'touch', x0: touch.clientX, y0: touch.clientY,
+      xPrev: touch.clientX, yPrev: touch.clientY,
+      t0: now(), tPrev: now(), moved: false, holding: false,
+      holdStart: 0, holdCounted: false, thresholdFelt: false, peakSpeed: 0,
     };
-    touchOrigin = {
-      x: touch.clientX,
-      y: touch.clientY,
-      lastY: touch.clientY,
-      t: now(),
-      lastT: now(),
-    };
-    if (gateOpen) {
-      markInteraction();
-      setSceneElement(activeClip());
-      startOptics(touch);
-      setActivePlaybackRate(SLOW_RATE);
-      setBreath(0);
-      rememberAnchor('touch');
-      prefetchNextCaptions(behaviorContext());
-      if (captionSuppressed && currentCaption) {
-        window.clearTimeout(captionRevealTimer);
-        captionRevealTimer = window.setTimeout(() => {
-          captionRevealTimer = 0;
-          revealCaptionForHold();
-        }, CAPTION_HOLD_REVEAL_MS);
-      }
-      holdTimer = window.setTimeout(startHold, HOLD_MS);
-      resonanceTimer = window.setTimeout(() => {
-        if (gesture && !gesture.moved) rewardCategory(activeCategory(), 'hold');
-      }, RESONANCE_HOLD_MS);
+    touchOrigin = { x: touch.clientX, y: touch.clientY, lastY: touch.clientY, t: now(), lastT: now() };
+    markInteraction();
+    setSceneElement(activeClip());
+    startOptics(touch);
+    setActivePlaybackRate(SLOW_RATE);
+    setBreath(0);
+    rememberAnchor('touch');
+    prefetchNextCaptions(behaviorContext());
+    if (captionSuppressed && currentCaption) {
+      window.clearTimeout(captionRevealTimer);
+      captionRevealTimer = window.setTimeout(() => {
+        captionRevealTimer = 0;
+        revealCaptionForHold();
+      }, CAPTION_HOLD_REVEAL_MS);
     }
-    if (event.cancelable) event.preventDefault();
+    holdTimer = window.setTimeout(startHold, HOLD_MS);
+    resonanceTimer = window.setTimeout(() => {
+      if (gesture && !gesture.moved) rewardCategory(activeCategory(), 'hold');
+    }, RESONANCE_HOLD_MS);
   }, { passive: false });
 
-  stage.addEventListener('touchmove', (event) => {
+  document.addEventListener('touchmove', (event) => {
     if (!touchOrigin || !gesture || event.touches.length !== 1) return;
+    if (isInterfaceTarget(event.target)) return;
     const touch = event.touches[0];
     const dx = touch.clientX - touchOrigin.x;
     const dy = touch.clientY - touchOrigin.y;
-    if (Math.abs(dy) > 10 && event.cancelable) event.preventDefault();
-    if (gateOpen) {
-      updateOptics(touch);
-      if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 10) {
-        setBreath(clamp(-dy / 140, -1, 1));
-      }
+    if (event.cancelable) event.preventDefault();
+    updateOptics(touch);
+    if (Math.abs(dy) > Math.abs(dx)) {
+      setBreath(clamp(-dy / 140, -1, 1));
     }
     if (Math.hypot(dx, dy) > 22 && !gesture.moved) {
       gesture.moved = true;
@@ -4547,40 +4421,31 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     touchOrigin.lastT = now();
   }, { passive: false });
 
-  stage.addEventListener('touchend', (event) => {
+  document.addEventListener('touchend', (event) => {
     if (!touchOrigin) return;
     const changed = event.changedTouches && event.changedTouches[0];
     const origin = touchOrigin;
     touchOrigin = null;
-    if (!changed) {
-      abortGesture();
-      return;
-    }
+    if (!changed) { abortGesture(); return; }
     const dx = changed.clientX - origin.x;
     const dy = changed.clientY - origin.y;
-    const elapsed = Math.max(1, now() - origin.t);
-    const velocity = Math.abs(dy) / elapsed;
-    const held = Boolean(gesture && gesture.holding);
-    if (held) stopHold();
+    const velocity = Math.abs(dy) / Math.max(1, now() - origin.t);
+    if (gesture && gesture.holding) stopHold();
     setActivePlaybackRate(1);
     setBreath(0);
     abortGesture();
-    if (dy < -36 && Math.abs(dy) > Math.abs(dx)) {
+    if (dy < -35 && Math.abs(dy) > Math.abs(dx)) {
       go('up', velocity);
     }
   }, { passive: false });
 
-  stage.addEventListener('touchcancel', () => {
+  document.addEventListener('touchcancel', () => {
     if (gesture && gesture.holding) stopHold();
     touchOrigin = null;
     setActivePlaybackRate(1);
     setBreath(0);
     abortGesture();
-  }, { passive: true });
-
-  stage.addEventListener('contextmenu', (event) => {
-    event.preventDefault();
-  });
+  }, { passive: false });
 
   window.addEventListener('blur', abortGesture);
 
@@ -4761,8 +4626,28 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     }
   }
 
+  function isAndroidInApp() {
+    return /Android/i.test(navigator.userAgent)
+      && /(wv|Telegram|Instagram|FBAN|FBAV|VK)/i.test(navigator.userAgent);
+  }
+
+  function showAndroidInfoCard() {
+    if (isStandaloneMode() || installChoiceMade() || !installCard) return;
+    installCard.classList.add('install-card--info');
+    if (installCardInfo) {
+      installCardInfo.textContent = tr('installInApp');
+      installCardInfo.hidden = false;
+    }
+    if (installCardHint) installCardHint.hidden = true;
+    if (installCardInstall) installCardInstall.hidden = true;
+    installCard.hidden = false;
+    installCard.classList.add('is-visible');
+    syncInstallButton();
+  }
+
   function showInstallCard(force = false, finalContext = false) {
     if (isStandaloneMode() || installChoiceMade()) return;
+    if (!isIos() && !deferredPrompt) return;
     if (!force && (installCardDismissed || gateOpen)) return;
     if (isIos() && iosInstallCard) {
       if (installCard) { installCard.hidden = true; installCard.classList.remove('is-visible'); }
@@ -4776,6 +4661,9 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     }
     if (iosInstallCard) { iosInstallCard.hidden = true; iosInstallCard.classList.remove('is-visible'); }
     if (!installCard) return;
+    installCard.classList.remove('install-card--info');
+    if (installCardInfo) installCardInfo.hidden = true;
+    if (installCardInstall) installCardInstall.hidden = false;
     installCard.classList.toggle('install-card--final', Boolean(finalContext));
     installCard.classList.add('is-visible');
     installCard.hidden = false;
@@ -4861,7 +4749,10 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
   window.addEventListener('beforeinstallprompt', (event) => {
     event.preventDefault();
     deferredPrompt = event;
-    showInstallCard();
+    if (installCard) installCard.classList.remove('install-card--info');
+    if (installCardInfo) installCardInfo.hidden = true;
+    if (installCardInstall) installCardInstall.hidden = false;
+    showInstallCard(true);
   });
 
   deferredPrompt = window.__deferredInstallPrompt || deferredPrompt;
@@ -4900,10 +4791,14 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     button.addEventListener('click', closeInstallPrompt);
   }
 
+  if (installCardInstall) installCardInstall.hidden = true;
   if (isStandaloneMode()) {
     try { localStorage.setItem(INSTALLED_KEY, '1'); } catch (_) {}
   }
-  if (!isStandaloneMode() && !installChoiceMade()) showInstallCard(true);
+  if (!isStandaloneMode() && !installChoiceMade()) {
+    if (isIos()) showInstallCard(true);
+    else if (isAndroidInApp()) showAndroidInfoCard();
+  }
   syncInstallButton();
 
   function unlockExperience() {

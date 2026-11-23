@@ -3208,3 +3208,78 @@ body,
   margin: 14px auto 0;
   text-align: center;
 }
+
+
+/* ================================================== v47 ENTRY BUGFIXES */
+.entry {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  text-align: center;
+  padding:
+    max(24px, calc(env(safe-area-inset-top) + 12px))
+    24px
+    max(28px, calc(env(safe-area-inset-bottom) + 16px));
+  background:
+    radial-gradient(circle at 50% 45%, rgba(214, 199, 178, 0.09) 0%, transparent 65%),
+    var(--void);
+}
+
+.entry > .install-card,
+.entry > .install-card--ios {
+  position: relative;
+  grid-row: auto;
+  top: auto;
+  bottom: auto;
+  left: auto;
+  right: auto;
+  transform: none;
+  margin: 0 auto;
+  width: min(100%, 340px);
+  max-width: 340px;
+}
+
+.install-card:not(.install-card--ios),
+.install-card--ios {
+  left: auto;
+  transform: none;
+}
+
+.entry .entry-trigger {
+  width: auto !important;
+  min-width: 180px;
+  max-width: 240px;
+  padding: 14px 42px;
+  border-radius: 999px;
+  margin: 0 auto;
+  border-top: 0.5px solid rgba(234, 229, 220, 0.4);
+}
+
+.entry .entry-nav-hint {
+  max-width: 280px;
+  margin: 14px auto 0;
+  text-align: center;
+}
+
+.install-card--info .install-card-btn {
+  display: none !important;
+}
+
+.install-card-info {
+  margin: 7px 0 0;
+  color: rgba(234, 229, 220, 0.7);
+  font-family: var(--sans);
+  font-size: 12px;
+  line-height: 1.45;
+  text-align: left;
+}
+
+.install-card--final {
+  position: fixed;
+  left: 50%;
+  top: auto;
+  bottom: calc(env(safe-area-inset-bottom) + 96px);
+  transform: translateX(-50%);
+  margin: 0;
+}
