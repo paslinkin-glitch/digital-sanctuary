@@ -2972,7 +2972,7 @@ html:not([data-maintenance="true"]) #maintenance-screen {
 }
 
 .entry:not(.is-open) {
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 .entry:not(.is-open) .entry-actions,
@@ -3506,4 +3506,9 @@ body,
   animation: none !important;
   margin-left: auto !important;
   margin-right: auto !important;
+}
+
+
+.finale.is-visible {
+  pointer-events: auto;
 }

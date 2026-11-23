@@ -3305,9 +3305,34 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
   function attachLockSwipe(surface, onSwipe) {
     if (!surface) return;
     let start = null;
+    let touchStart = null;
+
+    surface.addEventListener('touchstart', (event) => {
+      if (event.touches.length !== 1 || event.target.closest('button, a')) {
+        touchStart = null;
+        return;
+      }
+      const touch = event.touches[0];
+      touchStart = { x: touch.clientX, y: touch.clientY };
+    }, { passive: true });
+
+    surface.addEventListener('touchend', (event) => {
+      if (!touchStart) return;
+      const touch = event.changedTouches && event.changedTouches[0];
+      const origin = touchStart;
+      touchStart = null;
+      if (!touch) return;
+      const dx = touch.clientX - origin.x;
+      const dy = touch.clientY - origin.y;
+      if (dx > 75 && dx > Math.abs(dy) * 1.2) onSwipe();
+    }, { passive: true });
+
+    surface.addEventListener('touchcancel', () => {
+      touchStart = null;
+    }, { passive: true });
 
     surface.addEventListener('pointerdown', (event) => {
-      if (event.target.closest('button')) {
+      if (event.pointerType !== 'mouse' || event.target.closest('button, a')) {
         start = null;
         return;
       }
@@ -3315,14 +3340,14 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     }, { passive: true });
 
     surface.addEventListener('pointerup', (event) => {
-      if (!start || event.pointerId !== start.id) {
+      if (!start || event.pointerId !== start.id || event.pointerType !== 'mouse') {
         start = null;
         return;
       }
       const dx = event.clientX - start.x;
       const dy = event.clientY - start.y;
       start = null;
-      if (dx > 80 && dx > Math.abs(dy) * 1.2) onSwipe();
+      if (dx > 75 && dx > Math.abs(dy) * 1.2) onSwipe();
     });
 
     surface.addEventListener('pointercancel', () => {
@@ -4405,6 +4430,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
   }, { passive: false });
 
   document.addEventListener('touchmove', (event) => {
+    if (!gateOpen || sessionComplete) return;
     if (!touchOrigin || !gesture || event.touches.length !== 1) return;
     if (isInterfaceTarget(event.target)) return;
     const touch = event.touches[0];
