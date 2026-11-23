@@ -15,8 +15,8 @@ window.VIDEOS_DATA = [
     "size": 3532954,
     "title_ru": "РўРµРЅСЊ 01",
     "fileHash": "vecteezy-50527364",
-    "caption_ru": "Тень лежит на холодном камне",
-    "caption_en": "Shadow rests on cold stone"
+    "caption_ru": "Ты слишком долго держал контроль",
+    "caption_en": "You held control for too long"
   },
   {
     "id": "vecteezy-21570169",
@@ -34,8 +34,8 @@ window.VIDEOS_DATA = [
     "size": 5272093,
     "title_ru": "РўРµРЅСЊ 02",
     "fileHash": "vecteezy-21570169",
-    "caption_ru": "Дождь держит под низким небом",
-    "caption_en": "Rain holds under low sky"
+    "caption_ru": "Шум внутри громче этого города",
+    "caption_en": "The noise inside is louder"
   },
   {
     "id": "g9re0sruya",
@@ -53,8 +53,8 @@ window.VIDEOS_DATA = [
     "size": 6218807,
     "title_ru": "РўРµРЅСЊ 03",
     "fileHash": "g9re0sruya",
-    "caption_ru": "Ночь дышит на старых ветках",
-    "caption_en": "Night breathes on old branches"
+    "caption_ru": "Здесь можно снять чужую маску",
+    "caption_en": "Remove the mask you borrowed"
   },
   {
     "id": "zqeb9bkb8p",
@@ -72,8 +72,8 @@ window.VIDEOS_DATA = [
     "size": 6442974,
     "title_ru": "РўРµРЅСЊ 04",
     "fileHash": "zqeb9bkb8p",
-    "caption_ru": "Камень помнит у края ночи",
-    "caption_en": "Stone remembers at the dark edge"
+    "caption_ru": "Твоя усталость не требует оправданий",
+    "caption_en": "Your tiredness needs no excuse"
   },
   {
     "id": "coverr-blue-subway-5836",
@@ -91,8 +91,8 @@ window.VIDEOS_DATA = [
     "size": 6844902,
     "title_ru": "РўРµРЅСЊ 05",
     "fileHash": "coverr-blue-subway-5836",
-    "caption_ru": "Тяжесть остаётся за мокрым стеклом",
-    "caption_en": "Weight remains on wet glass"
+    "caption_ru": "Ты не обязан быть сильным",
+    "caption_en": "You need not be strong"
   },
   {
     "id": "vecteezy-48120369",
@@ -110,8 +110,8 @@ window.VIDEOS_DATA = [
     "size": 7862858,
     "title_ru": "РўРµРЅСЊ 06",
     "fileHash": "vecteezy-48120369",
-    "caption_ru": "Сумрак хранит внутри тишины",
-    "caption_en": "Dusk keeps inside the silence"
+    "caption_ru": "Эта тяжесть уже знакома тебе",
+    "caption_en": "This weight already knows you"
   },
   {
     "id": "vecteezy-50527423",
@@ -129,8 +129,8 @@ window.VIDEOS_DATA = [
     "size": 8301239,
     "title_ru": "РўРµРЅСЊ 07",
     "fileHash": "vecteezy-50527423",
-    "caption_ru": "Стекло отражает в тёмной комнате",
-    "caption_en": "Glass reflects in a dark room"
+    "caption_ru": "Ты прячешь усталость за спокойствием",
+    "caption_en": "You hide fatigue behind calm"
   },
   {
     "id": "vecteezy-38594556",
@@ -148,8 +148,8 @@ window.VIDEOS_DATA = [
     "size": 3662571,
     "title_ru": "РўРµРЅСЊ 08",
     "fileHash": "vecteezy-38594556",
-    "caption_ru": "Тишина слышит в глубокой тени",
-    "caption_en": "Silence listens in deep shadow"
+    "caption_ru": "Твоя тень не просит прощения",
+    "caption_en": "Your shadow asks no forgiveness"
   },
   {
     "id": "vecteezy-29868578",
@@ -167,8 +167,8 @@ window.VIDEOS_DATA = [
     "size": 4964548,
     "title_ru": "РўРµРЅСЊ 09",
     "fileHash": "vecteezy-29868578",
-    "caption_ru": "Тень лежит у края ночи",
-    "caption_en": "Shadow rests at the dark edge"
+    "caption_ru": "Можно перестать держать спину",
+    "caption_en": "You can stop bracing now"
   },
   {
     "id": "pibfpdhvox",
@@ -186,8 +186,8 @@ window.VIDEOS_DATA = [
     "size": 5813310,
     "title_ru": "РўРµРЅСЊ 10",
     "fileHash": "pibfpdhvox",
-    "caption_ru": "Дождь держит за мокрым стеклом",
-    "caption_en": "Rain holds on wet glass"
+    "caption_ru": "Ты давно не слышал себя",
+    "caption_en": "You have not heard yourself"
   },
   {
     "id": "qlz28yfl9f",
@@ -205,8 +205,8 @@ window.VIDEOS_DATA = [
     "size": 5839402,
     "title_ru": "РўРµРЅСЊ 11",
     "fileHash": "qlz28yfl9f",
-    "caption_ru": "Ночь дышит внутри тишины",
-    "caption_en": "Night breathes inside the silence"
+    "caption_ru": "Здесь не нужно быть удобным",
+    "caption_en": "You need not be easy"
   },
   {
     "id": "coverr-9ejgoxnsm3",
@@ -224,8 +224,8 @@ window.VIDEOS_DATA = [
     "size": 7370590,
     "title_ru": "РўРµРЅСЊ 12",
     "fileHash": "coverr-9ejgoxnsm3",
-    "caption_ru": "Камень помнит в тёмной комнате",
-    "caption_en": "Stone remembers in a dark room"
+    "caption_ru": "Твоя честность начинается с паузы",
+    "caption_en": "Honesty begins with a pause"
   },
   {
     "id": "vecteezy-45709951",
@@ -243,8 +243,8 @@ window.VIDEOS_DATA = [
     "size": 9375455,
     "title_ru": "РўРµРЅСЊ 13",
     "fileHash": "vecteezy-45709951",
-    "caption_ru": "Тяжесть остаётся в глубокой тени",
-    "caption_en": "Weight remains in deep shadow"
+    "caption_ru": "Ты устал от собственного шума",
+    "caption_en": "You are tired of your noise"
   },
   {
     "id": "coverr-gukaxin4fr",
@@ -262,8 +262,8 @@ window.VIDEOS_DATA = [
     "size": 10455733,
     "title_ru": "РўРµРЅСЊ 14",
     "fileHash": "coverr-gukaxin4fr",
-    "caption_ru": "Сумрак хранит на холодном камне",
-    "caption_en": "Dusk keeps on cold stone"
+    "caption_ru": "Эта маска больше не нужна",
+    "caption_en": "This mask is no longer needed"
   },
   {
     "id": "coverr-0pab3nr95c",
@@ -281,8 +281,8 @@ window.VIDEOS_DATA = [
     "size": 9039976,
     "title_ru": "РўРµРЅСЊ 15",
     "fileHash": "coverr-0pab3nr95c",
-    "caption_ru": "Стекло отражает под низким небом",
-    "caption_en": "Glass reflects under low sky"
+    "caption_ru": "Ты можешь признать эту тяжесть",
+    "caption_en": "You can admit this weight"
   },
   {
     "id": "coverr-qideiywgzv",
@@ -300,8 +300,8 @@ window.VIDEOS_DATA = [
     "size": 10455515,
     "title_ru": "РўРµРЅСЊ 16",
     "fileHash": "coverr-qideiywgzv",
-    "caption_ru": "Тишина слышит на старых ветках",
-    "caption_en": "Silence listens on old branches"
+    "caption_ru": "Внутри слишком долго было тесно",
+    "caption_en": "Inside has been too tight"
   },
   {
     "id": "vecteezy-9006691",
@@ -319,8 +319,8 @@ window.VIDEOS_DATA = [
     "size": 3890416,
     "title_ru": "РўРµРЅСЊ 17",
     "fileHash": "vecteezy-9006691",
-    "caption_ru": "Тень лежит в тёмной комнате",
-    "caption_en": "Shadow rests in a dark room"
+    "caption_ru": "Ты не должен всё выдержать",
+    "caption_en": "You need not endure everything"
   },
   {
     "id": "vecteezy-34827118",
@@ -338,8 +338,8 @@ window.VIDEOS_DATA = [
     "size": 5562007,
     "title_ru": "РўРµРЅСЊ 18",
     "fileHash": "vecteezy-34827118",
-    "caption_ru": "Дождь держит в глубокой тени",
-    "caption_en": "Rain holds in deep shadow"
+    "caption_ru": "Здесь тебя никто не оценивает",
+    "caption_en": "No one judges you here"
   },
   {
     "id": "vecteezy-50124393",
@@ -357,8 +357,8 @@ window.VIDEOS_DATA = [
     "size": 5902083,
     "title_ru": "РўРµРЅСЊ 19",
     "fileHash": "vecteezy-50124393",
-    "caption_ru": "Ночь дышит на холодном камне",
-    "caption_en": "Night breathes on cold stone"
+    "caption_ru": "Твоё молчание тоже говорит",
+    "caption_en": "Your silence also speaks"
   },
   {
     "id": "vecteezy-48229330",
@@ -376,8 +376,8 @@ window.VIDEOS_DATA = [
     "size": 6061015,
     "title_ru": "РўРµРЅСЊ 20",
     "fileHash": "vecteezy-48229330",
-    "caption_ru": "Камень помнит под низким небом",
-    "caption_en": "Stone remembers under low sky"
+    "caption_ru": "Ты имеешь право устать",
+    "caption_en": "You may be tired"
   },
   {
     "id": "wgwktmpmx7",
@@ -395,8 +395,8 @@ window.VIDEOS_DATA = [
     "size": 6403198,
     "title_ru": "РўРµРЅСЊ 21",
     "fileHash": "wgwktmpmx7",
-    "caption_ru": "Тяжесть остаётся на старых ветках",
-    "caption_en": "Weight remains on old branches"
+    "caption_ru": "Эта ночь не требует ответа",
+    "caption_en": "This night asks no answer"
   },
   {
     "id": "coverr-coverr-cars-on-the-highway-2993",
@@ -414,8 +414,8 @@ window.VIDEOS_DATA = [
     "size": 7515847,
     "title_ru": "РўРµРЅСЊ 22",
     "fileHash": "coverr-coverr-cars-on-the-highway-2993",
-    "caption_ru": "Сумрак хранит у края ночи",
-    "caption_en": "Dusk keeps at the dark edge"
+    "caption_ru": "Ты можешь отпустить чужой голос",
+    "caption_en": "You can release another voice"
   },
   {
     "id": "coverr-t9mmfvmoau",
@@ -433,8 +433,8 @@ window.VIDEOS_DATA = [
     "size": 8123841,
     "title_ru": "РўРµРЅСЊ 23",
     "fileHash": "coverr-t9mmfvmoau",
-    "caption_ru": "Стекло отражает за мокрым стеклом",
-    "caption_en": "Glass reflects on wet glass"
+    "caption_ru": "Внутри уже давно пора выдохнуть",
+    "caption_en": "Inside it is time to exhale"
   },
   {
     "id": "vecteezy-41638597",
@@ -452,8 +452,8 @@ window.VIDEOS_DATA = [
     "size": 4171283,
     "title_ru": "РўРµРЅСЊ 24",
     "fileHash": "vecteezy-41638597",
-    "caption_ru": "Тишина слышит внутри тишины",
-    "caption_en": "Silence listens inside the silence"
+    "caption_ru": "Ты не обязан всё объяснять",
+    "caption_en": "You do not owe explanations"
   },
   {
     "id": "vecteezy-36195382",
@@ -471,8 +471,8 @@ window.VIDEOS_DATA = [
     "size": 7932625,
     "title_ru": "РўРµРЅСЊ 25",
     "fileHash": "vecteezy-36195382",
-    "caption_ru": "Тень лежит под низким небом",
-    "caption_en": "Shadow rests under low sky"
+    "caption_ru": "Сними с себя чужие ожидания",
+    "caption_en": "Remove their expectations now"
   },
   {
     "id": "vecteezy-42239858",
@@ -490,8 +490,8 @@ window.VIDEOS_DATA = [
     "size": 4888856,
     "title_ru": "РўРµРЅСЊ 29",
     "fileHash": "vecteezy-42239858",
-    "caption_ru": "Дождь держит на старых ветках",
-    "caption_en": "Rain holds on old branches"
+    "caption_ru": "Твоя слабость здесь безопасна",
+    "caption_en": "Your weakness is safe here"
   },
   {
     "id": "vecteezy-22187669",
@@ -509,8 +509,8 @@ window.VIDEOS_DATA = [
     "size": 4375124,
     "title_ru": "РўРµРЅСЊ 30",
     "fileHash": "vecteezy-22187669",
-    "caption_ru": "Ночь дышит у края ночи",
-    "caption_en": "Night breathes at the dark edge"
+    "caption_ru": "Ты слишком долго был настороже",
+    "caption_en": "You guarded yourself too long"
   },
   {
     "id": "vecteezy-40722016",
@@ -528,8 +528,8 @@ window.VIDEOS_DATA = [
     "size": 5357026,
     "title_ru": "РўРµРЅСЊ 31",
     "fileHash": "vecteezy-40722016",
-    "caption_ru": "Камень помнит за мокрым стеклом",
-    "caption_en": "Stone remembers on wet glass"
+    "caption_ru": "Позволь себе не быть героем",
+    "caption_en": "Let yourself not be a hero"
   },
   {
     "id": "vecteezy-23006125",
@@ -547,8 +547,8 @@ window.VIDEOS_DATA = [
     "size": 3507612,
     "title_ru": "РўРµРЅСЊ 32",
     "fileHash": "vecteezy-23006125",
-    "caption_ru": "Тяжесть остаётся внутри тишины",
-    "caption_en": "Weight remains inside the silence"
+    "caption_ru": "Эта тишина не судит тебя",
+    "caption_en": "This silence does not judge"
   },
   {
     "id": "vecteezy-1616756",
@@ -566,8 +566,8 @@ window.VIDEOS_DATA = [
     "size": 4065494,
     "title_ru": "РўСЂРёРєСЃС‚РµСЂ 02",
     "fileHash": "vecteezy-1616756",
-    "caption_ru": "Вода уносит старую маску",
-    "caption_en": "Water carries the old mask"
+    "caption_ru": "Не пытайся удержать этот кадр",
+    "caption_en": "Do not hold this frame"
   },
   {
     "id": "vecteezy-33573845",
@@ -585,8 +585,8 @@ window.VIDEOS_DATA = [
     "size": 4883329,
     "title_ru": "РўСЂРёРєСЃС‚РµСЂ 04",
     "fileHash": "vecteezy-33573845",
-    "caption_ru": "Пламя отпускает дальний свет",
-    "caption_en": "Flame releases a distant light"
+    "caption_ru": "То, чего ты боишься, уже прошло",
+    "caption_en": "What you feared has passed"
   },
   {
     "id": "vecteezy-27163190",
@@ -604,8 +604,8 @@ window.VIDEOS_DATA = [
     "size": 6457409,
     "title_ru": "РўСЂРёРєСЃС‚РµСЂ 05",
     "fileHash": "vecteezy-27163190",
-    "caption_ru": "Ветер меняет прежний берег",
-    "caption_en": "Wind changes the former shore"
+    "caption_ru": "Позволь течению нести тебя",
+    "caption_en": "Let the current carry you"
   },
   {
     "id": "vecteezy-20287073",
@@ -623,8 +623,8 @@ window.VIDEOS_DATA = [
     "size": 6620511,
     "title_ru": "РўСЂРёРєСЃС‚РµСЂ 06",
     "fileHash": "vecteezy-20287073",
-    "caption_ru": "Волна принимает новый поворот",
-    "caption_en": "Wave receives a new turn"
+    "caption_ru": "Контроль здесь больше не нужен",
+    "caption_en": "Control is no longer needed"
   },
   {
     "id": "2bfirk705y",
@@ -642,8 +642,8 @@ window.VIDEOS_DATA = [
     "size": 6673908,
     "title_ru": "РўСЂРёРєСЃС‚РµСЂ 07",
     "fileHash": "2bfirk705y",
-    "caption_ru": "Течение помнит закрытую дверь",
-    "caption_en": "Current remembers the closed door"
+    "caption_ru": "Отпусти то, что уже уходит",
+    "caption_en": "Release what is already leaving"
   },
   {
     "id": "vecteezy-24514776",
@@ -661,8 +661,8 @@ window.VIDEOS_DATA = [
     "size": 7495696,
     "title_ru": "РўСЂРёРєСЃС‚РµСЂ 09",
     "fileHash": "vecteezy-24514776",
-    "caption_ru": "Отражение тает тихое дно",
-    "caption_en": "Reflection melts the quiet floor"
+    "caption_ru": "Не держи дыхание так крепко",
+    "caption_en": "Do not hold your breath"
   },
   {
     "id": "vecteezy-23413773",
@@ -680,8 +680,8 @@ window.VIDEOS_DATA = [
     "size": 8491372,
     "title_ru": "РўСЂРёРєСЃС‚РµСЂ 10",
     "fileHash": "vecteezy-23413773",
-    "caption_ru": "Вода уносит прежний берег",
-    "caption_en": "Water carries the former shore"
+    "caption_ru": "Ты не обязан понимать всё",
+    "caption_en": "You do not have to understand"
   },
   {
     "id": "vecteezy-22524485",
@@ -699,8 +699,8 @@ window.VIDEOS_DATA = [
     "size": 9108433,
     "title_ru": "РўСЂРёРєСЃС‚РµСЂ 11",
     "fileHash": "vecteezy-22524485",
-    "caption_ru": "Глубина открывает новый поворот",
-    "caption_en": "Depth opens a new turn"
+    "caption_ru": "Отдайся глубине без борьбы",
+    "caption_en": "Give yourself to the depth"
   },
   {
     "id": "vecteezy-44572320",
@@ -718,8 +718,8 @@ window.VIDEOS_DATA = [
     "size": 9293459,
     "title_ru": "РўСЂРёРєСЃС‚РµСЂ 12",
     "fileHash": "vecteezy-44572320",
-    "caption_ru": "Пламя отпускает закрытую дверь",
-    "caption_en": "Flame releases the closed door"
+    "caption_ru": "То, что кажется крахом, — дверь",
+    "caption_en": "Collapse is only a door"
   },
   {
     "id": "vecteezy-42851671",
@@ -737,8 +737,8 @@ window.VIDEOS_DATA = [
     "size": 9396777,
     "title_ru": "РўСЂРёРєСЃС‚РµСЂ 13",
     "fileHash": "vecteezy-42851671",
-    "caption_ru": "Ветер меняет глубокий поток",
-    "caption_en": "Wind changes the deep stream"
+    "caption_ru": "Позволь себе не знать ответ",
+    "caption_en": "Let yourself not know"
   },
   {
     "id": "vecteezy-50636732",
@@ -756,8 +756,8 @@ window.VIDEOS_DATA = [
     "size": 10086016,
     "title_ru": "РўСЂРёРєСЃС‚РµСЂ 14",
     "fileHash": "vecteezy-50636732",
-    "caption_ru": "Волна принимает тихое дно",
-    "caption_en": "Wave receives the quiet floor"
+    "caption_ru": "Ты можешь потерять контроль здесь",
+    "caption_en": "You can lose control here"
   },
   {
     "id": "vecteezy-24210863",
@@ -775,8 +775,8 @@ window.VIDEOS_DATA = [
     "size": 10220025,
     "title_ru": "РўСЂРёРєСЃС‚РµСЂ 15",
     "fileHash": "vecteezy-24210863",
-    "caption_ru": "Течение помнит старую маску",
-    "caption_en": "Current remembers the old mask"
+    "caption_ru": "Всё меняется, когда ты не держишь",
+    "caption_en": "Everything changes when you release"
   },
   {
     "id": "vecteezy-39159769",
@@ -794,8 +794,8 @@ window.VIDEOS_DATA = [
     "size": 3588536,
     "title_ru": "РўСЂРёРєСЃС‚РµСЂ 16",
     "fileHash": "vecteezy-39159769",
-    "caption_ru": "Бездна дышит ночную воду",
-    "caption_en": "Abyss breathes the night water"
+    "caption_ru": "Не спорь с этой глубиной",
+    "caption_en": "Do not argue with this depth"
   },
   {
     "id": "vecteezy-37190062",
@@ -813,8 +813,8 @@ window.VIDEOS_DATA = [
     "size": 3655384,
     "title_ru": "РўСЂРёРєСЃС‚РµСЂ 17",
     "fileHash": "vecteezy-37190062",
-    "caption_ru": "Отражение тает дальний свет",
-    "caption_en": "Reflection melts a distant light"
+    "caption_ru": "Отпусти прежнюю версию себя",
+    "caption_en": "Release your former self"
   },
   {
     "id": "vecteezy-39160369",
@@ -832,8 +832,8 @@ window.VIDEOS_DATA = [
     "size": 4809427,
     "title_ru": "РўСЂРёРєСЃС‚РµСЂ 18",
     "fileHash": "vecteezy-39160369",
-    "caption_ru": "Вода уносит глубокий поток",
-    "caption_en": "Water carries the deep stream"
+    "caption_ru": "То, что ускользает, остаётся с тобой",
+    "caption_en": "What slips away stays with you"
   },
   {
     "id": "vecteezy-25413582",
@@ -851,8 +851,8 @@ window.VIDEOS_DATA = [
     "size": 4189178,
     "title_ru": "РўСЂРёРєСЃС‚РµСЂ 20",
     "fileHash": "vecteezy-25413582",
-    "caption_ru": "Глубина открывает тихое дно",
-    "caption_en": "Depth opens the quiet floor"
+    "caption_ru": "Позволь волне решить за тебя",
+    "caption_en": "Let the wave decide for you"
   },
   {
     "id": "vecteezy-46285849",
@@ -870,8 +870,8 @@ window.VIDEOS_DATA = [
     "size": 7052576,
     "title_ru": "РўСЂРёРєСЃС‚РµСЂ 21",
     "fileHash": "vecteezy-46285849",
-    "caption_ru": "Пламя отпускает старую маску",
-    "caption_en": "Flame releases the old mask"
+    "caption_ru": "Ты не обязан быть прежним",
+    "caption_en": "You need not stay the same"
   },
   {
     "id": "vecteezy-26744510",
@@ -889,8 +889,8 @@ window.VIDEOS_DATA = [
     "size": 7444334,
     "title_ru": "РўСЂРёРєСЃС‚РµСЂ 22",
     "fileHash": "vecteezy-26744510",
-    "caption_ru": "Ветер меняет ночную воду",
-    "caption_en": "Wind changes the night water"
+    "caption_ru": "Контроль — это только привычка",
+    "caption_en": "Control is only a habit"
   },
   {
     "id": "vecteezy-18761237",
@@ -908,8 +908,8 @@ window.VIDEOS_DATA = [
     "size": 3522722,
     "title_ru": "РџРѕРєРѕР№ 01",
     "fileHash": "vecteezy-18761237",
-    "caption_ru": "Дыхание замедляется в тихой воде",
-    "caption_en": "Breath slows in quiet water"
+    "caption_ru": "Выдохни глубже, чем минуту назад",
+    "caption_en": "Breathe deeper than a minute ago"
   },
   {
     "id": "vecteezy-27482214",
@@ -927,8 +927,8 @@ window.VIDEOS_DATA = [
     "size": 3575419,
     "title_ru": "РџРѕРєРѕР№ 02",
     "fileHash": "vecteezy-27482214",
-    "caption_ru": "Тело слушает на тёплом камне",
-    "caption_en": "Body listens on warm stone"
+    "caption_ru": "Время здесь течёт иначе",
+    "caption_en": "Time flows differently here"
   },
   {
     "id": "vecteezy-18761245",
@@ -946,8 +946,8 @@ window.VIDEOS_DATA = [
     "size": 3770400,
     "title_ru": "РџРѕРєРѕР№ 03",
     "fileHash": "vecteezy-18761245",
-    "caption_ru": "Тишина держит под низким небом",
-    "caption_en": "Silence holds under low sky"
+    "caption_ru": "Ничего не нужно решать сейчас",
+    "caption_en": "Nothing needs deciding now"
   },
   {
     "id": "vecteezy-78882544",
@@ -965,8 +965,8 @@ window.VIDEOS_DATA = [
     "size": 3799265,
     "title_ru": "РџРѕРєРѕР№ 04",
     "fileHash": "vecteezy-78882544",
-    "caption_ru": "Свет остаётся в мягком свете",
-    "caption_en": "Light remains in soft light"
+    "caption_ru": "Тишина держит тебя без слов",
+    "caption_en": "Silence holds you without words"
   },
   {
     "id": "vecteezy-27272805",
@@ -984,8 +984,8 @@ window.VIDEOS_DATA = [
     "size": 3965194,
     "title_ru": "РџРѕРєРѕР№ 05",
     "fileHash": "vecteezy-27272805",
-    "caption_ru": "Сердце отпускает у открытого окна",
-    "caption_en": "Heart releases by the open window"
+    "caption_ru": "Твоё дыхание уже замедляется",
+    "caption_en": "Your breath is already slowing"
   },
   {
     "id": "vecteezy-49924671",
@@ -1003,8 +1003,8 @@ window.VIDEOS_DATA = [
     "size": 4131702,
     "title_ru": "РџРѕРєРѕР№ 06",
     "fileHash": "vecteezy-49924671",
-    "caption_ru": "Тепло остаётся рядом с дыханием",
-    "caption_en": "Warmth stays beside the breath"
+    "caption_ru": "Останься в этом мягком выдохе",
+    "caption_en": "Stay in this soft exhale"
   },
   {
     "id": "vecteezy-20831039",
@@ -1022,8 +1022,8 @@ window.VIDEOS_DATA = [
     "size": 4240025,
     "title_ru": "РџРѕРєРѕР№ 07",
     "fileHash": "vecteezy-20831039",
-    "caption_ru": "Взгляд смягчается внутри комнаты",
-    "caption_en": "Gaze softens inside the room"
+    "caption_ru": "Тело знает, как отпускать",
+    "caption_en": "The body knows how to release"
   },
   {
     "id": "vecteezy-24955868",
@@ -1041,8 +1041,8 @@ window.VIDEOS_DATA = [
     "size": 4255986,
     "title_ru": "РџРѕРєРѕР№ 08",
     "fileHash": "vecteezy-24955868",
-    "caption_ru": "Покой дышит в глубоком покое",
-    "caption_en": "Rest breathes in deep rest"
+    "caption_ru": "Просто позволь себе дышать",
+    "caption_en": "Just let yourself breathe"
   },
   {
     "id": "vecteezy-11705699",
@@ -1060,8 +1060,8 @@ window.VIDEOS_DATA = [
     "size": 4463488,
     "title_ru": "РџРѕРєРѕР№ 10",
     "fileHash": "vecteezy-11705699",
-    "caption_ru": "Дыхание замедляется в мягком свете",
-    "caption_en": "Breath slows in soft light"
+    "caption_ru": "Здесь можно ничего не делать",
+    "caption_en": "You can do nothing here"
   },
   {
     "id": "vecteezy-37989279",
@@ -1079,8 +1079,8 @@ window.VIDEOS_DATA = [
     "size": 4464549,
     "title_ru": "РџРѕРєРѕР№ 11",
     "fileHash": "vecteezy-37989279",
-    "caption_ru": "Тело слушает у открытого окна",
-    "caption_en": "Body listens by the open window"
+    "caption_ru": "Твои плечи могут опуститься",
+    "caption_en": "Your shoulders can come down"
   },
   {
     "id": "vecteezy-15957810",
@@ -1098,8 +1098,8 @@ window.VIDEOS_DATA = [
     "size": 4471087,
     "title_ru": "РџРѕРєРѕР№ 12",
     "fileHash": "vecteezy-15957810",
-    "caption_ru": "Тишина держит рядом с дыханием",
-    "caption_en": "Silence holds beside the breath"
+    "caption_ru": "Внутри достаточно места для тебя",
+    "caption_en": "There is enough room inside"
   },
   {
     "id": "vecteezy-26369703",
@@ -1117,8 +1117,8 @@ window.VIDEOS_DATA = [
     "size": 4661530,
     "title_ru": "РџРѕРєРѕР№ 13",
     "fileHash": "vecteezy-26369703",
-    "caption_ru": "Свет остаётся внутри комнаты",
-    "caption_en": "Light remains inside the room"
+    "caption_ru": "Слушай тишину между вдохами",
+    "caption_en": "Listen to the space between breaths"
   },
   {
     "id": "vecteezy-10366500",
@@ -1136,8 +1136,8 @@ window.VIDEOS_DATA = [
     "size": 4689580,
     "title_ru": "РџРѕРєРѕР№ 14",
     "fileHash": "vecteezy-10366500",
-    "caption_ru": "Сердце отпускает в глубоком покое",
-    "caption_en": "Heart releases in deep rest"
+    "caption_ru": "Всё уже происходит без усилия",
+    "caption_en": "Everything happens without effort"
   },
   {
     "id": "vecteezy-50096613",
@@ -1155,8 +1155,8 @@ window.VIDEOS_DATA = [
     "size": 4797618,
     "title_ru": "РџРѕРєРѕР№ 15",
     "fileHash": "vecteezy-50096613",
-    "caption_ru": "Тепло остаётся в тихой воде",
-    "caption_en": "Warmth stays in quiet water"
+    "caption_ru": "Ты можешь просто быть здесь",
+    "caption_en": "You can simply be here"
   },
   {
     "id": "vecteezy-23624434",
@@ -1174,8 +1174,8 @@ window.VIDEOS_DATA = [
     "size": 5033763,
     "title_ru": "РџРѕРєРѕР№ 16",
     "fileHash": "vecteezy-23624434",
-    "caption_ru": "Взгляд смягчается на тёплом камне",
-    "caption_en": "Gaze softens on warm stone"
+    "caption_ru": "Этот выдох длиннее прошлого",
+    "caption_en": "This exhale is longer than before"
   },
   {
     "id": "vecteezy-21244998",
@@ -1193,8 +1193,8 @@ window.VIDEOS_DATA = [
     "size": 5490630,
     "title_ru": "РџРѕРєРѕР№ 18",
     "fileHash": "vecteezy-21244998",
-    "caption_ru": "Покой дышит под низким небом",
-    "caption_en": "Rest breathes under low sky"
+    "caption_ru": "Твоё тело просит только покоя",
+    "caption_en": "Your body asks only for rest"
   },
   {
     "id": "vecteezy-44308857",
@@ -1212,8 +1212,8 @@ window.VIDEOS_DATA = [
     "size": 5845023,
     "title_ru": "РџРѕРєРѕР№ 19",
     "fileHash": "vecteezy-44308857",
-    "caption_ru": "Дыхание замедляется внутри комнаты",
-    "caption_en": "Breath slows inside the room"
+    "caption_ru": "Никуда не нужно спешить",
+    "caption_en": "There is nowhere to hurry"
   },
   {
     "id": "vecteezy-31688932",
@@ -1231,8 +1231,8 @@ window.VIDEOS_DATA = [
     "size": 5869438,
     "title_ru": "РџРѕРєРѕР№ 20",
     "fileHash": "vecteezy-31688932",
-    "caption_ru": "Тело слушает в глубоком покое",
-    "caption_en": "Body listens in deep rest"
+    "caption_ru": "Пусть дыхание станет глубже",
+    "caption_en": "Let your breath become deeper"
   },
   {
     "id": "vecteezy-39898433",
@@ -1250,8 +1250,8 @@ window.VIDEOS_DATA = [
     "size": 5968569,
     "title_ru": "РџРѕРєРѕР№ 21",
     "fileHash": "vecteezy-39898433",
-    "caption_ru": "Тишина держит в тихой воде",
-    "caption_en": "Silence holds in quiet water"
+    "caption_ru": "Здесь нет правильного ответа",
+    "caption_en": "There is no right answer here"
   },
   {
     "id": "vecteezy-28660818",
@@ -1269,8 +1269,8 @@ window.VIDEOS_DATA = [
     "size": 6160581,
     "title_ru": "РџРѕРєРѕР№ 22",
     "fileHash": "vecteezy-28660818",
-    "caption_ru": "Свет остаётся на тёплом камне",
-    "caption_en": "Light remains on warm stone"
+    "caption_ru": "Ты уже дома в своём теле",
+    "caption_en": "You are home in your body"
   },
   {
     "id": "vecteezy-22675470",
@@ -1288,8 +1288,8 @@ window.VIDEOS_DATA = [
     "size": 6319773,
     "title_ru": "РџРѕРєРѕР№ 23",
     "fileHash": "vecteezy-22675470",
-    "caption_ru": "Сердце отпускает под низким небом",
-    "caption_en": "Heart releases under low sky"
+    "caption_ru": "Позволь тишине сделать работу",
+    "caption_en": "Let silence do the work"
   },
   {
     "id": "vecteezy-26673477",
@@ -1307,8 +1307,8 @@ window.VIDEOS_DATA = [
     "size": 6819996,
     "title_ru": "РџРѕРєРѕР№ 24",
     "fileHash": "vecteezy-26673477",
-    "caption_ru": "Тепло остаётся в мягком свете",
-    "caption_en": "Warmth stays in soft light"
+    "caption_ru": "Ритм твоего сердца достаточен",
+    "caption_en": "Your heart rhythm is enough"
   },
   {
     "id": "vecteezy-49319867",
@@ -1326,8 +1326,8 @@ window.VIDEOS_DATA = [
     "size": 6883780,
     "title_ru": "РџРѕРєРѕР№ 25",
     "fileHash": "vecteezy-49319867",
-    "caption_ru": "Взгляд смягчается у открытого окна",
-    "caption_en": "Gaze softens by the open window"
+    "caption_ru": "Останься с этим тёплым светом",
+    "caption_en": "Stay with this warm light"
   },
   {
     "id": "vecteezy-21798334",
@@ -1345,8 +1345,8 @@ window.VIDEOS_DATA = [
     "size": 6936621,
     "title_ru": "РџРѕРєРѕР№ 26",
     "fileHash": "vecteezy-21798334",
-    "caption_ru": "Покой дышит рядом с дыханием",
-    "caption_en": "Rest breathes beside the breath"
+    "caption_ru": "Вдох приходит без команды",
+    "caption_en": "The inhale comes without command"
   },
   {
     "id": "vecteezy-47385242",
@@ -1364,8 +1364,8 @@ window.VIDEOS_DATA = [
     "size": 7477310,
     "title_ru": "РџРѕРєРѕР№ 27",
     "fileHash": "vecteezy-47385242",
-    "caption_ru": "Дыхание замедляется на тёплом камне",
-    "caption_en": "Breath slows on warm stone"
+    "caption_ru": "Тело помнит, как быть живым",
+    "caption_en": "The body remembers being alive"
   },
   {
     "id": "055zcwp14t",
@@ -1383,8 +1383,8 @@ window.VIDEOS_DATA = [
     "size": 8395743,
     "title_ru": "РџРѕРєРѕР№ 28",
     "fileHash": "055zcwp14t",
-    "caption_ru": "Тело слушает под низким небом",
-    "caption_en": "Body listens under low sky"
+    "caption_ru": "Здесь можно снять напряжение",
+    "caption_en": "You can release the tension"
   },
   {
     "id": "coverr-eq54utb0v7",
@@ -1402,8 +1402,8 @@ window.VIDEOS_DATA = [
     "size": 8545836,
     "title_ru": "РџРѕРєРѕР№ 29",
     "fileHash": "coverr-eq54utb0v7",
-    "caption_ru": "Тишина держит в мягком свете",
-    "caption_en": "Silence holds in soft light"
+    "caption_ru": "Времени хватит на всё",
+    "caption_en": "There is time enough for everything"
   },
   {
     "id": "8lsbvwzhox",
@@ -1421,8 +1421,8 @@ window.VIDEOS_DATA = [
     "size": 8695238,
     "title_ru": "РџРѕРєРѕР№ 30",
     "fileHash": "8lsbvwzhox",
-    "caption_ru": "Свет остаётся у открытого окна",
-    "caption_en": "Light remains by the open window"
+    "caption_ru": "Просто слушай своё дыхание",
+    "caption_en": "Just listen to your breathing"
   },
   {
     "id": "vecteezy-17202055",
@@ -1440,8 +1440,8 @@ window.VIDEOS_DATA = [
     "size": 3593694,
     "title_ru": "РџРѕРєРѕР№ 31",
     "fileHash": "vecteezy-17202055",
-    "caption_ru": "Сердце отпускает рядом с дыханием",
-    "caption_en": "Heart releases beside the breath"
+    "caption_ru": "Твоя мягкость — это сила",
+    "caption_en": "Your softness is strength"
   },
   {
     "id": "vecteezy-11733811",
@@ -1459,8 +1459,8 @@ window.VIDEOS_DATA = [
     "size": 6366257,
     "title_ru": "РџРѕРєРѕР№ 32",
     "fileHash": "vecteezy-11733811",
-    "caption_ru": "Тепло остаётся внутри комнаты",
-    "caption_en": "Warmth stays inside the room"
+    "caption_ru": "Ничто не требует твоего внимания",
+    "caption_en": "Nothing needs your attention"
   },
   {
     "id": "vecteezy-26167264",
@@ -1478,8 +1478,8 @@ window.VIDEOS_DATA = [
     "size": 3712807,
     "title_ru": "РџСѓС‚СЊ 01",
     "fileHash": "vecteezy-26167264",
-    "caption_ru": "Дорога открывает через низкое небо",
-    "caption_en": "The road opens through low sky"
+    "caption_ru": "Ты уже знаешь свой следующий шаг",
+    "caption_en": "You already know your next step"
   },
   {
     "id": "vecteezy-39227242",
@@ -1497,8 +1497,8 @@ window.VIDEOS_DATA = [
     "size": 3736950,
     "title_ru": "РџСѓС‚СЊ 02",
     "fileHash": "vecteezy-39227242",
-    "caption_ru": "Свет ведёт в тихий простор",
-    "caption_en": "Light leads into quiet space"
+    "caption_ru": "Свет возвращается без усилия",
+    "caption_en": "Light returns without effort"
   },
   {
     "id": "vecteezy-49924669",
@@ -1516,8 +1516,8 @@ window.VIDEOS_DATA = [
     "size": 3842925,
     "title_ru": "РџСѓС‚СЊ 03",
     "fileHash": "vecteezy-49924669",
-    "caption_ru": "Утро находит к дальнему свету",
-    "caption_en": "Morning finds toward distant light"
+    "caption_ru": "Горизонт открыт, когда ты спокоен",
+    "caption_en": "The horizon opens in calm"
   },
   {
     "id": "vecteezy-49757118",
@@ -1535,8 +1535,8 @@ window.VIDEOS_DATA = [
     "size": 4017319,
     "title_ru": "РџСѓС‚СЊ 04",
     "fileHash": "vecteezy-49757118",
-    "caption_ru": "Простор дышит в тихий простор",
-    "caption_en": "Open space breathes into quiet space"
+    "caption_ru": "Иди дальше в своём ритме",
+    "caption_en": "Walk on in your own rhythm"
   },
   {
     "id": "vecteezy-25251767",
@@ -1554,8 +1554,8 @@ window.VIDEOS_DATA = [
     "size": 4244001,
     "title_ru": "РџСѓС‚СЊ 05",
     "fileHash": "vecteezy-25251767",
-    "caption_ru": "Небо светлеет над спящим городом",
-    "caption_en": "The sky clears above sleeping city"
+    "caption_ru": "Твой путь начинается с этой паузы",
+    "caption_en": "Your path begins with this pause"
   },
   {
     "id": "vecteezy-48665208",
@@ -1573,8 +1573,8 @@ window.VIDEOS_DATA = [
     "size": 4556449,
     "title_ru": "РџСѓС‚СЊ 06",
     "fileHash": "vecteezy-48665208",
-    "caption_ru": "Ветер зовёт в ясное утро",
-    "caption_en": "Wind calls into clear morning"
+    "caption_ru": "Ясность приходит без принуждения",
+    "caption_en": "Clarity comes without force"
   },
   {
     "id": "vecteezy-47104840",
@@ -1592,8 +1592,8 @@ window.VIDEOS_DATA = [
     "size": 4614285,
     "title_ru": "РџСѓС‚СЊ 07",
     "fileHash": "vecteezy-47104840",
-    "caption_ru": "Горизонт ждёт к новой линии",
-    "caption_en": "Horizon waits toward a new line"
+    "caption_ru": "Ты можешь идти медленно и уверенно",
+    "caption_en": "You can walk slowly and sure"
   },
   {
     "id": "vecteezy-16766057",
@@ -1611,8 +1611,8 @@ window.VIDEOS_DATA = [
     "size": 4879249,
     "title_ru": "РџСѓС‚СЊ 08",
     "fileHash": "vecteezy-16766057",
-    "caption_ru": "Шаг звучит сквозь мягкий туман",
-    "caption_en": "The step sounds through soft fog"
+    "caption_ru": "Дорога не требует спешки",
+    "caption_en": "The road asks no hurry"
   },
   {
     "id": "vecteezy-42408065",
@@ -1630,8 +1630,8 @@ window.VIDEOS_DATA = [
     "size": 4960460,
     "title_ru": "РџСѓС‚СЊ 10",
     "fileHash": "vecteezy-42408065",
-    "caption_ru": "Дорога открывает в тихий простор",
-    "caption_en": "The road opens into quiet space"
+    "caption_ru": "Ты уже несёшь свой свет",
+    "caption_en": "You already carry your light"
   },
   {
     "id": "vecteezy-13129372",
@@ -1649,8 +1649,8 @@ window.VIDEOS_DATA = [
     "size": 5295649,
     "title_ru": "РџСѓС‚СЊ 11",
     "fileHash": "vecteezy-13129372",
-    "caption_ru": "Свет ведёт над спящим городом",
-    "caption_en": "Light leads above sleeping city"
+    "caption_ru": "Впереди достаточно пространства",
+    "caption_en": "There is enough space ahead"
   },
   {
     "id": "vecteezy-44308850",
@@ -1668,8 +1668,8 @@ window.VIDEOS_DATA = [
     "size": 5356719,
     "title_ru": "РџСѓС‚СЊ 12",
     "fileHash": "vecteezy-44308850",
-    "caption_ru": "Утро находит в ясное утро",
-    "caption_en": "Morning finds into clear morning"
+    "caption_ru": "Твой шаг имеет собственный вес",
+    "caption_en": "Your step has its own weight"
   },
   {
     "id": "vecteezy-48665200",
@@ -1687,8 +1687,8 @@ window.VIDEOS_DATA = [
     "size": 5715123,
     "title_ru": "РџСѓС‚СЊ 13",
     "fileHash": "vecteezy-48665200",
-    "caption_ru": "Простор дышит над спящим городом",
-    "caption_en": "Open space breathes above sleeping city"
+    "caption_ru": "Свет становится яснее с каждым вдохом",
+    "caption_en": "Light clears with every breath"
   },
   {
     "id": "vecteezy-26489445",
@@ -1706,8 +1706,8 @@ window.VIDEOS_DATA = [
     "size": 5800762,
     "title_ru": "РџСѓС‚СЊ 14",
     "fileHash": "vecteezy-26489445",
-    "caption_ru": "Небо светлеет сквозь мягкий туман",
-    "caption_en": "The sky clears through soft fog"
+    "caption_ru": "Ты возвращаешься к себе",
+    "caption_en": "You return to yourself"
   },
   {
     "id": "vecteezy-39227308",
@@ -1725,8 +1725,8 @@ window.VIDEOS_DATA = [
     "size": 6814806,
     "title_ru": "РџСѓС‚СЊ 16",
     "fileHash": "vecteezy-39227308",
-    "caption_ru": "Ветер зовёт через низкое небо",
-    "caption_en": "Wind calls through low sky"
+    "caption_ru": "Горизонт ждёт твоего движения",
+    "caption_en": "The horizon waits for your move"
   },
   {
     "id": "vecteezy-44851735",
@@ -1744,8 +1744,8 @@ window.VIDEOS_DATA = [
     "size": 7134298,
     "title_ru": "РџСѓС‚СЊ 17",
     "fileHash": "vecteezy-44851735",
-    "caption_ru": "Горизонт ждёт в тихий простор",
-    "caption_en": "Horizon waits into quiet space"
+    "caption_ru": "Иди туда, где тебе легко",
+    "caption_en": "Walk where you feel light"
   },
   {
     "id": "vecteezy-44308819",
@@ -1763,8 +1763,8 @@ window.VIDEOS_DATA = [
     "size": 7194682,
     "title_ru": "РџСѓС‚СЊ 18",
     "fileHash": "vecteezy-44308819",
-    "caption_ru": "Шаг звучит к дальнему свету",
-    "caption_en": "The step sounds toward distant light"
+    "caption_ru": "Твоя ясность уже внутри",
+    "caption_en": "Your clarity is already inside"
   },
   {
     "id": "coverr-porto-santo-coastline-2591",
@@ -1782,8 +1782,8 @@ window.VIDEOS_DATA = [
     "size": 7193387,
     "title_ru": "РџСѓС‚СЊ 19",
     "fileHash": "coverr-porto-santo-coastline-2591",
-    "caption_ru": "Дорога открывает над спящим городом",
-    "caption_en": "The road opens above sleeping city"
+    "caption_ru": "Позволь дороге открыться",
+    "caption_en": "Let the road open"
   },
   {
     "id": "faom7mmeif",
@@ -1801,8 +1801,8 @@ window.VIDEOS_DATA = [
     "size": 7238560,
     "title_ru": "РџСѓС‚СЊ 20",
     "fileHash": "faom7mmeif",
-    "caption_ru": "Свет ведёт сквозь мягкий туман",
-    "caption_en": "Light leads through soft fog"
+    "caption_ru": "Ты не один на этом пути",
+    "caption_en": "You are not alone here"
   },
   {
     "id": "vecteezy-24153650",
@@ -1820,8 +1820,8 @@ window.VIDEOS_DATA = [
     "size": 7585387,
     "title_ru": "РџСѓС‚СЊ 21",
     "fileHash": "vecteezy-24153650",
-    "caption_ru": "Утро находит через низкое небо",
-    "caption_en": "Morning finds through low sky"
+    "caption_ru": "Каждый шаг возвращает тебя",
+    "caption_en": "Every step returns you"
   },
   {
     "id": "vecteezy-44308860",
@@ -1839,8 +1839,8 @@ window.VIDEOS_DATA = [
     "size": 7797161,
     "title_ru": "РџСѓС‚СЊ 22",
     "fileHash": "vecteezy-44308860",
-    "caption_ru": "Простор дышит сквозь мягкий туман",
-    "caption_en": "Open space breathes through soft fog"
+    "caption_ru": "Впереди тихая открытая линия",
+    "caption_en": "Ahead lies a quiet open line"
   },
   {
     "id": "coverr-walking-mountain-top-8360",
@@ -1858,8 +1858,8 @@ window.VIDEOS_DATA = [
     "size": 8797143,
     "title_ru": "РџСѓС‚СЊ 23",
     "fileHash": "coverr-walking-mountain-top-8360",
-    "caption_ru": "Небо светлеет к дальнему свету",
-    "caption_en": "The sky clears toward distant light"
+    "caption_ru": "Ты можешь выбрать своё направление",
+    "caption_en": "You can choose your direction"
   },
   {
     "id": "vecteezy-35353508",
@@ -1877,8 +1877,8 @@ window.VIDEOS_DATA = [
     "size": 9156747,
     "title_ru": "РџСѓС‚СЊ 24",
     "fileHash": "vecteezy-35353508",
-    "caption_ru": "Ветер зовёт за открытой дверью",
-    "caption_en": "Wind calls behind the open door"
+    "caption_ru": "Свет не исчезает из тебя",
+    "caption_en": "Light does not leave you"
   },
   {
     "id": "vecteezy-28800918",
@@ -1896,8 +1896,8 @@ window.VIDEOS_DATA = [
     "size": 9340076,
     "title_ru": "РџСѓС‚СЊ 25",
     "fileHash": "vecteezy-28800918",
-    "caption_ru": "Горизонт ждёт над спящим городом",
-    "caption_en": "Horizon waits above sleeping city"
+    "caption_ru": "Твой путь не нужно доказывать",
+    "caption_en": "Your path needs no proof"
   },
   {
     "id": "vecteezy-48659846",
@@ -1915,8 +1915,8 @@ window.VIDEOS_DATA = [
     "size": 8738728,
     "title_ru": "РџСѓС‚СЊ 26",
     "fileHash": "vecteezy-48659846",
-    "caption_ru": "Шаг звучит в ясное утро",
-    "caption_en": "The step sounds into clear morning"
+    "caption_ru": "Двигайся из внутренней опоры",
+    "caption_en": "Move from your inner ground"
   },
   {
     "id": "vecteezy-9978949",
@@ -1934,8 +1934,8 @@ window.VIDEOS_DATA = [
     "size": 9067186,
     "title_ru": "РџСѓС‚СЊ 27",
     "fileHash": "vecteezy-9978949",
-    "caption_ru": "Дорога открывает сквозь мягкий туман",
-    "caption_en": "The road opens through soft fog"
+    "caption_ru": "Горизонт становится ближе с выдохом",
+    "caption_en": "The horizon nears with exhale"
   },
   {
     "id": "vecteezy-9687461",
@@ -1953,8 +1953,8 @@ window.VIDEOS_DATA = [
     "size": 9745285,
     "title_ru": "РџСѓС‚СЊ 28",
     "fileHash": "vecteezy-9687461",
-    "caption_ru": "Свет ведёт к дальнему свету",
-    "caption_en": "Light leads toward distant light"
+    "caption_ru": "Ты уже на правильной стороне",
+    "caption_en": "You are already on your side"
   },
   {
     "id": "vecteezy-23156720",
@@ -1972,8 +1972,8 @@ window.VIDEOS_DATA = [
     "size": 9817151,
     "title_ru": "РџСѓС‚СЊ 29",
     "fileHash": "vecteezy-23156720",
-    "caption_ru": "Утро находит за открытой дверью",
-    "caption_en": "Morning finds behind the open door"
+    "caption_ru": "Позволь себе идти дальше",
+    "caption_en": "Let yourself walk farther"
   },
   {
     "id": "vecteezy-47104845",
@@ -1991,8 +1991,8 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 6512189,
     "title_ru": "Покой 33",
-    "caption_ru": "Взгляд смягчается в глубоком покое",
-    "caption_en": "Gaze softens in deep rest"
+    "caption_ru": "Позволь себе замедлиться полностью",
+    "caption_en": "Let yourself slow completely"
   },
   {
     "id": "vecteezy-41420997",
@@ -2010,8 +2010,8 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 6365545,
     "title_ru": "Покой 38",
-    "caption_ru": "Покой дышит в тихой воде",
-    "caption_en": "Rest breathes in quiet water"
+    "caption_ru": "Этот момент держит тебя бережно",
+    "caption_en": "This moment holds you gently"
   },
   {
     "id": "vecteezy-20383962",
@@ -2029,8 +2029,8 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 3724072,
     "title_ru": "Путь 30",
-    "caption_ru": "Простор дышит к дальнему свету",
-    "caption_en": "Open space breathes toward distant light"
+    "caption_ru": "Внутренний компас снова слышен",
+    "caption_en": "The inner compass is heard"
   },
   {
     "id": "vecteezy-35230903",
@@ -2048,8 +2048,8 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 5008288,
     "title_ru": "Путь 31",
-    "caption_ru": "Небо светлеет в ясное утро",
-    "caption_en": "The sky clears into clear morning"
+    "caption_ru": "Твоё движение больше не бегство",
+    "caption_en": "Your movement is no longer escape"
   },
   {
     "id": "vecteezy-27148488",
@@ -2067,8 +2067,8 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 8602726,
     "title_ru": "Трикстер 35",
-    "caption_ru": "Волна принимает дальний свет",
-    "caption_en": "Wave receives a distant light"
+    "caption_ru": "Отпусти берег, который знал",
+    "caption_en": "Release the shore you knew"
   },
   {
     "id": "vecteezy-36096700",
@@ -2086,8 +2086,8 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 6634236,
     "title_ru": "Трикстер 36",
-    "caption_ru": "Течение помнит прежний берег",
-    "caption_en": "Current remembers the former shore"
+    "caption_ru": "Глубина не просит твоего разрешения",
+    "caption_en": "Depth asks no permission"
   },
   {
     "id": "vecteezy-84289015",
@@ -2105,8 +2105,8 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 4327703,
     "title_ru": "Трикстер 37",
-    "caption_ru": "Бездна дышит новый поворот",
-    "caption_en": "Abyss breathes a new turn"
+    "caption_ru": "Позволь себе исчезнуть на миг",
+    "caption_en": "Let yourself vanish for a moment"
   },
   {
     "id": "calm_33_vecteezy-22187669",
@@ -2124,8 +2124,8 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 4375124,
     "title_ru": "Покой 39",
-    "caption_ru": "Дыхание замедляется у открытого окна",
-    "caption_en": "Breath slows by the open window"
+    "caption_ru": "Выдох освобождает больше места",
+    "caption_en": "The exhale makes more room"
   },
   {
     "id": "calm_34_vecteezy-40722016",
@@ -2143,8 +2143,8 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 5357026,
     "title_ru": "Покой 39",
-    "caption_ru": "Тело слушает рядом с дыханием",
-    "caption_en": "Body listens beside the breath"
+    "caption_ru": "Ты в безопасности в этой тишине",
+    "caption_en": "You are safe in this silence"
   },
   {
     "id": "calm_35_vecteezy-34213914",
@@ -2162,8 +2162,8 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 3559576,
     "title_ru": "Покой 39",
-    "caption_ru": "Тишина держит внутри комнаты",
-    "caption_en": "Silence holds inside the room"
+    "caption_ru": "Дыши так, будто времени нет",
+    "caption_en": "Breathe as if time is gone"
   },
   {
     "id": "calm_36_vecteezy-27272805",
@@ -2181,8 +2181,8 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 3965194,
     "title_ru": "Покой 39",
-    "caption_ru": "Свет остаётся в глубоком покое",
-    "caption_en": "Light remains in deep rest"
+    "caption_ru": "Твоё спокойствие уже рядом",
+    "caption_en": "Your calm is already near"
   },
   {
     "id": "calm_39_vecteezy-23624434",
@@ -2200,8 +2200,8 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 5033763,
     "title_ru": "Покой 39",
-    "caption_ru": "Сердце отпускает в тихой воде",
-    "caption_en": "Heart releases in quiet water"
+    "caption_ru": "Останься в этом тихом ритме",
+    "caption_en": "Stay in this quiet rhythm"
   },
   {
     "id": "calm_40_vecteezy-31688932",
@@ -2219,8 +2219,8 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 5869438,
     "title_ru": "Покой 40",
-    "caption_ru": "Тепло остаётся на тёплом камне",
-    "caption_en": "Warmth stays on warm stone"
+    "caption_ru": "Тело благодарно за паузу",
+    "caption_en": "The body is grateful for pause"
   },
   {
     "id": "calm_41_vecteezy-78882544",
@@ -2238,8 +2238,8 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 3799265,
     "title_ru": "Покой 41",
-    "caption_ru": "Взгляд смягчается под низким небом",
-    "caption_en": "Gaze softens under low sky"
+    "caption_ru": "Здесь ты можешь отдохнуть",
+    "caption_en": "You can rest here"
   },
   {
     "id": "path_33_vecteezy-42239858",
@@ -2257,8 +2257,8 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 4896700,
     "title_ru": "Новый кадр",
-    "caption_ru": "Дорога становится ясной линией",
-    "caption_en": "The road becomes a clear line"
+    "caption_ru": "Свет остаётся после шага",
+    "caption_en": "Light remains after the step"
   },
   {
     "id": "path_34_vecteezy-11733811",
@@ -2276,7 +2276,7 @@ window.VIDEOS_DATA = [
     "duration": 10.0,
     "size": 6396000,
     "title_ru": "Новый кадр",
-    "caption_ru": "Вода возвращает тихое дыхание",
-    "caption_en": "Water returns a quiet breath"
+    "caption_ru": "Внутри становится тише и теплее",
+    "caption_en": "Inside grows quieter and warmer"
   }
 ];

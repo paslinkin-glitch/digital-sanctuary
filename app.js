@@ -917,6 +917,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   let captionRevealed = false;
   let currentCaption = null;
   let captionMemoryTimer = 0;
+  let captionZeroTimer = 0;
+  let captionWakeTimer = 0;
   let captionRevealTimer = 0;
   let captionAcceptedCount = 0;
   let captionYouStartCount = 0;
@@ -1549,6 +1551,25 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     prefetchNextCaptions(behaviorContext());
   }
 
+  function scheduleCaptionZero() {
+    window.clearTimeout(captionZeroTimer);
+    if (!captionEl || !captionHasText || !captionEl.classList.contains('is-visible')) return;
+    captionZeroTimer = window.setTimeout(() => {
+      if (captionEl && captionEl.classList.contains('is-visible') && !stage.classList.contains('is-touching') && !stage.classList.contains('is-held')) {
+        captionEl.classList.add('is-zero');
+      }
+    }, 5000);
+  }
+
+  function wakeCaption() {
+    if (!captionEl) return;
+    window.clearTimeout(captionZeroTimer);
+    window.clearTimeout(captionWakeTimer);
+    captionEl.classList.remove('is-zero');
+    captionEl.classList.add('is-awake');
+    captionWakeTimer = window.setTimeout(() => captionEl.classList.remove('is-awake'), 1600);
+  }
+
   function scheduleCaptionVisible(started, token, immediate) {
     if (!captionEl || !captionHasText || token !== captionSceneToken) return;
 
@@ -1560,15 +1581,17 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       if (token !== captionSceneToken || !captionHasText) return;
 
       captionEl.setAttribute('aria-hidden', 'false');
+      captionEl.classList.remove('is-zero');
       captionEl.classList.add('is-visible');
       captionRevealed = true;
       if (currentCaption) {
         currentCaption.revealed = true;
         if (!currentCaption.haptic) {
           currentCaption.haptic = true;
-          safeVibrate(hapticPatternForCurrent().whisper, 4000);
+          safeVibrate(10, 3000);
         }
       }
+      scheduleCaptionZero();
       maybeRecordResonance();
     }, delay);
   }
@@ -1584,15 +1607,17 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
 
     window.clearTimeout(captionTimer);
     captionEl.setAttribute('aria-hidden', 'false');
+    captionEl.classList.remove('is-zero');
     captionEl.classList.add('is-visible');
     captionRevealed = true;
     if (currentCaption) {
       currentCaption.revealed = true;
       if (!currentCaption.haptic) {
         currentCaption.haptic = true;
-        safeVibrate(hapticPatternForCurrent().whisper, 4000);
+        safeVibrate(10, 3000);
       }
     }
+    scheduleCaptionZero();
     maybeRecordResonance();
   }
 
@@ -1613,7 +1638,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
 
     if (!captionEl) return;
 
-    captionEl.classList.remove('is-visible');
+    captionEl.classList.remove('is-visible', 'is-zero', 'is-awake');
     captionEl.setAttribute('aria-hidden', 'true');
 
     if (!clip || !category) return;
@@ -4095,6 +4120,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
 
     if (currentCaption) currentCaption.held = true;
     stage.classList.add('is-held');
+    wakeCaption();
     setActivePlaybackRate(SLOW_RATE);
     setSoundDepth(true);
     startHoldPulse();
@@ -4167,6 +4193,8 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
   document.addEventListener('touchstart', (event) => {
     if (!gateOpen || sessionComplete) return;
     if (event.touches.length !== 1 || isInterfaceTarget(event.target)) return;
+    stage.classList.add('is-touching');
+    wakeCaption();
     const touch = event.touches[0];
     if (gesture) abortGesture();
     enableSoundscape();
@@ -4235,9 +4263,11 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     const dy = changed.clientY - origin.y;
     const velocity = Math.abs(dy) / Math.max(1, now() - origin.t);
     if (gesture && gesture.holding) stopHold();
+    stage.classList.remove('is-touching');
     setActivePlaybackRate(1);
     setBreath(0);
     abortGesture();
+    scheduleCaptionZero();
     if (Math.abs(dy) > 35 && Math.abs(dy) > Math.abs(dx)) {
       go(dy < 0 ? 'up' : 'down', velocity);
     }
@@ -4245,6 +4275,8 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
 
   document.addEventListener('touchcancel', () => {
     if (gesture && gesture.holding) stopHold();
+    stage.classList.remove('is-touching');
+    scheduleCaptionZero();
     touchOrigin = null;
     setActivePlaybackRate(1);
     setBreath(0);
