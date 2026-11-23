@@ -14,10 +14,10 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
   <link rel="preconnect" href="https://s3.twcstorage.ru" crossorigin>
-  <link rel="stylesheet" href="style.css?v=52">
+  <link rel="stylesheet" href="style.css?v=53">
 </head>
 <body>
-  <script>window.SANCTUARY_MAINTENANCE = true; if (window.SANCTUARY_MAINTENANCE) document.documentElement.dataset.maintenance = 'true';</script>
+  <script>window.SANCTUARY_MAINTENANCE = false; if (window.SANCTUARY_MAINTENANCE) document.documentElement.dataset.maintenance = 'true';</script>
   <section id="maintenance-screen" aria-live="polite">
     <div class="maintenance-inner">
       <span class="maintenance-thread" aria-hidden="true"></span>
@@ -73,11 +73,7 @@
       <span class="caption-line"></span>
       <span class="caption-line"></span>
     </div>
-    <div class="swipe-hint" id="swipe-hint" hidden aria-hidden="true">
-      <span class="swipe-hint-arrow">↑</span>
-      <span class="swipe-hint-label">Swipe up · Hold to sink deeper</span>
-    </div>
-  </main>
+</main>
 
   <div class="entry" id="entry" role="dialog" aria-label="Entrance to the sanctuary">
     <div class="ambient-mesh ambient-mesh--entry" aria-hidden="true">
@@ -96,6 +92,11 @@
       <h1 class="entry-title">A private space<br>of silence and stillness</h1>
       <p class="entry-sub">No words, no judgments,<br>no attempts to fix you</p>
     </div>
+    <div class="entry-gesture-guide" id="entry-gesture-guide" aria-hidden="true">
+      <span class="guide-thread"><i></i></span>
+      <span class="guide-line" id="guide-line-1">Swipe up — to shift the frame</span>
+      <span class="guide-line" id="guide-line-2">Hold — to slow down time</span>
+    </div>
     <div class="entry-actions">
       <p class="entry-nav-hint">Swipe up like a dream · Hold when a frame resonates</p>
       <p class="entry-tap-prompt" id="entry-tap-prompt" hidden>Tap to begin</p>
@@ -103,16 +104,13 @@
     <p class="entry-installed-note" id="entry-installed-note" hidden>Sanctuary installed. Close the browser and open it from your home screen</p>
   <aside class="install-card" id="install-card" hidden aria-live="polite">
     <div class="install-card-copy">
-      <p class="install-card-title">Keep the sanctuary</p>
       <p class="install-card-hint" id="install-card-hint" hidden>Tap Share → Add to Home Screen</p>
       <p class="install-card-info" id="install-card-info" hidden></p>
     </div>
     <button class="install-card-btn" id="install-card-install" type="button">Add to screen</button>
-    <button class="install-card-close" id="install-card-later" type="button" aria-label="Close">×</button>
   </aside>
 
   <aside class="install-card install-card--ios" id="ios-install-card" hidden aria-live="polite">
-    <button class="ios-install-close" id="ios-install-close" type="button" aria-label="Close">×</button>
     <p class="ios-install-kicker" id="ios-install-kicker">SAVE THE SANCTUARY</p>
     <div class="ios-steps" id="ios-steps-safari">
       <div class="ios-step">
@@ -190,7 +188,7 @@
       window.__deferredInstallPrompt = event;
     });
   </script>
-  <script src="videos-data.js?v=52"></script>
-  <script src="app.js?v=52"></script>
+  <script src="videos-data.js?v=53"></script>
+  <script src="app.js?v=53"></script>
 </body>
 </html>

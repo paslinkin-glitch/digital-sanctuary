@@ -3563,3 +3563,154 @@ body,
   0%, 100% { opacity: 0.45; }
   50% { opacity: 0.85; }
 }
+
+
+/* v53 app-mode threshold and gesture guide */
+.entry-gesture-guide {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  margin: 4px auto 0;
+  text-align: center;
+}
+
+.entry.is-standalone .entry-gesture-guide {
+  display: flex;
+}
+
+.guide-thread {
+  position: relative;
+  display: block;
+  width: 1px;
+  height: 58px;
+  background: linear-gradient(180deg, transparent, rgba(214, 199, 178, 0.7), transparent);
+  overflow: visible;
+}
+
+.guide-thread i {
+  position: absolute;
+  left: -1.5px;
+  bottom: 0;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(234, 229, 220, 0.9);
+  box-shadow: 0 0 10px rgba(214, 199, 178, 0.65);
+  animation: guideRise 3.8s ease-in-out infinite;
+}
+
+.guide-line {
+  color: rgba(234, 229, 220, 0.54);
+  font-family: var(--mono);
+  font-size: 8.5px;
+  letter-spacing: 0.18em;
+  line-height: 1.45;
+  text-transform: uppercase;
+}
+
+@keyframes guideRise {
+  0% { transform: translateY(0); opacity: 0; }
+  25% { opacity: 0.8; }
+  75% { opacity: 0.55; }
+  100% { transform: translateY(-54px); opacity: 0; }
+}
+
+.entry.is-standalone .entry-copy {
+  margin: auto 0;
+}
+
+.entry.is-standalone .entry-sub {
+  display: none;
+}
+
+.entry.is-browser .entry-gesture-guide {
+  display: none;
+}
+
+.entry.is-browser > .install-card,
+.entry.is-browser > .install-card--ios {
+  justify-content: center;
+}
+
+.entry.is-browser > .install-card:not(.install-card--ios) {
+  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: center;
+}
+
+.entry.is-browser > .install-card:not(.install-card--ios) .install-card-copy {
+  flex: 0 1 100%;
+  text-align: center;
+}
+
+.entry.is-browser > .install-card:not(.install-card--ios) .install-card-btn {
+  margin: 0 auto;
+}
+
+.entry.is-installed > *:not(.entry-installed-note) {
+  display: none !important;
+}
+
+.entry.is-installed {
+  justify-content: center;
+  background: #060607;
+}
+
+.entry.is-installed .entry-installed-note {
+  display: block !important;
+  max-width: 330px;
+  color: rgba(234, 229, 220, 0.7);
+  font-family: var(--serif);
+  font-size: 20px;
+  line-height: 1.45;
+  letter-spacing: 0.02em;
+  text-align: center;
+}
+
+
+.entry.is-browser > .install-card .install-card-btn {
+  display: block !important;
+  position: static !important;
+  margin: 0 auto !important;
+  align-self: center !important;
+  justify-self: center !important;
+  width: max-content !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+}
+
+.entry.is-browser > .install-card {
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+
+/* hard centering for the browser install capsule */
+body .entry.is-browser > .install-card,
+body .entry.entry-browser-mode > .install-card {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+body .entry.is-browser > .install-card .install-card-copy,
+body .entry.entry-browser-mode > .install-card .install-card-copy {
+  flex: 0 1 auto !important;
+  width: 100% !important;
+  text-align: center !important;
+}
+body .entry.is-browser > .install-card .install-card-btn,
+body .entry.entry-browser-mode > .install-card .install-card-btn {
+  display: block !important;
+  position: static !important;
+  margin: 0 auto !important;
+  align-self: center !important;
+  width: max-content !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+}

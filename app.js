@@ -93,6 +93,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       docTitle: 'Digital Sanctuary — интерактивное убежище',
       entryAria: 'Вход в убежище',
       entryKicker: 'ЦИФРОВОЕ УБЕЖИЩЕ',
+      appKicker: 'ПОРОГ ТИШИНЫ',
+      appTitle: 'Оставь шум снаружи.<br>Войди в сон без слов',
+      guideSwipe: 'Потяни вверх — чтобы сменить кадр',
+      guideHold: 'Удерживай — чтобы замедлить время',
       entryTitle: 'Закрытое пространство<br>тишины и созерцания',
       entrySub: 'Без слов, оценок и попыток<br>тебя исправить',
       enter: 'Войти',
@@ -139,6 +143,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       docTitle: 'Digital Sanctuary — an interactive sanctuary',
       entryAria: 'Entrance to the sanctuary',
       entryKicker: 'DIGITAL SANCTUARY',
+      appKicker: 'THRESHOLD OF STILLNESS',
+      appTitle: 'Leave the noise outside.<br>Enter a dream without words',
+      guideSwipe: 'Swipe up — to shift the frame',
+      guideHold: 'Hold — to slow down time',
       entryTitle: 'A private space<br>of silence and stillness',
       entrySub: 'No words, no judgments,<br>no attempts to fix you',
       enter: 'Enter',
@@ -565,6 +573,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   const entryTrigger = document.getElementById('entry-trigger');
   const entryInstallButton = document.getElementById('entry-install');
   const entryTapPrompt = document.getElementById('entry-tap-prompt');
+  const guideLine1 = document.getElementById('guide-line-1');
+  const guideLine2 = document.getElementById('guide-line-2');
   const entryInstalledNote = document.getElementById('entry-installed-note');
   const entryInstallHint = document.getElementById('entry-install-hint');
   const installCard = document.getElementById('install-card');
@@ -612,6 +622,11 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     setText('.entry-kicker', 'entryKicker');
     setHtml('.entry-title', 'entryTitle');
     setHtml('.entry-sub', 'entrySub');
+    const appMode = isStandaloneMode();
+    setText('.entry-kicker', appMode ? 'appKicker' : 'entryKicker');
+    setHtml('.entry-title', appMode ? 'appTitle' : 'entryTitle');
+    if (guideLine1) guideLine1.textContent = tr('guideSwipe');
+    if (guideLine2) guideLine2.textContent = tr('guideHold');
     setText('.entry-nav-hint', 'nav');
     setText('.install-card-title', 'installCardTitle');
     setText('.finale-kicker', 'finaleKicker');
@@ -4784,7 +4799,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
         if (choice && choice.outcome === 'accepted') {
           installCardDismissed = true;
           showInstalledState();
-          try { window.close(); } catch (_) {}
+          try { window.close(); window.blur(); } catch (_) {}
         }
       } catch (_) {
         /* установка может быть отменена системой */
@@ -4849,6 +4864,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
 
   function showInstalledState() {
     hideInstallCard();
+    if (entryGate) entryGate.classList.add('is-installed');
     if (entryTapPrompt) entryTapPrompt.hidden = true;
     if (entryInstalledNote) entryInstalledNote.hidden = false;
   }
@@ -4871,6 +4887,8 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
   if (entryGate) {
     entryGate.classList.toggle('is-standalone', isStandaloneMode());
     entryGate.classList.toggle('is-browser', !isStandaloneMode());
+    entryGate.classList.toggle('entry-app-mode', isStandaloneMode());
+    entryGate.classList.toggle('entry-browser-mode', !isStandaloneMode());
   }
   if (isStandaloneMode()) {
     hideInstallCard();
