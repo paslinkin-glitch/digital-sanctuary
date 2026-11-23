@@ -14,10 +14,10 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
   <link rel="preconnect" href="https://s3.twcstorage.ru" crossorigin>
-  <link rel="stylesheet" href="style.css?v=69">
+  <link rel="stylesheet" href="style.css?v=70">
 </head>
 <body>
-  <script>window.SANCTUARY_MAINTENANCE = true; if (window.SANCTUARY_MAINTENANCE) document.documentElement.dataset.maintenance = 'true';</script>
+  <script>window.SANCTUARY_MAINTENANCE = false; if (window.SANCTUARY_MAINTENANCE) document.documentElement.dataset.maintenance = 'true';</script>
   <section id="maintenance-screen" aria-live="polite">
     <div class="maintenance-inner">
       <span class="maintenance-thread" aria-hidden="true"></span>
@@ -110,6 +110,10 @@
 
     </div>
 
+    <div class="entry-install-offer" id="entry-install-offer">
+      <button class="entry-install" id="entry-install" type="button">Install app</button>
+      <p class="entry-install-hint" id="entry-install-hint" hidden></p>
+    </div>
     <p class="entry-installed-note" id="entry-installed-note" hidden>Sanctuary installed. Close the browser and open it from your home screen</p>
 
 
@@ -158,7 +162,7 @@
       window.__deferredInstallPrompt = event;
     });
   </script>
-  <script src="videos-data.js?v=69"></script>
-  <script src="app.js?v=69"></script>
+  <script src="videos-data.js?v=70"></script>
+  <script src="app.js?v=70"></script>
 </body>
 </html>

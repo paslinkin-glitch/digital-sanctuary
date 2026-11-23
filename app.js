@@ -4726,7 +4726,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
 
   function syncInstallButton() {
     if (!entryInstallButton) return;
-    const available = !isStandaloneMode() && (Boolean(deferredPrompt) || isIos());
+    const available = !isStandaloneMode();
     const cardVisible = Boolean(
       (installCard && !installCard.hidden) || (iosInstallCard && !iosInstallCard.hidden)
     );
@@ -4869,12 +4869,11 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       return;
     }
 
-    if (installCard && !installCard.hidden) {
-      if (installCardInfo) {
-        installCardInfo.textContent = tr('installManual');
-        installCardInfo.hidden = false;
-      }
-      if (installCardHint) installCardHint.hidden = true;
+    if (entryInstallHint) {
+      entryInstallHint.textContent = tr('installManual');
+      entryInstallHint.hidden = false;
+      window.clearTimeout(installHintTimer);
+      installHintTimer = window.setTimeout(() => { entryInstallHint.hidden = true; }, 5000);
     }
   }
 

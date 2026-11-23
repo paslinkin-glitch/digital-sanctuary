@@ -117,3 +117,12 @@ html[data-tier="low"] .lang-switch{backdrop-filter:none!important;-webkit-backdr
 .entry.is-locked .entry-copy,.entry.is-locked .entry-gesture-guide,.entry.is-locked .quiet-presence{display:none!important}
 .entry.is-locked .entry-lock-rail,.entry.is-locked .entry-lock-time{display:none!important}
 @keyframes entryHint{0%,100%{opacity:.38;transform:translateY(0)}50%{opacity:.78;transform:translateY(-3px)}}
+
+
+/* v70 install offer and installed confirmation */
+.entry-install-offer{order:4!important;margin:18px auto 0!important;text-align:center}
+.entry-install{padding:8px 16px;border:.5px solid rgba(214,199,178,.32);border-radius:999px;background:rgba(12,12,14,.42);color:rgba(245,245,240,.78);font-family:var(--mono);font-size:8px;letter-spacing:.22em;text-transform:uppercase;backdrop-filter:blur(12px)}
+.entry.is-standalone .entry-install-offer{display:none!important}
+.entry-install-hint{max-width:280px;margin:10px auto 0;color:rgba(234,229,220,.56);font-family:var(--sans);font-size:11px;line-height:1.5;text-align:center}
+.entry.is-installed > .entry-install-offer{display:none!important}
+body .entry.is-installed > .entry-installed-note{display:block!important}
