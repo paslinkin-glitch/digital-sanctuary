@@ -66,8 +66,6 @@
 
   // Demo key from the brief. A static prototype must expose it; for production
   // this call belongs behind a tiny server-side proxy.
-  const API_KEY = 'b1155018766256bd1ea645df7d64e178';
-  const API_ENDPOINT = 'https://api.coverr.co/videos';
   const DEEPSEEK_PROXY_ENDPOINT = '/api/deepseek';
   const CAPTION_START_DELAY_MS = 1200;
   const CAPTION_MIN_WORDS = 4;
@@ -115,7 +113,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       finaleSub: 'ПРОСТРАНСТВО РЯДОМ',
       finaleBody1: 'Здесь ничего не нужно объяснять или исправлять.',
       finaleBody2: 'Тишина просто побыла рядом — ты можешь остаться в ней или вернуться в любой момент.',
-      loading: 'СОБИРАЕМ РАЗБОР...',
+      loading: 'ТИШИНА...',
       back: 'Ещё один сон',
       cycle1: 'Первый круг завершён. Теперь сон опускается глубже',
       cycleKicker: 'КРУГ I // ПРОЙДЕН',
@@ -156,7 +154,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       finaleSub: 'THE SPACE BESIDE YOU',
       finaleBody1: 'Nothing here needs to be explained or repaired.',
       finaleBody2: 'Silence simply stayed beside you — you can remain in it or return at any moment.',
-      loading: 'BUILDING YOUR VERDICT...',
+      loading: 'LISTENING...',
       back: 'One more dream',
       cycle1: 'First cycle complete. The dream now descends deeper',
       cycleKicker: 'CYCLE I // COMPLETE',
@@ -379,49 +377,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   };
 
   /* ---------------------------------------------------------- категории */
-
-  const CATEGORY_CONFIG = {
-    Shadow: {
-      query: 'dark fog night',
-      fallbackQuery: 'fog forest',
-      extendedQuery: 'dark shadow fog mist forest night mystery',
-      keywords: ['fog', 'mist', 'dark', 'night', 'forest', 'gloomy', 'mysterious', 'haze', 'tree', 'shadow'],
-      blocked: ['coffin', 'cemetery', 'halloween', 'zombie', 'skull', 'horror'],
-      preferred: ['VC1PStUKzq', 'Jl07Anu9ty'],
-    },
-    Trickster: {
-      query: 'smoke fire dark',
-      fallbackQuery: 'fire',
-      extendedQuery: 'trickster chaos smoke fire sparks dark',
-      keywords: ['smoke', 'fire', 'flame', 'sparks', 'match', 'lighter', 'burning', 'dark', 'night', 'inferno'],
-      blocked: ['sausage', 'cooking', 'food', 'barbecue'],
-      preferred: ['ZNfyKwAM8L', 'mGv4TVmkZo'],
-    },
-    Abyss: {
-      query: 'underwater dark ocean',
-      fallbackQuery: 'underwater',
-      extendedQuery: 'abyss deep underwater ocean dark submerged',
-      keywords: ['underwater', 'deep', 'ocean', 'sea', 'blue', 'submerged', 'dark', 'wreck', 'jellyfish', 'whale', 'boat'],
-      blocked: ['child', 'goldfish'],
-      preferred: ['ni2blF5Md9', '8KyLPpPmVA'],
-    },
-    Calm: {
-      query: 'rain window dark',
-      fallbackQuery: 'rain window',
-      extendedQuery: 'calm rain window night cozy warm',
-      keywords: ['rain', 'window', 'raindrops', 'cozy', 'calm', 'peaceful', 'warm', 'evening', 'lamp', 'coffee', 'dark', 'glass'],
-      blocked: [],
-      preferred: ['aMlApWfzYF', 'oEw7PbASZW'],
-    },
-    Path: {
-      query: 'empty road night',
-      fallbackQuery: 'night road',
-      extendedQuery: 'path empty road night journey headlights',
-      keywords: ['road', 'night', 'empty', 'street', 'driving', 'car', 'lights', 'city', 'journey', 'highway'],
-      blocked: ['halloween', 'makeup', 'zombie', 'skull'],
-      preferred: ['KK342MfQEX', 'fwwKKUlRGF'],
-    },
-  };
 
   /* ------------------------------------------------------ путь индивидуации */
 
@@ -706,17 +661,16 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
 
   const categories = slides.map((slide, index) => {
     const tag = slide.dataset.tag;
-    const config = CATEGORY_CONFIG[tag] || {};
     return {
       index,
       tag,
       el: slide,
-      query: config.query || tag,
-      fallbackQuery: config.fallbackQuery || '',
-      extendedQuery: config.extendedQuery || config.fallbackQuery || tag,
-      keywords: config.keywords || [],
-      blocked: config.blocked || [],
-      preferred: config.preferred || [],
+      query: tag,
+      fallbackQuery: '',
+      extendedQuery: tag,
+      keywords: [],
+      blocked: [],
+      preferred: [],
       clips: [],
       activeIndex: 0,
       lastPlayed: null,
@@ -4578,7 +4532,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
         setBreath(clamp(-dy / 140, -1, 1));
       }
     }
-    if (Math.hypot(dx, dy) > 12 && !gesture.moved) {
+    if (Math.hypot(dx, dy) > 22 && !gesture.moved) {
       gesture.moved = true;
       window.clearTimeout(holdTimer);
       window.clearTimeout(resonanceTimer);
