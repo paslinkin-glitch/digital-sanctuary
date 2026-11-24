@@ -19,10 +19,10 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
   <link rel="preconnect" href="https://s3.twcstorage.ru" crossorigin>
-  <link rel="stylesheet" href="style.css?v=75">
+  <link rel="stylesheet" href="style.css?v=76">
 </head>
 <body>
-  <script>window.SANCTUARY_MAINTENANCE = true; if (window.SANCTUARY_MAINTENANCE) document.documentElement.dataset.maintenance = 'true';</script>
+  <script>window.SANCTUARY_MAINTENANCE = false; if (window.SANCTUARY_MAINTENANCE) document.documentElement.dataset.maintenance = 'true';</script>
   <section id="maintenance-screen" aria-live="polite">
     <div class="maintenance-inner">
       <span class="maintenance-thread" aria-hidden="true"></span>
@@ -81,7 +81,8 @@
 </main>
 
   <div class="entry" id="entry" role="dialog" aria-label="Entrance to the sanctuary">
-    <div class="entry-aura" aria-hidden="true"></div>
+    <canvas class="entry-abstract" id="entry-abstract-canvas" aria-hidden="true"></canvas>
+    <div class="entry-abstract-shade" aria-hidden="true"></div>
     <div class="entry-topbar">
     <div class="lang-switch" id="lang-switch" role="group" aria-label="Language">
       <button class="lang-switch-btn" type="button" data-lang="ru">RU</button>
@@ -134,25 +135,21 @@
     </div>
     <div class="finale-glow" aria-hidden="true"></div>
     <div class="finale-shell">
-      <div class="finale-zone finale-zone--top">
-        <p class="finale-reflection" id="finale-reflection" aria-live="polite">You lingered where the gaze usually slips past. The space remembered that response — the door will open again in two hours, when the silence settles.</p>
-        <p class="finale-door-note" id="finale-door-note">The door closes for two hours so the silence can settle</p>
+      <div class="finale-divider finale-divider--top" aria-hidden="true"></div>
+      <p class="finale-reflection" id="finale-reflection" aria-live="polite">You lingered where the gaze usually slips past. The space remembered that response.</p>
+      <p class="finale-door-note" id="finale-door-note">The door closes for two hours so the silence can settle</p>
+      <div class="finale-time">
+        <p class="finale-countdown" id="finale-countdown">02:00:00</p>
+        <button class="finale-notify" id="notify-return" type="button">Notify me in 2 hours</button>
       </div>
-      <div class="finale-zone finale-zone--center">
+      <div class="finale-divider finale-divider--bottom" aria-hidden="true"></div>
+      <div class="finale-art-block">
+        <p class="finale-art-note" id="finale-art-note">A unique painting from this session</p>
         <div class="finale-artifact" id="finale-artifact" hidden>
           <canvas id="session-artifact" width="1080" height="1350" aria-label="Your quiet artifact"></canvas>
         </div>
       </div>
-      <div class="finale-zone finale-zone--bottom">
-        <div class="finale-door-module">
-          <div class="finale-timer">
-            <p class="finale-lock-label" id="finale-lock-label">CONTINUATION IN</p>
-            <p class="finale-countdown" id="finale-countdown">02:00:00</p>
-          </div>
-          <button class="finale-btn finale-btn--glass finale-notify" id="notify-return" type="button">Notify me in 2 hours</button>
-        </div>
-        <button class="finale-gift" id="share-silence" type="button">Gift silence to a friend <span aria-hidden="true">↗</span></button>
-      </div>
+      <button class="finale-gift" id="share-silence" type="button">Share</button>
     </div>
   </section>
 
@@ -169,7 +166,7 @@
       window.__deferredInstallPrompt = event;
     });
   </script>
-  <script src="videos-data.js?v=75"></script>
-  <script src="app.js?v=75"></script>
+  <script src="videos-data.js?v=76"></script>
+  <script src="app.js?v=76"></script>
 </body>
 </html>

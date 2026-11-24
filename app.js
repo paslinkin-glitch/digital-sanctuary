@@ -100,7 +100,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       installHelp: 'Как установить',
       installManual: 'Меню браузера ⋮ → Установить приложение / На экран Домой',
       finaleInstall: 'Добавить на экран',
-      finaleGift: 'Подарить тишину другу',
+      finaleGift: 'Поделиться',
+      artNote: 'Уникальная картина этой сессии',
       installAccepted: 'Приложение добавлено на экран',
       iosKicker: 'СОХРАНИТЬ УБЕЖИЩЕ',
       iosSafari1: 'Нажмите «Поделиться» на нижней панели',
@@ -173,7 +174,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       installHelp: 'How to install',
       installManual: 'Browser menu ⋮ → Install app / Add to Home Screen',
       finaleInstall: 'Add to screen',
-      finaleGift: 'Gift silence to a friend',
+      finaleGift: 'Share',
+      artNote: 'A unique painting from this session',
       installAccepted: 'App added to your screen',
       iosKicker: 'SAVE THE SANCTUARY',
       iosSafari1: 'Tap Share in the bottom bar',
@@ -589,6 +591,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   const finaleCountdownEl = document.getElementById('finale-countdown');
   const finaleReflectionEl = document.getElementById('finale-reflection');
   const finaleDoorNote = document.getElementById('finale-door-note');
+  const finaleArtNote = document.getElementById('finale-art-note');
   const finaleLockInlineEl = document.getElementById('finale-lock-inline');
   const finaleLockLabel = document.getElementById('finale-lock-label');
   const copySnapshotButton = document.getElementById('copy-snapshot');
@@ -638,6 +641,132 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     window.clearTimeout(presenceTimer);
     presenceTimer = window.setTimeout(tick, 25000 + Math.random() * 15000);
   }
+  const ENTRY_PALETTE = ['#D6C7B2', '#7E8F82', '#5D6D82', '#A67B63', '#8A798D'];
+  const ENTRY_HISTORY_KEY = 'sanctuary-entry-abstract-history';
+
+  function initEntryAbstract() {
+    const canvas = document.getElementById('entry-abstract-canvas');
+    if (!canvas) return;
+    const entry = document.getElementById('entry');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    const width = Math.max(1, window.innerWidth);
+    const height = Math.max(1, window.innerHeight);
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+
+    let history = [];
+    try { history = JSON.parse(localStorage.getItem(ENTRY_HISTORY_KEY) || '[]'); } catch (_) { history = []; }
+    if (!Array.isArray(history)) history = [];
+    history = history.slice(-10);
+
+    let seed = 0;
+    let combo = [];
+    for (let attempt = 0; attempt < 80; attempt += 1) {
+      const raw = (window.crypto && crypto.getRandomValues)
+        ? crypto.getRandomValues(new Uint32Array(1))[0]
+        : Math.floor(Math.random() * 0xFFFFFFFF);
+      seed = raw >>> 0;
+      const count = seed % 3 === 0 ? 3 : 2;
+      const pool = ENTRY_PALETTE.map((_, i) => i);
+      const chosen = [];
+      let local = seed;
+      for (let i = 0; i < count; i += 1) {
+        local = (local * 1664525 + 1013904223) >>> 0;
+        chosen.push(pool.splice(local % pool.length, 1)[0]);
+      }
+      combo = chosen.sort((a, b) => a - b);
+      const key = combo.join('-');
+      const used = history.some((item) => item && (item.seed === seed || item.combo === key));
+      if (!used) break;
+    }
+    const comboKey = combo.join('-');
+    history.push({ seed, combo: comboKey });
+    history = history.slice(-10);
+    try { localStorage.setItem(ENTRY_HISTORY_KEY, JSON.stringify(history)); } catch (_) {}
+    canvas.dataset.seed = String(seed);
+    canvas.dataset.harmony = combo.map((i) => ENTRY_PALETTE[i]).join(',');
+
+    function makeRandom(value) {
+      let state = value >>> 0;
+      return function random() {
+        state = (state * 1664525 + 1013904223) >>> 0;
+        return state / 4294967296;
+      };
+    }
+    const random = makeRandom(seed);
+    const colors = combo.map((i) => ENTRY_PALETTE[i]);
+
+    function rgba(hex, alpha) {
+      const n = parseInt(hex.slice(1), 16);
+      return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha.toFixed(3)})`;
+    }
+    function layer(draw) {
+      const off = document.createElement('canvas');
+      off.width = canvas.width;
+      off.height = canvas.height;
+      const c = off.getContext('2d');
+      c.setTransform(dpr, 0, 0, dpr, 0, 0);
+      draw(c, width, height);
+      return off;
+    }
+
+    const waves = layer((c, W, H) => {
+      const count = 4 + Math.floor(random() * 3);
+      c.globalCompositeOperation = 'screen';
+      for (let i = 0; i < count; i += 1) {
+        const color = colors[i % colors.length];
+        const y = H * (0.14 + random() * 0.72);
+        const amp = H * (0.08 + random() * 0.18);
+        const alpha = 0.06 + random() * 0.16;
+        const grad = c.createLinearGradient(0, y - amp, W, y + amp);
+        grad.addColorStop(0, rgba(color, 0));
+        grad.addColorStop(0.22, rgba(color, alpha));
+        grad.addColorStop(0.55, rgba(colors[(i + 1) % colors.length], alpha * 0.8));
+        grad.addColorStop(0.82, rgba(color, alpha * 0.6));
+        grad.addColorStop(1, rgba(color, 0));
+        c.fillStyle = grad;
+        c.globalAlpha = 0.9;
+        c.beginPath();
+        c.moveTo(-W * 0.15, y);
+        c.bezierCurveTo(W * (0.18 + random() * 0.12), y - amp, W * (0.36 + random() * 0.1), y + amp, W * 0.56, y - amp * 0.2);
+        c.bezierCurveTo(W * 0.76, y - amp * 0.85, W * 0.9, y + amp * 0.6, W * 1.15, y - amp * 0.1);
+        c.lineTo(W * 1.15, H * 1.1);
+        c.lineTo(-W * 0.15, H * 1.1);
+        c.closePath();
+        c.fill();
+      }
+      c.globalCompositeOperation = 'source-over';
+    });
+
+    const threads = layer((c, W, H) => {
+      c.globalCompositeOperation = 'screen';
+      const count = 9 + Math.floor(random() * 5);
+      for (let i = 0; i < count; i += 1) {
+        const color = colors[i % colors.length];
+        c.strokeStyle = rgba(color, 0.08 + random() * 0.14);
+        c.lineWidth = 0.6 + random() * 0.7;
+        c.beginPath();
+        const y1 = H * (0.08 + random() * 0.8);
+        const y2 = H * (0.08 + random() * 0.8);
+        c.moveTo(-W * 0.1, y1);
+        c.bezierCurveTo(W * (0.2 + random() * 0.2), H * (random()), W * (0.6 + random() * 0.2), H * (random()), W * 1.1, y2);
+        c.stroke();
+      }
+      c.globalCompositeOperation = 'source-over';
+    });
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = '#070709';
+    ctx.fillRect(0, 0, width, height);
+    ctx.drawImage(waves, 0, 0, width, height);
+    ctx.drawImage(threads, 0, 0, width, height);
+  }
+
   function applyLanguage() {
     document.documentElement.lang = currentLang;
     document.title = tr('docTitle');
@@ -701,6 +830,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (finaleInstallButton) finaleInstallButton.textContent = tr('finaleInstall');
     if (finaleLockLabel) finaleLockLabel.textContent = tr('lockLabel');
     if (finaleDoorNote) finaleDoorNote.textContent = tr('doorNote');
+    if (finaleArtNote) finaleArtNote.textContent = tr('artNote');
     if (backToStartButton) backToStartButton.textContent = tr('back');
     const loading = finalePortraitEl && finalePortraitEl.querySelector('.finale-loading');
     if (loading) loading.textContent = tr('loading');
@@ -4617,6 +4747,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
   if (connection && typeof connection.addEventListener === 'function') connection.addEventListener('change', () => setQuality(false));
   startPresenceCounter();
+  initEntryAbstract();
   trackEvent('entry_view', { mode: isStandaloneMode() ? 'pwa' : 'browser', directApp: APP_ENTRY });
   window.addEventListener('load', () => trackEvent('threshold_open'), { once: true });
   if (notifyReturnButton) {

@@ -68,3 +68,38 @@
 @media (max-width:380px){.finale-artifact{height:min(31vh,230px)!important}.finale-reflection{font-size:18px!important}.finale-door-module{padding:9px 12px 6px}}
 @media (min-width:700px){.finale-shell{width:min(54vw,480px)!important}.finale-artifact{height:min(33vh,260px)!important;max-width:min(70vw,236px)!important}}
 @media (prefers-reduced-motion:reduce){.entry-aura,.entry.is-locked .entry-aura{animation:none!important;opacity:.9}}
+
+
+/* v76 generative threshold and seven-step finale */
+.entry{background:#070709!important}
+.entry-abstract{position:absolute;inset:0;z-index:0;width:100%;height:100%;display:block;pointer-events:none}
+.entry-abstract-shade{position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse 72% 58% at 50% 44%,rgba(7,7,9,.10) 0%,rgba(7,7,9,.38) 56%,rgba(7,7,9,.74) 100%),linear-gradient(180deg,rgba(7,7,9,.22),rgba(7,7,9,0) 26%,rgba(7,7,9,0) 70%,rgba(7,7,9,.48))}
+.entry-aura{display:none!important}
+
+.finale{overflow:hidden!important;align-items:stretch!important;justify-content:center!important;padding:max(14px,env(safe-area-inset-top)) max(18px,5vw) max(14px,env(safe-area-inset-bottom))!important}
+.finale-shell{height:100%!important;max-height:100%!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:space-between!important;gap:0!important;width:min(88vw,430px)!important;margin:0 auto!important;padding:0!important;text-align:center!important}
+.finale-divider{display:block!important;flex:0 0 auto;width:clamp(56px,18vw,96px)!important;height:1px!important;margin:0 auto!important;background:linear-gradient(90deg,transparent,rgba(214,199,178,.55),transparent)!important;transform-origin:center;animation:finaleDivider 5.8s ease-in-out infinite!important}
+.finale-divider--bottom{animation-delay:-2.9s!important}
+@keyframes finaleDivider{0%,100%{opacity:.35;transform:scaleX(.85)}50%{opacity:.85;transform:scaleX(1.1)}}
+.finale-reflection{font-family:var(--serif)!important;font-size:clamp(19px,4.8vw,24px)!important;font-weight:400!important;line-height:1.32!important;color:#F5F5F0!important;max-width:330px!important;margin:0 auto!important;text-align:center!important;display:-webkit-box!important;-webkit-line-clamp:3!important;-webkit-box-orient:vertical!important;overflow:hidden!important;text-shadow:0 2px 20px rgba(7,7,9,.7)}
+.finale-door-note{font-family:var(--serif)!important;font-size:clamp(13px,3.4vw,15px)!important;font-style:italic!important;line-height:1.5!important;color:rgba(245,245,240,.62)!important;letter-spacing:.03em!important;max-width:330px!important;margin:0 auto!important;text-align:center!important}
+.finale-time{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-height:0}
+.finale-countdown{font-family:var(--mono)!important;font-size:clamp(26px,6.8vw,34px)!important;font-weight:300!important;line-height:1.2!important;letter-spacing:.14em!important;font-variant-numeric:tabular-nums!important;color:#D6C7B2!important;margin:0!important;opacity:1!important;text-shadow:0 0 20px rgba(214,199,178,.16)}
+.finale-notify{width:auto!important;min-height:0!important;margin:0!important;padding:2px!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;color:rgba(245,245,240,.45)!important;font-family:var(--sans)!important;font-size:9.5px!important;font-weight:300!important;letter-spacing:.08em!important;line-height:1.4!important;opacity:.45!important;text-transform:none!important}
+.finale-notify:hover,.finale-notify:focus-visible{color:rgba(245,245,240,.78)!important;background:transparent!important}
+.finale-art-block{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(6px,1.2vh,10px);min-height:0;width:100%}
+.finale-art-note{font-family:var(--sans)!important;font-size:clamp(12px,3.2vw,14px)!important;font-weight:300!important;line-height:1.45!important;color:rgba(245,245,240,.58)!important;max-width:330px!important;margin:0 auto!important;text-align:center!important}
+.finale-artifact{height:min(38vh,310px)!important;width:auto!important;max-width:min(76vw,250px)!important;aspect-ratio:4/5!important;padding:0!important;margin:0 auto!important;border:1px solid rgba(214,199,178,.14)!important;border-radius:18px!important;background:transparent!important;overflow:hidden!important;box-shadow:0 18px 48px rgba(7,7,9,.34)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;position:relative!important}
+.finale-artifact::after{content:"";position:absolute;inset:0;border-radius:17px;pointer-events:none;box-shadow:inset 0 0 46px rgba(7,7,9,.32),inset 0 0 0 1px rgba(7,7,9,.12)}
+.finale-artifact canvas{width:100%!important;height:100%!important;aspect-ratio:auto!important;object-fit:cover!important;border-radius:17px!important;display:block!important}
+.finale-gift{width:auto!important;min-height:0!important;margin:0!important;padding:4px 6px max(4px,env(safe-area-inset-bottom))!important;border:0!important;border-radius:0!important;background:transparent!important;color:rgba(245,245,240,.48)!important;font-family:var(--sans)!important;font-size:13px!important;font-weight:300!important;letter-spacing:.12em!important;text-transform:uppercase!important;line-height:1.4!important;text-decoration:none!important;opacity:1;transition:color .5s var(--organic)!important}
+.finale-gift:hover,.finale-gift:focus-visible,.finale-gift:active{color:rgba(245,245,240,.9)!important;background:transparent!important}
+.finale-install{display:none!important}
+.finale-door-module,.finale-timer,.finale-lock-label{display:none!important}
+@media (max-width:380px){.finale-reflection{font-size:19px!important}.finale-countdown{font-size:26px!important}.finale-artifact{height:min(37vh,300px)!important}.finale-art-note{font-size:12px!important}}
+@media (min-width:700px){.finale-shell{width:min(54vw,480px)!important}.finale-artifact{height:310px!important;max-width:248px!important}}
+@media (prefers-reduced-motion:reduce){.finale-divider{animation:none!important;opacity:.65!important;transform:none!important}}
+
+.entry-abstract{animation:abstractDrift 16s ease-in-out infinite alternate!important;transform-origin:50% 45%;will-change:transform,opacity;opacity:.94}
+@keyframes abstractDrift{0%{transform:scale(1) translate3d(0,0,0);opacity:.88}45%{transform:scale(1.025) translate3d(-.8%,-.5%,0);opacity:1}100%{transform:scale(1.04) translate3d(.7%,.6%,0);opacity:.9}}
+@media (prefers-reduced-motion:reduce){.entry-abstract{animation:none!important;opacity:.94!important}}
