@@ -641,130 +641,232 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     window.clearTimeout(presenceTimer);
     presenceTimer = window.setTimeout(tick, 25000 + Math.random() * 15000);
   }
-  const ENTRY_PALETTE = ['#D6C7B2', '#7E8F82', '#5D6D82', '#A67B63', '#8A798D'];
-  const ENTRY_HISTORY_KEY = 'sanctuary-entry-abstract-history';
+  const ENTRY_MOTIFS = ['mountains', 'sea', 'forest', 'dunes', 'night'];
+  const ENTRY_LANDSCAPE_KEY = 'sanctuary-entry-landscape-history';
+  let entryLandscapeState = null;
+  let entryResizeBound = false;
 
   function initEntryAbstract() {
     const canvas = document.getElementById('entry-abstract-canvas');
     if (!canvas) return;
-    const entry = document.getElementById('entry');
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
-    const width = Math.max(1, window.innerWidth);
-    const height = Math.max(1, window.innerHeight);
-    canvas.width = Math.round(width * dpr);
-    canvas.height = Math.round(height * dpr);
-    canvas.style.width = width + 'px';
-    canvas.style.height = height + 'px';
-
-    let history = [];
-    try { history = JSON.parse(localStorage.getItem(ENTRY_HISTORY_KEY) || '[]'); } catch (_) { history = []; }
-    if (!Array.isArray(history)) history = [];
-    history = history.slice(-10);
-
-    let seed = 0;
-    let combo = [];
-    for (let attempt = 0; attempt < 80; attempt += 1) {
+    if (!entryLandscapeState) {
+      let history = [];
+      try { history = JSON.parse(localStorage.getItem(ENTRY_LANDSCAPE_KEY) || '[]'); } catch (_) { history = []; }
+      if (!Array.isArray(history)) history = [];
+      history = history.slice(-5);
       const raw = (window.crypto && crypto.getRandomValues)
         ? crypto.getRandomValues(new Uint32Array(1))[0]
         : Math.floor(Math.random() * 0xFFFFFFFF);
-      seed = raw >>> 0;
-      const count = seed % 3 === 0 ? 3 : 2;
-      const pool = ENTRY_PALETTE.map((_, i) => i);
-      const chosen = [];
-      let local = seed;
-      for (let i = 0; i < count; i += 1) {
-        local = (local * 1664525 + 1013904223) >>> 0;
-        chosen.push(pool.splice(local % pool.length, 1)[0]);
-      }
-      combo = chosen.sort((a, b) => a - b);
-      const key = combo.join('-');
-      const used = history.some((item) => item && (item.seed === seed || item.combo === key));
-      if (!used) break;
+      const seed = raw >>> 0;
+      const recentMotifs = history.map((item) => item && item.motif).filter(Boolean);
+      let available = ENTRY_MOTIFS.filter((motif) => !recentMotifs.includes(motif));
+      if (!available.length) available = ENTRY_MOTIFS.filter((motif) => motif !== recentMotifs[recentMotifs.length - 1]);
+      if (!available.length) available = ENTRY_MOTIFS.slice();
+      const motif = available[seed % available.length];
+      entryLandscapeState = { seed, motif };
+      history.push({ seed, motif });
+      try { localStorage.setItem(ENTRY_LANDSCAPE_KEY, JSON.stringify(history.slice(-5))); } catch (_) {}
+      canvas.dataset.seed = String(seed);
+      canvas.dataset.motif = motif;
     }
-    const comboKey = combo.join('-');
-    history.push({ seed, combo: comboKey });
-    history = history.slice(-10);
-    try { localStorage.setItem(ENTRY_HISTORY_KEY, JSON.stringify(history)); } catch (_) {}
-    canvas.dataset.seed = String(seed);
-    canvas.dataset.harmony = combo.map((i) => ENTRY_PALETTE[i]).join(',');
-
-    function makeRandom(value) {
-      let state = value >>> 0;
-      return function random() {
-        state = (state * 1664525 + 1013904223) >>> 0;
-        return state / 4294967296;
-      };
+    drawEntryLandscape(canvas);
+    if (!entryResizeBound) {
+      entryResizeBound = true;
+      window.addEventListener('resize', () => drawEntryLandscape(canvas), { passive: true });
     }
-    const random = makeRandom(seed);
-    const colors = combo.map((i) => ENTRY_PALETTE[i]);
+  }
 
-    function rgba(hex, alpha) {
-      const n = parseInt(hex.slice(1), 16);
-      return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha.toFixed(3)})`;
-    }
-    function layer(draw) {
-      const off = document.createElement('canvas');
-      off.width = canvas.width;
-      off.height = canvas.height;
-      const c = off.getContext('2d');
-      c.setTransform(dpr, 0, 0, dpr, 0, 0);
-      draw(c, width, height);
-      return off;
-    }
-
-    const waves = layer((c, W, H) => {
-      const count = 4 + Math.floor(random() * 3);
-      c.globalCompositeOperation = 'screen';
-      for (let i = 0; i < count; i += 1) {
-        const color = colors[i % colors.length];
-        const y = H * (0.14 + random() * 0.72);
-        const amp = H * (0.08 + random() * 0.18);
-        const alpha = 0.06 + random() * 0.16;
-        const grad = c.createLinearGradient(0, y - amp, W, y + amp);
-        grad.addColorStop(0, rgba(color, 0));
-        grad.addColorStop(0.22, rgba(color, alpha));
-        grad.addColorStop(0.55, rgba(colors[(i + 1) % colors.length], alpha * 0.8));
-        grad.addColorStop(0.82, rgba(color, alpha * 0.6));
-        grad.addColorStop(1, rgba(color, 0));
-        c.fillStyle = grad;
-        c.globalAlpha = 0.9;
-        c.beginPath();
-        c.moveTo(-W * 0.15, y);
-        c.bezierCurveTo(W * (0.18 + random() * 0.12), y - amp, W * (0.36 + random() * 0.1), y + amp, W * 0.56, y - amp * 0.2);
-        c.bezierCurveTo(W * 0.76, y - amp * 0.85, W * 0.9, y + amp * 0.6, W * 1.15, y - amp * 0.1);
-        c.lineTo(W * 1.15, H * 1.1);
-        c.lineTo(-W * 0.15, H * 1.1);
-        c.closePath();
-        c.fill();
-      }
-      c.globalCompositeOperation = 'source-over';
-    });
-
-    const threads = layer((c, W, H) => {
-      c.globalCompositeOperation = 'screen';
-      const count = 9 + Math.floor(random() * 5);
-      for (let i = 0; i < count; i += 1) {
-        const color = colors[i % colors.length];
-        c.strokeStyle = rgba(color, 0.08 + random() * 0.14);
-        c.lineWidth = 0.6 + random() * 0.7;
-        c.beginPath();
-        const y1 = H * (0.08 + random() * 0.8);
-        const y2 = H * (0.08 + random() * 0.8);
-        c.moveTo(-W * 0.1, y1);
-        c.bezierCurveTo(W * (0.2 + random() * 0.2), H * (random()), W * (0.6 + random() * 0.2), H * (random()), W * 1.1, y2);
-        c.stroke();
-      }
-      c.globalCompositeOperation = 'source-over';
-    });
-
+  function drawEntryLandscape(canvas) {
+    const state = entryLandscapeState;
+    if (!state) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    const W = Math.max(1, window.innerWidth);
+    const H = Math.max(1, window.innerHeight);
+    canvas.width = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = '#070709';
-    ctx.fillRect(0, 0, width, height);
-    ctx.drawImage(waves, 0, 0, width, height);
-    ctx.drawImage(threads, 0, 0, width, height);
+    ctx.clearRect(0, 0, W, H);
+
+    let local = state.seed >>> 0;
+    const rand = () => {
+      local = (local * 1664525 + 1013904223) >>> 0;
+      return local / 4294967296;
+    };
+    const rgba = (hex, a) => {
+      const n = parseInt(hex.slice(1), 16);
+      return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a.toFixed(3)})`;
+    };
+
+    const sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, '#070709');
+    sky.addColorStop(0.46, '#090A0D');
+    sky.addColorStop(1, '#070709');
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, W, H);
+
+    const mist = (y, a, color) => {
+      const g = ctx.createLinearGradient(0, y - H * 0.12, 0, y + H * 0.14);
+      g.addColorStop(0, rgba(color, 0));
+      g.addColorStop(0.48, rgba(color, a));
+      g.addColorStop(1, rgba(color, 0));
+      ctx.fillStyle = g;
+      ctx.fillRect(0, y - H * 0.14, W, H * 0.28);
+    };
+
+    if (state.motif === 'mountains') {
+      mist(H * 0.58, 0.045, '#D6C7B2');
+      const ridges = 4 + (state.seed % 2);
+      for (let i = 0; i < ridges; i += 1) {
+        const baseY = H * (0.32 + i * 0.075);
+        const amp = H * (0.12 + rand() * 0.12);
+        const color = i % 2 ? '#7E8F82' : '#5D6D82';
+        const g = ctx.createLinearGradient(0, baseY - amp, 0, H * 0.86);
+        g.addColorStop(0, rgba(color, 0.14 + i * 0.018));
+        g.addColorStop(0.55, rgba(color, 0.075));
+        g.addColorStop(1, rgba('#070709', 0.02));
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.moveTo(-W * 0.08, H * 0.9);
+        ctx.lineTo(-W * 0.08, baseY + amp * 0.3);
+        let x = -W * 0.08;
+        while (x < W * 1.08) {
+          const nx = x + W * (0.14 + rand() * 0.2);
+          const peak = baseY - amp * (0.2 + rand() * 0.9);
+          ctx.quadraticCurveTo((x + nx) / 2, peak, nx, baseY + amp * (rand() * 0.18));
+          x = nx;
+        }
+        ctx.lineTo(W * 1.08, H * 0.9);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = rgba('#D6C7B2', 0.13 + i * 0.012);
+        ctx.lineWidth = 0.6 + rand() * 0.5;
+        ctx.beginPath();
+        let sx = -W * 0.08;
+        ctx.moveTo(sx, baseY + amp * 0.32);
+        while (sx < W * 1.08) {
+          const nx = sx + W * (0.16 + rand() * 0.2);
+          ctx.quadraticCurveTo((sx + nx) / 2, baseY - amp * (0.15 + rand() * 0.5), nx, baseY + amp * 0.2);
+          sx = nx;
+        }
+        ctx.stroke();
+      }
+    } else if (state.motif === 'sea') {
+      const horizon = H * 0.47;
+      const glow = ctx.createRadialGradient(W * 0.52, horizon, 0, W * 0.52, horizon, W * 0.7);
+      glow.addColorStop(0, rgba('#D6C7B2', 0.15));
+      glow.addColorStop(0.4, rgba('#5D6D82', 0.1));
+      glow.addColorStop(1, rgba('#070709', 0));
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, W, H);
+      mist(horizon, 0.05, '#D6C7B2');
+      ctx.strokeStyle = rgba('#D6C7B2', 0.24);
+      ctx.lineWidth = 0.7;
+      ctx.beginPath(); ctx.moveTo(W * 0.06, horizon); ctx.lineTo(W * 0.94, horizon); ctx.stroke();
+      const water = ctx.createLinearGradient(0, horizon, 0, H);
+      water.addColorStop(0, rgba('#5D6D82', 0.14));
+      water.addColorStop(0.55, rgba('#5D6D82', 0.06));
+      water.addColorStop(1, rgba('#070709', 0.02));
+      ctx.fillStyle = water;
+      ctx.fillRect(0, horizon, W, H - horizon);
+      for (let i = 0; i < 28; i += 1) {
+        const y = horizon + (H - horizon) * rand() * 0.9;
+        const x = W * rand() * 0.8;
+        const len = W * (0.04 + rand() * 0.22);
+        ctx.strokeStyle = rgba(i % 4 ? '#D6C7B2' : '#8A798D', 0.035 + rand() * 0.08);
+        ctx.lineWidth = 0.5 + rand() * 1;
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + len, y); ctx.stroke();
+      }
+    } else if (state.motif === 'forest') {
+      mist(H * 0.54, 0.075, '#7E8F82');
+      mist(H * 0.72, 0.045, '#D6C7B2');
+      const trees = 22 + Math.floor(rand() * 10);
+      for (let i = 0; i < trees; i += 1) {
+        const x = W * (0.04 + rand() * 0.92);
+        const top = H * (0.17 + rand() * 0.3);
+        const bottom = H * (0.68 + rand() * 0.2);
+        const color = i % 3 ? '#7E8F82' : '#D6C7B2';
+        ctx.strokeStyle = rgba(color, 0.045 + rand() * 0.11);
+        ctx.lineWidth = 0.5 + rand() * 1.5;
+        ctx.beginPath();
+        ctx.moveTo(x, top);
+        ctx.bezierCurveTo(x + (rand() - 0.5) * W * 0.03, H * 0.42, x + (rand() - 0.5) * W * 0.04, H * 0.6, x, bottom);
+        ctx.stroke();
+        if (rand() > 0.55) {
+          ctx.strokeStyle = rgba(color, 0.035 + rand() * 0.05);
+          ctx.lineWidth = 0.4;
+          ctx.beginPath();
+          ctx.moveTo(x, top + (bottom - top) * 0.32);
+          ctx.quadraticCurveTo(x + W * 0.06, top + (bottom - top) * 0.25, x + W * 0.09, top + (bottom - top) * 0.38);
+          ctx.stroke();
+        }
+      }
+    } else if (state.motif === 'dunes') {
+      const dunes = 4;
+      for (let i = 0; i < dunes; i += 1) {
+        const baseY = H * (0.42 + i * 0.11);
+        const color = i % 2 ? '#D6C7B2' : '#A67B63';
+        const g = ctx.createLinearGradient(0, baseY, 0, H);
+        g.addColorStop(0, rgba(color, 0.12 + i * 0.025));
+        g.addColorStop(0.6, rgba(color, 0.055));
+        g.addColorStop(1, rgba('#070709', 0.01));
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.moveTo(-W * 0.1, H * 0.9);
+        ctx.lineTo(-W * 0.1, baseY);
+        let x = -W * 0.1;
+        while (x < W * 1.1) {
+          const nx = x + W * (0.28 + rand() * 0.25);
+          ctx.bezierCurveTo(x + W * 0.12, baseY - H * (0.03 + rand() * 0.1), nx - W * 0.1, baseY + H * (0.02 + rand() * 0.08), nx, baseY + H * (0.01 + rand() * 0.03));
+          x = nx;
+        }
+        ctx.lineTo(W * 1.1, H * 0.9);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = rgba('#D6C7B2', 0.16 + i * 0.015);
+        ctx.lineWidth = 0.6;
+        ctx.beginPath();
+        ctx.moveTo(-W * 0.1, baseY);
+        ctx.quadraticCurveTo(W * 0.42, baseY - H * 0.08, W * 1.1, baseY + H * 0.02);
+        ctx.stroke();
+      }
+    } else {
+      mist(H * 0.62, 0.035, '#8A798D');
+      const stars = 34 + Math.floor(rand() * 18);
+      for (let i = 0; i < stars; i += 1) {
+        const x = rand() * W;
+        const y = rand() * H * 0.52;
+        const a = 0.12 + rand() * 0.38;
+        ctx.fillStyle = rgba(i % 5 ? '#D6C7B2' : '#8A798D', a);
+        ctx.beginPath();
+        ctx.arc(x, y, 0.4 + rand() * 1.1, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      const beam = ctx.createLinearGradient(W * 0.52, 0, W * 0.48, H);
+      beam.addColorStop(0, rgba('#8A798D', 0.09));
+      beam.addColorStop(0.5, rgba('#D6C7B2', 0.035));
+      beam.addColorStop(1, rgba('#070709', 0));
+      ctx.fillStyle = beam;
+      ctx.fillRect(W * 0.3, 0, W * 0.4, H);
+      const hill = ctx.createLinearGradient(0, H * 0.64, 0, H);
+      hill.addColorStop(0, rgba('#5D6D82', 0.16));
+      hill.addColorStop(1, rgba('#070709', 0.02));
+      ctx.fillStyle = hill;
+      ctx.beginPath();
+      ctx.moveTo(0, H * 0.72);
+      ctx.bezierCurveTo(W * 0.2, H * 0.64, W * 0.32, H * 0.76, W * 0.5, H * 0.69);
+      ctx.bezierCurveTo(W * 0.7, H * 0.62, W * 0.82, H * 0.75, W, H * 0.66);
+      ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = rgba('#D6C7B2', 0.12); ctx.lineWidth = 0.6;
+      ctx.beginPath();
+      ctx.moveTo(0, H * 0.72);
+      ctx.bezierCurveTo(W * 0.2, H * 0.64, W * 0.32, H * 0.76, W * 0.5, H * 0.69);
+      ctx.bezierCurveTo(W * 0.7, H * 0.62, W * 0.82, H * 0.75, W, H * 0.66);
+      ctx.stroke();
+    }
   }
 
   function applyLanguage() {
