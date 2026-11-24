@@ -19,10 +19,10 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
   <link rel="preconnect" href="https://s3.twcstorage.ru" crossorigin>
-  <link rel="stylesheet" href="style.css?v=74">
+  <link rel="stylesheet" href="style.css?v=75">
 </head>
 <body>
-  <script>window.SANCTUARY_MAINTENANCE = true; if (window.SANCTUARY_MAINTENANCE) document.documentElement.dataset.maintenance = 'true';</script>
+  <script>window.SANCTUARY_MAINTENANCE = false; if (window.SANCTUARY_MAINTENANCE) document.documentElement.dataset.maintenance = 'true';</script>
   <section id="maintenance-screen" aria-live="polite">
     <div class="maintenance-inner">
       <span class="maintenance-thread" aria-hidden="true"></span>
@@ -81,15 +81,7 @@
 </main>
 
   <div class="entry" id="entry" role="dialog" aria-label="Entrance to the sanctuary">
-    <div class="ambient-mesh ambient-mesh--entry" aria-hidden="true">
-      <span class="ambient-orb ambient-orb--indigo"></span>
-      <span class="ambient-orb ambient-orb--amber"></span>
-      <span class="ambient-orb ambient-orb--smoke"></span>
-    </div>
     <div class="entry-aura" aria-hidden="true"></div>
-    <div class="entry-breath" aria-hidden="true"></div>
-    <div class="entry-grain" aria-hidden="true"></div>
-    <div class="aura-core" aria-hidden="true"></div>
     <div class="entry-topbar">
     <div class="lang-switch" id="lang-switch" role="group" aria-label="Language">
       <button class="lang-switch-btn" type="button" data-lang="ru">RU</button>
@@ -142,22 +134,24 @@
     </div>
     <div class="finale-glow" aria-hidden="true"></div>
     <div class="finale-shell">
-      <p class="finale-reflection" id="finale-reflection" aria-live="polite">You lingered where the gaze usually slips past. The space remembered that response — the door will open again in two hours, when the silence settles.</p>
-      <div class="finale-door-line" aria-hidden="true"></div>
-      <p class="finale-door-note" id="finale-door-note">The door closes for two hours so the silence can settle</p>
-      <div class="finale-timer">
-        <p class="finale-lock-label" id="finale-lock-label">CONTINUATION IN</p>
-        <p class="finale-countdown" id="finale-countdown">02:00:00</p>
+      <div class="finale-zone finale-zone--top">
+        <p class="finale-reflection" id="finale-reflection" aria-live="polite">You lingered where the gaze usually slips past. The space remembered that response — the door will open again in two hours, when the silence settles.</p>
+        <p class="finale-door-note" id="finale-door-note">The door closes for two hours so the silence can settle</p>
       </div>
-      <button class="finale-btn finale-btn--glass finale-notify" id="notify-return" type="button">Notify me in 2 hours</button>
-      <div class="finale-divider" aria-hidden="true"><span></span></div>
-      <div class="finale-artifact" id="finale-artifact" hidden>
-        <canvas id="session-artifact" width="1080" height="1350" aria-label="Your quiet artifact"></canvas>
+      <div class="finale-zone finale-zone--center">
+        <div class="finale-artifact" id="finale-artifact" hidden>
+          <canvas id="session-artifact" width="1080" height="1350" aria-label="Your quiet artifact"></canvas>
+        </div>
       </div>
-      <button class="finale-gift" id="share-silence" type="button">Gift silence to a friend <span aria-hidden="true">↗</span></button>
-      <div class="finale-install" id="finale-install-wrap" hidden>
-        <button class="finale-install-link" id="finale-install" type="button">Add to screen</button>
-        <p class="finale-install-hint" id="finale-install-hint" hidden></p>
+      <div class="finale-zone finale-zone--bottom">
+        <div class="finale-door-module">
+          <div class="finale-timer">
+            <p class="finale-lock-label" id="finale-lock-label">CONTINUATION IN</p>
+            <p class="finale-countdown" id="finale-countdown">02:00:00</p>
+          </div>
+          <button class="finale-btn finale-btn--glass finale-notify" id="notify-return" type="button">Notify me in 2 hours</button>
+        </div>
+        <button class="finale-gift" id="share-silence" type="button">Gift silence to a friend <span aria-hidden="true">↗</span></button>
       </div>
     </div>
   </section>
@@ -175,7 +169,7 @@
       window.__deferredInstallPrompt = event;
     });
   </script>
-  <script src="videos-data.js?v=74"></script>
-  <script src="app.js?v=74"></script>
+  <script src="videos-data.js?v=75"></script>
+  <script src="app.js?v=75"></script>
 </body>
 </html>
