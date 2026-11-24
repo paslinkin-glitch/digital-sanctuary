@@ -1,23 +1,18 @@
 ﻿
 (() => {
   'use strict';
-
   if (window.SANCTUARY_MAINTENANCE) {
     document.documentElement.dataset.maintenance = 'true';
     const screen = document.getElementById('maintenance-screen');
     if (screen) screen.hidden = false;
     return;
   }
-
-  
-
   const SLOW_FADE_MS = parseFloat(
     getComputedStyle(document.documentElement).getPropertyValue('--fade-duration')
   ) || 800;
   const QUICK_FADE_MS = 250;
   const QUICK_VIEW_MS = 2500;
   const IMPULSIVE_SPEED = 1.0;
-
   const HOLD_MS = 260;
   const SWIPE_MIN_RATIO = 0.08;
   const SWIPE_MIN_PX = 30;
@@ -55,7 +50,6 @@
     space: { frame: [34, 65, 34], hold: [44, 180, 44], interval: 2400, whisper: [6, 95, 10], anchor: [24, 150, 18, 150, 40] },
   };
   const PORTRAIT_TIMEOUT_MS = 1500;
-
   const DEEPSEEK_PROXY_ENDPOINT = '/api/deepseek';
   const CAPTION_START_DELAY_MS = 1200;
   const CAPTION_MIN_WORDS = 4;
@@ -76,7 +70,6 @@ Speak through images and presence: rain, shadow, water, light, breath, road. Do 
 Do not moralize, over-comfort, or ask questions. Return only the line.`;
   const MUSIC_GAIN = 0.42;
   const NOISE_GAIN = 0.22;
-
   const LANG_STORAGE_KEY = 'sanctuary-lang';
   const I18N = {
     ru: {
@@ -226,7 +219,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       giftShareTitle: 'Silence for you',
     },
   };
-
   const CAPTION_FALLBACK_POOL = {
     Shadow: [
       'Тень дышит рядом с тобой',
@@ -269,7 +261,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       'Путь дышит вместе с тобой',
     ],
   };
-
   const CAPTION_FALLBACK_POOL_EN = {
     Shadow: ['Shadow breathes beside you', 'Light goes into depth', 'Darkness stays quietly here', 'A reflection waits by the window', 'Fog holds your shadow', 'Night asks for nothing'],
     Trickster: ['Fire remembers your rhythm', 'The wave carries away noise', 'Smoke draws another path', 'The deep breathes very slowly', 'A spark lives one moment', 'Water keeps your whisper'],
@@ -277,9 +268,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     Calm: ['Leaves whisper of peace', 'The lake holds your breath', 'Dawn arrives without words', 'Wind softens by water', 'Light rests on grass', 'Soft rain stays beside you'],
     Path: ['The road leads to light', 'The horizon opens before you', 'Footsteps grow quieter now', 'Birds fly above water', 'Morning waits ahead', 'The path breathes with you'],
   };
-
   let fallbackCaptionUsed = new Set();
-
   function pickFallbackCaption(categoryTag) {
     const tag = categoryTag || 'Shadow';
     const pool = (currentLang === 'en' ? CAPTION_FALLBACK_POOL_EN : CAPTION_FALLBACK_POOL)[tag]
@@ -294,18 +283,15 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (fallback) fallbackCaptionUsed.add(fallback);
     return fallback;
   }
-
   function detectLanguage() {
     try {
       const stored = localStorage.getItem(LANG_STORAGE_KEY);
       if (stored === 'ru' || stored === 'en') return stored;
     } catch (_) {
-      
     }
     const language = String((navigator.languages && navigator.languages[0]) || navigator.language || '').toLowerCase();
     return language.startsWith('ru') ? 'ru' : 'en';
   }
-
   function detectScreenTier() {
     const nav = navigator || {};
     const memory = Number(nav['dev' + 'iceMemory'] || 8);
@@ -319,28 +305,23 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (memory >= 8 && cores >= 8) return 'high';
     return 'mid';
   }
-
   const SCREEN_TIER = detectScreenTier();
   const GIFT_MODE = new URLSearchParams(location.search).get('gift') === '1';
   document.documentElement.dataset.tier = SCREEN_TIER;
-
   function timeOfDayFor(hour) {
     if (hour >= 23 || hour < 5) return 'night';
     if (hour < 11) return 'morning';
     if (hour < 18) return 'day';
     return 'evening';
   }
-
   let envContext = {
     timeOfDay: timeOfDayFor(new Date().getHours()),
     weatherType: 'clear',
   };
-
   function applyNightPupil() {
     const hour = new Date().getHours();
     document.documentElement.dataset.nightPupil = (hour >= 22 || hour < 6) ? 'true' : 'false';
   }
-
   async function loadEnvironment() {
     applyNightPupil();
     if ('AmbientLightSensor' in window) {
@@ -353,10 +334,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         });
         sensor.start();
       } catch (_) {
-        
       }
     }
-
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), 1500);
     try {
@@ -382,13 +361,11 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       else if (code === 45 || code === 48) type = 'fog';
       envContext = { ...envContext, weatherType: type };
     } catch (_) {
-      
     } finally {
       window.clearTimeout(timer);
       setElementalNoise(currentOpticElement);
     }
   }
-
   function environmentScoreFor(title, stage) {
     const text = String(title || '').toLowerCase();
     let score = 0;
@@ -402,25 +379,18 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (stage === 'shadow') score += 1;
     return score;
   }
-
   let currentLang = detectLanguage();
-
   function tr(key) {
     return (I18N[currentLang] && I18N[currentLang][key]) || I18N.ru[key] || key;
   }
-
   function trackEvent(eventName, props = {}) {
     try {
       if (window.umami && typeof window.umami.track === 'function') {
         window.umami.track(eventName, props);
       }
     } catch (_) {
-      
     }
   }
-
-  
-
   const FALLBACK_CLIPS = {
     Shadow: [],
     Trickster: [],
@@ -428,11 +398,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     Calm: [],
     Path: [],
   };
-
-  
-
-  
-
   const STAGES = [
     {
       id: 1,
@@ -469,7 +434,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       tags: ['tunnel light dark', 'train tracks night', 'birds sky dusk', 'empty highway night', 'sunrise fog'],
     },
   ];
-
   const STAGE_BY_CATEGORY = {
     Shadow: 1,
     Trickster: 2,
@@ -477,7 +441,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     Calm: 3,
     Path: 4,
   };
-
   function shuffleArray(items) {
     const result = items.slice();
     for (let i = result.length - 1; i > 0; i -= 1) {
@@ -486,11 +449,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
     return result;
   }
-
   function randomFrom(items) {
     return items[Math.floor(Math.random() * items.length)];
   }
-
   const stagePlan = STAGES.map((stage) => {
     if (stage.id === 2) {
       return {
@@ -498,13 +459,11 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         selected: [randomFrom(stage.shadowTags), randomFrom(stage.abyssTags)],
       };
     }
-
     return {
       ...stage,
       selected: shuffleArray(stage.tags).slice(0, 2),
     };
   });
-
     const MUSIC_CATALOG = {
     Shadow: [
       { id: 'HDgXJpCNph', title: 'Whisper Canyon', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/whisper-canyon-HDgXJpCNph.mp3' },
@@ -542,8 +501,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       { id: 'open-sky', title: 'Open Sky', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/open-sky.mp3' },
     ],
   };
-
-
   const ELEMENT_DEFAULT = {
     Shadow: 'fog',
     Calm: 'water',
@@ -551,19 +508,16 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     Trickster: 'fire',
     Path: 'space',
   };
-
   const ELEMENT_WORDS = {
     water: ['water', 'rain', 'ocean', 'sea', 'underwater', 'wave', 'river', 'storm', 'wet', 'drop', 'glass', 'lake'],
     fire: ['fire', 'flame', 'burning', 'burn', 'smoke', 'spark', 'match', 'lighter', 'ember', 'sun', 'light'],
     fog: ['fog', 'mist', 'haze', 'forest', 'tree', 'cloud', 'shadow', 'dark', 'gloomy', 'condensation'],
     space: ['space', 'sky', 'road', 'night', 'star', 'city', 'highway', 'street', 'journey', 'path', 'car', 'lights'],
   };
-
   function elementForClip(title, tags, categoryTag, description) {
     const haystack = `${title || ''} ${(tags || []).join(' ')} ${description || ''}`.toLowerCase();
     let best = ELEMENT_DEFAULT[categoryTag] || 'fog';
     let bestScore = 0;
-
     for (const [element, words] of Object.entries(ELEMENT_WORDS)) {
       let score = 0;
       for (const word of words) {
@@ -575,14 +529,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         best = element;
       }
     }
-
     return best;
   }
-
   const ALL_MUSIC_TRACKS = Object.values(MUSIC_CATALOG).flat();
-
-  
-
   const stage = document.querySelector('.stage');
   const cycleWhisperEl = document.getElementById('cycle-whisper');
   const cycleWhisperKickerEl = document.getElementById('cycle-whisper-kicker');
@@ -592,12 +541,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   const captionLines = captionEl
     ? Array.from(captionEl.querySelectorAll('.caption-line'))
     : [];
-
   if (!stage || !slides.length || slides.some((slide) => !slide.querySelector('.media'))) {
     console.error('[sanctuary] stage markup is missing or incomplete');
     return;
   }
-
   const progressFill = document.getElementById('session-progress-fill');
   const stageLabelEl = document.getElementById('stage-label');
   let swipeHint = document.getElementById('swipe-hint');
@@ -656,17 +603,12 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   const artLightboxImage = document.getElementById('art-lightbox-image');
   const artLightboxClose = document.getElementById('art-lightbox-close');
   const artLightboxSave = document.getElementById('art-lightbox-save');
-
-
-
   let presenceCount = 0;
   let presenceTimer = 0;
-
   function presenceBaseForHour(hour) {
     if (hour >= 7 && hour < 18) return 7 + Math.floor(Math.random() * 8);
     return 18 + Math.floor(Math.random() * 17);
   }
-
   function updatePresenceCounter() {
     const label = tr('inSilenceNow').replace('{n}', String(presenceCount));
     for (const node of presenceTexts) {
@@ -678,7 +620,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       }, 180);
     }
   }
-
   function startPresenceCounter() {
     presenceCount = presenceBaseForHour(new Date().getHours());
     updatePresenceCounter();
@@ -691,11 +632,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     window.clearTimeout(presenceTimer);
     presenceTimer = window.setTimeout(tick, 25000 + Math.random() * 15000);
   }
-
   function applyLanguage() {
     document.documentElement.lang = currentLang;
     document.title = tr('docTitle');
-
     const setText = (selector, key) => {
       const node = document.querySelector(selector);
       if (node) node.textContent = tr(key);
@@ -704,7 +643,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       const node = document.querySelector(selector);
       if (node) node.innerHTML = tr(key);
     };
-
     setText('.entry-kicker', 'entryKicker');
     setHtml('.entry-title', 'entryTitle');
     setHtml('.entry-sub', 'entrySub');
@@ -730,7 +668,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (finaleBody[0]) finaleBody[0].textContent = tr('finaleBody1');
     if (finaleBody[1]) finaleBody[1].textContent = tr('finaleBody2');
     setText('.swipe-hint-label', 'swipe');
-
     if (entryGate) entryGate.setAttribute('aria-label', tr('entryAria'));
     if (entryTrigger) {
       entryTrigger.textContent = isSessionLocked()
@@ -743,7 +680,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (entryTapPrompt) entryTapPrompt.textContent = tr('tapToBegin');
     if (entryLockKicker) entryLockKicker.textContent = tr('lockEntryKicker');
     if (entryLockHint) entryLockHint.textContent = tr('lockEntryHint');
-
     if (installCardHint) installCardHint.textContent = tr('installHint');
     if (installCardInfo) installCardInfo.textContent = tr('installInApp');
     if (iosInstallKicker) iosInstallKicker.textContent = tr('iosKicker');
@@ -760,30 +696,24 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (finaleLockLabel) finaleLockLabel.textContent = tr('lockLabel');
     if (finaleDoorNote) finaleDoorNote.textContent = tr('doorNote');
     if (backToStartButton) backToStartButton.textContent = tr('back');
-
     const loading = finalePortraitEl && finalePortraitEl.querySelector('.finale-loading');
     if (loading) loading.textContent = tr('loading');
-
     for (const button of langButtons) {
       const active = button.dataset.lang === currentLang;
       button.classList.toggle('is-active', active);
       button.setAttribute('aria-pressed', active ? 'true' : 'false');
     }
-
     updateSessionLockUI();
   }
-
   function setLanguage(lang) {
     if (lang !== 'ru' && lang !== 'en') return;
     currentLang = lang;
     try {
       localStorage.setItem(LANG_STORAGE_KEY, currentLang);
     } catch (_) {
-      
     }
     applyLanguage();
   }
-
   if (langSwitch) {
     langSwitch.addEventListener('pointerdown', (event) => event.stopPropagation());
   }
@@ -793,7 +723,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       setLanguage(button.dataset.lang);
     });
   }
-
   const categories = slides.map((slide, index) => {
     const tag = slide.dataset.tag;
     return {
@@ -818,11 +747,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       trackCursor: 0,
     };
   });
-
   const VIEWED_STORAGE_KEY = 'sanctuary-viewed-video-ids-v1';
   const VIEWED_ALL_KEY = 'sanctuary-viewed-all-v1';
   const MAX_VIEWED_IDS = 100;
-
   function readViewedVideoIds() {
     try {
       const raw = localStorage.getItem(VIEWED_STORAGE_KEY);
@@ -834,9 +761,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       return [];
     }
   }
-
   let viewedVideoIds = readViewedVideoIds();
-
   function readAllViewedVideoIds() {
     try {
       const raw = localStorage.getItem(VIEWED_ALL_KEY);
@@ -848,38 +773,29 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       return [];
     }
   }
-
   let allViewedVideoIds = new Set(readAllViewedVideoIds());
   let catalogVideoIds = new Set();
-
   if (!allViewedVideoIds.size) {
     for (const id of viewedVideoIds) allViewedVideoIds.add(id);
   }
-
   function persistViewedVideoIds() {
     try {
       localStorage.setItem(VIEWED_STORAGE_KEY, JSON.stringify(viewedVideoIds));
     } catch (_) {
-      
     }
   }
-
   function persistAllViewedVideoIds() {
     try {
       localStorage.setItem(VIEWED_ALL_KEY, JSON.stringify([...allViewedVideoIds]));
     } catch (_) {
-      
     }
   }
-
   const sessionUsedVideoIds = new Set(allViewedVideoIds);
-
   function resetViewedCycleIfComplete() {
     if (!catalogVideoIds.size) return false;
     for (const id of catalogVideoIds) {
       if (!allViewedVideoIds.has(id)) return false;
     }
-
     allViewedVideoIds.clear();
     viewedVideoIds = [];
     sessionUsedVideoIds.clear();
@@ -887,14 +803,11 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       localStorage.removeItem(VIEWED_ALL_KEY);
       localStorage.removeItem(VIEWED_STORAGE_KEY);
     } catch (_) {
-      
     }
     return true;
   }
-
   function markVideoViewed(id) {
     if (!id) return;
-
     sessionUsedVideoIds.add(id);
     allViewedVideoIds.add(id);
     const previous = viewedVideoIds.indexOf(id);
@@ -906,24 +819,19 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     persistViewedVideoIds();
     persistAllViewedVideoIds();
   }
-
   function isVideoSeen(id) {
     return Boolean(id) && sessionUsedVideoIds.has(id);
   }
-
   function stageFor(id) {
     return stagePlan.find((stage) => stage.id === id) || stagePlan[0];
   }
-
   function setCategorySearch(tag, tags) {
     const category = categories.find((item) => item.tag === tag);
     if (!category || !tags.length) return;
-
     category.query = tags[0];
     category.fallbackQuery = tags[1] || tags[0];
     category.extendedQuery = tags.join(' ');
   }
-
   function applyStageQueries() {
     setCategorySearch('Shadow', stageFor(1).selected);
     setCategorySearch('Trickster', [stageFor(2).selected[0]]);
@@ -931,9 +839,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     setCategorySearch('Calm', stageFor(3).selected);
     setCategorySearch('Path', stageFor(4).selected);
   }
-
   applyStageQueries();
-
   const synchronicity = {
     active: false,
     swipes: 0,
@@ -941,7 +847,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     symbol: null,
     anchorClipId: null,
   };
-
   const engine = {
     phase: 'diagnostic',       // 'diagnostic' | 'flow'
     diagnosticViews: [],       // первые 3 просмотра: Shadow / Calm / Abyss
@@ -961,11 +866,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     pathEvery: 5,
     lastDecision: 'start',
   };
-
   function now() {
     return performance.now();
   }
-
   const state = {
     index: 0,
     viewStart: now(),
@@ -984,7 +887,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     captionFastStreak: 0,
   };
   state.visits[0] = 1;
-
   let gesture = null;
   let isTransitioning = false;
   let touchOrigin = null;
@@ -997,11 +899,11 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   let recentTrackIds = [];
   let sound = null;
   let soundStarting = false;
+  let nativeTrack = null;
   let gateOpen = false;
   let soundBank = null;
   let libraryPrepared = false;
   const trackAudio = new Map();
-
   let anchorWatchTimer = 0;
   let anchorWatchToken = 0;
   let stuporMonitor = 0;
@@ -1029,13 +931,11 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   const captionCache = new Map();
   const captionPending = new Map();
   const captionSeen = new Set();
-
   let pathPlan = [];
   let pathPos = -1;
   let pathPicked = new Set();
   let pathStarted = false;
   let pathStartPending = false;
-
   let sessionEvents = [];
   let sessionStartedAt = 0;
   let sessionComplete = false;
@@ -1078,7 +978,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   let installCardDismissed = false;
   const INSTALL_SESSION_KEY = 'sanctuary_install_skipped';
   const INSTALLED_KEY = 'sanctuary_installed';
-
   function resetViewClock() {
     state.viewStart = now();
     state.holdsInView = 0;
@@ -1086,52 +985,40 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     state.longestHoldMs = 0;
     state.loopsInView = 0;
     state.resonanceAwarded = false;
-
     window.clearTimeout(anchorWatchTimer);
     const token = ++anchorWatchToken;
     anchorWatchTimer = window.setTimeout(() => {
       if (gateOpen && token === anchorWatchToken) rememberAnchor('watch');
     }, ANCHOR_WATCH_MS);
   }
-
   function activeCategory() {
     return categories[state.index];
   }
-
   function activeClip() {
     const category = activeCategory();
     return category && category.clips[category.activeIndex]
       ? category.clips[category.activeIndex]
       : null;
   }
-
   function categoryByTag(tag) {
     return categories.find((category) => category.tag === tag) || null;
   }
-
   function rememberAnchor(source) {
     if (!gateOpen || synchronicity.active) return;
-
     const clip = activeClip();
     if (!clip) return;
-
     synchronicity.active = true;
     synchronicity.swipes = 0;
     synchronicity.threshold = 6 + Math.floor(Math.random() * 3);
     synchronicity.symbol = clip.element || ELEMENT_DEFAULT[activeCategory().tag] || 'fog';
     synchronicity.anchorClipId = clip.id;
-
-
   }
-
   function findSyncTarget() {
     const current = activeCategory();
     const symbol = synchronicity.symbol;
     const candidates = [];
-
     for (const category of categories) {
       if (category.index === current.index) continue;
-
       category.clips.forEach((clip, index) => {
         if (!clip || clip.element !== symbol || !clip.el) return;
         if (!clip.id || clip.id === synchronicity.anchorClipId) return;
@@ -1139,34 +1026,26 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         candidates.push({ category, clip, index });
       });
     }
-
     if (!candidates.length) return null;
     return candidates[Math.floor(Math.random() * candidates.length)];
   }
-
   function advanceSynchronicity() {
     if (!synchronicity.active) return null;
-
     synchronicity.swipes += 1;
     if (synchronicity.swipes < synchronicity.threshold) return null;
-
     const target = findSyncTarget();
     synchronicity.active = false;
     synchronicity.swipes = 0;
     return target;
   }
-
   function clamp(value, min, max) {
     return Math.min(max, Math.max(min, value));
   }
-
   function safeVibrate(pattern = 10, cooldown = HAPTIC_COOLDOWN_MS) {
     if (typeof navigator.vibrate !== 'function') return false;
-
     const time = now();
     if (time - lastHapticAt < cooldown) return false;
     lastHapticAt = time;
-
     try {
       navigator.vibrate(pattern);
       return true;
@@ -1174,21 +1053,17 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       return false;
     }
   }
-
   function stopHaptics() {
     if (typeof navigator.vibrate === 'function') {
       try {
         navigator.vibrate(0);
       } catch (_) {
-        
       }
     }
   }
-
   function hapticPatternForCurrent() {
     return HAPTIC_PATTERNS[currentOpticElement] || HAPTIC_PATTERNS.fog;
   }
-
   function startHoldPulse() {
     stopHoldPulse();
     const pattern = hapticPatternForCurrent();
@@ -1203,25 +1078,21 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     };
     holdPulseTimer = window.setTimeout(breathe, 4000);
   }
-
   function stopHoldPulse() {
     const wasHolding = Boolean(holdPulseTimer);
     window.clearTimeout(holdPulseTimer);
     holdPulseTimer = 0;
     if (wasHolding) stopHaptics();
   }
-
   function pointForEvent(event) {
     const rect = stage.getBoundingClientRect();
     return { x: event.clientX - rect.left, y: event.clientY - rect.top };
   }
-
   function setSceneElement(clip) {
     const category = activeCategory();
     const element = (clip && clip.element)
       || (category && ELEMENT_DEFAULT[category.tag])
       || 'fog';
-
     currentOpticElement = element;
     setElementalNoise(element);
     stage.dataset.element = element;
@@ -1230,27 +1101,21 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     stage.style.setProperty('--optic-x', '50%');
     stage.style.setProperty('--optic-y', '50%');
   }
-
   function startOptics(event) {
     if (!gateOpen) return;
-
     const point = pointForEvent(event);
     stage.classList.add('is-touching');
     stage.style.setProperty('--optic-x', `${point.x}px`);
     stage.style.setProperty('--optic-y', `${point.y}px`);
-
     if (currentOpticElement === 'space') {
       stage.style.setProperty('--optic-zoom', '1.04');
     }
   }
-
   function updateOptics(event) {
     if (!gateOpen || !gesture) return;
-
     const point = pointForEvent(event);
     stage.style.setProperty('--optic-x', `${point.x}px`);
     stage.style.setProperty('--optic-y', `${point.y}px`);
-
     if (currentOpticElement === 'space') {
       const dy = event.clientY - gesture.y0;
       const amount = clamp(-dy / 160, -1, 1);
@@ -1258,15 +1123,12 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       stage.style.setProperty('--optic-zoom', zoom.toFixed(3));
     }
   }
-
   function stopOptics() {
     stage.classList.remove('is-touching');
     stage.style.removeProperty('--optic-zoom');
   }
-
   function setBreath(amount) {
     breathValue = clamp(amount, -1, 1);
-
     if (sound && sound.breath) {
       const cutoff = breathValue < 0
         ? 20000 * Math.pow(1400 / 20000, -breathValue)
@@ -1277,14 +1139,12 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       sound.breath.frequency.exponentialRampToValueAtTime(cutoff, t + 0.18);
     }
   }
-
   function updateUserAverage(viewedMs) {
     if (!Number.isFinite(viewedMs) || viewedMs <= 0) return;
     userAvgWatchTime = userAvgWatchTime
       ? userAvgWatchTime * 0.8 + viewedMs * 0.2
       : viewedMs;
   }
-
   function behaviorContext(record) {
     const viewedMs = record && Number.isFinite(record.viewedMs)
       ? record.viewedMs
@@ -1300,27 +1160,23 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         : record.viewedMs < FAST_VIEW_MS)
       : engine.fastStreak >= 2 || state.nervousStreak >= 2;
     const anxiety = early || (record && record.swipeSpeed >= IMPULSIVE_SPEED);
-
     if (resonance) {
       return {
         key: 'resonance',
         context: 'удержание или повторный круг — реальное погружение, а не обычный просмотр',
       };
     }
-
     if (anxiety) {
       return {
         key: 'anxiety',
         context: 'досрочный уход — скрытое сопротивление, слишком быстрый пропуск',
       };
     }
-
     return {
       key: 'neutral',
       context: 'спокойный просмотр без выраженного удержания',
     };
   }
-
   function sceneContextFor(record, behavior) {
     const fast = record.viewedMs < FAST_VIEW_MS || record.swipeSpeed >= IMPULSIVE_SPEED;
     const held = record.heldMs > 0
@@ -1332,11 +1188,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       : record.viewedMs < FAST_VIEW_MS;
     const linger = record.viewedMs >= CAPTION_LINGER_MS
       || held;
-
     state.captionFastStreak = fast && !linger
       ? state.captionFastStreak + 1
       : 0;
-
     return {
       behavior,
       linger,
@@ -1347,15 +1201,12 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       viewedMs: record.viewedMs,
     };
   }
-
   function captionKey(clip) {
     return `${clip.id || `${clip.title || 'untitled'}|${clip.url || ''}`}|${resonanceMemoryVersion}`;
   }
-
   function normalizeCaption(raw) {
     let text = String(raw || '').trim();
     if (!text) return '';
-
     text = text
       .replace(/^```[a-z]*\s*/i, '')
       .replace(/\s*```$/i, '')
@@ -1363,30 +1214,23 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       .replace(/^["«»“”'`]+|["«»“”'`]+$/g, '')
       .replace(/\s+/g, ' ')
       .trim();
-
     return text;
   }
-
   function countCaptionWords(text) {
     const matches = text.match(/[\p{L}\p{N}]+(?:[-’'][\p{L}\p{N}]+)*/gu);
     return matches ? matches.length : 0;
   }
-
   function captionStartsWithYou(text) {
     return /^(ты|твой|твоя|твои)(?=\s|$|[,.;:!?…—–-])/iu.test(text);
   }
-
   function captionVoiceAllowed(text) {
     if (!captionStartsWithYou(text)) return true;
-
     const nextTotal = captionAcceptedCount + 1;
     const nextYou = captionYouStartCount + 1;
     return nextYou / nextTotal <= CAPTION_YOU_LIMIT + 1e-9;
   }
-
   function captionIsValid(text) {
     if (!text) return false;
-
     const words = countCaptionWords(text);
     if (words < CAPTION_MIN_WORDS || words > CAPTION_MAX_WORDS) return false;
     if (currentLang === 'en') {
@@ -1396,42 +1240,32 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
     if (/[<>]/.test(text)) return false;
     if (/["«»“”]/.test(text)) return false;
-
     const sentenceMarks = text.match(/[.!?…]/g) || [];
     if (sentenceMarks.length > 2) return false;
-
     if (/(сделай|поверь|должен|нужно|попробуй|стань|обещай|you should|you must|try to|promise me)/iu.test(text)) return false;
-
     return true;
   }
-
   function memoryPrompt() {
     if (!resonanceMemory.length) return '';
-
     const events = resonanceMemory
       .map((event, index) => `${index + 1}. ${event.category}; образ: «${event.image}»; фраза: «${event.phrase}»`)
       .join('\n');
-
     return `\n\nПамять последних резонансных событий (от старого к новому):\n${events}\nНовая фраза должна логически или ассоциативно развивать, углублять либо парадоксально откликаться на последнюю мысль из этой памяти через визуал нового видео. Не повторяй прошлые формулировки.`;
   }
-
   function localTimeContext() {
     const date = new Date();
     const hour = date.getHours();
     let label = currentLang === 'en' ? 'deep night' : 'глубокая ночь';
-
     if (hour >= 5 && hour < 8) label = currentLang === 'en' ? 'early morning' : 'раннее утро';
     else if (hour >= 8 && hour < 12) label = currentLang === 'en' ? 'morning' : 'утро';
     else if (hour >= 12 && hour < 17) label = currentLang === 'en' ? 'day' : 'день';
     else if (hour >= 17 && hour < 21) label = currentLang === 'en' ? 'evening' : 'вечер';
     else if (hour >= 21) label = currentLang === 'en' ? 'late evening' : 'поздний вечер';
-
     return {
       clock: `${String(hour).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`,
       label,
     };
   }
-
   function captionMessages(clip, category, behavior, stageId) {
     const stage = stageFor(stageId || STAGE_BY_CATEGORY[category.tag] || 1);
     const archetype = clip.archetype || stage.archetype || stage.name;
@@ -1440,7 +1274,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const behaviorLine = currentLang === 'en'
       ? 'quiet presence with the image'
       : 'тихое присутствие рядом с образом';
-
     const details = currentLang === 'en'
       ? [
         `Category: ${category.tag}.`,
@@ -1464,7 +1297,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         'Создай одну новую фразу строго из 4–6 слов. Верни только текст.',
       ];
     const systemPrompt = currentLang === 'en' ? CAPTION_SYSTEM_PROMPT_EN : CAPTION_SYSTEM_PROMPT_RU;
-
     return [
       {
         role: 'system',
@@ -1473,15 +1305,12 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       { role: 'user', content: details.filter(Boolean).join('\n') },
     ];
   }
-
   async function callDeepSeek(messages, temperature) {
     if (location.protocol === 'file:') return null;
     if (location.hostname === 'yoursanctuary.ru' || location.hostname.endsWith('.github.io') || location.hostname === 's3.twcstorage.ru' || location.hostname === 'localhost' || location.hostname === '127.0.0.1') return null;
     if (captionApiUnavailable) return null;
-
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), CAPTION_TIMEOUT_MS);
-
     try {
       const response = await fetch(DEEPSEEK_PROXY_ENDPOINT, {
         method: 'POST',
@@ -1496,24 +1325,20 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         signal: controller.signal,
         cache: 'no-store',
       });
-
       if (response.status === 401 || response.status === 403) {
         captionApiUnavailable = true;
         return null;
       }
-
       if (!response.ok) {
         captionApiUnavailable = true;
         return null;
       }
-
       const payload = await response.json();
       const content = payload
         && payload.choices
         && payload.choices[0]
         && payload.choices[0].message
         && payload.choices[0].message.content;
-
       return typeof content === 'string' ? content : null;
     } catch (_) {
       captionApiUnavailable = true;
@@ -1522,19 +1347,15 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       window.clearTimeout(timer);
     }
   }
-
   function requestCaption(clip, category, behavior, stageId) {
     if (!clip || !category) return Promise.resolve(null);
-
     const key = captionKey(clip);
     if (captionCache.has(key)) return Promise.resolve(captionCache.get(key));
     if (captionPending.has(key)) return captionPending.get(key);
-
     const promise = (async () => {
       const messages = captionMessages(clip, category, behavior, stageId);
       let raw = await callDeepSeek(messages, 1.15);
       let text = normalizeCaption(raw);
-
       if (
         !captionIsValid(text)
         || captionSeen.has(text.toLowerCase())
@@ -1542,7 +1363,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       ) {
         return null;
       }
-
       const startsWithYou = captionStartsWithYou(text);
       captionAcceptedCount += 1;
       if (startsWithYou) captionYouStartCount += 1;
@@ -1552,34 +1372,23 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     })().finally(() => {
       captionPending.delete(key);
     });
-
     captionPending.set(key, promise);
     return promise;
   }
-
   function prefetchCaption(clip, category, behavior, stageId) {
     if (!clip || !category) return;
-
     const key = captionKey(clip);
     if (captionCache.has(key) || captionPending.has(key)) return;
-
     requestCaption(clip, category, behavior, stageId).catch(() => {});
   }
-
-
-
-
-
   function prefetchNextCaptions(behavior) {
     const next = pathPlan[pathPos + 1];
     if (next) {
       prefetchCaption(next.clip, next.category, behavior, next.stage);
     }
   }
-
   function renderCaptionLines(text) {
     if (!captionEl) return;
-
     const words = text.split(/\s+/).filter(Boolean);
     const middle = Math.ceil(words.length / 2);
     const renderLine = (line, list, offset) => {
@@ -1597,7 +1406,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     renderLine(captionLines[1], words.slice(middle), middle);
     captionEl.setAttribute('aria-label', text);
   }
-
   function registerCaptionFrame() {
     sessionTextFrames = Math.min(
       Math.max(1, Math.floor(CYCLE_LENGTH * CAPTION_MAX_RATIO)),
@@ -1606,14 +1414,12 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     quietSinceText = 0;
     quietRequired = 2 + Math.floor(Math.random() * 2);
   }
-
   function captionAllowedForScene(context) {
     if (cycleCaptionBlocked) {
       cycleCaptionBlocked = false;
       quietSinceText = 0;
       return false;
     }
-
     const cap = Math.max(1, Math.floor(CYCLE_LENGTH * CAPTION_MAX_RATIO));
     if (context && context.held) return true;
     if (sessionTextFrames >= cap) return false;
@@ -1621,21 +1427,17 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       quietSinceText = Math.max(quietSinceText, 2);
       return false;
     }
-
     if (quietSinceText < quietRequired) {
       quietSinceText += 1;
       return false;
     }
-
     registerCaptionFrame();
     lastCaptionFrame = pathPos;
     return true;
   }
-
   function maybeRecordResonance() {
     if (!currentCaption || !currentCaption.text || !currentCaption.revealed) return;
     if (currentCaption.recorded) return;
-
     const held = currentCaption.held || (gesture && gesture.holding);
     const video = currentCaption.clip && currentCaption.clip.el;
     const durationMs = video && Number.isFinite(video.duration) && video.duration > 0
@@ -1644,7 +1446,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const looped = state.loopsInView > 0
       || (now() - state.viewStart) > durationMs * 1.2;
     if (!held && !looped) return;
-
     currentCaption.recorded = true;
     resonanceMemory.push({
       category: currentCaption.category.tag,
@@ -1652,12 +1453,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       phrase: currentCaption.text,
     });
     if (resonanceMemory.length > 4) resonanceMemory.shift();
-
     resonanceMemoryVersion += 1;
     safeVibrate(hapticPatternForCurrent().anchor, 6000);
     prefetchNextCaptions(behaviorContext());
   }
-
   function scheduleCaptionZero() {
     window.clearTimeout(captionZeroTimer);
     if (!captionEl || !captionHasText || !captionEl.classList.contains('is-visible')) return;
@@ -1672,7 +1471,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       }
     }, 4800);
   }
-
   function wakeCaption() {
     if (!captionEl) return;
     window.clearTimeout(captionZeroTimer);
@@ -1681,17 +1479,14 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     captionEl.classList.add('is-awake');
     captionWakeTimer = window.setTimeout(() => captionEl.classList.remove('is-awake'), 1600);
   }
-
   function scheduleCaptionVisible(started, token, immediate) {
     if (!captionEl || !captionHasText || token !== captionSceneToken) return;
-
     const requestedDelay = captionStartDelayOverride || CAPTION_START_DELAY_MS;
     const delay = immediate ? 0 : Math.max(0, requestedDelay - (now() - started));
     captionStartDelayOverride = 0;
     window.clearTimeout(captionTimer);
     captionTimer = window.setTimeout(() => {
       if (token !== captionSceneToken || !captionHasText) return;
-
       captionEl.setAttribute('aria-hidden', 'false');
       captionEl.classList.remove('is-zero');
       captionEl.classList.add('is-visible');
@@ -1708,16 +1503,13 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       maybeRecordResonance();
     }, delay);
   }
-
   function revealCaptionForHold() {
     if (!captionSuppressed || captionHoldReady) return;
     if (Date.now() < cycleWhisperUntil) return;
     if (!gesture || !gesture.holding) return;
-
     captionHoldReady = true;
     if (currentCaption) currentCaption.held = true;
     if (!captionHasText) return;
-
     window.clearTimeout(captionTimer);
     captionEl.setAttribute('aria-hidden', 'false');
     captionEl.classList.remove('is-zero');
@@ -1735,30 +1527,23 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     scheduleCaptionZero();
     maybeRecordResonance();
   }
-
   function activateCaption(category, clip, behavior, allowed, stageId) {
     const token = ++captionSceneToken;
     window.clearTimeout(captionTimer);
     window.clearTimeout(captionMemoryTimer);
     window.clearTimeout(captionRevealTimer);
-
     const stage = stageId || STAGE_BY_CATEGORY[category && category.tag] || 1;
-
     captionAllow = Boolean(allowed);
     captionSuppressed = !captionAllow;
     captionHoldReady = false;
     captionHasText = false;
     captionRevealed = false;
     currentCaption = null;
-
     if (!captionEl) return;
-
     captionEl.classList.remove('is-visible', 'is-zero', 'is-awake');
     document.querySelector('.stage')?.classList.remove('is-caption-active');
     captionEl.setAttribute('aria-hidden', 'true');
-
     if (!clip || !category) return;
-
     currentCaption = {
       category,
       clip,
@@ -1769,32 +1554,26 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       haptic: false,
       token,
     };
-
     const hiddenEligible = true;
     const started = now();
     const applyText = (text) => {
       if (token !== captionSceneToken || !text) return;
-
       renderCaptionLines(text);
       captionHasText = true;
       currentCaption.text = text;
-
       if (captionAllow) {
         scheduleCaptionVisible(started, token, false);
       } else if (captionHoldReady) {
         scheduleCaptionVisible(started, token, true);
       }
-
       maybeRecordResonance();
     };
-
     const key = captionKey(clip);
     const cached = captionCache.get(key);
     const staticCaption = currentLang === 'en' ? clip.caption_en : clip.caption_ru;
     const fallbackFirst = () => {
       applyText(pickFallbackCaption(category.tag));
     };
-
     if (staticCaption) {
       applyText(staticCaption);
       prefetchNextCaptions(behavior);
@@ -1803,7 +1582,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       }, CAPTION_LINGER_MS);
       return;
     }
-
     if (captionAllow || hiddenEligible) {
       if (cached) {
         applyText(cached);
@@ -1816,45 +1594,35 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
           .catch(() => fallbackFirst());
       }
     }
-
     prefetchNextCaptions(behavior);
-
     captionMemoryTimer = window.setTimeout(() => {
       if (token === captionSceneToken) maybeRecordResonance();
     }, CAPTION_LINGER_MS);
   }
-
   function markInteraction() {
     state.lastInteraction = now();
     if (state.stupor) exitStupor();
   }
-
   function enterStupor() {
     if (state.stupor || !gateOpen) return;
-
     state.stupor = true;
     stage.classList.add('is-stupor');
     stage.style.setProperty('--stupor-ms', '15000ms');
     stage.style.setProperty('--stupor-scale', '1.12');
     startStuporBreath();
   }
-
   function exitStupor() {
     if (!state.stupor) return;
-
     state.stupor = false;
     stage.classList.remove('is-stupor');
     stage.style.setProperty('--stupor-ms', '800ms');
     stage.style.setProperty('--stupor-scale', '1');
     stopStuporBreath();
   }
-
   function startStuporBreath() {
     if (!sound || !sound.breathPulse || stuporPulseTimer) return;
-
     const pulse = () => {
       if (!sound || !state.stupor) return;
-
       const t = sound.ctx.currentTime;
       const gain = sound.breathPulse.gain;
       gain.cancelScheduledValues(t);
@@ -1862,67 +1630,51 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       gain.linearRampToValueAtTime(1.16, t + 4);
       gain.linearRampToValueAtTime(1, t + 10);
     };
-
     pulse();
     stuporPulseTimer = window.setInterval(pulse, 10000);
   }
-
   function stopStuporBreath() {
     if (!stuporPulseTimer) return;
-
     window.clearInterval(stuporPulseTimer);
     stuporPulseTimer = 0;
-
     if (!sound || !sound.breathPulse) return;
-
     const t = sound.ctx.currentTime;
     const gain = sound.breathPulse.gain;
     gain.cancelScheduledValues(t);
     gain.setValueAtTime(gain.value, t);
     gain.linearRampToValueAtTime(1, t + 0.8);
   }
-
   function checkStupor() {
     if (!gateOpen || document.hidden || gesture) return;
     if (!state.stupor && now() - state.lastInteraction >= STUPOR_IDLE_MS) {
       enterStupor();
     }
   }
-
   function triggerTricksterPrick() {
     if (!gateOpen || stage.classList.contains('is-prick')) return;
-
     stage.classList.add('is-prick');
     playTricksterClick();
     window.setTimeout(() => {
       stage.classList.remove('is-prick');
     }, 150);
   }
-
   function playTricksterClick() {
     if (!sound || !sound.master) return;
-
     const ctx = sound.ctx;
     const t = ctx.currentTime;
     const oscillator = ctx.createOscillator();
     const gain = ctx.createGain();
-
     oscillator.type = 'triangle';
     oscillator.frequency.setValueAtTime(190, t);
     oscillator.frequency.exponentialRampToValueAtTime(80, t + 0.05);
-
     gain.gain.setValueAtTime(0.0001, t);
     gain.gain.exponentialRampToValueAtTime(0.035, t + 0.005);
     gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
-
     oscillator.connect(gain);
     gain.connect(sound.master);
     oscillator.start(t);
     oscillator.stop(t + 0.12);
   }
-
-  
-
   function createPinkNoiseBuffer(ctx, seconds) {
     const length = Math.max(1, Math.floor(ctx.sampleRate * seconds));
     const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
@@ -1934,7 +1686,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     let b4 = 0;
     let b5 = 0;
     let b6 = 0;
-
     for (let i = 0; i < length; i += 1) {
       const white = Math.random() * 2 - 1;
       b0 = 0.99886 * b0 + white * 0.0555179;
@@ -1947,37 +1698,30 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       b6 = white * 0.115926;
       data[i] = pink * 0.11;
     }
-
     return buffer;
   }
-
   function prepareSoundLibrary() {
     if (libraryPrepared) return;
     libraryPrepared = true;
-
     soundBank = document.createElement('div');
     soundBank.setAttribute('aria-hidden', 'true');
     soundBank.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;pointer-events:none;';
     document.body.appendChild(soundBank);
-
     const first = categories[0].musicTracks[0];
     if (first) {
       createTrackAudio(first);
       preloadTrack(first);
     }
   }
-
   function createTrackAudio(track) {
     if (!track) return null;
     if (trackAudio.has(track.id)) return trackAudio.get(track.id);
-
     if (!soundBank) {
       soundBank = document.createElement('div');
       soundBank.setAttribute('aria-hidden', 'true');
       soundBank.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;pointer-events:none;';
       document.body.appendChild(soundBank);
     }
-
     if (SCREEN_TIER === 'low' && trackAudio.size >= 2) {
       for (const [id, oldAudio] of [...trackAudio]) {
         if (id === sound?.activeTrackId) continue;
@@ -1991,44 +1735,36 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     audio.preload = 'metadata';
     audio.setAttribute('playsinline', '');
     audio.style.display = 'none';
-
     audio.addEventListener('error', () => {
       track.failed = true;
       if (sound && sound.activeTrackId === track.id) {
         startSoundCrossfade(null, SLOW_FADE_MS);
       }
     });
-
     audio.src = track.url;
     soundBank.appendChild(audio);
     audio.load();
     trackAudio.set(track.id, audio);
     return audio;
   }
-
   function preloadTrack(track) {
     if (!track || track.failed) return;
-
     const audio = trackAudio.get(track.id) || createTrackAudio(track);
     if (!audio) return;
-
     audio.preload = 'auto';
     if (audio.readyState === 0) {
       audio.load();
     }
   }
-
   function preloadFirstTracks() {
     const first = categories[0] && categories[0].musicTracks[0];
     if (first) preloadTrack(first);
   }
-
   function preloadNextTrack(category) {
     if (SCREEN_TIER === 'low') return;
     if (!category || !category.musicTracks.length) return;
     preloadTrack(category.musicTracks[category.trackCursor % category.musicTracks.length]);
   }
-
   let globalTrackCursor = 0;
   function nextTrackFor(category) {
     const tracks = ALL_MUSIC_TRACKS.length ? ALL_MUSIC_TRACKS : (category.musicTracks || []);
@@ -2042,7 +1778,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
     return fallback;
   }
-
   function disposeTrackChannel(channel) {
     if (!channel) return;
     const { track, audio } = channel;
@@ -2055,7 +1790,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       if (sound && sound.channels.get(track.id) === channel) sound.channels.delete(track.id);
     }
   }
-
   function fadeChannelVolume(channel, target, ms) {
     if (!channel || !channel.audio) return;
     if (channel.fadeRaf) cancelAnimationFrame(channel.fadeRaf);
@@ -2071,7 +1805,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     };
     channel.fadeRaf = requestAnimationFrame(step);
   }
-
   function ensureTrackChannel(track) {
     if (!sound || !track || track.failed) return null;
     if (sound.channels.has(track.id)) return sound.channels.get(track.id);
@@ -2080,23 +1813,19 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         if (id !== sound.activeTrackId) { disposeTrackChannel(item); break; }
       }
     }
-
     const audio = trackAudio.get(track.id) || createTrackAudio(track);
     if (!audio) return null;
-
     audio.volume = 0;
     const channel = { track, audio, fadeRaf: 0 };
     sound.channels.set(track.id, channel);
     return channel;
   }
-
   const ELEMENTAL_NOISE = {
     water: { highpass: 90, lowpass: 1450, gain: 0.24, wind: 0.06, depth: 170 },
     fire: { highpass: 180, lowpass: 2100, gain: 0.20, wind: 0.14, depth: 360 },
     fog: { highpass: 120, lowpass: 950, gain: 0.17, wind: 0.05, depth: 280 },
     space: { highpass: 160, lowpass: 1800, gain: 0.13, wind: 0.03, depth: 210 },
   };
-
   function setElementalNoise(element = currentOpticElement) {
     if (!sound || !sound.noiseGain) return;
     const weather = envContext.weatherType;
@@ -2122,7 +1851,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (sound.wind) sound.wind.frequency.linearRampToValueAtTime(profile.wind, now + 0.8);
     if (sound.windDepth) sound.windDepth.gain.linearRampToValueAtTime(profile.depth, now + 0.8);
   }
-
   function setStageOvertone(stageId) {
     if (SCREEN_TIER === 'low') {
       if (sound && sound.overtoneGain) sound.overtoneGain.gain.value = 0;
@@ -2137,7 +1865,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     sound.overtone.frequency.linearRampToValueAtTime(frequency, now + 1.2);
     sound.overtoneGain.gain.linearRampToValueAtTime(0.008, now + 1.2);
   }
-
   function setStageSubBass(stageId) {
     if (!sound || !sound.subBassGain) return;
     const stage = Number(stageId) || 1;
@@ -2156,58 +1883,91 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     sound.subBassGain.gain.setValueAtTime(sound.subBassGain.gain.value, now);
     sound.subBassGain.gain.linearRampToValueAtTime(gain, now + 2.4);
   }
+  function activateAudioSession() {
+    if (navigator.audioSession) {
+      try { navigator.audioSession.type = 'playback'; } catch (_) {}
+    }
+  }
+  function primeAudioGesture() {
+    activateAudioSession();
+    if (!sound) {
+      if (nativeTrack && nativeTrack.paused) {
+        nativeTrack.volume = Math.max(nativeTrack.volume, MUSIC_GAIN);
+        const promise = nativeTrack.play();
+        if (promise && typeof promise.catch === 'function') promise.catch(() => {});
+      }
+      return;
+    }
+    if (sound.ctx.state === 'suspended') sound.ctx.resume().catch(() => {});
+    const channel = sound.activeTrackId ? sound.channels.get(sound.activeTrackId) : null;
+    if (channel && channel.audio.paused) {
+      channel.audio.volume = Math.max(channel.audio.volume, MUSIC_GAIN);
+      const promise = channel.audio.play();
+      if (promise && typeof promise.catch === 'function') promise.catch(() => {});
+    }
+  }
+  function playNativeTrack(track) {
+    if (!track || track.failed) {
+      if (nativeTrack) { nativeTrack.pause(); nativeTrack.volume = 0; }
+      return;
+    }
+    const audio = trackAudio.get(track.id) || createTrackAudio(track);
+    if (!audio) return;
+    if (nativeTrack && nativeTrack !== audio) {
+      try { nativeTrack.pause(); nativeTrack.volume = 0; } catch (_) {}
+    }
+    nativeTrack = audio;
+    audio.volume = 0;
+    const promise = audio.play();
+    if (promise && typeof promise.catch === 'function') promise.catch(() => {});
+    fadeChannelVolume({ audio }, MUSIC_GAIN, 800);
+  }
 
   function enableSoundscape() {
+    activateAudioSession();
     if (sound) {
       if (sound.ctx.state === 'suspended') sound.ctx.resume().catch(() => {});
       return;
     }
     if (soundStarting) return;
-
-    const AudioCtor = window.AudioContext || window.webkitAudioContext;
-    if (!AudioCtor) return;
     if (!libraryPrepared) prepareSoundLibrary();
-
+    const AudioCtor = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtor) {
+      preloadFirstTracks();
+      return;
+    }
     soundStarting = true;
     try {
       const ctx = SCREEN_TIER === 'low' ? new AudioCtor({ latencyHint: 'playback' }) : new AudioCtor();
       const bus = ctx.createGain();
-
       const rumbleCut = ctx.createBiquadFilter();
       rumbleCut.type = 'highpass';
       rumbleCut.frequency.value = 110;
       rumbleCut.Q.value = 0.7;
-
       const depth = ctx.createBiquadFilter();
       depth.type = 'lowpass';
       depth.frequency.value = 18000;
       depth.Q.value = 0.5;
-
       const compressor = ctx.createDynamicsCompressor();
       compressor.threshold.value = -20;
       compressor.knee.value = 16;
       compressor.ratio.value = 5;
       compressor.attack.value = 0.006;
       compressor.release.value = 0.3;
-
       const breath = ctx.createBiquadFilter();
       breath.type = 'lowpass';
       breath.frequency.value = 20000;
       breath.Q.value = 0.3;
-
       const breathPulse = ctx.createGain();
       breathPulse.gain.value = 1;
-
       const master = ctx.createGain();
       master.gain.value = 0.72;
-
       const limiter = ctx.createDynamicsCompressor();
       limiter.threshold.value = -2;
       limiter.knee.value = 2;
       limiter.ratio.value = 20;
       limiter.attack.value = 0.003;
       limiter.release.value = 0.12;
-
       bus.connect(rumbleCut);
       rumbleCut.connect(depth);
       depth.connect(breath);
@@ -2216,30 +1976,24 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       breathPulse.connect(master);
       master.connect(limiter);
       limiter.connect(ctx.destination);
-
       const noise = ctx.createBufferSource();
       noise.buffer = createPinkNoiseBuffer(ctx, 4);
       noise.loop = true;
-
       const noiseCut = ctx.createBiquadFilter();
       noiseCut.type = 'highpass';
       noiseCut.frequency.value = 180;
       noiseCut.Q.value = 0.5;
-
       const noiseTone = ctx.createBiquadFilter();
       noiseTone.type = 'lowpass';
       noiseTone.frequency.value = 2400;
       noiseTone.Q.value = 0.4;
-
       const noiseGain = ctx.createGain();
       noiseGain.gain.value = 0;
-
       noise.connect(noiseCut);
       noiseCut.connect(noiseTone);
       noiseTone.connect(noiseGain);
       noiseGain.connect(bus);
       noise.start();
-
       const wind = ctx.createOscillator();
       wind.frequency.value = 0.07;
       const windDepth = ctx.createGain();
@@ -2247,7 +2001,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       wind.connect(windDepth);
       windDepth.connect(noiseTone.frequency);
       wind.start();
-
       const overtone = ctx.createOscillator();
       overtone.type = 'sine';
       overtone.frequency.value = 110;
@@ -2256,7 +2009,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       overtone.connect(overtoneGain);
       overtoneGain.connect(bus);
       overtone.start();
-
       const subBass = ctx.createOscillator();
       subBass.type = 'sine';
       subBass.frequency.value = 42;
@@ -2265,7 +2017,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       subBass.connect(subBassGain);
       subBassGain.connect(master);
       subBass.start();
-
       sound = {
         ctx,
         bus,
@@ -2294,51 +2045,45 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         held: false,
         fadeToken: 0,
       };
-
       if (ctx.state === 'suspended') ctx.resume().catch(() => {});
       setElementalNoise(currentOpticElement);
       setStageOvertone(sessionStage);
       setStageSubBass(sessionStage);
-
       preloadFirstTracks();
     } catch (_) {
     } finally {
       soundStarting = false;
     }
   }
-
   function switchSoundtrack(track, fadeMs) {
-    if (!sound) return;
-
+    if (!sound) {
+      playNativeTrack(track);
+      return;
+    }
     const duration = fadeMs || SLOW_FADE_MS;
     if (!track || track.failed) {
       startSoundCrossfade(null, duration);
       return;
     }
-
     const channel = ensureTrackChannel(track);
     if (!channel) {
       startSoundCrossfade(null, duration);
       return;
     }
-
     if (sound.activeType === 'music' && sound.activeTrackId === track.id && !channel.audio.paused) {
       channel.audio.playbackRate = SCREEN_TIER === 'low' ? 1 : (sound.held ? SLOW_RATE : 1);
       return;
     }
-
     channel.audio.playbackRate = SCREEN_TIER === 'low' ? 1 : (sound.held ? SLOW_RATE : 1);
     channel.audio.preload = 'auto';
     startSoundCrossfade(channel, duration);
   }
-
   function startSoundCrossfade(channel, fadeMs) {
     if (!sound) return;
-
     const duration = Math.max(120, fadeMs || SLOW_FADE_MS);
     const targetId = channel ? channel.track.id : null;
+    const firstPlayback = !sound.activeTrackId;
     const fadeToken = ++sound.fadeToken;
-
     sound.activeTrackId = targetId;
     sound.activeTrack = channel ? channel.track : null;
     sound.activeType = channel ? 'music' : 'noise';
@@ -2346,7 +2091,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       recentTrackIds.push(channel.track.id);
       recentTrackIds = recentTrackIds.slice(-18);
     }
-
     const hardSwap = SCREEN_TIER !== 'high';
     for (const [id, item] of [...sound.channels]) {
       if (channel && id === targetId) {
@@ -2360,7 +2104,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         fadeChannelVolume(item, 0, duration);
       }
     }
-
     const now = sound.ctx.currentTime;
     sound.noiseGain.gain.cancelScheduledValues(now);
     sound.noiseGain.gain.setValueAtTime(sound.noiseGain.gain.value, now);
@@ -2368,11 +2111,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       channel ? 0 : (sound.noiseBaseGain || NOISE_GAIN),
       now + duration / 1000
     );
-
     if (channel) {
       channel.audio.playbackRate = SCREEN_TIER === 'low' ? 1 : (sound.held ? SLOW_RATE : 1);
       channel.audio.volume = 0;
-      window.setTimeout(() => {
+      const begin = () => {
         if (!sound || fadeToken !== sound.fadeToken) return;
         const promise = channel.audio.play();
         if (promise && typeof promise.catch === 'function') {
@@ -2382,9 +2124,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
           });
         }
         fadeChannelVolume(channel, MUSIC_GAIN, duration);
-      }, 120);
+      };
+      if (firstPlayback) begin();
+      else window.setTimeout(begin, 120);
     }
-
     window.setTimeout(() => {
       if (!sound || fadeToken !== sound.fadeToken) return;
       for (const [id, item] of [...sound.channels]) {
@@ -2394,58 +2137,51 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       }
     }, duration + 260);
   }
-
   function setSoundDepth(deep) {
     if (!sound) return;
-
     sound.held = deep;
     const now = sound.ctx.currentTime;
     const cutoff = deep ? (SCREEN_TIER === 'low' ? 650 : 750) : 18000;
-
     sound.depth.frequency.cancelScheduledValues(now);
     sound.depth.frequency.setValueAtTime(sound.depth.frequency.value, now);
     sound.depth.frequency.exponentialRampToValueAtTime(cutoff, now + 0.45);
-
     sound.master.gain.cancelScheduledValues(now);
     sound.master.gain.setValueAtTime(sound.master.gain.value, now);
     sound.master.gain.linearRampToValueAtTime(deep ? 0.58 : 0.72, now + 0.4);
-
     for (const channel of sound.channels.values()) {
       channel.audio.playbackRate = SCREEN_TIER === 'low' ? 1 : (deep ? SLOW_RATE : 1);
       fadeChannelVolume(channel, deep ? MUSIC_GAIN * 0.55 : MUSIC_GAIN, 420);
     }
     setElementalNoise();
   }
-
   function pauseSound() {
-    if (!sound) return;
+    if (!sound) {
+      if (nativeTrack) nativeTrack.pause();
+      return;
+    }
     sound.ctx.suspend().catch(() => {});
     for (const channel of sound.channels.values()) {
       channel.audio.pause();
     }
   }
-
   function resumeSound() {
-    if (!sound) return;
+    if (!sound) {
+      if (nativeTrack && nativeTrack.paused) nativeTrack.play().catch(() => {});
+      return;
+    }
     sound.ctx.resume().catch(() => {});
     if (sound.activeTrack) switchSoundtrack(sound.activeTrack, SLOW_FADE_MS);
   }
-
-  
-
   function playbackUrl(url) {
     return url;
   }
-
   function scoreClip(clip, category) {
     const preferredIndex = category.preferred.indexOf(clip.id);
     if (preferredIndex >= 0) return 1000 - preferredIndex;
-
     let score = 0;
     const title = clip.title.toLowerCase();
     const description = clip.description.toLowerCase();
     const tags = clip.tags.map((tag) => tag.toLowerCase());
-
     for (const keyword of category.keywords) {
       const key = keyword.toLowerCase();
       if (title.includes(key)) score += 4;
@@ -2456,23 +2192,17 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       }
       if (description.includes(key)) score += 1;
     }
-
     if (clip.vertical) score += 3;
     if (clip.duration >= 5 && clip.duration <= 20) score += 1;
     return score;
   }
-
-
-
   function nextClipIndex(category) {
     const clips = category.clips;
     if (!clips.length) return null;
-
     const available = (index) => {
       const clip = clips[index];
       return Boolean(clip) && !clip.invalid && (!clip.id || !isVideoSeen(clip.id));
     };
-
     if (category.freshIndex !== null) {
       const fresh = category.freshIndex;
       category.freshIndex = null;
@@ -2481,7 +2211,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         return fresh;
       }
     }
-
     const start = category.lastPlayed === null ? -1 : category.lastPlayed;
     for (let step = 1; step <= clips.length; step += 1) {
       const index = (start + step + clips.length) % clips.length;
@@ -2490,25 +2219,20 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         return index;
       }
     }
-
     return null;
   }
-
   function hasUnusedVideo(category) {
     return Boolean(category)
       && category.clips.some((clip) => !clip.id || !sessionUsedVideoIds.has(clip.id));
   }
-
   function unusedCategory(excludeIndex) {
     const other = categories.find(
       (category) => category.index !== excludeIndex && hasUnusedVideo(category)
     );
     if (other) return other;
-
     const current = activeCategory();
     return hasUnusedVideo(current) ? current : null;
   }
-
   function playCategory(category) {
     if (!category || category.index !== state.index || !category.clips.length) return null;
     const index = nextClipIndex(category);
@@ -2516,7 +2240,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     playClip(category, index);
     return index;
   }
-
   function contextAllowsClip(clip) {
     const text = `${clip.title || ''} ${clip.description || ''}`.toLowerCase();
     const darkContext = ['rain', 'fog', 'snow'].includes(envContext.weatherType)
@@ -2524,7 +2247,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (darkContext && /\b(beach|tropical|palm|summer|flower|sunny|sunlight|golden)\b/.test(text)) return false;
     return true;
   }
-
   function pickStageClips(stage, count, picked, allowSeen = false) {
     const stageCategories = categories.filter((category) => stage.categories.includes(category.tag));
     const pools = stageCategories.map((category) => {
@@ -2537,40 +2259,28 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         && (allowSeen || !isVideoSeen(clip.id))
         && contextAllowsClip(clip)
       ));
-
       const ordered = shuffleArray(filtered).sort((a, b) => (b.envScore || 0) - (a.envScore || 0));
-
       return { category, clips: ordered };
     });
-
     const picks = [];
     let guard = 0;
-
     while (picks.length < count && guard < count * 4) {
       let added = false;
-
       for (const pool of pools) {
         if (picks.length >= count) break;
         const clip = pool.clips.shift();
         if (!clip) continue;
-
         picked.add(clip.id);
         picks.push({ stage: stage.id, category: pool.category, clip });
         added = true;
       }
-
       if (!added) break;
       guard += 1;
     }
-
     return picks;
   }
-
-
-
   function appendFallbackPath(allowSeen = false) {
     const entries = [];
-
     for (const stage of STAGES) {
       for (const tag of stage.categories) {
         const category = categories.find((item) => item.tag === tag);
@@ -2585,16 +2295,13 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         entries.push({ stage: stage.id, category, clip });
       }
     }
-
     if (!entries.length) return false;
     pathPlan.push(...entries);
     return true;
   }
-
   function ensureFallbackCategories() {
     for (const category of categories) {
       if (category.clips.length) continue;
-
       const fallback = (FALLBACK_CLIPS[category.tag] || []).map((clip) => ({
         ...clip,
         description: clip.description || '',
@@ -2602,31 +2309,24 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         element: clip.element || elementForClip(clip.title, [], category.tag, ''),
       }));
       if (!fallback.length) continue;
-
       category.clips = fallback;
       mountClips(category);
     }
   }
-
   function forceNextAvailableScene(direction) {
     ensureFallbackCategories();
-
     const playable = categories.filter((category) => category.clips.length);
     if (!playable.length) {
       return false;
     }
-
     const current = activeCategory();
     const ordered = playable
       .filter((category) => category !== current)
       .concat(playable.includes(current) ? [current] : []);
-
     for (const category of ordered) {
       const clip = category.clips.find((item) => !item.invalid && !isVideoSeen(item.id))
         || category.clips.find((item) => !item.invalid);
-
       if (!clip) continue;
-
       navigateTo(
         category.index,
         direction,
@@ -2639,17 +2339,14 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       );
       return true;
     }
-
     return false;
   }
-
   function normalizeSessionKey(value) {
     return String(value || '')
       .toLowerCase()
       .replace(/[^\p{L}\p{N}]+/gu, ' ')
       .trim();
   }
-
   function sessionPlanIsUnique(entries) {
     const ids = new Set();
     const urls = new Set();
@@ -2668,15 +2365,12 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
     return true;
   }
-
   function buildSessionPlan() {
     resetViewedCycleIfComplete();
     pathPicked = new Set();
-
     const attempt = (allowSeen) => {
       const picked = new Set();
       const entries = [];
-
       for (let cycle = 0; cycle < 2; cycle += 1) {
         const cycleEntries = [];
         for (const spec of CYCLE_STAGES) {
@@ -2686,7 +2380,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
           cycleEntries.push(...picks);
         }
         if (cycleEntries.length !== CYCLE_LENGTH) return null;
-
         const last = cycleEntries[cycleEntries.length - 1];
         if (last && last.stage === 4 && !last.clip.is_finale) {
           const used = new Set(cycleEntries.map((entry) => entry.clip.id));
@@ -2706,14 +2399,11 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
             last.category = final.category;
           }
         }
-
         for (const entry of cycleEntries) picked.add(entry.clip.id);
         entries.push(...cycleEntries);
       }
-
       return entries;
     };
-
     let entries = attempt(false);
     if (!entries || entries.length !== SESSION_LENGTH || !sessionPlanIsUnique(entries)) {
       allViewedVideoIds.clear();
@@ -2721,46 +2411,38 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       persistAllViewedVideoIds();
       entries = attempt(false) || attempt(true);
     }
-
     if (!entries || entries.length !== SESSION_LENGTH || !sessionPlanIsUnique(entries)) return false;
-
     pathPlan = entries;
     pathPicked = new Set(entries.map((entry) => entry.clip.id));
     pathPos = -1;
     pathStarted = false;
     return true;
   }
-
   function updateSessionProgress() {
     if (!progressFill) return;
-
     const currentFrame = sessionComplete
       ? SESSION_LENGTH
       : Math.min(SESSION_LENGTH, Math.max(0, pathPos + 1));
     progressFill.style.width = `${(currentFrame / SESSION_LENGTH) * 100}%`;
   }
-
   function stageLabelFor(stageId) {
     if (stageId === 1) return '01 // НАЧАЛО';
     if (stageId === 2) return '02 // ГЛУБИНА';
     if (stageId === 3) return '03 // ТИШИНА';
     return '04 // ВЫХОД';
   }
-
   function updateStageLabel(stageId) {
     sessionStage = stageId || sessionStage;
     setStageOvertone(sessionStage);
     setStageSubBass(sessionStage);
     if (stageLabelEl) stageLabelEl.textContent = stageLabelFor(sessionStage);
   }
-
   function trackStageReached(stageId) {
     const stage = Number(stageId);
     if (!stage || stage === lastTrackedStage) return;
     lastTrackedStage = stage;
     trackEvent('stage_reached', { stage });
   }
-
   function stopFinaleSessionVideo() {
     if (!finaleSessionVideo) return;
     try {
@@ -2768,20 +2450,16 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       finaleSessionVideo.removeAttribute('src');
       finaleSessionVideo.load();
     } catch (_) {
-      
     }
   }
-
   function syncFinaleSessionVideo() {
     if (!finaleSessionVideo) return;
-
     const anchorVideo = anchorClip && anchorClip.el;
     const activeVideo = document.querySelector('.slide.is-active video');
     const source = (anchorVideo && (anchorVideo.currentSrc || anchorVideo.getAttribute('src') || anchorVideo.src))
       || (anchorClip && anchorClip.url)
       || (activeVideo && (activeVideo.currentSrc || activeVideo.getAttribute('src') || activeVideo.src));
     if (!source) return;
-
     if (finaleSessionVideo.getAttribute('src') !== source) {
       finaleSessionVideo.src = source;
       finaleSessionVideo.load();
@@ -2790,7 +2468,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const promise = finaleSessionVideo.play();
     if (promise && typeof promise.catch === 'function') promise.catch(() => {});
   }
-
   function hideCycleWhisper() {
     window.clearTimeout(cycleWhisperTimer);
     cycleWhisperTimer = 0;
@@ -2799,7 +2476,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     cycleWhisperEl.classList.remove('is-visible');
     cycleWhisperEl.setAttribute('aria-hidden', 'true');
   }
-
   function showCycleWhisper(completedCycle) {
     if (!cycleWhisperEl) return;
     window.clearTimeout(cycleWhisperTimer);
@@ -2817,7 +2493,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       cycleWhisperEl.setAttribute('aria-hidden', 'true');
     }, 5000);
   }
-
   function beginSession() {
     window.clearTimeout(sessionFinalTimer);
     sessionFinalTimer = 0;
@@ -2845,13 +2520,11 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     lastHoldTrackedFrame = -1;
     portraitText = '';
     portraitRequestId += 1;
-
     if (copySnapshotButton) copySnapshotButton.textContent = tr('copy');
     if (notifyReturnButton) {
       notifyReturnButton.disabled = false;
       notifyReturnButton.textContent = tr('notify');
     }
-
     if (finaleEl) {
       finaleEl.hidden = true;
       finaleEl.classList.remove('is-visible');
@@ -2862,7 +2535,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     updateStageLabel(1);
     updateSessionProgress();
   }
-
   function readSessionLock() {
     try {
       const value = Number(localStorage.getItem(SESSION_LOCK_KEY));
@@ -2871,17 +2543,14 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       return 0;
     }
   }
-
   function writeSessionLock(value) {
     sessionLockAt = value;
     try {
       if (value) localStorage.setItem(SESSION_LOCK_KEY, String(value));
       else localStorage.removeItem(SESSION_LOCK_KEY);
     } catch (_) {
-      
     }
   }
-
   function formatSessionCountdown(ms) {
     const total = Math.max(0, Math.ceil(ms / 1000));
     const hours = Math.floor(total / 3600);
@@ -2889,12 +2558,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const seconds = total % 60;
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   }
-
   function updateSessionLockUI() {
     const remaining = sessionLockAt ? Math.max(0, sessionLockAt - Date.now()) : 0;
     const text = formatSessionCountdown(remaining);
     const showEntryLock = remaining > 0 && !gateOpen;
-
     if (finaleCountdownEl) finaleCountdownEl.textContent = text;
     if (finaleLockInlineEl) finaleLockInlineEl.textContent = text;
     if (entryLock) {
@@ -2903,7 +2570,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       if (entryLockLight) entryLockLight.style.width = `${Math.max(0, Math.min(100, (remaining / SESSION_LOCK_MS) * 100))}%`;
       if (entryGate) entryGate.classList.toggle('is-locked', showEntryLock);
     }
-
     if (!gateOpen) {
       if (remaining > 0) {
         if (entryTrigger) {
@@ -2917,7 +2583,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         }
       }
     }
-
     if (sessionLockAt && remaining <= 0) {
       returnAfterLock = true;
       writeSessionLock(0);
@@ -2925,18 +2590,15 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       lockTicker = 0;
     }
   }
-
   function startSessionLockTicker() {
     window.clearInterval(lockTicker);
     updateSessionLockUI();
     lockTicker = window.setInterval(updateSessionLockUI, 1000);
   }
-
   function setSessionLock() {
     writeSessionLock(Date.now() + SESSION_LOCK_MS);
     startSessionLockTicker();
   }
-
   function clearSessionLock() {
     writeSessionLock(0);
     if (lockTicker) {
@@ -2945,19 +2607,15 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
     updateSessionLockUI();
   }
-
   function isSessionLocked() {
     return Boolean(sessionLockAt && sessionLockAt > Date.now());
   }
-
   function recordSessionEvent(record) {
     if (sessionComplete) return false;
     if (sessionEvents.length > pathPos) return false;
-
     const category = activeCategory();
     const clip = activeClip();
     if (!category || !clip) return false;
-
     const viewedMs = record && Number.isFinite(record.viewedMs)
       ? record.viewedMs
       : Math.max(0, Math.round(now() - state.viewStart));
@@ -2968,12 +2626,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const early = userAvgWatchTime > 0
       ? viewedMs < userAvgWatchTime * EARLY_SWIPE_RATIO
       : viewedMs < FAST_VIEW_MS;
-
     if (counted) {
       sessionAccounted = Math.min(CYCLE_LENGTH, sessionAccounted + 1);
       lastSessionProgressAt = Date.now();
     }
-
     sessionEvents.push({
       frame: sessionEvents.length + 1,
       stage: sessionStage,
@@ -2991,17 +2647,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       early,
       counted,
     });
-
     updateSessionProgress();
     return counted;
   }
-
-
-
-
-
   const FINALE_TIMEOUT_MS = 1500;
-
   function finaleFallbackReflection() {
     const held = (state.totalHolds || 0) > 0
       || sessionEvents.some((event) => event.held || event.heldMs > 0);
@@ -3015,7 +2664,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
     return 'Ты шёл сквозь кадры быстрее, чем успевал выдохнуть, стараясь не задерживаться. Дверь закрывается на два часа — возвращайся, когда будешь готов смотреть медленнее.';
   }
-
   function finaleReflectionIsValid(text) {
     if (!text) return false;
     if (currentLang === 'en') {
@@ -3026,60 +2674,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const sentences = text.match(/[^.!?…]+[.!?…]+/g) || [];
     return sentences.length === 2;
   }
-
-  async function requestFinaleReflection() {
-    const fallback = finaleFallbackReflection();
-    if (finaleReflectionEl) finaleReflectionEl.textContent = fallback;
-    if (location.protocol === 'file:') return;
-    if (location.hostname === 'yoursanctuary.ru' || location.hostname.endsWith('.github.io') || location.hostname === 's3.twcstorage.ru' || location.hostname === 'localhost' || location.hostname === '127.0.0.1') return;
-
-    const heldFrames = sessionEvents.filter((event) => event.held || event.heldMs > 0).length;
-    const fastFrames = sessionEvents.filter((event) => event.fast || event.early).length;
-    const pauses = sessionEvents.filter((event) => event.lingered).length;
-    const user = currentLang === 'en'
-      ? `Across 30 frames: holds — ${heldFrames}, fast swipes — ${fastFrames}, pauses — ${pauses}. Total holds — ${state.totalHolds || 0}.
-Write exactly 2 short English sentences. No numbers, jargon, video titles, or advice.`
-      : `За 30 кадров: удержаний — ${heldFrames}, быстрых свайпов — ${fastFrames}, пауз — ${pauses}. Всего удержаний за сессию — ${state.totalHolds || 0}.
-Напиши ровно 2 коротких предложения на русском. Без цифр, терминов, названий роликов, англицизмов и советов.`;
-
-    const controller = new AbortController();
-    const timer = window.setTimeout(() => controller.abort(), FINALE_TIMEOUT_MS);
-    try {
-      const response = await fetch(DEEPSEEK_PROXY_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: [
-            {
-              role: 'system',
-              content: currentLang === 'en'
-                ? 'You are a quiet, perceptive observer of dreams. From the rhythm of viewing and holds, write 2 short, intriguing English sentences without jargon, anglicisms, or moralizing. Create the feeling that the space noticed a hidden reaction, and gently close the door for 2 hours so that what was seen can settle.'
-                : 'Ты — тихий, проницательный наблюдатель сна. На основе ритма просмотров и удержаний напиши 2 коротких, интригующих предложения на русском языке без терминов, англицизмов и морали. Создай ощущение, что пространство заметило скрытую реакцию пользователя, и мягко закрой дверь на 2 часа, чтобы увиденное улеглось.',
-            },
-            { role: 'user', content: user },
-          ],
-          temperature: 0.8,
-          max_tokens: 120,
-        }),
-        signal: controller.signal,
-        cache: 'no-store',
-      });
-      if (!response.ok) return;
-      const payload = await response.json();
-      const raw = payload
-        && payload.choices
-        && payload.choices[0]
-        && payload.choices[0].message
-        && payload.choices[0].message.content;
-      const text = String(raw || '').replace(/^["«»“”]+|["«»“”]+$/g, '').replace(/\s+/g, ' ').trim();
-      if (finaleReflectionIsValid(text) && finaleReflectionEl) finaleReflectionEl.textContent = text;
-    } catch (_) {
-      
-    } finally {
-      window.clearTimeout(timer);
-    }
-  }
-
   async function requestWakeLock() {
     if (!('wakeLock' in navigator) || wakeLock) return;
     try {
@@ -3089,13 +2683,11 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       wakeLock = null;
     }
   }
-
   function releaseWakeLock() {
     if (!wakeLock) return;
     try { wakeLock.release(); } catch (_) {  }
     wakeLock = null;
   }
-
   function artifactArchiveNumber() {
     try {
       const stored = localStorage.getItem('sanctuary-artifact-code');
@@ -3107,7 +2699,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     try { localStorage.setItem('sanctuary-artifact-code', code); } catch (_) {}
     return code;
   }
-
   function drawSessionArtifact() {
     if (!artifactCanvas || !finaleArtifact) return;
     const ctx = artifactCanvas.getContext('2d');
@@ -3126,7 +2717,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       seed = (seed * 1664525 + 1013904223) >>> 0;
       return seed / 4294967296;
     };
-
     const palettes = [
       { bg: '#ECE6DA', ink: '#1A1B1E', a: '#D8BC94', b: '#B8B2A6', c: '#6E8C89' },
       { bg: '#E7E2D6', ink: '#232528', a: '#B8B2A6', b: '#D8BC94', c: '#587673' },
@@ -3137,17 +2727,14 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     ];
     const palette = palettes[Math.floor(random() * palettes.length)];
     const composition = ['bird', 'grove', 'feather', 'branch', 'horizon', 'stone'][Math.floor(random() * 6)];
-
     ctx.fillStyle = palette.bg;
     ctx.fillRect(0, 0, W, H);
-
     // Canvas grain.
     for (let i = 0; i < 10000; i += 1) {
       const alpha = 0.012 + random() * 0.045;
       ctx.fillStyle = random() > 0.45 ? `rgba(26, 27, 30, ${alpha * 0.55})` : `rgba(255, 250, 240, ${alpha})`;
       ctx.fillRect(random() * W, random() * H, 1 + random() * 2.4, 1 + random() * 2.4);
     }
-
     // Translucent pigment washes.
     const washes = 3 + Math.floor(random() * 3);
     for (let i = 0; i < washes; i += 1) {
@@ -3162,7 +2749,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, W, H);
     }
-
     // Scattered pigment and brush marks.
     for (let i = 0; i < 18; i += 1) {
       ctx.save();
@@ -3177,13 +2763,11 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       ctx.stroke();
       ctx.restore();
     }
-
     ctx.save();
     ctx.translate(W / 2, H * 0.48);
     ctx.globalAlpha = 0.9;
     ctx.fillStyle = palette.ink;
     ctx.strokeStyle = palette.ink;
-
     const bird = (x, y, scale, flip) => {
       ctx.save();
       ctx.translate(x, y);
@@ -3214,7 +2798,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       ctx.beginPath(); ctx.moveTo(92, 2); ctx.lineTo(126, 15); ctx.lineTo(90, 20); ctx.closePath(); ctx.fill();
       ctx.restore();
     };
-
     if (composition === 'bird') {
       bird(-20, -30, 1, false);
       if (random() > 0.2) bird(190, 130, 0.52, true);
@@ -3280,7 +2863,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       ctx.beginPath(); ctx.ellipse(-30, 100, 150, 20, 0, 0, Math.PI * 2); ctx.fill();
     }
     ctx.restore();
-
     // Only the archive number lives on the canvas.
     ctx.fillStyle = `${palette.ink}B8`;
     ctx.font = '400 22px "JetBrains Mono", monospace';
@@ -3289,13 +2871,11 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     ctx.strokeStyle = `${palette.a}AA`;
     ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(74, 116); ctx.lineTo(144, 116); ctx.stroke();
-
     finaleArtifact.dataset.scenario = sessionScenario;
     finaleArtifact.dataset.composition = composition;
     artifactCanvas.dataset.archive = archive;
     finaleArtifact.hidden = false;
   }
-
   function artifactBlob() {
     return new Promise((resolve) => {
       if (!artifactCanvas) { resolve(null); return; }
@@ -3303,7 +2883,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       catch (_) { resolve(null); }
     });
   }
-
   async function copyGiftLink() {
     const link = 'https://yoursanctuary.ru/?gift=1';
     try {
@@ -3314,7 +2893,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       }
     } catch (_) {}
   }
-
   async function shareSilence() {
     const url = 'https://yoursanctuary.ru/?gift=1';
     try {
@@ -3331,12 +2909,10 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     }
     await copyGiftLink();
   }
-
   function showFinaleInstall() {
     if (!finaleInstallWrap) return;
     finaleInstallWrap.hidden = isStandaloneMode() || installChoiceMade();
   }
-
   async function handleFinaleInstall() {
     if (!deferredPrompt) {
       if (finaleInstallHint) {
@@ -3356,17 +2932,13 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       }
     } catch (_) {}
   }
-
   let sessionScenario = 'grove';
-
   function chooseSessionScenario() {
     if (state.totalHolds > 0 || state.heldMs > 1200) return 'feather';
     if (engine.averagePaceMs && engine.averagePaceMs < 2200) return 'bird';
     return 'grove';
   }
-
   let artifactSalt = '';
-
   function applyScenarioReflection() {
     sessionScenario = chooseSessionScenario();
     artifactSalt = Math.random().toString(36).slice(2, 10);
@@ -3376,7 +2948,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     if (finaleArtifact) finaleArtifact.dataset.scenario = sessionScenario;
     if (artifactCanvas) artifactCanvas.dataset.scenario = sessionScenario;
   }
-
   function openArtLightbox() {
     if (!artifactCanvas || !artLightbox || !artLightboxImage) return;
     try {
@@ -3389,27 +2960,22 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     artLightbox.hidden = false;
     window.requestAnimationFrame(() => artLightbox.classList.add('is-visible'));
   }
-
   function closeArtLightbox() {
     if (!artLightbox) return;
     artLightbox.classList.remove('is-visible');
     window.setTimeout(() => { artLightbox.hidden = true; }, 260);
   }
-
   function finishSession() {
     if (sessionComplete) return;
-
     window.clearTimeout(sessionFinalTimer);
     sessionFinalTimer = 0;
     sessionComplete = true;
     trackEvent('session_complete', { total_holds: state.totalHolds });
     stopHoldPulse();
     if (gesture) stopHold();
-
     const category = activeCategory();
     if (category) pauseCategory(category);
     pauseSound();
-
     stage.classList.add('is-finalizing');
     releaseWakeLock();
     if (stageLabelEl) stageLabelEl.textContent = '30 // ТИШИНА';
@@ -3418,7 +2984,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     updateSessionLockUI();
     applyScenarioReflection();
     showFinaleInstall();
-
     if (finaleEl) {
       finaleEl.hidden = false;
       finaleEl.setAttribute('aria-hidden', 'false');
@@ -3428,9 +2993,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
         window.setTimeout(drawSessionArtifact, 260);
       });
     }
-
   }
-
   function returnToStart() {
     stopFinaleSessionVideo();
     if (finaleEl) {
@@ -3454,28 +3017,23 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     if (!buildSessionPlan()) appendFallbackPath(true);
     updateSessionLockUI();
   }
-
   function stageNameFor(stageId) {
     return stageFor(stageId).name;
   }
-
   function countedSessionEvents() {
     const counted = sessionEvents.filter((event) => event.counted);
     return counted.length ? counted : sessionEvents;
   }
-
   function sessionTopMoment(events) {
     return events
       .slice()
       .sort((a, b) => (b.heldMs || 0) - (a.heldMs || 0) || (b.viewedMs || 0) - (a.viewedMs || 0))[0];
   }
-
   function sessionAverageSeconds(events) {
     if (!events.length) return 0;
     const total = events.reduce((sum, event) => sum + (event.viewedMs || 0), 0);
     return Math.max(0.1, total / events.length / 1000);
   }
-
   function topTitlesForStage(events, stageId, limit = 2) {
     return events
       .filter((event) => Number(event.stage) === Number(stageId))
@@ -3485,14 +3043,12 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       .map((event) => String(event.title || '').split(/\s+/).slice(0, 5).join(' '))
       .filter(Boolean);
   }
-
   function fallbackSessionPortrait() {
     const events = countedSessionEvents();
     const shadowTitle = topTitlesForStage(events, 1, 1)[0];
     const trickTitle = topTitlesForStage(events, 2, 1)[0];
     const calmTitle = topTitlesForStage(events, 3, 1)[0];
     const pathTitle = topTitlesForStage(events, 4, 1)[0];
-
     if (currentLang === 'en') {
       const shadow = shadowTitle || 'the dark frame';
       const trick = trickTitle || 'the edge of intensity';
@@ -3506,7 +3062,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
         'Which part of this movement are you still not ready to call yours?',
       ];
     }
-
     const shadow = shadowTitle || 'тёмном кадре';
     const trick = trickTitle || 'краю интенсивности';
     const calm = calmTitle || 'тихом кадре';
@@ -3519,19 +3074,9 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       'Какую часть этого движения ты пока не готов назвать своей?',
     ];
   }
-
-
-
-
-
-
-
-
-
   function scheduleReturnNotification(unlockAt) {
     const body = tr('notificationBody');
     const delay = Math.max(0, unlockAt - Date.now());
-
     window.clearTimeout(returnNotificationTimer);
     returnNotificationTimer = window.setTimeout(() => {
       if (!('Notification' in window) || Notification.permission !== 'granted') return;
@@ -3542,10 +3087,8 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
           tag: 'sanctuary-return',
         });
       } catch (_) {
-        
       }
     }, delay);
-
     if (!('serviceWorker' in navigator)) return;
     navigator.serviceWorker.ready.then((registration) => {
       const worker = registration.active || navigator.serviceWorker.controller;
@@ -3559,14 +3102,12 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       }
     }).catch(() => {});
   }
-
   async function enableReturnNotification() {
     trackEvent('notify_enable');
     if (!('Notification' in window)) {
       if (notifyReturnButton) notifyReturnButton.textContent = tr('notifyUnavailable');
       return;
     }
-
     let permission = Notification.permission;
     if (permission === 'default') {
       try {
@@ -3575,12 +3116,10 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
         permission = 'denied';
       }
     }
-
     if (permission !== 'granted') {
       if (notifyReturnButton) notifyReturnButton.textContent = tr('notifyOff');
       return;
     }
-
     const unlockAt = sessionLockAt || (Date.now() + SESSION_LOCK_MS);
     scheduleReturnNotification(unlockAt);
     if (notifyReturnButton) {
@@ -3588,7 +3127,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       notifyReturnButton.disabled = true;
     }
   }
-
   function startNewSessionAfterUnlock() {
     clearSessionLock();
     if (returnAfterLock) {
@@ -3606,7 +3144,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     pathPicked = new Set();
     pathPos = -1;
     pathStarted = false;
-
     if (finaleEl) {
       finaleEl.hidden = true;
       finaleEl.classList.remove('is-visible');
@@ -3614,9 +3151,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     }
     stopFinaleSessionVideo();
     stage.classList.remove('is-finalizing');
-
     if (!buildSessionPlan()) appendFallbackPath(true);
-
     if (!pathPlan.length) {
       gateOpen = false;
       if (entryGate) {
@@ -3627,7 +3162,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       updateSessionLockUI();
       return;
     }
-
     gateOpen = true;
     if (!startPathFirst()) {
       gateOpen = false;
@@ -3639,12 +3173,10 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       updateSessionLockUI();
     }
   }
-
   function attachLockSwipe(surface, onSwipe) {
     if (!surface) return;
     let start = null;
     let touchStart = null;
-
     surface.addEventListener('touchstart', (event) => {
       if (event.touches.length !== 1 || event.target.closest('button, a')) {
         touchStart = null;
@@ -3653,7 +3185,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       const touch = event.touches[0];
       touchStart = { x: touch.clientX, y: touch.clientY };
     }, { passive: true });
-
     surface.addEventListener('touchend', (event) => {
       if (!touchStart) return;
       const touch = event.changedTouches && event.changedTouches[0];
@@ -3664,11 +3195,9 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       const dy = touch.clientY - origin.y;
       if (dx > 75 && dx > Math.abs(dy) * 1.2) onSwipe();
     }, { passive: true });
-
     surface.addEventListener('touchcancel', () => {
       touchStart = null;
     }, { passive: true });
-
     surface.addEventListener('pointerdown', (event) => {
       if (event.pointerType !== 'mouse' || event.target.closest('button, a')) {
         start = null;
@@ -3676,7 +3205,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       }
       start = { id: event.pointerId, x: event.clientX, y: event.clientY };
     }, { passive: true });
-
     surface.addEventListener('pointerup', (event) => {
       if (!start || event.pointerId !== start.id || event.pointerType !== 'mouse') {
         start = null;
@@ -3687,25 +3215,20 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       start = null;
       if (dx > 75 && dx > Math.abs(dy) * 1.2) onSwipe();
     });
-
     surface.addEventListener('pointercancel', () => {
       start = null;
     });
   }
-
   function makeCycleEntries(allowSeen) {
     const picked = new Set(pathPicked);
     const entries = [];
-
     for (const spec of CYCLE_STAGES) {
       const stage = stageFor(spec.id);
       const picks = pickStageClips(stage, spec.count, picked, allowSeen);
       if (picks.length < spec.count) return null;
       entries.push(...picks);
     }
-
     if (entries.length !== CYCLE_LENGTH) return null;
-
     const last = entries[entries.length - 1];
     if (last && last.stage === 4 && !last.clip.is_finale) {
       const used = new Set(entries.map((entry) => entry.clip.id));
@@ -3725,10 +3248,8 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
         last.category = final.category;
       }
     }
-
     return entries;
   }
-
   function extendPathPlan() {
     for (const allowSeen of [false, true]) {
       const entries = makeCycleEntries(allowSeen);
@@ -3737,7 +3258,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       pathPlan.push(...entries);
       return true;
     }
-
     pathPicked.clear();
     const entries = makeCycleEntries(true);
     if (!entries) return false;
@@ -3745,12 +3265,10 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     pathPlan.push(...entries);
     return true;
   }
-
   function dismissSwipeHint(removeElement = false) {
     window.clearTimeout(swipeHintTimer);
     swipeHintTimer = 0;
     if (!swipeHint) return;
-
     swipeHint.classList.remove('is-visible');
     if (removeElement) {
       swipeHint.remove();
@@ -3759,10 +3277,8 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       swipeHint.hidden = true;
     }
   }
-
   function armSwipeHint() {
     if (!swipeHint || hasSwiped) return;
-
     let firstVisit = false;
     try {
       firstVisit = !localStorage.getItem('sanctuary-first-hint-seen');
@@ -3770,7 +3286,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       firstVisit = true;
     }
     const delay = firstVisit ? 6000 : 1200;
-
     window.clearTimeout(firstHintTimer);
     window.clearTimeout(swipeHintTimer);
     swipeHint.hidden = false;
@@ -3785,39 +3300,33 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       }, 5200);
     }, delay);
   }
-
   function markFirstSwipe() {
     if (hasSwiped) return;
     hasSwiped = true;
     try { localStorage.setItem('sanctuary-first-hint-seen', '1'); } catch (_) {}
     dismissSwipeHint(true);
   }
-
   function startPathFirst() {
     isTransitioning = false;
     if (pathStarted || !pathPlan.length) return false;
-
     beginSession();
     if (!sceneOrdinal) sceneOrdinal = 1;
     const entry = pathPlan[0];
     const category = entry.category;
     const index = category.clips.findIndex((clip) => clip.id === entry.clip.id);
     if (index < 0) return false;
-
     if (state.index !== category.index) {
       slides[state.index].classList.remove('is-active');
       category.el.classList.add('is-active');
       state.index = category.index;
       state.visits[category.index] += 1;
     }
-
     resetViewClock();
     if (isVideoSeen(entry.clip.id)) sessionUsedVideoIds.delete(entry.clip.id);
     category.freshIndex = index;
     preparePlaybackWindow(entry, pathPlan[1]);
     const clipIndex = playCategory(category);
     if (clipIndex === null) return false;
-
     pathPos = 0;
     pathStarted = true;
     pathStartPending = false;
@@ -3827,21 +3336,17 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     updateSessionProgress();
     setSceneElement(activeClip());
     activateCaption(category, activeClip(), behaviorContext(), false, entry.stage);
-
     const track = nextTrackFor(category);
     switchSoundtrack(track, SLOW_FADE_MS);
     preloadNextTrack(category);
     armSwipeHint();
     return true;
   }
-
   function attachVideo(category, clip, index) {
     const media = category.el.querySelector('.media');
     if (!media) return null;
-
     const video = document.createElement('video');
     const playUrl = clip.playUrl || playbackUrl(clip.url);
-
     clip.playUrl = playUrl;
     video.className = 'clip';
     video.muted = true;
@@ -3855,13 +3360,11 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     video.setAttribute('playsinline', '');
     video.setAttribute('webkit-playsinline', '');
     video.setAttribute('aria-hidden', 'true');
-
     video.addEventListener('loadedmetadata', () => {
       if (video.videoWidth > 0 && video.videoHeight > video.videoWidth) {
         video.classList.add('is-ready');
       }
     });
-
     video.addEventListener('canplay', () => video.classList.add('is-ready'));
     video.addEventListener('playing', () => video.classList.add('is-ready'));
     video.addEventListener('timeupdate', () => handleLoop(category, index, video));
@@ -3884,7 +3387,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
         if (promise && typeof promise.catch === 'function') promise.catch(() => {});
       }
     });
-
     video.crossOrigin = 'anonymous';
     video.src = playUrl;
     video.dataset.clipId = clip.id || '';
@@ -3893,18 +3395,15 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     media.appendChild(video);
     return video;
   }
-
   function mountClips(category) {
     const media = category.el.querySelector('.media');
     if (!media) return;
-
     category.clips.forEach((clip) => {
       if (clip.el) releaseClipVideo(clip);
       clip.el = null;
     });
     media.textContent = '';
   }
-
   function releaseClipVideo(clip) {
     if (!clip || !clip.el) return;
     const video = clip.el;
@@ -3914,12 +3413,10 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       video.load();
       video.remove();
     } catch (_) {
-      
     }
     clip.el = null;
     clip.lastTime = 0;
   }
-
   function ensureClipVideo(category, clip) {
     if (!category || !clip) return null;
     if (clip.el) return clip.el;
@@ -3927,7 +3424,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     if (index < 0) return null;
     return attachVideo(category, clip, index);
   }
-
   function prunePlaybackVideos(keepIds) {
     for (const category of categories) {
       for (const clip of category.clips) {
@@ -3943,13 +3439,11 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
             video.load();
             video.remove();
           } catch (_) {
-            
           }
         }
       });
     }
   }
-
   function preparePlaybackWindow(currentEntry, nextEntry) {
     const base = pathPos < 0 ? 0 : pathPos;
     const windowEntries = (SCREEN_TIER === 'low'
@@ -3971,16 +3465,12 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     }
     prunePlaybackVideos(keep);
   }
-
-
-
   const CATALOG_STAGE_CATEGORIES = {
     shadow: ['Shadow'],
     trickster_abyss: ['Trickster', 'Abyss'],
     calm: ['Calm'],
     path: ['Path'],
   };
-
   function lightPriorityFor(title) {
     const text = String(title || '').toLowerCase();
     const bright = [
@@ -3994,13 +3484,11 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     for (const word of dark) if (text.includes(word)) score -= 0.7;
     return score;
   }
-
   async function loadVideoCatalog() {
     const embedded = Array.isArray(window.VIDEOS_DATA) && window.VIDEOS_DATA.length
       ? window.VIDEOS_DATA
       : null;
     let catalog = embedded;
-
     if (location.protocol !== 'file:') {
       try {
         const response = await fetch('./videos.json', { cache: 'no-store' });
@@ -4014,11 +3502,9 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
         if (!catalog) throw error;
       }
     }
-
     if (!Array.isArray(catalog) || !catalog.length) {
       throw new Error('videos.json / videos-data.js is empty or malformed');
     }
-
     const pools = {
       Shadow: [],
       Trickster: [],
@@ -4034,7 +3520,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       .replace(/\.mp4$/, '');
     let tricksterFlip = 0;
     let loaded = 0;
-
     for (const item of catalog) {
       if (!item || typeof item.url !== 'string' || !/^https:\/\//i.test(item.url)) continue;
       if (usedUrls.has(item.url)) continue;
@@ -4042,7 +3527,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       const baseKey = baseVideoKey(item.url);
       if (usedBaseKeys.has(baseKey)) continue;
       usedBaseKeys.add(baseKey);
-
       const itemSize = Number(item.size) || 0;
       const itemWidth = Number(item.width) || 0;
       const itemHeight = Number(item.height) || 0;
@@ -4056,25 +3540,21 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
         || itemHeight !== 1920
         || itemBitrate < 2_500_000
       ) continue;
-
       const rawStage = String(item.stage || '').toLowerCase().replace(/\s+/g, '_');
       const stageKey = rawStage === 'trickster' || rawStage === 'abyss'
         ? 'trickster_abyss'
         : rawStage;
       const tags = CATALOG_STAGE_CATEGORIES[stageKey];
       if (!tags) continue;
-
       const tag = tags.length > 1
         ? tags[tricksterFlip++ % tags.length]
         : tags[0];
       const category = categories.find((entry) => entry.tag === tag);
       if (!category) continue;
-
       const id = String(item.id || item.url);
       if (usedIds.has(id)) continue;
       usedIds.add(id);
       usedUrls.add(item.url);
-
       const title = String(item.title || 'Без названия').trim();
       const archetype = String(item.archetype || category.tag);
       const clip = {
@@ -4100,15 +3580,12 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
         lightPriority: lightPriorityFor(title),
         envScore: environmentScoreFor(title, stageKey),
       };
-
       pools[tag].push(clip);
       loaded += 1;
     }
-
     if (!loaded) {
       throw new Error('videos.json contains no playable entries');
     }
-
     for (const category of categories) {
       category.clips = shuffleArray(pools[category.tag] || []).slice(0, CLIPS_PER_CATEGORY);
       category.activeIndex = 0;
@@ -4116,7 +3593,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       category.freshIndex = null;
       mountClips(category);
     }
-
     catalogVideoIds = new Set();
     for (const category of categories) {
       for (const clip of category.clips) {
@@ -4124,32 +3600,22 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       }
     }
     resetViewedCycleIfComplete();
-
-
-
     return loaded;
   }
-
   function handleLoop(category, clipIndex, video) {
     if (category.index !== state.index || category.activeIndex !== clipIndex) return;
-
     const clip = category.clips[clipIndex];
     if (!clip) return;
-
     const current = video.currentTime;
     if (clip.lastTime > 0.5 && current + 0.35 < clip.lastTime) {
       state.loopsInView += 1;
       state.totalLoops += 1;
     }
     clip.lastTime = current;
-
     if (state.loopsInView >= 2) {
       rewardCategory(category, 'loops');
     }
   }
-
-  
-
   function playClip(category, index) {
     if (!category || category.index !== state.index) return;
     if (!gateOpen) return;
@@ -4157,20 +3623,16 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     if (!selected) return;
     ensureClipVideo(category, selected);
     if (!selected.el) return;
-
     if (selected.id) markVideoViewed(selected.id);
     category.activeIndex = index;
-
     category.clips.forEach((clip, clipIndex) => {
       const video = clip.el;
       if (!video) return;
-
       if (clipIndex === index) {
         video.classList.add('is-current');
         video.preload = 'auto';
         video.playbackRate = stage.classList.contains('is-held') ? SLOW_RATE : 1;
         clip.lastTime = video.currentTime;
-
         const promise = video.play();
         if (promise && typeof promise.catch === 'function') {
           promise.catch(() => {
@@ -4182,91 +3644,68 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       }
     });
   }
-
   function pauseCategory(category) {
     if (!category) return;
     category.clips.forEach((clip) => {
       if (clip.el) clip.el.pause();
     });
   }
-
   function setActivePlaybackRate(rate) {
     const clip = activeClip();
     if (clip && clip.el) clip.el.playbackRate = rate;
   }
-
   function wakePlayback() {
     if (!gateOpen) return;
     const category = activeCategory();
     const clip = category && category.clips[category.activeIndex];
     if (!clip || !clip.el || !clip.el.paused) return;
-
     const promise = clip.el.play();
     if (promise && typeof promise.catch === 'function') promise.catch(() => {});
   }
-
-  
-
   function rewardCategory(category, reason) {
     if (!category || engine.phase !== 'flow' || state.resonanceAwarded) return;
-
     state.resonanceAwarded = true;
     const nextWeight = Math.min(MAX_WEIGHT, (engine.weights[category.tag] || 1) + 1);
     engine.weights[category.tag] = nextWeight;
     engine.resonanceTotal += 1;
-
-
-
   }
-
   function isDeepEngagement() {
     if (engine.resonanceTotal >= 2) return true;
     if (engine.averagePaceMs >= 6000 && engine.recentViews.length >= 2) return true;
-
     const recent = engine.recentViews.slice(-4);
     if (recent.length < 2) return false;
-
     const average = recent.reduce((sum, value) => sum + value, 0) / recent.length;
     return average >= 4500;
   }
-
   function weightedNext(excludeIndex) {
     const pool = categories.filter((category) => category.index !== excludeIndex);
     if (!pool.length) return null;
-
     const previous = engine.history[engine.historyPos - 1];
     const weights = pool.map((category) => {
       let weight = Math.max(0.1, engine.weights[category.tag] || 1);
       if (category.index === previous) weight *= 0.7;
       return weight;
     });
-
     const total = weights.reduce((sum, weight) => sum + weight, 0);
     let roll = Math.random() * total;
-
     for (let i = 0; i < pool.length; i += 1) {
       roll -= weights[i];
       if (roll <= 0) return pool[i].index;
     }
-
     return pool[pool.length - 1].index;
   }
-
   function registerBehavior(record) {
     const category = categories[state.index];
     if (!category || engine.phase !== 'flow') return;
-
     if (!state.resonanceAwarded && (state.longestHoldMs >= RESONANCE_HOLD_MS || record.loopCount >= 2)) {
       rewardCategory(
         category,
         state.longestHoldMs >= RESONANCE_HOLD_MS ? 'hold' : 'loops'
       );
     }
-
     if (record.viewedMs < FAST_VIEW_MS) {
       engine.fastStreak += 1;
       engine.weights[category.tag] = Math.max(0.5, (engine.weights[category.tag] || 1) - 0.25);
-
       if (!engine.forced.length) {
         if (category.tag === 'Trickster') {
           engine.forced = ['Calm'];
@@ -4278,16 +3717,13 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       engine.fastStreak = 0;
     }
   }
-
   function selectFlowTarget() {
     const current = categories[state.index];
     engine.swipes += 1;
     engine.sincePath += 1;
-
     if (current.tag === 'Path') {
       engine.sincePath = 0;
     }
-
     while (engine.forced.length) {
       const forced = categoryByTag(engine.forced.shift());
       if (forced && forced.index !== current.index) {
@@ -4295,14 +3731,12 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
         return forced.index;
       }
     }
-
     if (isDeepEngagement() && engine.sincePath >= engine.pathEvery && current.tag !== 'Path') {
       engine.sincePath = 0;
       engine.pathEvery = 5 + Math.floor(Math.random() * 2);
       engine.lastDecision = 'path:gestalt';
       return categoryByTag('Path').index;
     }
-
     const target = weightedNext(current.index);
     if (target !== null) {
       engine.lastDecision = `weighted:${categories[target].tag}`;
@@ -4310,14 +3744,10 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     }
     return target;
   }
-
-
-
   function fadeDurationFor(viewedMs, speed) {
     const impulsive = speed >= IMPULSIVE_SPEED;
     return viewedMs < QUICK_VIEW_MS || impulsive ? QUICK_FADE_MS : SLOW_FADE_MS;
   }
-
   function showFrameAfterglow() {
     if (SCREEN_TIER !== 'high') return;
     if (!gateOpen || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -4338,41 +3768,32 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       window.setTimeout(() => ghost.remove(), 520);
     } catch (_) {}
   }
-
   function navigateTo(targetIndex, direction, fadeMs, forcedClipId, sceneContext) {
     if (targetIndex === null || targetIndex === undefined) return;
     if (!slides[targetIndex]) return;
-
     showFrameAfterglow();
     maybeRecordResonance();
     markInteraction();
     setBreath(0);
     stopOptics();
     window.clearTimeout(captionRevealTimer);
-
     const fromIndex = state.index;
     const from = slides[fromIndex];
     const to = slides[targetIndex];
     const duration = fadeMs || SLOW_FADE_MS;
-
     stage.style.setProperty('--fade-duration', `${duration}ms`);
-
     stage.classList.remove('is-held');
     stopHoldPulse();
     setActivePlaybackRate(1);
     setSoundDepth(false);
     pauseCategory(categories[fromIndex]);
-
     from.classList.remove('is-active');
     to.classList.add('is-active');
-
     state.index = targetIndex;
     state.visits[targetIndex] += 1;
     resetViewClock();
-
     if (!sceneOrdinal) sceneOrdinal = 1;
     sceneOrdinal += 1;
-
     const category = categories[targetIndex];
     const behavior = sceneContext && sceneContext.behavior
       ? sceneContext.behavior
@@ -4381,48 +3802,39 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     const sceneStage = sceneContext && sceneContext.stage
       ? sceneContext.stage
       : (STAGE_BY_CATEGORY[category.tag] || 1);
-
     if (activeHapticStage !== sceneStage) {
       activeHapticStage = sceneStage;
       trackStageReached(sceneStage);
     }
     updateStageLabel(sceneStage);
     updateSessionProgress();
-
     if (forcedClipId) {
       const forcedIndex = category.clips.findIndex((clip) => clip.id === forcedClipId);
       if (forcedIndex >= 0) category.freshIndex = forcedIndex;
       if (isVideoSeen(forcedClipId)) sessionUsedVideoIds.delete(forcedClipId);
     }
-
     const planned = pathPlan[pathPos];
     if (!forcedClipId && planned && planned.category === category) {
       const plannedIndex = category.clips.findIndex((clip) => clip.id === planned.clip.id);
       if (plannedIndex >= 0) category.freshIndex = plannedIndex;
     }
     preparePlaybackWindow(planned, pathPlan[pathPos + 1]);
-
     playCategory(category);
     setSceneElement(activeClip());
     activateCaption(category, activeClip(), behavior, allowed, sceneStage);
     const track = nextTrackFor(category);
     switchSoundtrack(track, duration);
     preloadNextTrack(category);
-
     if (direction === 'up') {
       engine.history = engine.history.slice(0, engine.historyPos + 1);
       engine.history.push(targetIndex);
       engine.historyPos = engine.history.length - 1;
     }
   }
-
-  
-
   function reportSwipe(direction, speed) {
     const category = activeCategory();
     const clip = category.clips[category.activeIndex];
     const visits = state.visits[state.index];
-
     const record = {
       category: category.tag,
       video: clip ? clip.title : null,
@@ -4445,13 +3857,8 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       averagePaceMs: engine.averagePaceMs,
       loggedAt: new Date().toISOString(),
     };
-
-
     return record;
   }
-
-  
-
   function compressShadowCycle() {
     if (shadowCompressed || pathPos !== 1) return;
     const replacements = [];
@@ -4476,7 +3883,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     for (const entry of replacements) pathPicked.add(entry.clip.id);
     shadowCompressed = true;
   }
-
   function go(direction, speed) {
     if (!gateOpen || sessionComplete) return;
     hideCycleWhisper();
@@ -4486,7 +3892,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     updateUserAverage(record.viewedMs);
     const behavior = behaviorContext(record);
     const sceneContext = sceneContextFor(record, behavior);
-
     if (state.nervousStreak >= 3) {
       triggerTricksterPrick();
       state.nervousStreak = 0;
@@ -4495,22 +3900,17 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
         ? state.nervousStreak + 1
         : 0;
     }
-
     if (!pathStarted) {
       try {
         if (startPathFirst()) {
           return;
         }
       } catch (error) {
-        
       }
-
       forceNextAvailableScene(direction);
       return;
     }
-
     recordSessionEvent(record);
-
     if (direction === 'down') {
       if (pathPos <= 0) return;
       pathPos -= 1;
@@ -4529,7 +3929,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       );
       return;
     }
-
     if (pathPos < 2) firstShadowDurations.push(record.viewedMs);
     if (
       pathPos === 1
@@ -4539,12 +3938,10 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     ) {
       compressShadowCycle();
     }
-
     if (pathPos >= SESSION_LENGTH - 1) {
       finishSession();
       return;
     }
-
     const isCycleBoundary = (pathPos + 1) % CYCLE_LENGTH === 0;
     if (pathPos + 1 >= pathPlan.length) {
       if (!extendPathPlan()) {
@@ -4552,13 +3949,10 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
         if (!extendPathPlan()) return;
       }
     }
-
     const entry = pathPlan[pathPos + 1];
     if (!entry) return;
-
     pathPos += 1;
     sceneContext.stage = entry.stage;
-
     if (isCycleBoundary) {
       const completedCycle = cycleNumber;
       cycleNumber += 1;
@@ -4572,7 +3966,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     } else {
       captionStartDelayOverride = 0;
     }
-
     navigateTo(
       entry.category.index,
       direction,
@@ -4581,16 +3974,11 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       sceneContext
     );
   }
-
-  
-
   function startHold() {
     holdTimer = 0;
     if (!gesture || gesture.moved || gesture.holding) return;
-
     gesture.holding = true;
     gesture.holdStart = now();
-
     if (!gesture.holdCounted) {
       gesture.holdCounted = true;
       state.holdsInView += 1;
@@ -4600,7 +3988,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
         trackEvent('deep_hold', { frame: sceneOrdinal, stage: sessionStage });
       }
     }
-
     if (currentCaption) currentCaption.held = true;
     stage.classList.add('is-held');
     wakeCaption();
@@ -4609,10 +3996,8 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     startHoldPulse();
     maybeRecordResonance();
   }
-
   function stopHold() {
     if (!gesture || !gesture.holding) return;
-
     gesture.holding = false;
     if (currentCaption && currentCaption.holdReveal) {
       currentCaption.holdReveal = false;
@@ -4636,7 +4021,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     setSoundDepth(false);
     stopHoldPulse();
   }
-
   function abortGesture() {
     window.clearTimeout(holdTimer);
     window.clearTimeout(resonanceTimer);
@@ -4644,7 +4028,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     holdTimer = 0;
     resonanceTimer = 0;
     captionRevealTimer = 0;
-
     if (gesture) {
       if (gesture.holding) {
         const duration = now() - gesture.holdStart;
@@ -4662,24 +4045,15 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       }
       gesture = null;
     }
-
     stopHoldPulse();
     setActivePlaybackRate(1);
     setBreath(0);
     stopOptics();
     stage.classList.remove('is-held');
   }
-
-  
-
-
-
-
-
   function isInterfaceTarget(target) {
     return Boolean(target && target.closest('button, a, .install-card, .install-card--ios, .lang-switch, .finale'));
   }
-
   document.addEventListener('touchstart', (event) => {
     if (!gateOpen || sessionComplete) return;
     if (event.touches.length !== 1 || isInterfaceTarget(event.target)) return;
@@ -4715,7 +4089,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       if (gesture && !gesture.moved) rewardCategory(activeCategory(), 'hold');
     }, RESONANCE_HOLD_MS);
   }, { passive: false });
-
   document.addEventListener('touchmove', (event) => {
     if (!gateOpen || sessionComplete) return;
     if (!touchOrigin || !gesture || event.touches.length !== 1) return;
@@ -4742,7 +4115,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     touchOrigin.lastY = touch.clientY;
     touchOrigin.lastT = now();
   }, { passive: false });
-
   document.addEventListener('touchend', (event) => {
     if (!touchOrigin) return;
     const changed = event.changedTouches && event.changedTouches[0];
@@ -4758,11 +4130,11 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     setBreath(0);
     abortGesture();
     scheduleCaptionZero();
+    primeAudioGesture();
     if (Math.abs(dy) > 35 && Math.abs(dy) > Math.abs(dx)) {
       go(dy < 0 ? 'up' : 'down', velocity);
     }
   }, { passive: false });
-
   document.addEventListener('touchcancel', () => {
     if (gesture && gesture.holding) stopHold();
     stage.classList.remove('is-touching');
@@ -4772,49 +4144,35 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     setBreath(0);
     abortGesture();
   }, { passive: false });
-
   window.addEventListener('blur', abortGesture);
-
-  
-
   let wheelSum = 0;
   let wheelFirstAt = 0;
   let wheelLastAt = 0;
-
   window.addEventListener('wheel', (event) => {
     event.preventDefault();
     markInteraction();
     rememberAnchor('wheel');
     setBreath(0);
-
     if (gesture) return;
-
     const t = now();
     const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? stage.clientHeight : 1;
     const delta = event.deltaY * unit;
-
     if (t - wheelLastAt > 180) {
       wheelSum = 0;
       wheelFirstAt = t;
     }
     wheelLastAt = t;
     wheelSum += delta;
-
     if (Math.abs(wheelSum) >= 40) {
       const direction = wheelSum > 0 ? 'up' : 'down';
       const dt = Math.max(24, t - wheelFirstAt);
       const speed = Math.min(4, Math.abs(wheelSum) / dt);
-
       wheelSum = 0;
       go(direction, speed);
     }
   }, { passive: false });
-
-  
-
   window.addEventListener('keydown', (event) => {
     const key = event.key;
-
     if (!gateOpen) {
       if (key === 'Enter' || key === ' ' || key === 'Spacebar') {
         event.preventDefault();
@@ -4822,23 +4180,19 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       }
       return;
     }
-
     if (key !== 'ArrowUp' && key !== 'ArrowDown' && key !== 'PageUp' && key !== 'PageDown') {
       return;
     }
-
     event.preventDefault();
     markInteraction();
     rememberAnchor('key');
     setBreath(0);
     go(key === 'ArrowUp' || key === 'PageUp' ? 'up' : 'down', 1);
   });
-
   stage.addEventListener('click', (event) => {
     if (!gateOpen) return;
     if (now() - lastSwipeAt < 450) return;
     if (event.clientY < window.innerHeight * 0.6) return;
-
     const t = now();
     if (t - lastBottomTapAt < 450) {
       lastBottomTapAt = 0;
@@ -4849,7 +4203,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       lastBottomTapAt = t;
     }
   });
-
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
       state.hiddenAt = now();
@@ -4864,7 +4217,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       setBreath(0);
       stopOptics();
       setSceneElement(activeClip());
-
       const category = activeCategory();
       if (category.clips.length) playClip(category, category.activeIndex);
       if (gateOpen) requestWakeLock();
@@ -4872,7 +4224,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       resumeSound();
     }
   });
-
   window.addEventListener('online', () => {
     if (!gateOpen || document.hidden) return;
     const clip = activeClip();
@@ -4881,23 +4232,15 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     if (gesture && gesture.holding) return;
     video.play().catch(() => {});
   });
-
-  
-
   try {
     prepareSoundLibrary();
   } catch (error) {
-
   }
-
   stage.dataset.element = 'fog';
   stage.style.setProperty('--optic-x', '50%');
   stage.style.setProperty('--optic-y', '50%');
-
   stuporMonitor = window.setInterval(checkStupor, 1000);
-
   const entryGate = document.querySelector('.entry');
-
   function isStandaloneMode() {
     if (new URLSearchParams(location.search).get('app') === '1') return true;
     if (window.matchMedia('(display-mode: standalone)').matches) return true;
@@ -4906,7 +4249,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     if (document.referrer.startsWith('android-app://')) return true;
     return false;
   }
-
   function installChoiceMade() {
     try {
       return sessionStorage.getItem(INSTALL_SESSION_KEY) === '1';
@@ -4914,33 +4256,27 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       return false;
     }
   }
-
   function rememberInstallChoice() {
     try { sessionStorage.setItem(INSTALL_SESSION_KEY, '1'); } catch (_) {}
   }
-
   function rememberInstalled() {
     try { localStorage.setItem(INSTALLED_KEY, '1'); } catch (_) {}
     installCardDismissed = true;
     hideInstallCard();
   }
-
   function isIos() {
     return /iphone|ipad|ipod/i.test(navigator.userAgent)
       || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   }
-
   function isInAppBrowser() {
     return /Telegram|Instagram|FBAN|FBAV|VK|VKApp|Snapchat/i.test(navigator.userAgent);
   }
-
   function syncIosInstallCard() {
     if (!iosInstallCard) return;
     const inApp = isInAppBrowser();
     if (iosStepsSafari) iosStepsSafari.hidden = inApp;
     if (iosStepsInapp) iosStepsInapp.hidden = !inApp;
   }
-
   function syncInstallButton() {
     if (!entryInstallButton) return;
     const available = !isStandaloneMode();
@@ -4952,68 +4288,10 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       entryInstallHint.hidden = true;
     }
   }
-
   function isAndroidInApp() {
     return /Android/i.test(navigator.userAgent)
       && /(wv|Telegram|Instagram|FBAN|FBAV|VK)/i.test(navigator.userAgent);
   }
-
-  function showAndroidInfoCard() {
-    if (isStandaloneMode() || installChoiceMade() || !installCard) return;
-    if (iosInstallCard) { iosInstallCard.hidden = true; iosInstallCard.style.display = 'none'; }
-    installCard.classList.add('install-card--info');
-    if (installCardInfo) {
-      installCardInfo.textContent = tr('installInApp');
-      installCardInfo.hidden = false;
-    }
-    if (installCardHint) installCardHint.hidden = true;
-    if (installCardInstall) installCardInstall.hidden = true;
-    installCard.hidden = false;
-    installCard.classList.add('is-visible');
-    syncInstallButton();
-  }
-
-  function showAndroidFallbackCard() {
-    if (isStandaloneMode() || installChoiceMade() || !installCard) return;
-    if (iosInstallCard) { iosInstallCard.hidden = true; iosInstallCard.style.display = 'none'; }
-    installCard.classList.remove('install-card--info');
-    if (installCardInfo) installCardInfo.hidden = true;
-    if (installCardHint) installCardHint.hidden = true;
-    if (installCardInstall) {
-      installCardInstall.hidden = false;
-      installCardInstall.textContent = tr('installHelp');
-    }
-    installCard.hidden = false;
-    installCard.classList.add('is-visible');
-    syncInstallButton();
-  }
-
-  function showInstallCard(force = false, finalContext = false) {
-    if (isStandaloneMode() || installChoiceMade()) return;
-    if (!isIos() && !deferredPrompt) return;
-    if (!force && (installCardDismissed || gateOpen)) return;
-    if (isIos() && iosInstallCard) {
-      if (installCard) { installCard.hidden = true; installCard.classList.remove('is-visible'); }
-      iosInstallCard.hidden = false;
-      iosInstallCard.classList.add('is-visible');
-      iosInstallCard.classList.toggle('install-card--final', Boolean(finalContext));
-      syncIosInstallCard();
-      syncEntryInstallOffset(true, iosInstallCard);
-      syncInstallButton();
-      return;
-    }
-    if (iosInstallCard) { iosInstallCard.hidden = true; iosInstallCard.classList.remove('is-visible'); }
-    if (!installCard) return;
-    installCard.classList.remove('install-card--info');
-    if (installCardInfo) installCardInfo.hidden = true;
-    if (installCardInstall) installCardInstall.hidden = false;
-    installCard.classList.toggle('install-card--final', Boolean(finalContext));
-    installCard.classList.add('is-visible');
-    installCard.hidden = false;
-    syncEntryInstallOffset(true, installCard);
-    syncInstallButton();
-  }
-
   function syncEntryInstallOffset(visible, card) {
     const entry = document.getElementById('entry');
     if (!entry) return;
@@ -5027,7 +4305,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       entry.style.setProperty('--install-offset', `${Math.round(height + 38)}px`);
     });
   }
-
   function hideInstallCard() {
     if (installCard) {
       installCard.hidden = true;
@@ -5041,27 +4318,21 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     syncEntryInstallOffset(false);
     syncInstallButton();
   }
-
-
-
   function showIosInstallHint() {
     const target = installCard && !installCard.hidden
       ? installCardHint
       : entryInstallHint;
     if (!target) return;
-
     window.clearTimeout(installHintTimer);
     target.hidden = false;
     installHintTimer = window.setTimeout(() => {
       target.hidden = true;
     }, 4000);
   }
-
   async function handleInstallClick(event) {
     event.preventDefault();
     event.stopPropagation();
     trackEvent('install_prompt_accepted');
-
     if (deferredPrompt) {
       const prompt = deferredPrompt;
       deferredPrompt = null;
@@ -5074,18 +4345,15 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
           try { window.close(); window.blur(); } catch (_) {}
         }
       } catch (_) {
-        
       }
       if (!isIos()) hideInstallCard();
       syncInstallButton();
       return;
     }
-
     if (isIos()) {
       showIosInstallHint();
       return;
     }
-
     if (entryInstallHint) {
       entryInstallHint.textContent = tr('installManual');
       entryInstallHint.hidden = false;
@@ -5093,7 +4361,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       installHintTimer = window.setTimeout(() => { entryInstallHint.hidden = true; }, 5000);
     }
   }
-
   window.addEventListener('beforeinstallprompt', (event) => {
     event.preventDefault();
     deferredPrompt = event;
@@ -5101,9 +4368,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     if (installCardInfo) installCardInfo.hidden = true;
     if (installCardInstall) installCardInstall.hidden = false;
   });
-
   deferredPrompt = window.__deferredInstallPrompt || deferredPrompt;
-
   window.addEventListener('appinstalled', () => {
     deferredPrompt = null;
     showInstalledState();
@@ -5111,27 +4376,22 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     if (entryInstallButton) entryInstallButton.hidden = true;
     if (entryInstallHint) entryInstallHint.hidden = true;
   });
-
   const displayModeQuery = window.matchMedia('(display-mode: standalone)');
   if (typeof displayModeQuery.addEventListener === 'function') {
     displayModeQuery.addEventListener('change', syncInstallButton);
   } else if (typeof displayModeQuery.addListener === 'function') {
     displayModeQuery.addListener(syncInstallButton);
   }
-
   if (entryInstallButton) {
     entryInstallButton.addEventListener('pointerdown', (event) => event.stopPropagation());
     entryInstallButton.addEventListener('click', handleInstallClick);
   }
-
   for (const card of [installCard, iosInstallCard]) {
     if (!card) continue;
     card.addEventListener('pointerdown', (event) => event.stopPropagation());
     card.addEventListener('click', (event) => event.stopPropagation());
   }
-
   if (installCardInstall) installCardInstall.addEventListener('click', handleInstallClick);
-
   function showInstalledState() {
     hideInstallCard();
     for (const card of [installCard, iosInstallCard]) {
@@ -5143,7 +4403,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     if (entryTapPrompt) entryTapPrompt.hidden = true;
     if (entryInstalledNote) entryInstalledNote.hidden = false;
   }
-
   function closeInstallPrompt(event) {
     event.preventDefault();
     event.stopPropagation();
@@ -5151,13 +4410,11 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     installCardDismissed = true;
     hideInstallCard();
   }
-
   for (const button of [installCardLater, iosInstallClose]) {
     if (!button) continue;
     button.addEventListener('pointerdown', closeInstallPrompt);
     button.addEventListener('click', closeInstallPrompt);
   }
-
   if (installCardInstall) installCardInstall.hidden = true;
   if (entryGate) {
     entryGate.classList.toggle('is-gift', GIFT_MODE);
@@ -5170,9 +4427,9 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
   if (entryTapPrompt) entryTapPrompt.hidden = true;
   if (entryInstalledNote) entryInstalledNote.hidden = true;
   syncInstallButton();
-
   function unlockExperience() {
     if (gateOpen) return;
+    activateAudioSession();
     isTransitioning = false;
     window.setTimeout(() => { isTransitioning = false; }, 1000);
     if (isSessionLocked()) {
@@ -5191,7 +4448,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     resetViewClock();
     markInteraction();
     setBreath(0);
-
     if (entryGate) {
       entryGate.classList.add('is-open');
       entryGate.setAttribute('aria-hidden', 'true');
@@ -5199,9 +4455,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
         entryGate.hidden = true;
       }, 1100);
     }
-
     enableSoundscape();
-
     if (!sceneOrdinal) sceneOrdinal = 1;
     try {
       if (!startPathFirst()) pathStartPending = true;
@@ -5210,7 +4464,6 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       console.error('[sanctuary] gate start failed:', error);
     }
   }
-
   if (entryGate) {
     let entryStart = null;
     entryGate.addEventListener('touchstart', (event) => {
@@ -5248,21 +4501,16 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
   } else if (!entryGate) {
     gateOpen = true;
   }
-
   if (entryBegin) entryBegin.addEventListener('click', unlockExperience);
-
   sessionLockAt = readSessionLock();
   returnAfterLock = Boolean(sessionLockAt && sessionLockAt <= Date.now());
   startSessionLockTicker();
   applyLanguage();
   startPresenceCounter();
   window.addEventListener('load', () => trackEvent('threshold_open'), { once: true });
-
-
   if (notifyReturnButton) {
     notifyReturnButton.addEventListener('click', enableReturnNotification);
   }
-
   if (shareSilenceButton) shareSilenceButton.addEventListener('click', shareSilence);
   if (finaleArtifact) {
     finaleArtifact.style.cursor = 'zoom-in';
@@ -5280,11 +4528,9 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
   if (artLightboxClose) artLightboxClose.addEventListener('click', closeArtLightbox);
   window.addEventListener('keydown', (event) => { if (event.key === 'Escape' && artLightbox && !artLightbox.hidden) closeArtLightbox(); });
   if (finaleInstallButton) finaleInstallButton.addEventListener('click', handleFinaleInstall);
-
   if (backToStartButton) {
     backToStartButton.addEventListener('click', returnToStart);
   }
-
   if (entryLock) {
     entryLock.addEventListener('pointerdown', (event) => {
       event.stopPropagation();
@@ -5293,36 +4539,29 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       entryLockRevealTimer = window.setTimeout(() => entryLock.classList.remove('is-revealed'), 4200);
     });
   }
-
   attachLockSwipe(entryGate, () => {
     if (!isSessionLocked()) return;
     clearSessionLock();
     unlockExperience();
   });
-
   attachLockSwipe(finaleEl, () => {
     if (!isSessionLocked()) return;
     startNewSessionAfterUnlock();
   });
-
   const environmentReady = Promise.race([
     loadEnvironment(),
     new Promise((resolve) => window.setTimeout(resolve, 1200)),
   ]);
   const startupTasks = [loadVideoCatalog(), environmentReady];
-
   Promise.allSettled(startupTasks).then(() => {
     try {
       const total = categories.reduce((sum, category) => sum + category.clips.length, 0);
       const music = categories.reduce((sum, category) => sum + category.musicTracks.length, 0);
-
-
       try {
         if (!buildSessionPlan()) appendFallbackPath(true);
       } catch (error) {
         console.error('[sanctuary] session plan failed:', error);
       }
-
       if (!pathPlan.length) {
         ensureFallbackCategories();
         try {
@@ -5331,21 +4570,16 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
           console.error('[sanctuary] fallback session failed:', error);
         }
       }
-
-
       if (!pathPlan.length) {
         console.error('[sanctuary] no video clips available after all fallbacks');
         return;
       }
-
       try {
         preparePlaybackWindow(pathPlan[0], pathPlan[1]);
         const first = pathPlan[0];
         prefetchCaption(first.clip, first.category, behaviorContext(), first.stage);
       } catch (error) {
-
       }
-
       if (gateOpen && !pathStarted) {
         try {
           startPathFirst();
@@ -5357,11 +4591,9 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       console.error('[sanctuary] startup failed:', error);
     }
   });
-
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).catch((error) => {
-
       });
     });
   }
