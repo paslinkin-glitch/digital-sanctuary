@@ -1267,15 +1267,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (!candidates.length) return null;
     return candidates[Math.floor(Math.random() * candidates.length)];
   }
-  function advanceSynchronicity() {
-    if (!synchronicity.active) return null;
-    synchronicity.swipes += 1;
-    if (synchronicity.swipes < synchronicity.threshold) return null;
-    const target = findSyncTarget();
-    synchronicity.active = false;
-    synchronicity.swipes = 0;
-    return target;
-  }
+
   function clamp(value, min, max) {
     return Math.min(max, Math.max(min, value));
   }
@@ -1483,13 +1475,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (/(сделай|поверь|должен|нужно|попробуй|стань|обещай|you should|you must|try to|promise me)/iu.test(text)) return false;
     return true;
   }
-  function memoryPrompt() {
-    if (!resonanceMemory.length) return '';
-    const events = resonanceMemory
-      .map((event, index) => `${index + 1}. ${event.category}; образ: «${event.image}»; фраза: «${event.phrase}»`)
-      .join('\n');
-    return `\n\nПамять последних резонансных событий (от старого к новому):\n${events}\nНовая фраза должна логически или ассоциативно развивать, углублять либо парадоксально откликаться на последнюю мысль из этой памяти через визуал нового видео. Не повторяй прошлые формулировки.`;
-  }
+
   function localTimeContext() {
     const date = new Date();
     const hour = date.getHours();
@@ -2455,27 +2441,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   function playbackUrl(url, clip) {
     return clip ? sourceForClip(clip) : url;
   }
-  function scoreClip(clip, category) {
-    const preferredIndex = category.preferred.indexOf(clip.id);
-    if (preferredIndex >= 0) return 1000 - preferredIndex;
-    let score = 0;
-    const title = clip.title.toLowerCase();
-    const description = clip.description.toLowerCase();
-    const tags = clip.tags.map((tag) => tag.toLowerCase());
-    for (const keyword of category.keywords) {
-      const key = keyword.toLowerCase();
-      if (title.includes(key)) score += 4;
-      if (tags.includes(key)) {
-        score += 4;
-      } else if (tags.some((tag) => tag.includes(key))) {
-        score += 1;
-      }
-      if (description.includes(key)) score += 1;
-    }
-    if (clip.vertical) score += 3;
-    if (clip.duration >= 5 && clip.duration <= 20) score += 1;
-    return score;
-  }
+
   function nextClipIndex(category) {
     const clips = category.clips;
     if (!clips.length) return null;
@@ -2505,14 +2471,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     return Boolean(category)
       && category.clips.some((clip) => !clip.id || !sessionUsedVideoIds.has(clip.id));
   }
-  function unusedCategory(excludeIndex) {
-    const other = categories.find(
-      (category) => category.index !== excludeIndex && hasUnusedVideo(category)
-    );
-    if (other) return other;
-    const current = activeCategory();
-    return hasUnusedVideo(current) ? current : null;
-  }
+
   function playCategory(category) {
     if (!category || category.index !== state.index || !category.clips.length) return null;
     const index = nextClipIndex(category);
@@ -2931,29 +2890,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     return counted;
   }
   const FINALE_TIMEOUT_MS = 1500;
-  function finaleFallbackReflection() {
-    const held = (state.totalHolds || 0) > 0
-      || sessionEvents.some((event) => event.held || event.heldMs > 0);
-    if (currentLang === 'en') {
-      return held
-        ? 'You lingered where the gaze usually slips past. The space remembered that response — the door will open again in two hours, when the silence settles.'
-        : 'You moved through the frames faster than a breath, trying not to linger. The door closes for two hours — return when you are ready to look more slowly.';
-    }
-    if (held) {
-      return 'Ты замирал там, где взгляд обычно скользит мимо. Пространство запомнило этот отклик — продолжение откроется через два часа, когда тишина уляжется.';
-    }
-    return 'Ты шёл сквозь кадры быстрее, чем успевал выдохнуть, стараясь не задерживаться. Дверь закрывается на два часа — возвращайся, когда будешь готов смотреть медленнее.';
-  }
-  function finaleReflectionIsValid(text) {
-    if (!text) return false;
-    if (currentLang === 'en') {
-      if (!/[A-Za-z]/.test(text) || /[А-Яа-яЁё]/.test(text)) return false;
-    } else if (!/[А-Яа-яЁё]/.test(text) || /[A-Za-z]/.test(text)) {
-      return false;
-    }
-    const sentences = text.match(/[^.!?…]+[.!?…]+/g) || [];
-    return sentences.length === 2;
-  }
+
+
   async function requestWakeLock() {
     if (!('wakeLock' in navigator) || wakeLock) return;
     try {
@@ -3311,23 +3249,13 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (!buildSessionPlan()) appendFallbackPath(true);
     updateSessionLockUI();
   }
-  function stageNameFor(stageId) {
-    return stageFor(stageId).name;
-  }
+
   function countedSessionEvents() {
     const counted = sessionEvents.filter((event) => event.counted);
     return counted.length ? counted : sessionEvents;
   }
-  function sessionTopMoment(events) {
-    return events
-      .slice()
-      .sort((a, b) => (b.heldMs || 0) - (a.heldMs || 0) || (b.viewedMs || 0) - (a.viewedMs || 0))[0];
-  }
-  function sessionAverageSeconds(events) {
-    if (!events.length) return 0;
-    const total = events.reduce((sum, event) => sum + (event.viewedMs || 0), 0);
-    return Math.max(0.1, total / events.length / 1000);
-  }
+
+
   function topTitlesForStage(events, stageId, limit = 2) {
     return events
       .filter((event) => Number(event.stage) === Number(stageId))
@@ -3337,37 +3265,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       .map((event) => String(event.title || '').split(/\s+/).slice(0, 5).join(' '))
       .filter(Boolean);
   }
-  function fallbackSessionPortrait() {
-    const events = countedSessionEvents();
-    const shadowTitle = topTitlesForStage(events, 1, 1)[0];
-    const trickTitle = topTitlesForStage(events, 2, 1)[0];
-    const calmTitle = topTitlesForStage(events, 3, 1)[0];
-    const pathTitle = topTitlesForStage(events, 4, 1)[0];
-    if (currentLang === 'en') {
-      const shadow = shadowTitle || 'the dark frame';
-      const trick = trickTitle || 'the edge of intensity';
-      const calm = calmTitle || 'the quiet frame';
-      const path = pathTitle || 'the open horizon';
-      return [
-        `Shadow: attention stayed with “${shadow}”; something there is usually kept just outside the light.`,
-        `Trickster and Abyss: “${trick}” held both attraction and the urge not to look directly.`,
-        `Calm / Anima: “${calm}” brought breath back; not an answer, more a place to be without proving anything.`,
-        `Path / Self: “${path}” points somewhere, though the direction has not yet become a choice.`,
-        'Which part of this movement are you still not ready to call yours?',
-      ];
-    }
-    const shadow = shadowTitle || 'тёмном кадре';
-    const trick = trickTitle || 'краю интенсивности';
-    const calm = calmTitle || 'тихом кадре';
-    const path = pathTitle || 'открытом горизонте';
-    return [
-      `Внимание дольше оставалось на «${shadow}»; там проступает то, что обычно держат вне света.`,
-      `«${trick}» удерживает и притяжение, и желание не смотреть прямо.`,
-      `«${calm}» возвращает дыхание; это не ответ, скорее место, где можно быть без доказательств.`,
-      `«${path}» намечает направление, хотя оно ещё не стало выбором.`,
-      'Какую часть этого движения ты пока не готов назвать своей?',
-    ];
-  }
+
   function scheduleReturnNotification(unlockAt) {
     const body = tr('notificationBody');
     const delay = Math.max(0, unlockAt - Date.now());
@@ -4022,56 +3920,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
     return pool[pool.length - 1].index;
   }
-  function registerBehavior(record) {
-    const category = categories[state.index];
-    if (!category || engine.phase !== 'flow') return;
-    if (!state.resonanceAwarded && (state.longestHoldMs >= RESONANCE_HOLD_MS || record.loopCount >= 2)) {
-      rewardCategory(
-        category,
-        state.longestHoldMs >= RESONANCE_HOLD_MS ? 'hold' : 'loops'
-      );
-    }
-    if (record.viewedMs < FAST_VIEW_MS) {
-      engine.fastStreak += 1;
-      engine.weights[category.tag] = Math.max(0.5, (engine.weights[category.tag] || 1) - 0.25);
-      if (!engine.forced.length) {
-        if (category.tag === 'Trickster') {
-          engine.forced = ['Calm'];
-        } else if (category.tag !== 'Calm') {
-          engine.forced = ['Trickster', 'Calm'];
-        }
-      }
-    } else {
-      engine.fastStreak = 0;
-    }
-  }
-  function selectFlowTarget() {
-    const current = categories[state.index];
-    engine.swipes += 1;
-    engine.sincePath += 1;
-    if (current.tag === 'Path') {
-      engine.sincePath = 0;
-    }
-    while (engine.forced.length) {
-      const forced = categoryByTag(engine.forced.shift());
-      if (forced && forced.index !== current.index) {
-        engine.lastDecision = `forced:${forced.tag}`;
-        return forced.index;
-      }
-    }
-    if (isDeepEngagement() && engine.sincePath >= engine.pathEvery && current.tag !== 'Path') {
-      engine.sincePath = 0;
-      engine.pathEvery = 5 + Math.floor(Math.random() * 2);
-      engine.lastDecision = 'path:gestalt';
-      return categoryByTag('Path').index;
-    }
-    const target = weightedNext(current.index);
-    if (target !== null) {
-      engine.lastDecision = `weighted:${categories[target].tag}`;
-      if (categories[target].tag === 'Path') engine.sincePath = 0;
-    }
-    return target;
-  }
+
+
   function fadeDurationFor(viewedMs, speed) {
     const impulsive = speed >= IMPULSIVE_SPEED;
     return viewedMs < QUICK_VIEW_MS || impulsive ? QUICK_FADE_MS : SLOW_FADE_MS;
@@ -4605,12 +4455,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   function isInAppBrowser() {
     return /Telegram|Instagram|FBAN|FBAV|VK|VKApp|Snapchat/i.test(navigator.userAgent);
   }
-  function syncIosInstallCard() {
-    if (!iosInstallCard) return;
-    const inApp = isInAppBrowser();
-    if (iosStepsSafari) iosStepsSafari.hidden = inApp;
-    if (iosStepsInapp) iosStepsInapp.hidden = !inApp;
-  }
+
   function syncInstallButton() {
     if (!entryInstallButton) return;
     const available = !isStandaloneMode();
@@ -4622,10 +4467,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       entryInstallHint.hidden = true;
     }
   }
-  function isAndroidInApp() {
-    return /Android/i.test(navigator.userAgent)
-      && /(wv|Telegram|Instagram|FBAN|FBAV|VK)/i.test(navigator.userAgent);
-  }
+
   function syncEntryInstallOffset(visible, card) {
     const entry = document.getElementById('entry');
     if (!entry) return;
