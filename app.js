@@ -307,6 +307,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   const SCREEN_TIER = detectScreenTier();
   const GIFT_MODE = new URLSearchParams(location.search).get('gift') === '1';
+  const APP_ENTRY = new URLSearchParams(location.search).get('app') === '1';
+  const COMPLETED_KEY = 'sanctuary-session-completed';
+  const trackedMilestones = new Set();
+  const holdGestureFrames = new Set();
   document.documentElement.dataset.tier = SCREEN_TIER;
   function timeOfDayFor(hour) {
     if (hour >= 23 || hour < 5) return 'night';
@@ -385,7 +389,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   function trackEvent(eventName, props = {}) {
     try {
-      if (window.umami && typeof window.umami.track === 'function') {
+      if (typeof window.trackSanctuaryEvent === 'function') {
+        window.trackSanctuaryEvent(eventName, props);
+      } else if (window.umami && typeof window.umami.track === 'function') {
         window.umami.track(eventName, props);
       }
     } catch (_) {
@@ -2894,6 +2900,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     } catch (_) {}
   }
   async function shareSilence() {
+    trackEvent('finale_action', { type: 'gift_share' });
     const url = 'https://yoursanctuary.ru/?gift=1';
     try {
       const blob = await artifactBlob();
@@ -2914,6 +2921,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     finaleInstallWrap.hidden = isStandaloneMode() || installChoiceMade();
   }
   async function handleFinaleInstall() {
+    trackEvent('pwa_install_click', { mode: isStandaloneMode() ? 'pwa' : 'browser' });
     if (!deferredPrompt) {
       if (finaleInstallHint) {
         finaleInstallHint.textContent = isIos() ? tr('installHint') : tr('installManual');
@@ -2949,6 +2957,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (artifactCanvas) artifactCanvas.dataset.scenario = sessionScenario;
   }
   function openArtLightbox() {
+    trackEvent('finale_action', { type: 'artwork_zoom' });
     if (!artifactCanvas || !artLightbox || !artLightboxImage) return;
     try {
       const url = artifactCanvas.toDataURL('image/png');
@@ -2965,12 +2974,21 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     artLightbox.classList.remove('is-visible');
     window.setTimeout(() => { artLightbox.hidden = true; }, 260);
   }
+  function trackFrameMilestone() {
+    const frame = pathPos + 1;
+    if (![5, 15, 25, 30].includes(frame) || trackedMilestones.has(frame)) return;
+    trackedMilestones.add(frame);
+    trackEvent('frame_milestone', { frame });
+  }
+
   function finishSession() {
     if (sessionComplete) return;
     window.clearTimeout(sessionFinalTimer);
     sessionFinalTimer = 0;
     sessionComplete = true;
-    trackEvent('session_complete', { total_holds: state.totalHolds });
+    trackFrameMilestone();
+    trackEvent('session_complete', { totalHolds: state.totalHolds, avgSwipeMs: Math.round(engine.averagePaceMs || 0) });
+    try { localStorage.setItem(COMPLETED_KEY, '1'); } catch (_) {}
     stopHoldPulse();
     if (gesture) stopHold();
     const category = activeCategory();
@@ -3952,6 +3970,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const entry = pathPlan[pathPos + 1];
     if (!entry) return;
     pathPos += 1;
+    trackFrameMilestone();
     sceneContext.stage = entry.stage;
     if (isCycleBoundary) {
       const completedCycle = cycleNumber;
@@ -4007,6 +4026,11 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       currentCaption.revealed = false;
     }
     const duration = now() - gesture.holdStart;
+    const gestureDuration = now() - gesture.t0;
+    if (gestureDuration >= 1000 && !holdGestureFrames.has(sceneOrdinal)) {
+      holdGestureFrames.add(sceneOrdinal);
+      trackEvent('hold_gesture', { frame: sceneOrdinal, durationMs: Math.round(gestureDuration) });
+    }
     state.heldMs += duration;
     state.longestHoldMs = Math.max(state.longestHoldMs, duration);
     if (duration >= 600) rememberAnchor('hold');
@@ -4332,6 +4356,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   async function handleInstallClick(event) {
     event.preventDefault();
     event.stopPropagation();
+    trackEvent('pwa_install_click', { mode: isStandaloneMode() ? 'pwa' : 'browser' });
     trackEvent('install_prompt_accepted');
     if (deferredPrompt) {
       const prompt = deferredPrompt;
@@ -4370,6 +4395,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   });
   deferredPrompt = window.__deferredInstallPrompt || deferredPrompt;
   window.addEventListener('appinstalled', () => {
+    trackEvent('pwa_installed', { mode: isStandaloneMode() ? 'pwa' : 'browser' });
     deferredPrompt = null;
     showInstalledState();
     rememberInstalled();
@@ -4439,7 +4465,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     gateOpen = true;
     isTransitioning = false;
     requestWakeLock();
-    trackEvent('session_start', { local_hour: new Date().getHours() });
+    let completedBefore = false;
+    try { completedBefore = localStorage.getItem(COMPLETED_KEY) === '1'; } catch (_) {}
+    if (completedBefore) trackEvent('return_after_lock', { mode: isStandaloneMode() ? 'pwa' : 'browser' });
+    trackEvent('session_start', { mode: isStandaloneMode() ? 'pwa' : 'browser' });
     if (returnAfterLock) {
       trackEvent('session_return');
       returnAfterLock = false;
@@ -4507,9 +4536,13 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   startSessionLockTicker();
   applyLanguage();
   startPresenceCounter();
+  trackEvent('entry_view', { mode: isStandaloneMode() ? 'pwa' : 'browser', directApp: APP_ENTRY });
   window.addEventListener('load', () => trackEvent('threshold_open'), { once: true });
   if (notifyReturnButton) {
-    notifyReturnButton.addEventListener('click', enableReturnNotification);
+    notifyReturnButton.addEventListener('click', () => {
+      trackEvent('finale_action', { type: 'notify' });
+      enableReturnNotification();
+    });
   }
   if (shareSilenceButton) shareSilenceButton.addEventListener('click', shareSilence);
   if (finaleArtifact) {

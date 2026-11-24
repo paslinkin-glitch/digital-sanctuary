@@ -3,7 +3,7 @@
  * the cache is only a fallback for offline launches. Coverr API and video
  * CDN requests are cross-origin and deliberately pass through untouched.
  */
-const CACHE = 'sanctuary-shell-v72';
+const CACHE = 'sanctuary-shell-v73';
 const ASSETS = [
   './',
   './index.html',
@@ -101,6 +101,7 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
+  if (url.hostname === 'cloud.umami.is' || url.hostname.endsWith('.umami.is')) return;
   if (url.origin !== self.location.origin) return;
 
   event.respondWith(networkFirst(request));
