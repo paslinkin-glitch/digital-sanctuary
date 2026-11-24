@@ -103,17 +103,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       finaleGift: 'Поделиться',
       artNote: 'Уникальная картина этой сессии',
       installAccepted: 'Приложение добавлено на экран',
-      installGuideTitle: 'Добавить на экран Домой',
-      installGuideLead: 'Это займёт несколько секунд.',
-      installGuideIos1: 'Нажмите «Поделиться» в Safari',
-      installGuideIos2: 'Выберите «На экран Домой»',
-      installGuideIos3: 'Подтвердите «Добавить»',
-      installGuideAndroid1: 'Откройте меню браузера',
-      installGuideAndroid2: 'Выберите «Установить приложение» или «Добавить на главный экран»',
-      installGuideAndroid3: 'Подтвердите установку',
-      installGuideInAppTitle: 'Откройте страницу в браузере',
-      installGuideInAppLead: 'Добавление на экран доступно в Safari или Chrome. Откройте эту страницу в браузере и повторите попытку.',
-      installGuideClose: 'Закрыть',
       iosKicker: 'СОХРАНИТЬ УБЕЖИЩЕ',
       iosSafari1: 'Нажмите «Поделиться» на нижней панели',
       iosSafari2: 'Выберите «На экран Домой»',
@@ -188,17 +177,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       finaleGift: 'Share',
       artNote: 'A unique painting from this session',
       installAccepted: 'App added to your screen',
-      installGuideTitle: 'Add to Home Screen',
-      installGuideLead: 'This will only take a few seconds.',
-      installGuideIos1: 'Tap Share in Safari',
-      installGuideIos2: 'Choose “Add to Home Screen”',
-      installGuideIos3: 'Confirm “Add”',
-      installGuideAndroid1: 'Open your browser menu',
-      installGuideAndroid2: 'Choose “Install app” or “Add to Home screen”',
-      installGuideAndroid3: 'Confirm installation',
-      installGuideInAppTitle: 'Open this page in a browser',
-      installGuideInAppLead: 'Adding to the home screen is available in Safari or Chrome. Open this page in a browser and try again.',
-      installGuideClose: 'Close',
       iosKicker: 'SAVE THE SANCTUARY',
       iosSafari1: 'Tap Share in the bottom bar',
       iosSafari2: 'Select «Add to Home Screen»',
@@ -592,12 +570,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   const installedTitle = document.querySelector('.installed-title');
   const installedSub = document.querySelector('.installed-sub');
   const entryInstallHint = document.getElementById('entry-install-hint');
-  const installGuide = document.getElementById('install-guide');
-  const installGuideTitle = document.getElementById('install-guide-title');
-  const installGuideLead = document.getElementById('install-guide-lead');
-  const installGuideSteps = document.getElementById('install-guide-steps');
-  const installGuideNote = document.getElementById('install-guide-note');
-  const installGuideClose = document.getElementById('install-guide-close');
   const installCard = document.getElementById('install-card');
   const installCardInstall = document.getElementById('install-card-install');
   const installCardLater = document.getElementById('install-card-later');
@@ -4691,37 +4663,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       target.hidden = true;
     }, 4000);
   }
-  function openInstallGuide() {
-    if (!installGuide) return;
-    const inApp = isInAppBrowser();
-    const ios = isIos();
-    if (installGuideTitle) installGuideTitle.textContent = inApp ? tr('installGuideInAppTitle') : tr('installGuideTitle');
-    if (installGuideLead) installGuideLead.textContent = inApp ? tr('installGuideInAppLead') : tr('installGuideLead');
-    if (installGuideSteps) {
-      installGuideSteps.innerHTML = '';
-      if (!inApp) {
-        const keys = ios
-          ? ['installGuideIos1', 'installGuideIos2', 'installGuideIos3']
-          : ['installGuideAndroid1', 'installGuideAndroid2', 'installGuideAndroid3'];
-        for (const key of keys) {
-          const li = document.createElement('li');
-          li.textContent = tr(key);
-          installGuideSteps.appendChild(li);
-        }
-      }
-    }
-    if (installGuideNote) installGuideNote.textContent = inApp ? '' : `yoursanctuary.ru`;
-    if (installGuideClose) installGuideClose.setAttribute('aria-label', tr('installGuideClose'));
-    installGuide.hidden = false;
-    window.requestAnimationFrame(() => installGuide.classList.add('is-visible'));
-    if (installGuideClose) installGuideClose.focus({ preventScroll: true });
-  }
-  function closeInstallGuide() {
-    if (!installGuide) return;
-    installGuide.classList.remove('is-visible');
-    window.setTimeout(() => { installGuide.hidden = true; }, 260);
-  }
-
   async function handleInstallClick(event) {
     event.preventDefault();
     event.stopPropagation();
@@ -4739,13 +4680,21 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
           try { window.close(); window.blur(); } catch (_) {}
         }
       } catch (_) {
-        openInstallGuide();
       }
-      hideInstallCard();
+      if (!isIos()) hideInstallCard();
       syncInstallButton();
       return;
     }
-    openInstallGuide();
+    if (isIos()) {
+      showIosInstallHint();
+      return;
+    }
+    if (entryInstallHint) {
+      entryInstallHint.textContent = tr('installManual');
+      entryInstallHint.hidden = false;
+      window.clearTimeout(installHintTimer);
+      installHintTimer = window.setTimeout(() => { entryInstallHint.hidden = true; }, 5000);
+    }
   }
   window.addEventListener('beforeinstallprompt', (event) => {
     event.preventDefault();
@@ -4770,16 +4719,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     displayModeQuery.addListener(syncInstallButton);
   }
   if (entryInstallButton) {
-    for (const type of ['pointerdown', 'pointerup', 'touchstart', 'touchmove', 'touchend']) {
-      entryInstallButton.addEventListener(type, (event) => event.stopPropagation(), { passive: false });
-    }
+    entryInstallButton.addEventListener('pointerdown', (event) => event.stopPropagation());
     entryInstallButton.addEventListener('click', handleInstallClick);
   }
-  if (installGuide) {
-    installGuide.addEventListener('click', (event) => { if (event.target === installGuide) closeInstallGuide(); });
-  }
-  if (installGuideClose) installGuideClose.addEventListener('click', closeInstallGuide);
-  window.addEventListener('keydown', (event) => { if (event.key === 'Escape' && installGuide && !installGuide.hidden) closeInstallGuide(); });
   for (const card of [installCard, iosInstallCard]) {
     if (!card) continue;
     card.addEventListener('pointerdown', (event) => event.stopPropagation());
@@ -4788,7 +4730,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   if (installCardInstall) installCardInstall.addEventListener('click', handleInstallClick);
   function showInstalledState() {
     hideInstallCard();
-    if (installGuide) { installGuide.classList.remove('is-visible'); installGuide.hidden = true; }
     for (const card of [installCard, iosInstallCard]) {
       if (!card) continue;
       card.hidden = true;

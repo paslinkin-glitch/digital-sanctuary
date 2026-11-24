@@ -29,10 +29,7 @@
 .entry.is-open{filter:blur(8px)!important}
 
 
-.entry.is-locked 
-50%{opacity:.18}}
-.entry.is-installed 
-@media (prefers-reduced-motion:reduce){}
+
 
 
 
@@ -137,20 +134,8 @@
 .entry-install-offer{z-index:7!important;pointer-events:auto!important}
 #install-btn{position:relative!important;z-index:8!important;pointer-events:auto!important}
 
-.install-guide{position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;padding:max(20px,env(safe-area-inset-top)) 6vw max(20px,env(safe-area-inset-bottom));background:rgba(7,7,9,.74);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);opacity:0;transition:opacity .35s var(--organic)}
-.install-guide[hidden]{display:none!important}.install-guide.is-visible{opacity:1}
-.install-guide-card{position:relative;width:min(86vw,360px);padding:clamp(24px,6vw,34px);border:1px solid rgba(214,199,178,.18);border-radius:20px;background:rgba(245,245,240,.04);box-shadow:0 28px 70px rgba(7,7,9,.55);text-align:left;transform:translateY(10px) scale(.98);transition:transform .4s var(--organic)}
-.install-guide.is-visible .install-guide-card{transform:translateY(0) scale(1)}
-.install-guide-close{position:absolute;top:12px;right:12px;width:34px;height:34px;border:.5px solid rgba(214,199,178,.22);border-radius:50%;background:rgba(7,7,9,.28);color:rgba(245,245,240,.7);font-family:var(--serif);font-size:22px;line-height:1}
-.install-guide-kicker{margin:0 0 14px;color:rgba(214,199,178,.58);font-family:var(--mono);font-size:9px;letter-spacing:.22em;text-transform:uppercase}
-.install-guide-title{margin:0;color:#F5F5F0;font-family:var(--serif);font-weight:300;font-size:clamp(24px,7vw,31px);line-height:1.15;letter-spacing:.01em}
-.install-guide-lead{margin:14px 0 0;color:rgba(245,245,240,.52);font-family:var(--sans);font-size:12px;line-height:1.6}
-.install-guide-steps{margin:18px 0 0;padding-left:1.35em;color:rgba(245,245,240,.68);font-family:var(--sans);font-size:12.5px;line-height:1.65}
-.install-guide-steps:empty{display:none}
-.install-guide-steps li{margin:0 0 8px;padding-left:3px}
-.install-guide-steps li::marker{color:#D6C7B2;font-family:var(--mono);font-size:10px}
-.install-guide-note{margin:14px 0 0;color:rgba(214,199,178,.40);font-family:var(--mono);font-size:8px;letter-spacing:.18em;text-transform:uppercase}
-.install-guide-note:empty{display:none}
+
+
 
 .finale-reflection{font-size:clamp(26px,7.2vw,36px)!important;line-height:1.24!important;font-weight:400!important;letter-spacing:-.01em!important;max-width:340px!important;display:block!important;-webkit-line-clamp:unset!important;-webkit-box-orient:initial!important;overflow:visible!important;color:#F5F5F0!important}
 .finale-door-note{font-size:clamp(13px,3.4vw,14px)!important;color:rgba(245,245,240,.48)!important}
