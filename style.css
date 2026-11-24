@@ -141,3 +141,11 @@
 .finale-door-note{font-size:clamp(13px,3.4vw,14px)!important;color:rgba(245,245,240,.48)!important}
 .finale-countdown{font-size:clamp(20px,5.2vw,25px)!important;font-weight:300!important;color:rgba(214,199,178,.78)!important;text-shadow:0 0 16px rgba(214,199,178,.10)}
 .finale-art-note{font-size:12px!important;color:rgba(245,245,240,.45)!important}
+
+
+/* v80 adaptive topbar and hero reflection */
+.entry-topbar{display:flex!important;flex-wrap:nowrap!important;justify-content:space-between!important;align-items:center!important;width:100%!important;padding-inline:clamp(1rem,5vw,2.2rem)!important;padding-top:calc(env(safe-area-inset-top,0rem) + clamp(0.8rem,2.6dvh,1.6rem))!important;gap:clamp(0.8rem,3vw,1.5rem)!important;position:relative!important;z-index:10!important;margin:0!important}
+.entry-topbar .lang-switch{position:static!important;top:auto!important;left:auto!important;right:auto!important;order:1!important;display:flex!important;align-items:center!important;align-self:stretch!important;margin:0!important;flex:0 0 auto;pointer-events:auto!important;z-index:11!important}
+.entry-topbar .quiet-presence{position:static!important;top:auto!important;left:auto!important;right:auto!important;order:2!important;display:flex!important;align-items:center!important;align-self:stretch!important;justify-content:flex-end!important;margin:0!important;min-width:0;flex:0 1 auto;white-space:nowrap;pointer-events:none!important;z-index:11!important}
+.entry-topbar .lang-switch-btn{pointer-events:auto!important;position:relative!important;z-index:12!important}
+.finale-reflection{font-size:clamp(1.85rem,8.2vw,2.75rem)!important;line-height:1.22!important;font-weight:400!important;max-width:min(88vw,26rem)!important}
