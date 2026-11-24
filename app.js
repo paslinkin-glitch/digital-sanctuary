@@ -2178,8 +2178,50 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     sound.ctx.resume().catch(() => {});
     if (sound.activeTrack) switchSoundtrack(sound.activeTrack, SLOW_FADE_MS);
   }
-  function playbackUrl(url) {
-    return url;
+  let activeQuality = chooseQuality();
+  function connectionSnapshot() {
+    const c = navigator.connection || navigator.mozConnection || navigator.webkitConnection || null;
+    const type = String((c && c.type) || '').toLowerCase();
+    const effectiveType = String((c && c.effectiveType) || '').toLowerCase();
+    const downlink = Number((c && c.downlink) || 0);
+    const saveData = Boolean(c && c.saveData);
+    const cellular = type === 'cellular' || (!type && /2g|3g|4g|5g/.test(effectiveType));
+    const wifi = type === 'wifi' || type === 'ethernet';
+    return { type, effectiveType, downlink, saveData, cellular, wifi };
+  }
+  function chooseQuality() {
+    const n = connectionSnapshot();
+    if (n.saveData || (n.cellular && (n.downlink < 4 || (n.effectiveType && n.effectiveType !== '4g')))) return '480';
+    if (n.wifi || (!n.cellular && n.downlink >= 10)) return '1080';
+    if (n.cellular && n.downlink >= 4) return '720';
+    return n.downlink >= 10 ? '1080' : '720';
+  }
+  function sourceForClip(clip) {
+    if (!clip) return '';
+    const raw = (window.VIDEOS_DATA || []).find((item) => item && item.url === clip.url) || {};
+    if (activeQuality === '480' && (clip.url480 || raw.url480)) return clip.url480 || raw.url480;
+    if (activeQuality === '720' && (clip.url720 || raw.url720)) return clip.url720 || raw.url720;
+    return clip.url;
+  }
+  function setQuality(force) {
+    const next = chooseQuality();
+    if (!force && next === activeQuality) return;
+    activeQuality = next;
+    const category = typeof activeCategory === 'function' ? activeCategory() : null;
+    const clip = category && category.clips[category.activeIndex];
+    if (!clip || !clip.el) return;
+    const url = sourceForClip(clip);
+    if (!url || clip.el.src === url) return;
+    const time = clip.el.currentTime || 0;
+    clip.playUrl = url;
+    clip.el.src = url;
+    if (clip.el.readyState === 0) clip.el.load();
+    try { clip.el.currentTime = time; } catch (_) {}
+    const promise = clip.el.play();
+    if (promise && typeof promise.catch === 'function') promise.catch(() => {});
+  }
+  function playbackUrl(url, clip) {
+    return clip ? sourceForClip(clip) : url;
   }
   function scoreClip(clip, category) {
     const preferredIndex = category.preferred.indexOf(clip.id);
@@ -3364,7 +3406,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const media = category.el.querySelector('.media');
     if (!media) return null;
     const video = document.createElement('video');
-    const playUrl = clip.playUrl || playbackUrl(clip.url);
+    const playUrl = playbackUrl(clip.url, clip);
     clip.playUrl = playUrl;
     video.className = 'clip';
     video.muted = true;
@@ -3383,11 +3425,30 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         video.classList.add('is-ready');
       }
     });
-    video.addEventListener('canplay', () => video.classList.add('is-ready'));
-    video.addEventListener('playing', () => video.classList.add('is-ready'));
+    let waitTimer = 0;
+    video.addEventListener('canplay', () => { window.clearTimeout(waitTimer); video.classList.add('is-ready'); });
+    video.addEventListener('playing', () => { window.clearTimeout(waitTimer); video.classList.add('is-ready'); });
+    video.addEventListener('waiting', () => {
+      window.clearTimeout(waitTimer);
+      waitTimer = window.setTimeout(() => {
+        if (activeQuality !== '480' && clip.url480) {
+          activeQuality = '480';
+          setQuality(true);
+        }
+      }, 1200);
+    });
     video.addEventListener('timeupdate', () => handleLoop(category, index, video));
     let fallbackCursor = 0;
     video.addEventListener('error', () => {
+      const original = clip.url;
+      if (original && video.src !== original) {
+        video.classList.remove('is-ready');
+        video.src = original;
+        if (video.readyState < 1) video.load();
+        const retry = video.play();
+        if (retry && typeof retry.catch === 'function') retry.catch(() => {});
+        return;
+      }
       const alternatives = category.clips.filter((candidate) => (
         candidate !== clip && candidate.url && !candidate.invalid
       ));
@@ -3464,17 +3525,15 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   function preparePlaybackWindow(currentEntry, nextEntry) {
     const base = pathPos < 0 ? 0 : pathPos;
-    const windowEntries = (SCREEN_TIER === 'low'
-      ? [currentEntry || pathPlan[base], nextEntry || pathPlan[base + 1]]
-      : [currentEntry || pathPlan[base], nextEntry || pathPlan[base + 1], pathPlan[base + 2]]).filter(Boolean);
+    const current = currentEntry || pathPlan[base];
+    const next = nextEntry || pathPlan[base + 1];
     const keep = new Set();
-    for (const entry of windowEntries) {
-      if (!entry || !entry.clip) continue;
-      keep.add(entry.clip.id);
-      ensureClipVideo(entry.category, entry.clip);
-      if (entry.clip.el) {
-        entry.clip.el.preload = 'auto';
-        if (entry.clip.el.readyState === 0) entry.clip.el.load();
+    if (current && current.clip) {
+      keep.add(current.clip.id);
+      ensureClipVideo(current.category, current.clip);
+      if (current.clip.el) {
+        current.clip.el.preload = 'auto';
+        if (current.clip.el.readyState === 0) current.clip.el.load();
       }
     }
     if (anchorClip && anchorClip.id) {
@@ -3482,7 +3541,22 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       ensureClipVideo(activeCategory(), anchorClip);
     }
     prunePlaybackVideos(keep);
+    const currentVideo = current && current.clip && current.clip.el;
+    if (currentVideo && next && next.clip) {
+      const promote = () => {
+        if (!currentVideo.paused || currentVideo.readyState >= 3) {
+          ensureClipVideo(next.category, next.clip);
+          if (next.clip.el) {
+            next.clip.el.preload = 'auto';
+            if (next.clip.el.readyState === 0) next.clip.el.load();
+          }
+        }
+      };
+      if (currentVideo.readyState >= 3) promote();
+      else currentVideo.addEventListener('canplay', promote, { once: true });
+    }
   }
+
   const CATALOG_STAGE_CATEGORIES = {
     shadow: ['Shadow'],
     trickster_abyss: ['Trickster', 'Abyss'],
@@ -3582,6 +3656,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         caption_en: String(item.caption_en || ''),
         title,
         url: item.url,
+        url720: String(item.url720 || ''),
+        url480: String(item.url480 || ''),
         duration: Number.isFinite(Number(item.duration)) ? Number(item.duration) : 10,
         description: archetype,
         tags: [stageKey, archetype],
@@ -4535,6 +4611,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   returnAfterLock = Boolean(sessionLockAt && sessionLockAt <= Date.now());
   startSessionLockTicker();
   applyLanguage();
+  activeQuality = chooseQuality();
+  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  if (connection && typeof connection.addEventListener === 'function') connection.addEventListener('change', () => setQuality(false));
   startPresenceCounter();
   trackEvent('entry_view', { mode: isStandaloneMode() ? 'pwa' : 'browser', directApp: APP_ENTRY });
   window.addEventListener('load', () => trackEvent('threshold_open'), { once: true });
