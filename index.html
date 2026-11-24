@@ -14,10 +14,10 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
   <link rel="preconnect" href="https://s3.twcstorage.ru" crossorigin>
-  <link rel="stylesheet" href="style.css?v=70">
+  <link rel="stylesheet" href="style.css?v=71">
 </head>
 <body>
-  <script>window.SANCTUARY_MAINTENANCE = true; if (window.SANCTUARY_MAINTENANCE) document.documentElement.dataset.maintenance = 'true';</script>
+  <script>window.SANCTUARY_MAINTENANCE = false; if (window.SANCTUARY_MAINTENANCE) document.documentElement.dataset.maintenance = 'true';</script>
   <section id="maintenance-screen" aria-live="polite">
     <div class="maintenance-inner">
       <span class="maintenance-thread" aria-hidden="true"></span>
@@ -82,10 +82,16 @@
       <span class="ambient-orb ambient-orb--smoke"></span>
     </div>
     <div class="aura-core" aria-hidden="true"></div>
+    <div class="entry-topbar">
     <div class="lang-switch" id="lang-switch" role="group" aria-label="Language">
       <button class="lang-switch-btn" type="button" data-lang="ru">RU</button>
       <span class="lang-switch-sep" aria-hidden="true">/</span>
       <button class="lang-switch-btn" type="button" data-lang="en">EN</button>
+    </div>
+      <div class="quiet-presence quiet-presence--top" id="entry-presence" aria-live="polite">
+        <span class="presence-dot" aria-hidden="true"></span>
+        <span class="presence-text" data-presence>IN SILENCE NOW: 0</span>
+      </div>
     </div>
     <div class="entry-copy">
       <p class="entry-kicker">A QUIET SPACE</p>
@@ -93,12 +99,7 @@
       <p class="entry-sub">Before sleep, after a hard day,<br>or between calls</p>
 
     </div>
-    <div class="quiet-presence" id="entry-presence" aria-live="polite">
-      <span class="presence-dot" aria-hidden="true"></span>
-      <span class="presence-text" data-presence>Quiet presence</span>
-    </div>
-
-    <div class="entry-lock" id="entry-lock" hidden aria-live="polite">
+<div class="entry-lock" id="entry-lock" hidden aria-live="polite">
       <p class="entry-lock-kicker" id="entry-lock-kicker">ДВЕРЬ ЗАКРЫТА</p>
       <span class="entry-lock-rail" aria-hidden="true"><i id="entry-lock-light"></i></span>
       <p class="entry-lock-time" id="entry-lock-time">02:00:00</p>
@@ -132,6 +133,8 @@
     <div class="finale-glow" aria-hidden="true"></div>
     <div class="finale-shell">
       <p class="finale-reflection" id="finale-reflection" aria-live="polite">You lingered where the gaze usually slips past. The space remembered that response — the door will open again in two hours, when the silence settles.</p>
+      <div class="finale-door-line" aria-hidden="true"></div>
+      <p class="finale-door-note" id="finale-door-note">The door closes for two hours so the silence can settle</p>
       <div class="finale-timer">
         <p class="finale-lock-label" id="finale-lock-label">CONTINUATION IN</p>
         <p class="finale-countdown" id="finale-countdown">02:00:00</p>
@@ -156,7 +159,7 @@
       window.__deferredInstallPrompt = event;
     });
   </script>
-  <script src="videos-data.js?v=70"></script>
-  <script src="app.js?v=70"></script>
+  <script src="videos-data.js?v=71"></script>
+  <script src="app.js?v=71"></script>
 </body>
 </html>

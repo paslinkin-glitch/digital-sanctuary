@@ -91,8 +91,8 @@ html[data-tier="low"] .lang-switch{backdrop-filter:none!important;-webkit-backdr
 .entry.is-standalone .entry-barrier{max-width:300px}
 .quiet-presence{display:flex;align-items:center;justify-content:center;gap:8px;margin:14px auto 0;color:rgba(234,229,220,.4);font-family:var(--mono);font-size:8px;letter-spacing:.2em;text-transform:uppercase}
 .quiet-presence--finale{margin:8px auto 0;color:rgba(214,199,178,.55)}
-.presence-dot{width:4px;height:4px;border-radius:50%;background:#D6C7B2;box-shadow:0 0 0 0 rgba(214,199,178,.45);animation:presencePulse 4.5s ease-in-out infinite}
-@keyframes presencePulse{0%,100%{opacity:.35;box-shadow:0 0 0 0 rgba(214,199,178,.2)}50%{opacity:.95;box-shadow:0 0 0 5px rgba(214,199,178,0)}}
+.presence-dot{width:4px;height:4px;border-radius:50%;background:#D6C7B2;box-shadow:0 0 0 0 rgba(214,199,178,.45);animation:presencePulse 4.5s ease-in-out infinite;transform-origin:center}
+@keyframes presencePulse{0%,100%{opacity:.45;transform:scale(.85);box-shadow:0 0 0 0 rgba(214,199,178,.2)}50%{opacity:1;transform:scale(1.2);box-shadow:0 0 0 5px rgba(214,199,178,0)}}
 .entry.is-gift .entry-title{color:#F5F5F0}
 
 /* v67 finale artifact and gift */
@@ -157,3 +157,23 @@ body .entry.is-installed > .entry-installed-note{display:flex!important;flex-dir
 .finale-gift:hover span{transform:translate(3px,-3px)}
 .finale-install{margin-top:16px!important}
 .finale-install-link{color:rgba(245,245,240,.42)!important}
+
+
+/* v71 topbar and split finale */
+.entry-topbar{display:flex;align-items:center;justify-content:space-between;width:100%;order:0!important;margin:0 0 8px;position:relative;z-index:6}
+.entry-topbar .lang-switch{position:static!important;top:auto!important;left:auto!important;right:auto!important;z-index:6!important}
+.quiet-presence--top{margin:0!important;color:rgba(234,229,220,.42);font-size:8px;letter-spacing:.16em;white-space:nowrap}
+.entry-copy{margin:auto 0 0!important}
+.entry.is-browser .entry-install-offer{margin-bottom:auto!important}
+.entry.is-standalone .entry-gesture-guide{margin-bottom:auto!important}
+.entry.is-locked .quiet-presence{display:none!important}
+
+.finale-reflection{font-size:clamp(1.25rem,5vw,1.55rem)!important;line-height:1.55!important;max-width:min(86vw,420px)!important}
+.finale-door-line{width:40px;height:.5px;margin:18px auto 12px;background:linear-gradient(90deg,transparent,rgba(214,199,178,.55),transparent)}
+.finale-door-note{max-width:min(82vw,360px);margin:0 auto;color:rgba(234,229,220,.58);font-family:var(--sans);font-size:11.5px;line-height:1.6;letter-spacing:.01em;text-align:center}
+.finale-timer{margin-top:20px!important}
+.finale-lock-label{font-size:8.5px!important;letter-spacing:.24em!important;opacity:.62}
+.finale-countdown{font-size:clamp(1.05rem,4.2vw,1.25rem)!important;letter-spacing:.16em!important;opacity:.78!important}
+.finale-notify{margin-top:14px!important}
+
+.presence-text{transition:opacity .35s ease}

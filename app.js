@@ -123,6 +123,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       finaleSub: 'ПРОСТРАНСТВО ОСТАЁТСЯ',
       finaleBody1: 'Здесь ничего не нужно объяснять или исправлять.',
       finaleBody2: 'Тишина просто побыла рядом — ты можешь остаться в ней или вернуться в любой момент.',
+      doorNote: 'Дверь закрывается на два часа, чтобы тишина улеглась',
+      scenarioHold: 'Ты замирал там, где взгляд обычно скользит мимо. Пространство запомнило этот отклик.',
+      scenarioFast: 'Ты шёл сквозь кадры быстрее, чем успевал выдохнуть. Пространство запомнило этот отклик.',
+      scenarioSteady: 'Ты прошёл этот круг ровно, не торопя ни один кадр. Пространство запомнило этот отклик.',
       loading: 'ТИШИНА...',
       back: 'Ещё один сон',
       cycle1: 'Первый круг завершён. Теперь сон опускается глубже',
@@ -192,6 +196,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       finaleSub: 'THE SPACE BESIDE YOU',
       finaleBody1: 'Nothing here needs to be explained or repaired.',
       finaleBody2: 'Silence simply stayed beside you — you can remain in it or return at any moment.',
+      doorNote: 'The door closes for two hours so the silence can settle',
+      scenarioHold: 'You lingered where the gaze usually slips past. The space remembered that response.',
+      scenarioFast: 'You moved through the frames faster than you could exhale. The space remembered that response.',
+      scenarioSteady: 'You passed this circle evenly, hurrying no frame. The space remembered that response.',
       loading: 'LISTENING...',
       back: 'One more dream',
       cycle1: 'First cycle complete. The dream now descends deeper',
@@ -627,6 +635,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   const finalePortraitEl = document.getElementById('finale-portrait');
   const finaleCountdownEl = document.getElementById('finale-countdown');
   const finaleReflectionEl = document.getElementById('finale-reflection');
+  const finaleDoorNote = document.getElementById('finale-door-note');
   const finaleLockInlineEl = document.getElementById('finale-lock-inline');
   const finaleLockLabel = document.getElementById('finale-lock-label');
   const copySnapshotButton = document.getElementById('copy-snapshot');
@@ -656,7 +665,14 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
 
   function updatePresenceCounter() {
     const label = tr('inSilenceNow').replace('{n}', String(presenceCount));
-    for (const node of presenceTexts) node.textContent = label;
+    for (const node of presenceTexts) {
+      window.clearTimeout(node._presenceTimer);
+      node.style.opacity = '0';
+      node._presenceTimer = window.setTimeout(() => {
+        node.textContent = label;
+        node.style.opacity = '1';
+      }, 180);
+    }
   }
 
   function startPresenceCounter() {
@@ -737,6 +753,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (shareSilenceButton) shareSilenceButton.textContent = tr('finaleGift');
     if (finaleInstallButton) finaleInstallButton.textContent = tr('finaleInstall');
     if (finaleLockLabel) finaleLockLabel.textContent = tr('lockLabel');
+    if (finaleDoorNote) finaleDoorNote.textContent = tr('doorNote');
     if (backToStartButton) backToStartButton.textContent = tr('back');
 
     const loading = finalePortraitEl && finalePortraitEl.querySelector('.finale-loading');
@@ -3129,7 +3146,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
       ctx.fillRect(0, 0, W, H);
     }
 
-    const motif = seed % 3;
+    const motif = sessionScenario === 'feather' ? 2 : sessionScenario === 'bird' ? 0 : 1;
     ctx.save();
     ctx.translate(W / 2, H * 0.47);
 
@@ -3238,19 +3255,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(74, 116); ctx.lineTo(144, 116); ctx.stroke();
 
-    // Poetic imprint.
-    const phrase = (clip && (currentLang === 'en' ? clip.caption_en : clip.caption_ru))
-      || (currentLang === 'en' ? 'Stillness remains' : 'Тишина остаётся');
-    ctx.fillStyle = 'rgba(26, 27, 30, .86)';
-    ctx.font = '300 60px "Cormorant Garamond", Georgia, serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(String(phrase), W / 2, H - 170);
-    ctx.fillStyle = 'rgba(26, 27, 30, .46)';
-    ctx.font = '400 18px "JetBrains Mono", monospace';
-    ctx.fillText('YOURSANCTUARY.RU', W / 2, H - 90);
-    ctx.textAlign = 'left';
-
-    finaleArtifact.hidden = false;
+    if (finaleArtifact) finaleArtifact.hidden = false;
   }
 
   function artifactBlob() {
@@ -3314,6 +3319,23 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     } catch (_) {}
   }
 
+  let sessionScenario = 'grove';
+
+  function chooseSessionScenario() {
+    if (state.totalHolds > 0 || state.heldMs > 1200) return 'feather';
+    if (engine.averagePaceMs && engine.averagePaceMs < 2200) return 'bird';
+    return 'grove';
+  }
+
+  function applyScenarioReflection() {
+    sessionScenario = chooseSessionScenario();
+    const key = sessionScenario === 'feather' ? 'scenarioHold' : sessionScenario === 'bird' ? 'scenarioFast' : 'scenarioSteady';
+    if (finaleReflectionEl) finaleReflectionEl.textContent = tr(key);
+    if (finaleDoorNote) finaleDoorNote.textContent = tr('doorNote');
+    if (finaleArtifact) finaleArtifact.dataset.scenario = sessionScenario;
+    if (artifactCanvas) artifactCanvas.dataset.scenario = sessionScenario;
+  }
+
   function finishSession() {
     if (sessionComplete) return;
 
@@ -3334,7 +3356,7 @@ Write exactly 2 short English sentences. No numbers, jargon, video titles, or ad
     setSessionLock();
     updateSessionProgress();
     updateSessionLockUI();
-    requestFinaleReflection();
+    applyScenarioReflection();
     showFinaleInstall();
 
     if (finaleEl) {
