@@ -19,10 +19,10 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
   <link rel="preconnect" href="https://s3.twcstorage.ru" crossorigin>
-  <link rel="stylesheet" href="style.css?v=77">
+  <link rel="stylesheet" href="style.css?v=78">
 </head>
 <body>
-  <script>window.SANCTUARY_MAINTENANCE = true; if (window.SANCTUARY_MAINTENANCE) document.documentElement.dataset.maintenance = 'true';</script>
+  <script>window.SANCTUARY_MAINTENANCE = false; if (window.SANCTUARY_MAINTENANCE) document.documentElement.dataset.maintenance = 'true';</script>
   <section id="maintenance-screen" aria-live="polite">
     <div class="maintenance-inner">
       <span class="maintenance-thread" aria-hidden="true"></span>
@@ -112,7 +112,7 @@
     </div>
 
     <div class="entry-install-offer" id="entry-install-offer">
-      <button class="entry-install" id="entry-install" type="button">Install app</button>
+      <button class="entry-install" id="install-btn" type="button">Install app</button>
       <p class="entry-install-hint" id="entry-install-hint" hidden></p>
     </div>
     <div class="entry-floor">
@@ -124,6 +124,17 @@
     </div>
 
 
+  </div>
+
+  <div class="install-guide" id="install-guide" hidden role="dialog" aria-modal="true" aria-labelledby="install-guide-title">
+    <div class="install-guide-card">
+      <button class="install-guide-close" id="install-guide-close" type="button" aria-label="Close">×</button>
+      <p class="install-guide-kicker">DIGITAL SANCTUARY</p>
+      <h2 class="install-guide-title" id="install-guide-title">Добавить на экран Домой</h2>
+      <p class="install-guide-lead" id="install-guide-lead"></p>
+      <ol class="install-guide-steps" id="install-guide-steps"></ol>
+      <p class="install-guide-note" id="install-guide-note"></p>
+    </div>
   </div>
 
   <section class="finale" id="finale" hidden aria-label="Final reflection">
@@ -167,7 +178,7 @@
       window.__deferredInstallPrompt = event;
     });
   </script>
-  <script src="videos-data.js?v=77"></script>
-  <script src="app.js?v=77"></script>
+  <script src="videos-data.js?v=78"></script>
+  <script src="app.js?v=78"></script>
 </body>
 </html>
