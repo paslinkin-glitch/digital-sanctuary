@@ -2913,9 +2913,11 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     ctx.restore();
     // Only the archive number lives on the canvas.
     ctx.fillStyle = `${palette.ink}B8`;
-    ctx.font = '400 22px "JetBrains Mono", monospace';
+    ctx.font = '300 22px "JetBrains Mono", monospace';
+    if ('letterSpacing' in ctx) ctx.letterSpacing = '3px';
     ctx.textAlign = 'left';
     ctx.fillText(`ARCHIVE № ${archive}`, 74, 92);
+    if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
     ctx.strokeStyle = `${palette.a}AA`;
     ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(74, 116); ctx.lineTo(144, 116); ctx.stroke();
