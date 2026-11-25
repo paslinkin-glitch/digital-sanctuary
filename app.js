@@ -72,44 +72,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   const NOISE_GAIN = 0.075;
   const LANG_STORAGE_KEY = 'sanctuary-lang';
   const I18N = {
-    ru: {
-      docTitle: 'Quiet Space — когда мысли не останавливаются',
-      entryAria: 'Вход в убежище',
-      entryKicker: 'ТИХОЕ ПРОСТРАНСТВО',
-      guideSwipe: 'Потяни вверх, чтобы войти',
-      entryTitle: 'Когда мысли<br>не останавливаются',
-      entrySub: 'Перед сном, после тяжёлого дня<br>или между созвонами',
-      installApp: 'Установить приложение на экран',
-      installHint: 'Нажмите «Поделиться» → «На экран Домой»',
-      installedTitle: 'Пространство установлено',
-      installedSub: 'Закройте браузер и откройте иконку с экрана телефона',
-      inSilenceNow: 'СЕЙЧАС В ТИШИНЕ: {n}',
-      installManual: 'Меню браузера ⋮ → Установить приложение / На экран Домой',
-      finaleGift: 'Поделиться',
-      artNote: 'Уникальная картина этой сессии',
-      copied: 'Скопировано',
-      doorNote: 'Дверь закрывается на два часа, чтобы тишина улеглась',
-      scenarioHold: 'Ты замирал там, где взгляд обычно скользит мимо. Пространство запомнило этот отклик.',
-      scenarioFast: 'Ты шёл сквозь кадры быстрее, чем успевал выдохнуть. Пространство запомнило этот отклик.',
-      scenarioSteady: 'Ты прошёл этот круг ровно, не торопя ни один кадр. Пространство запомнило этот отклик.',
-      cycle1: 'Первый круг завершён. Теперь сон опускается глубже',
-      cycleKicker: 'КРУГ I // ПРОЙДЕН',
-      cycle2: 'Второй круг пройден. Тишина остаётся рядом.',
-      cycle3: 'Круг сна завершён. Дыхание продолжается.',
-      lockEntryKicker: 'ДВЕРЬ ЗАКРЫТА',
-      lockEntryHint: 'Тишина ещё длится',
-      notificationBody: 'Продолжение открыто. Вернись, чтобы узнать, что дальше.',
-      notify: 'Уведомить через 2 часа',
-      notifySet: 'Уведомление поставлено',
-      notifyOff: 'Уведомления отключены',
-      notifyUnavailable: 'Уведомления недоступны',
-      saveFrame: 'Сохранить образ сна',
-      giftKicker: 'ТЕБЕ ПЕРЕДАЛИ 3 МИНУТЫ ТИШИНЫ',
-      giftTitle: 'Просто побудь здесь<br>без слов',
-      giftSub: 'Ничего не нужно делать — просто смотри.',
-      giftShareText: 'Тебе передали 3 минуты тишины. Просто смотри.',
-      giftShareTitle: 'Тишина для тебя',
-    },
     en: {
       docTitle: 'Quiet Space — when thoughts won’t stop',
       entryAria: 'Entrance to the sanctuary',
@@ -147,6 +109,44 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       giftSub: 'Nothing to do — just watch.',
       giftShareText: 'Someone sent you 3 minutes of silence. Just watch.',
       giftShareTitle: 'Silence for you',
+    },
+    ru: {
+      docTitle: 'Quiet Space — когда мысли не останавливаются',
+      entryAria: 'Вход в убежище',
+      entryKicker: 'ТИХОЕ ПРОСТРАНСТВО',
+      guideSwipe: 'Потяни вверх, чтобы войти',
+      entryTitle: 'Когда мысли<br>не останавливаются',
+      entrySub: 'Перед сном, после тяжёлого дня<br>или между созвонами',
+      installApp: 'Установить приложение на экран',
+      installHint: 'Нажмите «Поделиться» → «На экран Домой»',
+      installedTitle: 'Пространство установлено',
+      installedSub: 'Закройте браузер и откройте иконку с экрана телефона',
+      inSilenceNow: 'СЕЙЧАС В ТИШИНЕ: {n}',
+      installManual: 'Меню браузера ⋮ → Установить приложение / На экран Домой',
+      finaleGift: 'Поделиться',
+      artNote: 'Уникальная картина этой сессии',
+      copied: 'Скопировано',
+      doorNote: 'Дверь закрывается на два часа, чтобы тишина улеглась',
+      scenarioHold: 'Ты замирал там, где взгляд обычно скользит мимо. Пространство запомнило этот отклик.',
+      scenarioFast: 'Ты шёл сквозь кадры быстрее, чем успевал выдохнуть. Пространство запомнило этот отклик.',
+      scenarioSteady: 'Ты прошёл этот круг ровно, не торопя ни один кадр. Пространство запомнило этот отклик.',
+      cycle1: 'Первый круг завершён. Теперь сон опускается глубже',
+      cycleKicker: 'КРУГ I // ПРОЙДЕН',
+      cycle2: 'Второй круг пройден. Тишина остаётся рядом.',
+      cycle3: 'Круг сна завершён. Дыхание продолжается.',
+      lockEntryKicker: 'ДВЕРЬ ЗАКРЫТА',
+      lockEntryHint: 'Тишина ещё длится',
+      notificationBody: 'Продолжение открыто. Вернись, чтобы узнать, что дальше.',
+      notify: 'Уведомить через 2 часа',
+      notifySet: 'Уведомление поставлено',
+      notifyOff: 'Уведомления отключены',
+      notifyUnavailable: 'Уведомления недоступны',
+      saveFrame: 'Сохранить образ сна',
+      giftKicker: 'ТЕБЕ ПЕРЕДАЛИ 3 МИНУТЫ ТИШИНЫ',
+      giftTitle: 'Просто побудь здесь<br>без слов',
+      giftSub: 'Ничего не нужно делать — просто смотри.',
+      giftShareText: 'Тебе передали 3 минуты тишины. Просто смотри.',
+      giftShareTitle: 'Тишина для тебя',
     },
   };
   const CAPTION_FALLBACK_POOL = {
@@ -219,8 +219,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       if (stored === 'ru' || stored === 'en') return stored;
     } catch (_) {
     }
-    const language = String((navigator.languages && navigator.languages[0]) || navigator.language || '').toLowerCase();
-    return language.startsWith('ru') ? 'ru' : 'en';
+    return 'en';
   }
   function detectScreenTier() {
     const nav = navigator || {};
@@ -315,7 +314,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   let currentLang = detectLanguage();
   function tr(key) {
-    return (I18N[currentLang] && I18N[currentLang][key]) || I18N.ru[key] || key;
+    return (I18N[currentLang] && I18N[currentLang][key]) || I18N.en[key] || key;
   }
   function trackEvent(eventName, props = {}) {
     try {

@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta name="description" content="When thoughts won’t stop. A quiet vertical sanctuary to slow down, breathe, and return to yourself.">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
   <meta name="theme-color" content="#060607">
   <script>
@@ -19,10 +20,10 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
   <link rel="preconnect" href="https://s3.twcstorage.ru" crossorigin>
-  <link rel="stylesheet" href="style.css?v=105">
+  <link rel="stylesheet" href="style.css?v=106">
 </head>
 <body>
-  <script>window.SANCTUARY_MAINTENANCE = true; if (window.SANCTUARY_MAINTENANCE) document.documentElement.dataset.maintenance = 'true';</script>
+  <script>window.SANCTUARY_MAINTENANCE = false; if (window.SANCTUARY_MAINTENANCE) document.documentElement.dataset.maintenance = 'true';</script>
   <section id="maintenance-screen" aria-live="polite">
     <div class="maintenance-inner">
       <span class="maintenance-thread" aria-hidden="true"></span>
@@ -30,8 +31,8 @@
       <h1>THE SANCTUARY IS TEMPORARILY CLOSED</h1>
       <p>Technical maintenance is underway. Please return shortly.</p>
       <span class="maintenance-rule" aria-hidden="true"></span>
-      <h2>ПРОСТРАНСТВО ВРЕМЕННО ЗАКРЫТО</h2>
-      <p>Ведутся технические работы. Возвращайтесь чуть позже.</p>
+      <h2>A QUIET SPACE</h2>
+      <p>The space will return shortly.</p>
     </div>
   </section>
   <main class="stage" id="stage">
@@ -85,9 +86,9 @@
     <div class="entry-abstract-shade" aria-hidden="true"></div>
     <div class="entry-topbar">
       <div class="lang-switch" id="lang-switch" role="group" aria-label="Language">
-      <button class="lang-switch-btn" type="button" data-lang="ru">RU</button>
+      <button class="lang-switch-btn is-active" type="button" data-lang="en" aria-pressed="true">EN</button>
       <span class="lang-switch-sep" aria-hidden="true">/</span>
-      <button class="lang-switch-btn" type="button" data-lang="en">EN</button>
+      <button class="lang-switch-btn" type="button" data-lang="ru" aria-pressed="false">RU</button>
     </div>
       <div class="quiet-presence quiet-presence--top" id="entry-presence" aria-live="polite">
         <span class="presence-dot" aria-hidden="true"></span>
@@ -100,10 +101,10 @@
 
     </div>
 <div class="entry-lock" id="entry-lock" hidden aria-live="polite">
-      <p class="entry-lock-kicker" id="entry-lock-kicker">ДВЕРЬ ЗАКРЫТА</p>
+      <p class="entry-lock-kicker" id="entry-lock-kicker">THE DOOR IS CLOSED</p>
       <span class="entry-lock-rail" aria-hidden="true"><i id="entry-lock-light"></i></span>
       <p class="entry-lock-time" id="entry-lock-time">02:00:00</p>
-      <p class="entry-lock-hint" id="entry-lock-hint">Тишина ещё длится</p>
+      <p class="entry-lock-hint" id="entry-lock-hint">The silence is still here</p>
     </div>
     <div class="entry-gesture-guide" id="entry-gesture-guide" aria-hidden="true">
       <span class="guide-thread"><i></i></span>
@@ -168,7 +169,7 @@
       window.__deferredInstallPrompt = event;
     });
   </script>
-  <script src="videos-data.js?v=105"></script>
-  <script src="app.js?v=105"></script>
+  <script src="videos-data.js?v=106"></script>
+  <script src="app.js?v=106"></script>
 </body>
 </html>
