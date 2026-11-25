@@ -2148,6 +2148,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
 
   function enableSoundscape() {
+    if (/Android/i.test(navigator.userAgent) || SCREEN_TIER === 'low') return;
     activateAudioSession();
     if (sound) {
       if (sound.ctx.state === 'suspended') sound.ctx.resume().catch(() => {});
@@ -3557,18 +3558,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         video.classList.add('is-ready');
       }
     });
-    let waitTimer = 0;
-    video.addEventListener('canplay', () => { window.clearTimeout(waitTimer); video.classList.add('is-ready'); });
-    video.addEventListener('playing', () => { window.clearTimeout(waitTimer); video.classList.add('is-ready'); });
-    video.addEventListener('waiting', () => {
-      window.clearTimeout(waitTimer);
-      waitTimer = window.setTimeout(() => {
-        if (activeQuality !== '480' && clip.url480) {
-          activeQuality = '480';
-          setQuality(true);
-        }
-      }, 1200);
-    });
+    video.addEventListener('canplay', () => video.classList.add('is-ready'));
+    video.addEventListener('playing', () => video.classList.add('is-ready'));
     video.addEventListener('timeupdate', () => handleLoop(category, index, video));
     let fallbackCursor = 0;
     video.addEventListener('error', () => {
