@@ -3543,18 +3543,27 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       keep.add(next.clip.id);
       ensureClipVideo(next.category, next.clip);
       if (next.clip.el) {
-        next.clip.el.preload = 'auto';
-        if (next.clip.el.readyState === 0) next.clip.el.load();
+        // Only headers next; full preload starts after current is playing.
+        next.clip.el.preload = 'metadata';
       }
     }
     if (next2 && next2.clip) {
-      keep.add(next2.clip.id);
-      ensureClipVideo(next2.category, next2.clip);
-      if (next2.clip.el) next2.clip.el.preload = 'metadata';
+      // Never create a third <video>; only warm the lightweight poster.
       if (next2.clip.urlPoster) {
         const img = new Image();
         img.src = next2.clip.urlPoster;
       }
+    }
+    if (current && current.clip && current.clip.el) {
+      const currentVideo = current.clip.el;
+      const warmNext = () => {
+        if (!next || !next.clip || !next.clip.el) return;
+        if (next.clip.el.preload === 'auto') return;
+        next.clip.el.preload = 'auto';
+        if (next.clip.el.readyState === 0) next.clip.el.load();
+      };
+      if (currentVideo.readyState >= 3) warmNext();
+      else currentVideo.addEventListener('playing', warmNext, { once: true });
     }
     if (anchorClip && anchorClip.id) {
       keep.add(anchorClip.id);
@@ -3722,6 +3731,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       if (clipIndex === index) {
         video.classList.add('is-current');
         video.preload = 'auto';
+        if (video.readyState === 0) video.load();
         if (video.readyState >= 4) clearFramePlaceholder();
         video.playbackRate = stage.classList.contains('is-held') ? SLOW_RATE : 1;
         clip.lastTime = video.currentTime;
