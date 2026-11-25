@@ -3381,6 +3381,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (!sceneOrdinal) sceneOrdinal = 1;
     const entry = pathPlan[0];
     const category = entry.category;
+    setSceneElement(entry.clip);
     const index = category.clips.findIndex((clip) => clip.id === entry.clip.id);
     if (index < 0) return false;
     if (state.index !== category.index) {
@@ -3402,7 +3403,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     activeHapticStage = entry.stage;
     trackStageReached(entry.stage);
     updateSessionProgress();
-    setSceneElement(activeClip());
     activateCaption(category, activeClip(), behaviorContext(), false, entry.stage);
     switchSoundtrack(null, SLOW_FADE_MS);
     return true;
@@ -3415,6 +3415,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     clip.playUrl = playUrl;
     video.className = 'clip';
     video.style.zIndex = '1';
+    video.style.willChange = 'opacity, transform';
     video.muted = true;
     video.defaultMuted = true;
     video.loop = true;
@@ -3841,33 +3842,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const to = slides[targetIndex];
     const fromVideo = from.querySelector('video.is-current') || from.querySelector('video');
     const duration = fadeMs || SLOW_FADE_MS;
-    stage.style.setProperty('--fade-duration', `${duration}ms`);
-    stage.classList.remove('is-held');
-    stopHoldPulse();
-    setActivePlaybackRate(1);
-    setSoundDepth(false);
-    pauseCategory(categories[fromIndex]);
-    from.classList.remove('is-active');
-    to.classList.add('is-active');
-    state.index = targetIndex;
-    state.visits[targetIndex] += 1;
-    resetViewClock();
-    if (!sceneOrdinal) sceneOrdinal = 1;
-    sceneOrdinal += 1;
     const category = categories[targetIndex];
-    const behavior = sceneContext && sceneContext.behavior
-      ? sceneContext.behavior
-      : behaviorContext();
-    const allowed = captionAllowedForScene(sceneContext);
-    const sceneStage = sceneContext && sceneContext.stage
-      ? sceneContext.stage
-      : (STAGE_BY_CATEGORY[category.tag] || 1);
-    if (activeHapticStage !== sceneStage) {
-      activeHapticStage = sceneStage;
-      trackStageReached(sceneStage);
-    }
-    updateStageLabel(sceneStage);
-    updateSessionProgress();
     if (forcedClipId) {
       const forcedIndex = category.clips.findIndex((clip) => clip.id === forcedClipId);
       if (forcedIndex >= 0) category.freshIndex = forcedIndex;
@@ -3881,10 +3856,36 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const targetClip = forcedClipId
       ? category.clips.find((clip) => clip.id === forcedClipId)
       : (planned && planned.category === category ? planned.clip : category.clips[category.activeIndex]);
+    setSceneElement(targetClip);
+    stage.style.setProperty('--fade-duration', `${duration}ms`);
+    stage.classList.remove('is-held');
+    stopHoldPulse();
+    setActivePlaybackRate(1);
+    setSoundDepth(false);
+    pauseCategory(categories[fromIndex]);
+    from.classList.remove('is-active');
+    to.classList.add('is-active');
+    state.index = targetIndex;
+    state.visits[targetIndex] += 1;
+    resetViewClock();
+    if (!sceneOrdinal) sceneOrdinal = 1;
+    sceneOrdinal += 1;
+    const behavior = sceneContext && sceneContext.behavior
+      ? sceneContext.behavior
+      : behaviorContext();
+    const allowed = captionAllowedForScene(sceneContext);
+    const sceneStage = sceneContext && sceneContext.stage
+      ? sceneContext.stage
+      : (STAGE_BY_CATEGORY[category.tag] || 1);
+    if (activeHapticStage !== sceneStage) {
+      activeHapticStage = sceneStage;
+      trackStageReached(sceneStage);
+    }
+    updateStageLabel(sceneStage);
+    updateSessionProgress();
     showFramePlaceholder(fromVideo, category, targetClip);
     preparePlaybackWindow(planned, pathPlan[pathPos + 1]);
     playCategory(category);
-    setSceneElement(activeClip());
     activateCaption(category, activeClip(), behavior, allowed, sceneStage);
     switchSoundtrack(null, duration);
     if (direction === 'up') {
