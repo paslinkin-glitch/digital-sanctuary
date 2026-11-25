@@ -10,7 +10,7 @@
   const SLOW_FADE_MS = parseFloat(
     getComputedStyle(document.documentElement).getPropertyValue('--fade-duration')
   ) || 800;
-  const QUICK_FADE_MS = 250;
+  const QUICK_FADE_MS = 520;
   const QUICK_VIEW_MS = 2500;
   const IMPULSIVE_SPEED = 1.0;
   const HOLD_MS = 260;
@@ -44,10 +44,10 @@
   const SWIPE_HAPTIC_COOLDOWN_MS = 600;
   const HOLD_HEARTBEAT_MS = 1800;
   const HAPTIC_PATTERNS = {
-    fire: { frame: [32, 45, 48], hold: [42, 85, 58], interval: 1400, whisper: [12, 70, 18], anchor: [28, 90, 12, 90, 34] },
-    water: { frame: [20, 55, 36, 70, 54], hold: [52, 160, 72], interval: 2200, whisper: [8, 55, 14], anchor: [20, 120, 10, 120, 26] },
-    fog: { frame: [46, 110, 28], hold: [58, 130, 34], interval: 2000, whisper: [10, 85, 12], anchor: [18, 110, 14, 110, 30] },
-    space: { frame: [34, 65, 34], hold: [44, 180, 44], interval: 2400, whisper: [6, 95, 10], anchor: [24, 150, 18, 150, 40] },
+    fire: { hold: [10], whisper: [8, 90, 10], anchor: [10, 80, 12] },
+    water: { hold: [8], whisper: [8, 90, 10], anchor: [8, 90, 10] },
+    fog: { hold: [10], whisper: [8, 90, 10], anchor: [10, 90, 10] },
+    space: { hold: [8], whisper: [8, 100, 12], anchor: [8, 100, 12] },
   };
   const PORTRAIT_TIMEOUT_MS = 1500;
   const DEEPSEEK_PROXY_ENDPOINT = '/api/deepseek';
@@ -1143,15 +1143,14 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     stopHoldPulse();
     const pattern = hapticPatternForCurrent();
     holdBreathStep = 0;
-    safeVibrate(pattern.hold, 0);
+    safeVibrate(10, 0);
     const breathe = () => {
       if (!gesture || !gesture.holding) return;
       holdBreathStep += 1;
-      safeVibrate(pattern.whisper, 0);
-      const wait = holdBreathStep % 2 === 1 ? 6000 : 4000;
-      holdPulseTimer = window.setTimeout(breathe, wait);
+      safeVibrate(8, 0);
+      holdPulseTimer = window.setTimeout(breathe, 7500);
     };
-    holdPulseTimer = window.setTimeout(breathe, 4000);
+    holdPulseTimer = window.setTimeout(breathe, 7500);
   }
   function stopHoldPulse() {
     const wasHolding = Boolean(holdPulseTimer);
@@ -1569,7 +1568,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         currentCaption.revealed = true;
         if (!currentCaption.haptic) {
           currentCaption.haptic = true;
-          safeVibrate(10, 3000);
+          safeVibrate(8, 5000);
         }
       }
       scheduleCaptionZero();
@@ -1594,7 +1593,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       currentCaption.revealed = true;
       if (!currentCaption.haptic) {
         currentCaption.haptic = true;
-        safeVibrate(10, 3000);
+        safeVibrate(8, 5000);
       }
     }
     scheduleCaptionZero();
@@ -2694,6 +2693,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   function showCycleWhisper(completedCycle) {
     if (!cycleWhisperEl) return;
+    safeVibrate([10, 90, 12], 3000);
     window.clearTimeout(cycleWhisperTimer);
     const key = completedCycle === 1 ? 'cycle1' : (completedCycle === 2 ? 'cycle2' : 'cycle3');
     if (cycleWhisperKickerEl) cycleWhisperKickerEl.textContent = tr('cycleKicker');
@@ -3133,6 +3133,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
 
   function finishSession() {
     if (sessionComplete) return;
+    safeVibrate([10, 90, 12], 3000);
     window.clearTimeout(sessionFinalTimer);
     sessionFinalTimer = 0;
     sessionComplete = true;
@@ -3745,7 +3746,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     try {
       const ghost = document.createElement('div');
       ghost.className = 'frame-placeholder';
-      ghost.style.cssText = 'position:absolute;inset:0;background:#070709;opacity:1;pointer-events:none;z-index:0;transition:opacity .45s ease';
+      ghost.style.cssText = 'position:absolute;inset:0;background:#070709;opacity:1;pointer-events:none;z-index:0;transition:opacity .65s ease';
       media.insertBefore(ghost, media.firstChild);
       framePlaceholder = ghost;
     } catch (_) {}
@@ -3890,7 +3891,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   function go(direction, speed) {
     if (!gateOpen || sessionComplete) return;
-    safeVibrate(hapticPatternForCurrent().frame, SWIPE_HAPTIC_COOLDOWN_MS);
     if (sound && speed > 1.1) setSoundTransparency(true);
     hideCycleWhisper();
     lastSwipeAt = now();
