@@ -437,6 +437,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       { id: 'open-sky', title: 'Open Sky', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/open-sky.mp3' },
     ],
   };
+  const LIVE_AUDIO_TRACKS = [{"id":"city-01-night-current","category":"city","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/city-01-night-current.mp3"},{"id":"city-02-monolith","category":"city","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/city-02-monolith.mp3"},{"id":"city-03-night-alt","category":"city","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/city-03-night-alt.mp3"},{"id":"city-04-monolith-alt","category":"city","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/city-04-monolith-alt.mp3"},{"id":"fire-01-ember-breath","category":"fire","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/fire-01-ember-breath.mp3"},{"id":"fire-02-quiet-ember","category":"fire","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/fire-02-quiet-ember.mp3"},{"id":"fire-03-ember-alt","category":"fire","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/fire-03-ember-alt.mp3"},{"id":"fog-01-clouds","category":"fog","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/fog-01-clouds.mp3"},{"id":"fog-02-open-sky","category":"fog","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/fog-02-open-sky.mp3"},{"id":"fog-03-pale-horizon","category":"fog","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/fog-03-pale-horizon.mp3"},{"id":"fog-04-long-exposure","category":"fog","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/fog-04-long-exposure.mp3"},{"id":"fog-05-look-at-sky","category":"fog","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/fog-05-look-at-sky.mp3"},{"id":"people-01-inner-world","category":"people","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/people-01-inner-world.mp3"},{"id":"people-02-looking-glass","category":"people","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/people-02-looking-glass.mp3"},{"id":"people-03-inner-alt","category":"people","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/people-03-inner-alt.mp3"},{"id":"rain-01-crystal-rain","category":"rain","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/rain-01-crystal-rain.mp3"},{"id":"rain-02-tokio-rain","category":"rain","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/rain-02-tokio-rain.mp3"},{"id":"rain-03-distant-rain","category":"rain","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/rain-03-distant-rain.mp3"},{"id":"rain-04-rain-alt","category":"rain","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/rain-04-rain-alt.mp3"},{"id":"road-01-cinematic-visions","category":"road","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/road-01-cinematic-visions.mp3"},{"id":"road-02-piano-travel","category":"road","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/road-02-piano-travel.mp3"},{"id":"road-03-visions-alt","category":"road","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/road-03-visions-alt.mp3"},{"id":"road-04-piano-alt","category":"road","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/road-04-piano-alt.mp3"},{"id":"space-01-color-of-space","category":"space","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/space-01-color-of-space.mp3"},{"id":"space-02-deep-meditation","category":"space","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/space-02-deep-meditation.mp3"},{"id":"space-03-horizons","category":"space","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/space-03-horizons.mp3"},{"id":"water-01-still-water","category":"water","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/water-01-still-water.mp3"},{"id":"water-02-low-tide","category":"water","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/water-02-low-tide.mp3"},{"id":"water-03-whisper-canyon","category":"water","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/water-03-whisper-canyon.mp3"},{"id":"water-04-lotus-flower","category":"water","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/water-04-lotus-flower.mp3"}];
   const ELEMENT_DEFAULT = {
     Shadow: 'fog',
     Calm: 'water',
@@ -1872,7 +1873,13 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (!sound || !audio || audio._graphSource) return;
     try {
       audio._graphSource = sound.ctx.createMediaElementSource(audio);
-      audio._graphSource.connect(sound.bus);
+      if (typeof sound.ctx.createStereoPanner === 'function') {
+        audio._graphPanner = sound.ctx.createStereoPanner();
+        audio._graphSource.connect(audio._graphPanner);
+        audio._graphPanner.connect(sound.bus);
+      } else {
+        audio._graphSource.connect(sound.bus);
+      }
     } catch (_) {
       audio._graphSource = null;
     }
@@ -1895,6 +1902,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   let currentSoundClip = null;
   let lastPerspective = '';
+  const recentLiveTrackIds = [];
   let soundSessionSalt = (Math.random() * 0xffffffff) >>> 0;
   const usedSoundSeeds = new Set();
   const SEMANTIC_SOUND_RULES = [
@@ -2405,9 +2413,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         held: false,
         fadeToken: 0,
       };
+      try { noise.stop(); wind.stop(); overtone.stop(); subBass.stop(); } catch (_) {}
       if (ctx.state === 'suspended') ctx.resume().catch(() => {});
-      startGenerativeAmbient();
-      setElementalNoise(currentOpticElement);
+      sound.activeType = 'music';
       setStageOvertone(sessionStage);
       setStageSubBass(sessionStage);
     } catch (_) {
@@ -2551,13 +2559,69 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     window.clearTimeout(sound.driftTimer);
     sound.driftTimer = 0;
   }
+  function liveTracksForCategory(category) {
+    return LIVE_AUDIO_TRACKS.filter((track) => track.category === category);
+  }
+  function chooseLiveTrack(clip) {
+    const category = (clip && clip.soundCategory) || semanticSoundKey(clip);
+    const candidates = liveTracksForCategory(category);
+    if (!candidates.length) return null;
+    const preferred = candidates.find((track) => track.id === (clip && clip.trackId));
+    const free = candidates.filter((track) => !recentLiveTrackIds.includes(track.id));
+    const chosen = (preferred && !recentLiveTrackIds.includes(preferred.id) ? preferred : null)
+      || free[0]
+      || preferred
+      || candidates[0];
+    if (!chosen) return null;
+    recentLiveTrackIds.push(chosen.id);
+    if (recentLiveTrackIds.length > 12) recentLiveTrackIds.shift();
+    return chosen;
+  }
+  function applyLivePerspective(channel, clip) {
+    if (!sound || !channel) return;
+    const category = (clip && clip.soundCategory) || semanticSoundKey(clip);
+    const recipes = PERSPECTIVE_RECIPES[category] || PERSPECTIVE_RECIPES.fog;
+    const letters = Object.keys(recipes).filter((letter) => letter !== lastPerspective);
+    const seed = soundSeedForClip(clip);
+    const perspective = letters[seed % letters.length] || Object.keys(recipes)[0];
+    const recipe = recipes[perspective];
+    lastPerspective = perspective;
+    sound.currentPerspective = perspective;
+    const now = sound.ctx.currentTime;
+    const cutoff = recipe.cutoff || 800;
+    sound.depth.frequency.cancelScheduledValues(now);
+    sound.depth.frequency.setValueAtTime(sound.depth.frequency.value, now);
+    sound.depth.frequency.linearRampToValueAtTime(cutoff, now + 0.03);
+    if (channel.audio._graphPanner) {
+      const pan = (recipe.panScale || 1) * ((seed % 100) / 100 * 2 - 1) * 0.55;
+      channel.audio._graphPanner.pan.cancelScheduledValues(now);
+      channel.audio._graphPanner.pan.setValueAtTime(channel.audio._graphPanner.pan.value, now);
+      channel.audio._graphPanner.pan.linearRampToValueAtTime(Math.max(-0.85, Math.min(0.85, pan)), now + 0.03);
+    }
+    try {
+      const duration = Number(channel.audio.duration) || 17;
+      channel.audio.currentTime = (seed % Math.max(1, Math.floor(duration * 1000))) / 1000;
+    } catch (_) {}
+  }
   function switchSoundtrack(track, fadeMs) {
     if (!sound) return;
-    tuneGenerativeScene(track, fadeMs);
+    const clip = activeClip() || currentSoundClip;
+    const chosen = chooseLiveTrack(clip);
+    if (!chosen) return;
+    const channel = ensureTrackChannel(chosen);
+    if (!channel) return;
+    applyLivePerspective(channel, clip);
+    const now = sound.ctx.currentTime;
+    sound.master.gain.cancelScheduledValues(now);
+    sound.master.gain.setValueAtTime(sound.master.gain.value, now);
+    sound.master.gain.linearRampToValueAtTime(0.0001, now + 0.025);
+    sound.master.gain.setValueAtTime(0.0001, now + 0.03);
+    sound.master.gain.linearRampToValueAtTime(0.68, now + 0.1);
+    startSoundCrossfade(channel, 25);
   }
   function startSoundCrossfade(channel, fadeMs) {
     if (!sound) return;
-    const duration = Math.max(120, fadeMs || SLOW_FADE_MS);
+    const duration = Math.max(25, fadeMs || SLOW_FADE_MS);
     const targetId = channel ? channel.track.id : null;
     const firstPlayback = !sound.activeTrackId;
     const fadeToken = ++sound.fadeToken;
@@ -2602,8 +2666,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         }
         fadeChannelVolume(channel, MUSIC_GAIN, duration);
       };
-      if (firstPlayback) begin();
-      else window.setTimeout(begin, 120);
+      window.setTimeout(begin, 30);
     }
     window.setTimeout(() => {
       if (!sound || fadeToken !== sound.fadeToken) return;
@@ -2619,7 +2682,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     sound.held = deep;
     if (deep) sound.transparentUntil = 0;
     const now = sound.ctx.currentTime;
-    const cutoff = deep ? (SCREEN_TIER === 'low' ? 650 : 750) : 18000;
+    const cutoff = deep ? 520 : 18000;
     sound.depth.frequency.cancelScheduledValues(now);
     sound.depth.frequency.setValueAtTime(sound.depth.frequency.value, now);
     sound.depth.frequency.exponentialRampToValueAtTime(cutoff, now + 0.45);
@@ -2628,7 +2691,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       const open = !deep && sound.transparentUntil > Date.now() ? 16000 : profile.cutoff;
       sound.ambientFilter.frequency.cancelScheduledValues(now);
       sound.ambientFilter.frequency.setValueAtTime(sound.ambientFilter.frequency.value, now);
-      sound.ambientFilter.frequency.linearRampToValueAtTime(deep ? 360 : open, now + 0.6);
+      sound.ambientFilter.frequency.linearRampToValueAtTime(deep ? 520 : open, now + 0.6);
     }
     sound.master.gain.cancelScheduledValues(now);
     sound.master.gain.setValueAtTime(sound.master.gain.value, now);
@@ -3909,6 +3972,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         element: elementForClip(title, [stageKey, archetype], tag, archetype),
         archetype,
         stage: stageKey,
+        soundCategory: String(item.soundCategory || ''),
+        trackId: String(item.trackId || ''),
         source: item.source || 'catalog',
         width: itemWidth,
         height: itemHeight,
