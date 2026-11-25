@@ -1788,8 +1788,12 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (SCREEN_TIER === 'low' && trackAudio.size >= 2) {
       for (const [id, oldAudio] of [...trackAudio]) {
         if (id === sound?.activeTrackId) continue;
-        try { oldAudio.pause(); oldAudio.removeAttribute('src'); oldAudio.load(); oldAudio.remove(); } catch (_) {}
-        trackAudio.delete(id);
+        const oldChannel = sound && sound.channels.get(id);
+        if (oldChannel) disposeTrackChannel(oldChannel);
+        else if (oldAudio.volume <= 0.005) {
+          try { oldAudio.pause(); oldAudio.removeAttribute('src'); oldAudio.load(); oldAudio.remove(); } catch (_) {}
+          trackAudio.delete(id);
+        }
       }
     }
     const audio = document.createElement('audio');
@@ -1842,10 +1846,16 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
     return fallback;
   }
-  function disposeTrackChannel(channel) {
+  function disposeTrackChannel(channel, force = false) {
     if (!channel) return;
     const { track, audio } = channel;
+    // Never cut a running MP3 at non-zero amplitude: that is the Android click.
+    if (!force && audio.volume > 0.005) {
+      fadeChannelVolume(channel, 0, 35, () => disposeTrackChannel(channel, true));
+      return;
+    }
     if (channel.fadeRaf) cancelAnimationFrame(channel.fadeRaf);
+    channel.fadeRaf = 0;
     try { audio.pause(); } catch (_) {}
     try { audio.removeAttribute('src'); audio.load(); } catch (_) {}
     try { audio.remove(); } catch (_) {}
@@ -1854,18 +1864,21 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       if (sound && sound.channels.get(track.id) === channel) sound.channels.delete(track.id);
     }
   }
-  function fadeChannelVolume(channel, target, ms) {
+  function fadeChannelVolume(channel, target, ms, done) {
     if (!channel || !channel.audio) return;
     if (channel.fadeRaf) cancelAnimationFrame(channel.fadeRaf);
     const from = Number(channel.audio.volume) || 0;
-    const duration = Math.max(80, ms || 400);
+    const duration = Math.max(8, ms || 400);
     const started = performance.now();
     const step = (ts) => {
       const p = Math.min(1, (ts - started) / duration);
-      const eased = 1 - Math.pow(1 - p, 3);
-      channel.audio.volume = Math.max(0, Math.min(1, from + (target - from) * eased));
+      channel.audio.volume = Math.max(0, Math.min(1, from + (target - from) * p));
       if (p < 1) channel.fadeRaf = requestAnimationFrame(step);
-      else channel.fadeRaf = 0;
+      else {
+        channel.fadeRaf = 0;
+        channel.audio.volume = Math.max(0, Math.min(1, target));
+        if (typeof done === 'function') done();
+      }
     };
     channel.fadeRaf = requestAnimationFrame(step);
   }
@@ -2627,14 +2640,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         item.audio.volume = 0;
         fadeChannelVolume(item, 0, duration);
       } else {
-        fadeChannelVolume(item, 0, 25);
-        window.setTimeout(() => {
-          try {
-            item.audio.pause();
-            item.audio.volume = 0;
-          } catch (_) {}
-          disposeTrackChannel(item);
-        }, 25);
+        fadeChannelVolume(item, 0, 35, () => disposeTrackChannel(item, true));
       }
     }
     const now = sound.ctx.currentTime;
@@ -2656,7 +2662,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
             startSoundCrossfade(null, fadeMs);
           });
         }
-        fadeChannelVolume(channel, MUSIC_GAIN, duration);
+        fadeChannelVolume(channel, MUSIC_GAIN, 80);
       };
       window.setTimeout(begin, 30);
     }
