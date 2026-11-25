@@ -79,7 +79,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       guideSwipe: 'Потяни вверх, чтобы войти',
       entryTitle: 'Когда мысли<br>не останавливаются',
       entrySub: 'Перед сном, после тяжёлого дня<br>или между созвонами',
-      nav: 'Листай вверх как сон · Задержи палец, если кадр отзывается',
       installApp: 'Установить приложение на экран',
       installHint: 'Нажмите «Поделиться» → «На экран Домой»',
       installedTitle: 'Убежище установлено',
@@ -118,7 +117,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       guideSwipe: 'Swipe up to enter',
       entryTitle: 'When thoughts<br>won’t stop',
       entrySub: 'Before sleep, after a hard day,<br>or between calls',
-      nav: 'Swipe up like a dream · Hold when a frame resonates',
       installApp: 'Add the app to your screen',
       installHint: 'Tap Share → Add to Home Screen',
       installedTitle: 'Sanctuary installed',
@@ -793,7 +791,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       setHtml('.entry-sub', 'giftSub');
     }
     if (guideLine1) guideLine1.textContent = tr('guideSwipe');
-    setText('.entry-nav-hint', 'nav');
     if (entryGate) entryGate.setAttribute('aria-label', tr('entryAria'));
     if (entryInstallButton) entryInstallButton.textContent = tr('installApp');
     if (entryInstallHint) entryInstallHint.textContent = tr('installHint');
@@ -3408,22 +3405,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const embedded = Array.isArray(window.VIDEOS_DATA) && window.VIDEOS_DATA.length
       ? window.VIDEOS_DATA
       : null;
-    let catalog = embedded;
-    if (location.protocol !== 'file:') {
-      try {
-        const response = await fetch('./videos.json', { cache: 'no-store' });
-        if (response.ok) {
-          const remoteCatalog = await response.json();
-          if (Array.isArray(remoteCatalog) && remoteCatalog.length) {
-            catalog = remoteCatalog;
-          }
-        }
-      } catch (error) {
-        if (!catalog) throw error;
-      }
-    }
+    const catalog = embedded;
     if (!Array.isArray(catalog) || !catalog.length) {
-      throw new Error('videos.json / videos-data.js is empty or malformed');
+      throw new Error('videos-data.js is empty or malformed');
     }
     const pools = {
       Shadow: [],
@@ -3506,7 +3490,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       loaded += 1;
     }
     if (!loaded) {
-      throw new Error('videos.json contains no playable entries');
+      throw new Error('videos-data.js contains no playable entries');
     }
     for (const category of categories) {
       category.clips = shuffleArray(pools[category.tag] || []).slice(0, CLIPS_PER_CATEGORY);
