@@ -1168,7 +1168,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       || (category && ELEMENT_DEFAULT[category.tag])
       || 'fog';
     currentOpticElement = element;
-    setElementalNoise(element);
+    currentSoundClip = clip || currentSoundClip;
     stage.dataset.element = element;
     stage.classList.remove('is-touching');
     stage.style.removeProperty('--optic-zoom');
@@ -1893,6 +1893,84 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     sound.channels.set(track.id, channel);
     return channel;
   }
+  let currentSoundClip = null;
+  let soundSessionSalt = (Math.random() * 0xffffffff) >>> 0;
+  const usedSoundSeeds = new Set();
+  const SEMANTIC_SOUND_RULES = [
+    { key: 'road', words: ['road', 'roads', 'highway', 'highways', 'car', 'cars', 'traffic', 'train', 'trains', 'street', 'streets', 'дорог', 'машин', 'поезд', 'улиц', 'трасс'] },
+    { key: 'people', words: ['people', 'crowd', 'crowds', 'silhouette', 'silhouettes', 'person', 'alone', 'люди', 'силуэт', 'шаги', 'толпа', 'человек'] },
+    { key: 'rain', words: ['rain', 'rains', 'window', 'windows', 'drops', 'дожд', 'капл', 'окн'] },
+    { key: 'city', words: ['city', 'urban', 'bokeh', 'corridor', 'building', 'buildings', 'lights', 'город', 'огни', 'коридор', 'здани'] },
+    { key: 'fire', words: ['fire', 'candle', 'sparks', 'огон', 'свеч', 'искр', 'пламя'] },
+    { key: 'water', words: ['water', 'ocean', 'waves', 'underwater', 'sea', 'вода', 'мор', 'глубин', 'волн', 'река'] },
+    { key: 'fog', words: ['fog', 'forest', 'mist', 'clouds', 'wind', 'лес', 'туман', 'облак', 'ветер'] },
+    { key: 'space', words: ['space', 'light', 'sky', 'tunnel', 'свет', 'горизонт', 'путь', 'космос'] },
+  ];
+  const ELEMENT_SOUND = { fire: 'fire', water: 'water', fog: 'fog', space: 'space' };
+  function semanticSoundKey(clip) {
+    const text = [
+      clip && clip.id, clip && clip.title, clip && clip.title_ru,
+      clip && clip.caption_ru, clip && clip.caption_en,
+      clip && clip.description, clip && clip.stage,
+      clip && Array.isArray(clip.tags) ? clip.tags.join(' ') : '',
+    ].filter(Boolean).join(' ').toLowerCase();
+    const matches = (word) => {
+      if (/[а-яё]/i.test(word)) return text.includes(word);
+      return new RegExp('\\b' + word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i').test(text);
+    };
+    for (const rule of SEMANTIC_SOUND_RULES) {
+      if (rule.words.some(matches)) return rule.key;
+    }
+    if (clip && ELEMENT_SOUND[clip.element]) return ELEMENT_SOUND[clip.element];
+    if (clip && clip.stage === 'path') return 'space';
+    if (clip && clip.stage === 'shadow') return 'fog';
+    if (clip && clip.stage === 'trickster_abyss') return 'water';
+    return 'fog';
+  }
+  function seededRandom(seed) {
+    let value = seed >>> 0;
+    return () => {
+      value = (value + 0x6D2B79F5) >>> 0;
+      let t = value;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function soundSeedForClip(clip) {
+    let hash = (soundSessionSalt ^ 0x9e3779b9) >>> 0;
+    const text = `${(clip && clip.id) || 'empty'}|${(clip && clip.title) || ''}|${(clip && clip.stage) || ''}`;
+    for (let i = 0; i < text.length; i += 1) {
+      hash = Math.imul(hash ^ text.charCodeAt(i), 16777619) >>> 0;
+    }
+    let seed = hash || 1;
+    let guard = 0;
+    while (usedSoundSeeds.has(seed) && guard < 100000) {
+      seed = (seed + 0x9e3779b9) >>> 0;
+      guard += 1;
+    }
+    usedSoundSeeds.add(seed);
+    return seed;
+  }
+  function profileForSoundKey(key) {
+    return AMBIENT_PROFILES[key] || AMBIENT_PROFILES.fog;
+  }
+  function applySoundForClip(clip, instant = true) {
+    if (!sound) return;
+    const key = semanticSoundKey(clip);
+    const base = profileForSoundKey(key);
+    const seed = soundSeedForClip(clip);
+    const random = seededRandom(seed);
+    const root = base.root * (0.94 + random() * 0.12);
+    const cutoff = base.cutoff * (0.9 + random() * 0.2);
+    const voiceGains = base.voiceGains.map((gain) => gain * (0.88 + random() * 0.24));
+    const pans = base.pans.map((pan) => Math.max(-0.85, Math.min(0.85, pan + (random() * 2 - 1) * 0.14)));
+    const profile = { ...base, root, cutoff, voiceGains, pans };
+    sound.currentClip = clip || null;
+    sound.currentSeed = seed;
+    sound.currentProfile = key;
+    applyAmbientProfile(profile, 1.6, seed, instant);
+  }
   const AMBIENT_PROFILES = {
     fire: {
       root: 55, intervals: [1, 1.5, 2, 3.02], cutoff: 1100, q: 0.8,
@@ -1917,6 +1995,30 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       voiceGains: [0.022, 0.015, 0.012, 0.008], pans: [-0.7, 0.7, -0.45, 0.45],
       noiseType: 'bandpass', noiseHighpass: 300, noiseLowpass: 7000, noiseQ: 0.5, noiseGain: 0.008,
       wind: 0.02, windDepth: 500, sparkle: 0.006, delay: 0.42, delayMix: 0.22, delayFeedback: 0.28, reverb: 0.35,
+    },
+    road: {
+      root: 48, intervals: [1, 1.5, 2, 2.01], cutoff: 230, q: 0.6,
+      voiceGains: [0.022, 0.014, 0.008, 0.006], pans: [-0.55, 0.55, -0.25, 0.25],
+      noiseType: 'lowpass', noiseHighpass: 80, noiseLowpass: 280, noiseQ: 0.7, noiseGain: 0.024,
+      wind: 0.035, windDepth: 90, sparkle: 0, delay: 0.3, delayMix: 0.10, delayFeedback: 0.14, reverb: 0.08,
+    },
+    city: {
+      root: 55, intervals: [1, 1.33, 2, 2.5], cutoff: 190, q: 0.8,
+      voiceGains: [0.020, 0.012, 0.007, 0.005], pans: [-0.35, 0.35, -0.6, 0.6],
+      noiseType: 'lowpass', noiseHighpass: 70, noiseLowpass: 240, noiseQ: 0.6, noiseGain: 0.020,
+      wind: 0.025, windDepth: 70, sparkle: 0, delay: 0.36, delayMix: 0.08, delayFeedback: 0.16, reverb: 0.24,
+    },
+    people: {
+      root: 65, intervals: [1, 1.5, 2, 3], cutoff: 330, q: 1.2,
+      voiceGains: [0.017, 0.010, 0.006, 0.004], pans: [-0.25, 0.25, -0.5, 0.5],
+      noiseType: 'bandpass', noiseHighpass: 140, noiseLowpass: 520, noiseQ: 1.3, noiseGain: 0.014,
+      wind: 0.02, windDepth: 80, sparkle: 0, delay: 0.32, delayMix: 0.06, delayFeedback: 0.12, reverb: 0.30,
+    },
+    rain: {
+      root: 42, intervals: [1, 1.25, 1.5, 2], cutoff: 780, q: 0.9,
+      voiceGains: [0.018, 0.012, 0.008, 0.005], pans: [-0.45, 0.45, -0.2, 0.2],
+      noiseType: 'bandpass', noiseHighpass: 420, noiseLowpass: 2600, noiseQ: 0.8, noiseGain: 0.022,
+      wind: 0.05, windDepth: 220, sparkle: 0.006, delay: 0.18, delayMix: 0.05, delayFeedback: 0.1, reverb: 0.12,
     },
   };
   function createReverbImpulse(ctx, seconds = 2.2) {
@@ -1947,73 +2049,67 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       scheduleSparkle();
     }, wait);
   }
-  function applyAmbientProfile(profile, duration = 1.6) {
+  function applyAmbientProfile(profile, duration = 1.6, seed = 0, instant = false) {
     if (!sound || !sound.ambientFilter) return;
     const now = sound.ctx.currentTime;
+    const at = instant ? now + 0.03 : now;
     const held = Boolean(sound.held);
+    const random = seededRandom(seed || 1);
     const transparent = !held && sound.transparentUntil > Date.now();
-    let cutoff = held ? Math.min(profile.cutoff, 420) : profile.cutoff;
+    let cutoff = held ? Math.min(profile.cutoff, 360) : profile.cutoff;
     if (transparent) cutoff = Math.max(cutoff, 15000);
-    sound.ambientFilter.frequency.cancelScheduledValues(now);
-    sound.ambientFilter.frequency.setValueAtTime(sound.ambientFilter.frequency.value, now);
-    sound.ambientFilter.frequency.linearRampToValueAtTime(cutoff, now + duration);
-    sound.ambientFilter.Q.cancelScheduledValues(now);
-    sound.ambientFilter.Q.setValueAtTime(sound.ambientFilter.Q.value, now);
-    sound.ambientFilter.Q.linearRampToValueAtTime(profile.q, now + duration);
+    const target = (param, value) => {
+      param.cancelScheduledValues(now);
+      param.setValueAtTime(param.value, now);
+      if (instant) param.setValueAtTime(value, at);
+      else param.linearRampToValueAtTime(value, now + duration);
+    };
+    if (instant) {
+      sound.master.gain.cancelScheduledValues(now);
+      sound.master.gain.setValueAtTime(sound.master.gain.value, now);
+      sound.master.gain.linearRampToValueAtTime(0.0001, now + 0.025);
+      sound.master.gain.setValueAtTime(0.0001, at);
+      sound.master.gain.linearRampToValueAtTime(held ? 0.52 : 0.68, now + 0.1);
+    }
+    target(sound.ambientFilter.frequency, cutoff);
+    target(sound.ambientFilter.Q, profile.q);
     sound.voices.forEach((voice, index) => {
       const frequency = profile.root * profile.intervals[index % profile.intervals.length];
-      voice.osc.frequency.cancelScheduledValues(now);
-      voice.osc.frequency.setValueAtTime(voice.osc.frequency.value, now);
-      voice.osc.frequency.linearRampToValueAtTime(frequency, now + duration);
+      target(voice.osc.frequency, frequency);
+      target(voice.osc.detune, -6 + random() * 12);
       const level = (profile.voiceGains[index % profile.voiceGains.length] || 0.008) * (held ? 0.82 : 1);
-      voice.gain.gain.cancelScheduledValues(now);
-      voice.gain.gain.setValueAtTime(voice.gain.gain.value, now);
-      voice.gain.gain.linearRampToValueAtTime(level, now + duration);
+      target(voice.gain.gain, level);
       if (voice.panner) {
         const pan = (profile.pans[index % profile.pans.length] || 0) * (held ? 0.55 : 1);
-        voice.panner.pan.cancelScheduledValues(now);
-        voice.panner.pan.setValueAtTime(voice.panner.pan.value, now);
-        voice.panner.pan.linearRampToValueAtTime(pan, now + duration);
+        target(voice.panner.pan, pan);
       }
+      if (voice.lfo) target(voice.lfo.frequency, 0.024 + index * 0.012 + random() * 0.025);
+      if (voice.panLfo) target(voice.panLfo.frequency, 0.018 + index * 0.009 + random() * 0.02);
     });
-    sound.noiseCut.frequency.cancelScheduledValues(now);
-    sound.noiseCut.frequency.setValueAtTime(sound.noiseCut.frequency.value, now);
-    sound.noiseCut.frequency.linearRampToValueAtTime(profile.noiseHighpass, now + duration);
+    target(sound.noiseCut.frequency, profile.noiseHighpass);
     sound.noiseTone.type = profile.noiseType;
-    sound.noiseTone.frequency.cancelScheduledValues(now);
-    sound.noiseTone.frequency.setValueAtTime(sound.noiseTone.frequency.value, now);
-    sound.noiseTone.frequency.linearRampToValueAtTime(held ? Math.min(profile.noiseLowpass, 700) : profile.noiseLowpass, now + duration);
-    sound.noiseTone.Q.cancelScheduledValues(now);
-    sound.noiseTone.Q.setValueAtTime(sound.noiseTone.Q.value, now);
-    sound.noiseTone.Q.linearRampToValueAtTime(profile.noiseQ, now + duration);
-    const noiseLevel = profile.noiseGain * (held ? 0.45 : 1);
-    sound.noiseGain.gain.cancelScheduledValues(now);
-    sound.noiseGain.gain.setValueAtTime(sound.noiseGain.gain.value, now);
-    sound.noiseGain.gain.linearRampToValueAtTime(noiseLevel, now + duration);
-    sound.windDepth.gain.linearRampToValueAtTime(profile.windDepth, now + duration);
+    target(sound.noiseTone.frequency, held ? Math.min(profile.noiseLowpass, 700) : profile.noiseLowpass);
+    target(sound.noiseTone.Q, profile.noiseQ);
+    target(sound.noiseGain.gain, profile.noiseGain * (held ? 0.45 : 1));
+    target(sound.windDepth.gain, profile.windDepth);
     if (sound.delay) {
-      sound.delay.delayTime.cancelScheduledValues(now);
-      sound.delay.delayTime.setValueAtTime(sound.delay.delayTime.value, now);
-      sound.delay.delayTime.linearRampToValueAtTime(profile.delay, now + duration);
-      sound.delayWet.gain.linearRampToValueAtTime(profile.delayMix, now + duration);
-      sound.delayFeedback.gain.linearRampToValueAtTime(profile.delayFeedback, now + duration);
+      target(sound.delay.delayTime, profile.delay);
+      target(sound.delayWet.gain, profile.delayMix);
+      target(sound.delayFeedback.gain, profile.delayFeedback);
     }
-    if (sound.reverbWet) sound.reverbWet.gain.linearRampToValueAtTime(profile.reverb, now + duration);
+    if (sound.reverbWet) target(sound.reverbWet.gain, profile.reverb);
     if (sound.sparkleGain) {
       if (profile.sparkle && !held) scheduleSparkle();
       else {
         window.clearTimeout(sound.sparkleTimer);
-        sound.sparkleGain.gain.linearRampToValueAtTime(0.0001, now + 0.3);
+        target(sound.sparkleGain.gain, 0.0001);
       }
     }
   }
   function setElementalNoise(element = currentOpticElement) {
-    if (!sound || !sound.noiseGain) return;
-    const weather = envContext.weatherType;
-    const key = weather === 'rain' && element !== 'fire' ? 'water' : (AMBIENT_PROFILES[element] ? element : 'fog');
-    sound.currentProfile = key;
-    sound.elementalGain = AMBIENT_PROFILES[key].noiseGain;
-    applyAmbientProfile(AMBIENT_PROFILES[key], 1.6);
+    if (element) currentOpticElement = element;
+    if (!sound) return;
+    if (!sound.currentClip) applySoundForClip(null, false);
   }
   function setStageOvertone(stageId) {
     if (SCREEN_TIER === 'low') {
@@ -2190,7 +2286,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       windDepth.connect(noiseTone.frequency);
       wind.start();
       const overtone = ctx.createOscillator();
-      overtone.type = 'sine';
+      overtone.type = 'triangle';
       overtone.frequency.value = 110;
       const overtoneGain = ctx.createGain();
       overtoneGain.gain.value = 0.008;
@@ -2198,7 +2294,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       overtoneGain.connect(bus);
       overtone.start();
       const subBass = ctx.createOscillator();
-      subBass.type = 'sine';
+      subBass.type = 'triangle';
       subBass.frequency.value = 42;
       const subBassGain = ctx.createGain();
       subBassGain.gain.value = 0;
@@ -2248,7 +2344,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (!sound) return;
     sound.activeType = 'generative';
     sound.activeTrack = track || null;
-    setElementalNoise(currentOpticElement);
+    applySoundForClip(activeClip() || currentSoundClip, true);
     if (!sound.driftTimer) scheduleAmbientDrift();
   }
   function startGenerativeAmbient() {
@@ -2297,7 +2393,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const voices = [];
     for (let index = 0; index < count; index += 1) {
       const osc = ctx.createOscillator();
-      osc.type = index % 2 ? 'triangle' : 'sine';
+      osc.type = 'triangle';
       osc.frequency.value = roots[index];
       const gain = ctx.createGain();
       gain.gain.value = 0;
@@ -2453,10 +2549,11 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     sound.depth.frequency.setValueAtTime(sound.depth.frequency.value, now);
     sound.depth.frequency.exponentialRampToValueAtTime(cutoff, now + 0.45);
     if (sound.ambientFilter) {
+      const profile = AMBIENT_PROFILES[sound.currentProfile] || AMBIENT_PROFILES.fog;
+      const open = !deep && sound.transparentUntil > Date.now() ? 16000 : profile.cutoff;
       sound.ambientFilter.frequency.cancelScheduledValues(now);
       sound.ambientFilter.frequency.setValueAtTime(sound.ambientFilter.frequency.value, now);
-      const open = !deep && sound.transparentUntil > Date.now() ? 16000 : 11000;
-      sound.ambientFilter.frequency.linearRampToValueAtTime(deep ? 420 : open, now + 0.6);
+      sound.ambientFilter.frequency.linearRampToValueAtTime(deep ? 360 : open, now + 0.6);
     }
     sound.master.gain.cancelScheduledValues(now);
     sound.master.gain.setValueAtTime(sound.master.gain.value, now);
@@ -2465,7 +2562,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       channel.audio.playbackRate = SCREEN_TIER === 'low' ? 1 : (deep ? SLOW_RATE : 1);
       fadeChannelVolume(channel, deep ? MUSIC_GAIN * 0.55 : MUSIC_GAIN, 420);
     }
-    setElementalNoise();
   }
   function setSoundTransparency(active) {
     if (!sound || !sound.ambientFilter) return;
@@ -2473,8 +2569,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     sound.transparentUntil = active ? Date.now() + 1200 : 0;
     sound.ambientFilter.frequency.cancelScheduledValues(now);
     sound.ambientFilter.frequency.setValueAtTime(sound.ambientFilter.frequency.value, now);
-    sound.ambientFilter.frequency.linearRampToValueAtTime(active ? 16000 : 11000, now + 0.45);
-    setElementalNoise();
+    const profile = AMBIENT_PROFILES[sound.currentProfile] || AMBIENT_PROFILES.fog;
+    sound.ambientFilter.frequency.linearRampToValueAtTime(active ? 16000 : profile.cutoff, now + 0.45);
   }
   function pauseSound() {
     if (!sound) {
@@ -3556,7 +3652,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         if (promise && typeof promise.catch === 'function') promise.catch(() => {});
       }
     });
-    video.crossOrigin = 'anonymous';
     video.src = playUrl;
     video.dataset.clipId = clip.id || '';
     clip.el = video;
@@ -3727,6 +3822,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         caption_ru: String(item.caption_ru || ''),
         caption_en: String(item.caption_en || ''),
         title,
+        title_ru: String(item.title_ru || ''),
         url: item.url,
         url720: String(item.url720 || ''),
         url480: String(item.url480 || ''),
