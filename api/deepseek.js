@@ -1,11 +1,12 @@
 const DEEPSEEK_ENDPOINT = 'https://api.deepseek.com/chat/completions';
 const DEEPSEEK_MODEL = 'deepseek-chat';
-const ALLOWED_ORIGIN = 'https://yoursanctuary.vercel.app';
+const ALLOWED_ORIGINS = new Set(['https://yoursanctuary.ru', 'https://yoursanctuary.vercel.app']);
+const ALLOWED_HOSTS = new Set(['yoursanctuary.ru', 'yoursanctuary.vercel.app']);
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
 
 function isAllowedOrigin(origin) {
   if (!origin) return false;
-  if (origin === ALLOWED_ORIGIN) return true;
+  if (ALLOWED_ORIGINS.has(origin)) return true;
 
   try {
     const parsed = new URL(origin);
@@ -24,7 +25,7 @@ function hostnameOf(hostHeader) {
 
 function isAllowedHost(hostHeader) {
   const hostname = hostnameOf(hostHeader);
-  return hostname === 'yoursanctuary.vercel.app' || LOCAL_HOSTS.has(hostname);
+  return ALLOWED_HOSTS.has(hostname) || LOCAL_HOSTS.has(hostname);
 }
 
 function parseBody(body) {

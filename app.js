@@ -76,59 +76,27 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       docTitle: 'Quiet Space — когда мысли не останавливаются',
       entryAria: 'Вход в убежище',
       entryKicker: 'ТИХОЕ ПРОСТРАНСТВО',
-      appKicker: 'ПОРОГ ТИШИНЫ',
-      appTitle: 'Оставь шум снаружи.<br>Войди в сон без слов',
       guideSwipe: 'Потяни вверх, чтобы войти',
-      guideHold: 'Удерживай — чтобы замедлить время',
       entryTitle: 'Когда мысли<br>не останавливаются',
       entrySub: 'Перед сном, после тяжёлого дня<br>или между созвонами',
-      entryBarrier: 'Ничего не нужно делать — просто смотри.<br>Бесплатно и без регистрации.',
-      entryBegin: 'Войти в тишину',
-      quietPresence: 'Тихое присутствие',
-      enter: 'Войти',
       nav: 'Листай вверх как сон · Задержи палец, если кадр отзывается',
       installApp: 'Установить приложение на экран',
       installHint: 'Нажмите «Поделиться» → «На экран Домой»',
-      installCardTitle: 'Сохранить убежище',
-      install: 'Установить приложение',
-      tapToBegin: 'Нажмите, чтобы начать',
       installedTitle: 'Убежище установлено',
       installedSub: 'Закройте браузер и откройте иконку с экрана телефона',
-      installedNote: 'Убежище установлено. Закройте браузер и откройте иконку с экрана телефона',
       inSilenceNow: 'СЕЙЧАС В ТИШИНЕ: {n}',
-      installInApp: 'Откройте в Chrome (⋮ → Открыть в браузере), чтобы установить приложение',
-      installHelp: 'Как установить',
       installManual: 'Меню браузера ⋮ → Установить приложение / На экран Домой',
-      finaleInstall: 'Добавить на экран',
       finaleGift: 'Поделиться',
       artNote: 'Уникальная картина этой сессии',
-      installAccepted: 'Приложение добавлено на экран',
-      iosKicker: 'СОХРАНИТЬ УБЕЖИЩЕ',
-      iosSafari1: 'Нажмите «Поделиться» на нижней панели',
-      iosSafari2: 'Выберите «На экран Домой»',
-      iosInapp1: 'Откройте эту страницу в Safari',
-      iosInapp2: 'Затем нажмите «Поделиться» → «На экран Домой»',
-      close: 'Закрыть',
-      copy: 'Скопировать',
       copied: 'Скопировано',
-      swipe: 'Потяни вверх · Удерживай, чтобы замедлить',
-      finaleKicker: 'ТИШИНА РЯДОМ',
-      finaleTitle: 'Ты здесь',
-      finaleSub: 'ПРОСТРАНСТВО ОСТАЁТСЯ',
-      finaleBody1: 'Здесь ничего не нужно объяснять или исправлять.',
-      finaleBody2: 'Тишина просто побыла рядом — ты можешь остаться в ней или вернуться в любой момент.',
       doorNote: 'Дверь закрывается на два часа, чтобы тишина улеглась',
       scenarioHold: 'Ты замирал там, где взгляд обычно скользит мимо. Пространство запомнило этот отклик.',
       scenarioFast: 'Ты шёл сквозь кадры быстрее, чем успевал выдохнуть. Пространство запомнило этот отклик.',
       scenarioSteady: 'Ты прошёл этот круг ровно, не торопя ни один кадр. Пространство запомнило этот отклик.',
-      loading: 'ТИШИНА...',
-      back: 'Ещё один сон',
       cycle1: 'Первый круг завершён. Теперь сон опускается глубже',
       cycleKicker: 'КРУГ I // ПРОЙДЕН',
       cycle2: 'Второй круг пройден. Тишина остаётся рядом.',
       cycle3: 'Круг сна завершён. Дыхание продолжается.',
-      lockLabel: 'ПРОДОЛЖЕНИЕ',
-      lockedPrefix: 'Продолжение через',
       lockEntryKicker: 'ДВЕРЬ ЗАКРЫТА',
       lockEntryHint: 'Тишина ещё длится',
       notificationBody: 'Продолжение открыто. Вернись, чтобы узнать, что дальше.',
@@ -136,13 +104,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       notifySet: 'Уведомление поставлено',
       notifyOff: 'Уведомления отключены',
       notifyUnavailable: 'Уведомления недоступны',
-      captionFallback: 'В этот час лучше просто дышать.',
       saveFrame: 'Сохранить образ сна',
-      saveUnavailable: 'Образ пока недоступен',
       giftKicker: 'ТЕБЕ ПЕРЕДАЛИ 3 МИНУТЫ ТИШИНЫ',
       giftTitle: 'Просто побудь здесь<br>без слов',
       giftSub: 'Ничего не нужно делать — просто смотри.',
-      giftBarrier: 'Бесплатно и без регистрации.',
       giftShareText: 'Тебе передали 3 минуты тишины. Просто смотри.',
       giftShareTitle: 'Тишина для тебя',
     },
@@ -150,59 +115,27 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       docTitle: 'Quiet Space — when thoughts won’t stop',
       entryAria: 'Entrance to the sanctuary',
       entryKicker: 'A QUIET SPACE',
-      appKicker: 'THRESHOLD OF STILLNESS',
-      appTitle: 'Leave the noise outside.<br>Enter a dream without words',
       guideSwipe: 'Swipe up to enter',
-      guideHold: 'Hold — to slow down time',
       entryTitle: 'When thoughts<br>won’t stop',
       entrySub: 'Before sleep, after a hard day,<br>or between calls',
-      entryBarrier: 'Nothing to do — just watch.<br>Free, no sign-up.',
-      entryBegin: 'Enter the quiet',
-      quietPresence: 'Quiet presence',
-      enter: 'Enter',
       nav: 'Swipe up like a dream · Hold when a frame resonates',
       installApp: 'Add the app to your screen',
       installHint: 'Tap Share → Add to Home Screen',
-      installCardTitle: 'Keep the sanctuary',
-      install: 'Install app',
-      tapToBegin: 'Tap to begin',
       installedTitle: 'Sanctuary installed',
       installedSub: 'Close the browser and open it from your home screen',
-      installedNote: 'Sanctuary installed. Close the browser and open it from your home screen',
       inSilenceNow: 'IN SILENCE NOW: {n}',
-      installInApp: 'Open in Chrome (⋮ → Open in browser) to install',
-      installHelp: 'How to install',
       installManual: 'Browser menu ⋮ → Install app / Add to Home Screen',
-      finaleInstall: 'Add to screen',
       finaleGift: 'Share',
       artNote: 'A unique painting from this session',
-      installAccepted: 'App added to your screen',
-      iosKicker: 'SAVE THE SANCTUARY',
-      iosSafari1: 'Tap Share in the bottom bar',
-      iosSafari2: 'Select «Add to Home Screen»',
-      iosInapp1: 'Open this page in Safari',
-      iosInapp2: 'Then tap Share → Add to Home Screen',
-      close: 'Close',
-      copy: 'Copy',
       copied: 'Copied',
-      swipe: 'Swipe up · Hold to sink deeper',
-      finaleKicker: 'SILENCE, STILL HERE',
-      finaleTitle: 'You are here',
-      finaleSub: 'THE SPACE BESIDE YOU',
-      finaleBody1: 'Nothing here needs to be explained or repaired.',
-      finaleBody2: 'Silence simply stayed beside you — you can remain in it or return at any moment.',
       doorNote: 'The door closes for two hours so the silence can settle',
       scenarioHold: 'You lingered where the gaze usually slips past. The space remembered that response.',
       scenarioFast: 'You moved through the frames faster than you could exhale. The space remembered that response.',
       scenarioSteady: 'You passed this circle evenly, hurrying no frame. The space remembered that response.',
-      loading: 'LISTENING...',
-      back: 'One more dream',
       cycle1: 'First cycle complete. The dream now descends deeper',
       cycleKicker: 'CYCLE I // COMPLETE',
       cycle2: 'Second cycle passed. Silence remains beside you.',
       cycle3: 'Dream cycle complete. Breathing continues.',
-      lockLabel: 'CONTINUATION',
-      lockedPrefix: 'Continues in',
       lockEntryKicker: 'THE DOOR IS CLOSED',
       lockEntryHint: 'The silence is still here',
       notificationBody: 'The next chapter is open. Come back and see what it holds.',
@@ -210,13 +143,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       notifySet: 'Notification set',
       notifyOff: 'Notifications off',
       notifyUnavailable: 'Notifications unavailable',
-      captionFallback: 'Right now, it is enough to breathe.',
       saveFrame: 'Save dream frame',
-      saveUnavailable: 'Frame is not available yet',
       giftKicker: 'SOMEONE SENT YOU 3 MINUTES OF SILENCE',
       giftTitle: 'Just stay here<br>without words',
       giftSub: 'Nothing to do — just watch.',
-      giftBarrier: 'Free, no sign-up.',
       giftShareText: 'Someone sent you 3 minutes of silence. Just watch.',
       giftShareTitle: 'Silence for you',
     },
@@ -554,60 +484,31 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     return;
   }
   const progressFill = document.getElementById('session-progress-fill');
-  const stageLabelEl = document.getElementById('stage-label');
-  let swipeHint = document.getElementById('swipe-hint');
-  const entryTrigger = document.getElementById('entry-trigger');
   const entryInstallButton = document.getElementById('install-btn');
-  const entryTapPrompt = document.getElementById('entry-tap-prompt');
   const entryLock = document.getElementById('entry-lock');
   const entryLockKicker = document.getElementById('entry-lock-kicker');
   const entryLockTime = document.getElementById('entry-lock-time');
   const entryLockHint = document.getElementById('entry-lock-hint');
   const entryLockLight = document.getElementById('entry-lock-light');
   const guideLine1 = document.getElementById('guide-line-1');
-  const guideLine2 = document.getElementById('guide-line-2');
   const entryInstalledNote = document.getElementById('entry-installed-note');
   const installedTitle = document.querySelector('.installed-title');
   const installedSub = document.querySelector('.installed-sub');
   const entryInstallHint = document.getElementById('entry-install-hint');
-  const installCard = document.getElementById('install-card');
-  const installCardInstall = document.getElementById('install-card-install');
-  const installCardLater = document.getElementById('install-card-later');
-  const installCardHint = document.getElementById('install-card-hint');
-  const installCardInfo = document.getElementById('install-card-info');
-  const iosInstallCard = document.getElementById('ios-install-card');
-  const iosInstallClose = document.getElementById('ios-install-close');
-  const iosInstallKicker = document.getElementById('ios-install-kicker');
-  const iosStepsSafari = document.getElementById('ios-steps-safari');
-  const iosStepsInapp = document.getElementById('ios-steps-inapp');
-  const iosSafari1 = document.getElementById('ios-safari-1');
-  const iosSafari2 = document.getElementById('ios-safari-2');
-  const iosInapp1 = document.getElementById('ios-inapp-1');
-  const iosInapp2 = document.getElementById('ios-inapp-2');
   const finaleEl = document.getElementById('finale');
   const finaleSessionVideo = document.getElementById('finale-session-video');
   if (SCREEN_TIER === 'low' && finaleSessionVideo) finaleSessionVideo.remove();
-  const finalePortraitEl = document.getElementById('finale-portrait');
   const finaleCountdownEl = document.getElementById('finale-countdown');
   const finaleReflectionEl = document.getElementById('finale-reflection');
   const finaleDoorNote = document.getElementById('finale-door-note');
   const finaleArtNote = document.getElementById('finale-art-note');
-  const finaleLockInlineEl = document.getElementById('finale-lock-inline');
-  const finaleLockLabel = document.getElementById('finale-lock-label');
-  const copySnapshotButton = document.getElementById('copy-snapshot');
   const notifyReturnButton = document.getElementById('notify-return');
-  const backToStartButton = document.getElementById('back-to-start');
   const langSwitch = document.getElementById('lang-switch');
   const langButtons = Array.from(document.querySelectorAll('.lang-switch-btn'));
-  const entryBegin = document.getElementById('entry-begin');
-  const entryBarrier = document.querySelector('.entry-barrier');
   const presenceTexts = Array.from(document.querySelectorAll('[data-presence]'));
   const finaleArtifact = document.getElementById('finale-artifact');
   const artifactCanvas = document.getElementById('session-artifact');
   const shareSilenceButton = document.getElementById('share-silence');
-  const finaleInstallWrap = document.getElementById('finale-install-wrap');
-  const finaleInstallButton = document.getElementById('finale-install');
-  const finaleInstallHint = document.getElementById('finale-install-hint');
   const artLightbox = document.getElementById('art-lightbox');
   const artLightboxImage = document.getElementById('art-lightbox-image');
   const artLightboxClose = document.getElementById('art-lightbox-close');
@@ -883,8 +784,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     setText('.entry-kicker', 'entryKicker');
     setHtml('.entry-title', 'entryTitle');
     setHtml('.entry-sub', 'entrySub');
-    if (entryBarrier) entryBarrier.innerHTML = tr('entryBarrier');
-    if (entryBegin) entryBegin.textContent = tr('entryBegin');
     if (installedTitle) installedTitle.textContent = tr('installedTitle');
     if (installedSub) installedSub.textContent = tr('installedSub');
     updatePresenceCounter();
@@ -892,50 +791,19 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       setText('.entry-kicker', 'giftKicker');
       setHtml('.entry-title', 'giftTitle');
       setHtml('.entry-sub', 'giftSub');
-      if (entryBarrier) entryBarrier.innerHTML = tr('giftBarrier');
     }
     if (guideLine1) guideLine1.textContent = tr('guideSwipe');
-    if (guideLine2) guideLine2.textContent = tr('guideHold');
     setText('.entry-nav-hint', 'nav');
-    setText('.install-card-title', 'installCardTitle');
-    setText('.finale-kicker', 'finaleKicker');
-    setText('.finale-title', 'finaleTitle');
-    setText('.finale-sub', 'finaleSub');
-    const finaleBody = document.querySelectorAll('.finale-portrait p');
-    if (finaleBody[0]) finaleBody[0].textContent = tr('finaleBody1');
-    if (finaleBody[1]) finaleBody[1].textContent = tr('finaleBody2');
-    setText('.swipe-hint-label', 'swipe');
     if (entryGate) entryGate.setAttribute('aria-label', tr('entryAria'));
-    if (entryTrigger) {
-      entryTrigger.textContent = isSessionLocked()
-        ? `${tr('lockedPrefix')} ${formatSessionCountdown(Math.max(0, sessionLockAt - Date.now()))}`
-        : tr('enter');
-    }
     if (entryInstallButton) entryInstallButton.textContent = tr('installApp');
     if (entryInstallHint) entryInstallHint.textContent = tr('installHint');
-    if (installCardInstall) installCardInstall.textContent = tr('install');
-    if (entryTapPrompt) entryTapPrompt.textContent = tr('tapToBegin');
     if (entryLockKicker) entryLockKicker.textContent = tr('lockEntryKicker');
     if (entryLockHint) entryLockHint.textContent = tr('lockEntryHint');
-    if (installCardHint) installCardHint.textContent = tr('installHint');
-    if (installCardInfo) installCardInfo.textContent = tr('installInApp');
-    if (iosInstallKicker) iosInstallKicker.textContent = tr('iosKicker');
-    if (iosSafari1) iosSafari1.textContent = tr('iosSafari1');
-    if (iosSafari2) iosSafari2.textContent = tr('iosSafari2');
-    if (iosInapp1) iosInapp1.textContent = tr('iosInapp1');
-    if (iosInapp2) iosInapp2.textContent = tr('iosInapp2');
-    if (installCardLater) installCardLater.setAttribute('aria-label', tr('close'));
-    if (copySnapshotButton) copySnapshotButton.textContent = tr('copy');
     if (notifyReturnButton) notifyReturnButton.textContent = tr('notify');
     if (shareSilenceButton) shareSilenceButton.textContent = tr('finaleGift');
     if (artLightboxSave) artLightboxSave.textContent = tr('saveFrame');
-    if (finaleInstallButton) finaleInstallButton.textContent = tr('finaleInstall');
-    if (finaleLockLabel) finaleLockLabel.textContent = tr('lockLabel');
     if (finaleDoorNote) finaleDoorNote.textContent = tr('doorNote');
     if (finaleArtNote) finaleArtNote.textContent = tr('artNote');
-    if (backToStartButton) backToStartButton.textContent = tr('back');
-    const loading = finalePortraitEl && finalePortraitEl.querySelector('.finale-loading');
-    if (loading) loading.textContent = tr('loading');
     for (const button of langButtons) {
       const active = button.dataset.lang === currentLang;
       button.classList.toggle('is-active', active);
@@ -977,7 +845,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       activeIndex: 0,
       lastPlayed: null,
       freshIndex: null,
-      loading: false,
       extendWanted: false,
       extendedLoading: false,
       extendedLoaded: false,
@@ -988,6 +855,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   const VIEWED_STORAGE_KEY = 'sanctuary-viewed-video-ids-v1';
   const VIEWED_ALL_KEY = 'sanctuary-viewed-all-v1';
   const MAX_VIEWED_IDS = 100;
+  const MAX_ALL_VIEWED_IDS = 500;
   function readViewedVideoIds() {
     try {
       const raw = localStorage.getItem(VIEWED_STORAGE_KEY);
@@ -1005,7 +873,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       const raw = localStorage.getItem(VIEWED_ALL_KEY);
       const parsed = raw ? JSON.parse(raw) : [];
       return Array.isArray(parsed)
-        ? parsed.filter((id) => typeof id === 'string' && id)
+        ? parsed.filter((id) => typeof id === 'string' && id).slice(-MAX_ALL_VIEWED_IDS)
         : [];
     } catch (_) {
       return [];
@@ -1048,6 +916,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (!id) return;
     sessionUsedVideoIds.add(id);
     allViewedVideoIds.add(id);
+    while (allViewedVideoIds.size > MAX_ALL_VIEWED_IDS) {
+      allViewedVideoIds.delete(allViewedVideoIds.values().next().value);
+    }
     const previous = viewedVideoIds.indexOf(id);
     if (previous >= 0) viewedVideoIds.splice(previous, 1);
     viewedVideoIds.push(id);
@@ -1131,8 +1002,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   let holdTimer = 0;
   let lastSwipeAt = 0;
   let lastBottomTapAt = 0;
-  let swipeHintTimer = 0;
-  let hasSwiped = false;
   let resonanceTimer = 0;
   let recentTrackIds = [];
   let sound = null;
@@ -1167,6 +1036,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   let resonanceMemoryVersion = 0;
   const resonanceMemory = [];
   const captionCache = new Map();
+  const CAPTION_CACHE_MAX = 200;
   const captionPending = new Map();
   const captionSeen = new Set();
   let pathPlan = [];
@@ -1196,7 +1066,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   let firstShadowDurations = [];
   let shadowCompressed = false;
   let wakeLock = null;
-  let firstHintTimer = 0;
   let activeHapticStage = 0;
   let holdPulseTimer = 0;
   let holdBreathStep = 0;
@@ -1207,15 +1076,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   let returnAfterLock = false;
   let lastTrackedStage = 0;
   let lastHoldTrackedFrame = -1;
-  let portraitText = '';
-  let portraitRequestId = 0;
   let returnNotificationTimer = 0;
   let deferredPrompt = null;
   let installHintTimer = 0;
-  let installNudgeTimer = 0;
-  let installCardDismissed = false;
-  const INSTALL_SESSION_KEY = 'sanctuary_install_skipped';
-  const INSTALLED_KEY = 'sanctuary_installed';
   function resetViewClock() {
     state.viewStart = now();
     state.holdsInView = 0;
@@ -1250,22 +1113,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     synchronicity.threshold = 6 + Math.floor(Math.random() * 3);
     synchronicity.symbol = clip.element || ELEMENT_DEFAULT[activeCategory().tag] || 'fog';
     synchronicity.anchorClipId = clip.id;
-  }
-  function findSyncTarget() {
-    const current = activeCategory();
-    const symbol = synchronicity.symbol;
-    const candidates = [];
-    for (const category of categories) {
-      if (category.index === current.index) continue;
-      category.clips.forEach((clip, index) => {
-        if (!clip || clip.element !== symbol || !clip.el) return;
-        if (!clip.id || clip.id === synchronicity.anchorClipId) return;
-        if (sessionUsedVideoIds.has(clip.id)) return;
-        candidates.push({ category, clip, index });
-      });
-    }
-    if (!candidates.length) return null;
-    return candidates[Math.floor(Math.random() * candidates.length)];
   }
 
   function clamp(value, min, max) {
@@ -1531,7 +1378,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   async function callDeepSeek(messages, temperature) {
     if (location.protocol === 'file:') return null;
-    if (location.hostname === 'yoursanctuary.ru' || location.hostname.endsWith('.github.io') || location.hostname === 's3.twcstorage.ru' || location.hostname === 'localhost' || location.hostname === '127.0.0.1') return null;
+    if (location.hostname.endsWith('.github.io') || location.hostname === 's3.twcstorage.ru' || location.hostname === 'localhost' || location.hostname === '127.0.0.1') return null;
     if (captionApiUnavailable) return null;
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), CAPTION_TIMEOUT_MS);
@@ -1591,6 +1438,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       captionAcceptedCount += 1;
       if (startsWithYou) captionYouStartCount += 1;
       captionSeen.add(text.toLowerCase());
+      if (captionCache.size >= CAPTION_CACHE_MAX) {
+        captionCache.delete(captionCache.keys().next().value);
+      }
       captionCache.set(key, text);
       return text;
     })().finally(() => {
@@ -1798,25 +1648,17 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const fallbackFirst = () => {
       applyText(pickFallbackCaption(category.tag));
     };
-    if (staticCaption) {
-      applyText(staticCaption);
-      prefetchNextCaptions(behavior);
-      captionMemoryTimer = window.setTimeout(() => {
-        if (token === captionSceneToken) maybeRecordResonance();
-      }, CAPTION_LINGER_MS);
-      return;
-    }
-    if (captionAllow || hiddenEligible) {
-      if (cached) {
-        applyText(cached);
-      } else {
-        requestCaption(clip, category, behavior, stage)
-          .then((text) => {
-            if (text) applyText(text);
-            else fallbackFirst();
-          })
-          .catch(() => fallbackFirst());
-      }
+    if (cached) applyText(cached);
+    else if (staticCaption) applyText(staticCaption);
+    if (!cached && (captionAllow || hiddenEligible)) {
+      requestCaption(clip, category, behavior, stage)
+        .then((text) => {
+          if (text) applyText(text);
+          else if (!staticCaption) fallbackFirst();
+        })
+        .catch(() => {
+          if (!staticCaption) fallbackFirst();
+        });
     }
     prefetchNextCaptions(behavior);
     captionMemoryTimer = window.setTimeout(() => {
@@ -2468,10 +2310,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
     return null;
   }
-  function hasUnusedVideo(category) {
-    return Boolean(category)
-      && category.clips.some((clip) => !clip.id || !sessionUsedVideoIds.has(clip.id));
-  }
 
   function playCategory(category) {
     if (!category || category.index !== state.index || !category.clips.length) return null;
@@ -2665,17 +2503,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       : Math.min(SESSION_LENGTH, Math.max(0, pathPos + 1));
     progressFill.style.width = `${(currentFrame / SESSION_LENGTH) * 100}%`;
   }
-  function stageLabelFor(stageId) {
-    if (stageId === 1) return '01 // НАЧАЛО';
-    if (stageId === 2) return '02 // ГЛУБИНА';
-    if (stageId === 3) return '03 // ТИШИНА';
-    return '04 // ВЫХОД';
-  }
   function updateStageLabel(stageId) {
     sessionStage = stageId || sessionStage;
     setStageOvertone(sessionStage);
     setStageSubBass(sessionStage);
-    if (stageLabelEl) stageLabelEl.textContent = stageLabelFor(sessionStage);
   }
   function trackStageReached(stageId) {
     const stage = Number(stageId);
@@ -2758,9 +2589,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     activeHapticStage = 0;
     lastTrackedStage = 0;
     lastHoldTrackedFrame = -1;
-    portraitText = '';
-    portraitRequestId += 1;
-    if (copySnapshotButton) copySnapshotButton.textContent = tr('copy');
     if (notifyReturnButton) {
       notifyReturnButton.disabled = false;
       notifyReturnButton.textContent = tr('notify');
@@ -2803,25 +2631,11 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const text = formatSessionCountdown(remaining);
     const showEntryLock = remaining > 0 && !gateOpen;
     if (finaleCountdownEl) finaleCountdownEl.textContent = text;
-    if (finaleLockInlineEl) finaleLockInlineEl.textContent = text;
     if (entryLock) {
       entryLock.hidden = !showEntryLock;
       if (entryLockTime) entryLockTime.textContent = text;
       if (entryLockLight) entryLockLight.style.width = `${Math.max(0, Math.min(100, (remaining / SESSION_LOCK_MS) * 100))}%`;
       if (entryGate) entryGate.classList.toggle('is-locked', showEntryLock);
-    }
-    if (!gateOpen) {
-      if (remaining > 0) {
-        if (entryTrigger) {
-          entryTrigger.disabled = true;
-          entryTrigger.textContent = `${tr('lockedPrefix')} ${text}`;
-        }
-      } else {
-        if (entryTrigger) {
-          entryTrigger.disabled = false;
-          entryTrigger.textContent = tr('enter');
-        }
-      }
     }
     if (sessionLockAt && remaining <= 0) {
       returnAfterLock = true;
@@ -3131,30 +2945,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
     await copyGiftLink();
   }
-  function showFinaleInstall() {
-    if (!finaleInstallWrap) return;
-    finaleInstallWrap.hidden = isStandaloneMode() || installChoiceMade();
-  }
-  async function handleFinaleInstall() {
-    trackEvent('pwa_install_click', { mode: isStandaloneMode() ? 'pwa' : 'browser' });
-    if (!deferredPrompt) {
-      if (finaleInstallHint) {
-        finaleInstallHint.textContent = isIos() ? tr('installHint') : tr('installManual');
-        finaleInstallHint.hidden = false;
-      }
-      return;
-    }
-    const prompt = deferredPrompt;
-    deferredPrompt = null;
-    try {
-      await prompt.prompt();
-      const choice = await prompt.userChoice;
-      if (choice && choice.outcome === 'accepted') {
-        if (finaleInstallButton) finaleInstallButton.textContent = tr('installAccepted');
-        if (finaleInstallHint) finaleInstallHint.hidden = true;
-      }
-    } catch (_) {}
-  }
   let sessionScenario = 'grove';
   function chooseSessionScenario() {
     if (state.totalHolds > 0 || state.heldMs > 1200) return 'feather';
@@ -3211,12 +3001,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     pauseSound();
     stage.classList.add('is-finalizing');
     releaseWakeLock();
-    if (stageLabelEl) stageLabelEl.textContent = '30 // ТИШИНА';
     setSessionLock();
     updateSessionProgress();
     updateSessionLockUI();
     applyScenarioReflection();
-    showFinaleInstall();
     if (finaleEl) {
       finaleEl.hidden = false;
       finaleEl.setAttribute('aria-hidden', 'false');
@@ -3226,45 +3014,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         window.setTimeout(drawSessionArtifact, 260);
       });
     }
-  }
-  function returnToStart() {
-    stopFinaleSessionVideo();
-    if (finaleEl) {
-      finaleEl.hidden = true;
-      finaleEl.classList.remove('is-visible');
-      finaleEl.setAttribute('aria-hidden', 'true');
-    }
-    stage.classList.remove('is-finalizing');
-    gateOpen = false;
-    pathStarted = false;
-    pathPos = -1;
-    pathPlan = [];
-    pathPicked = new Set();
-    if (entryGate) {
-      entryGate.hidden = false;
-      entryGate.classList.remove('is-open');
-      entryGate.setAttribute('aria-hidden', 'false');
-    }
-    hideInstallCard();
-    beginSession();
-    if (!buildSessionPlan()) appendFallbackPath(true);
-    updateSessionLockUI();
-  }
-
-  function countedSessionEvents() {
-    const counted = sessionEvents.filter((event) => event.counted);
-    return counted.length ? counted : sessionEvents;
-  }
-
-
-  function topTitlesForStage(events, stageId, limit = 2) {
-    return events
-      .filter((event) => Number(event.stage) === Number(stageId))
-      .slice()
-      .sort((a, b) => (b.heldMs || 0) - (a.heldMs || 0) || (b.viewedMs || 0) - (a.viewedMs || 0))
-      .slice(0, limit)
-      .map((event) => String(event.title || '').split(/\s+/).slice(0, 5).join(' '))
-      .filter(Boolean);
   }
 
   function scheduleReturnNotification(unlockAt) {
@@ -3326,7 +3075,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       trackEvent('session_return');
       returnAfterLock = false;
     }
-    hideInstallCard();
     window.clearTimeout(sessionFinalTimer);
     sessionFinalTimer = 0;
     sessionComplete = false;
@@ -3458,47 +3206,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     pathPlan.push(...entries);
     return true;
   }
-  function dismissSwipeHint(removeElement = false) {
-    window.clearTimeout(swipeHintTimer);
-    swipeHintTimer = 0;
-    if (!swipeHint) return;
-    swipeHint.classList.remove('is-visible');
-    if (removeElement) {
-      swipeHint.remove();
-      swipeHint = null;
-    } else {
-      swipeHint.hidden = true;
-    }
-  }
-  function armSwipeHint() {
-    if (!swipeHint || hasSwiped) return;
-    let firstVisit = false;
-    try {
-      firstVisit = !localStorage.getItem('sanctuary-first-hint-seen');
-    } catch (_) {
-      firstVisit = true;
-    }
-    const delay = firstVisit ? 6000 : 1200;
-    window.clearTimeout(firstHintTimer);
-    window.clearTimeout(swipeHintTimer);
-    swipeHint.hidden = false;
-    swipeHint.classList.remove('is-visible');
-    firstHintTimer = window.setTimeout(() => {
-      if (!swipeHint || hasSwiped) return;
-      swipeHint.classList.add('is-visible');
-      try { localStorage.setItem('sanctuary-first-hint-seen', '1'); } catch (_) {}
-      window.clearTimeout(swipeHintTimer);
-      swipeHintTimer = window.setTimeout(() => {
-        if (swipeHint && !hasSwiped) swipeHint.classList.remove('is-visible');
-      }, 5200);
-    }, delay);
-  }
-  function markFirstSwipe() {
-    if (hasSwiped) return;
-    hasSwiped = true;
-    try { localStorage.setItem('sanctuary-first-hint-seen', '1'); } catch (_) {}
-    dismissSwipeHint(true);
-  }
   function startPathFirst() {
     isTransitioning = false;
     if (pathStarted || !pathPlan.length) return false;
@@ -3532,7 +3239,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const track = nextTrackFor(category);
     switchSoundtrack(track, SLOW_FADE_MS);
     preloadNextTrack(category);
-    armSwipeHint();
     return true;
   }
   function attachVideo(category, clip, index) {
@@ -3886,31 +3592,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     engine.weights[category.tag] = nextWeight;
     engine.resonanceTotal += 1;
   }
-  function isDeepEngagement() {
-    if (engine.resonanceTotal >= 2) return true;
-    if (engine.averagePaceMs >= 6000 && engine.recentViews.length >= 2) return true;
-    const recent = engine.recentViews.slice(-4);
-    if (recent.length < 2) return false;
-    const average = recent.reduce((sum, value) => sum + value, 0) / recent.length;
-    return average >= 4500;
-  }
-  function weightedNext(excludeIndex) {
-    const pool = categories.filter((category) => category.index !== excludeIndex);
-    if (!pool.length) return null;
-    const previous = engine.history[engine.historyPos - 1];
-    const weights = pool.map((category) => {
-      let weight = Math.max(0.1, engine.weights[category.tag] || 1);
-      if (category.index === previous) weight *= 0.7;
-      return weight;
-    });
-    const total = weights.reduce((sum, weight) => sum + weight, 0);
-    let roll = Math.random() * total;
-    for (let i = 0; i < pool.length; i += 1) {
-      roll -= weights[i];
-      if (roll <= 0) return pool[i].index;
-    }
-    return pool[pool.length - 1].index;
-  }
 
 
   function fadeDurationFor(viewedMs, speed) {
@@ -4055,7 +3736,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   function go(direction, speed) {
     if (!gateOpen || sessionComplete) return;
     hideCycleWhisper();
-    markFirstSwipe();
     lastSwipeAt = now();
     const record = reportSwipe(direction, speed);
     updateUserAverage(record.viewedMs);
@@ -4424,76 +4104,22 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (document.referrer.startsWith('android-app://')) return true;
     return false;
   }
-  function installChoiceMade() {
-    try {
-      return sessionStorage.getItem(INSTALL_SESSION_KEY) === '1';
-    } catch (_) {
-      return false;
-    }
-  }
-  function rememberInstallChoice() {
-    try { sessionStorage.setItem(INSTALL_SESSION_KEY, '1'); } catch (_) {}
-  }
-  function rememberInstalled() {
-    try { localStorage.setItem(INSTALLED_KEY, '1'); } catch (_) {}
-    installCardDismissed = true;
-    hideInstallCard();
-  }
   function isIos() {
     return /iphone|ipad|ipod/i.test(navigator.userAgent)
       || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   }
-  function isInAppBrowser() {
-    return /Telegram|Instagram|FBAN|FBAV|VK|VKApp|Snapchat/i.test(navigator.userAgent);
-  }
-
   function syncInstallButton() {
     if (!entryInstallButton) return;
     const available = !isStandaloneMode();
-    const cardVisible = Boolean(
-      (installCard && !installCard.hidden) || (iosInstallCard && !iosInstallCard.hidden)
-    );
-    entryInstallButton.hidden = !available || cardVisible;
-    if (!available && entryInstallHint) {
-      entryInstallHint.hidden = true;
-    }
-  }
-
-  function syncEntryInstallOffset(visible, card) {
-    const entry = document.getElementById('entry');
-    if (!entry) return;
-    entry.classList.toggle('has-install-card', Boolean(visible));
-    if (!visible) {
-      entry.style.removeProperty('--install-offset');
-      return;
-    }
-    window.requestAnimationFrame(() => {
-      const height = (card && card.offsetHeight) || 80;
-      entry.style.setProperty('--install-offset', `${Math.round(height + 38)}px`);
-    });
-  }
-  function hideInstallCard() {
-    if (installCard) {
-      installCard.hidden = true;
-      installCard.classList.remove('install-card--final', 'is-visible');
-    }
-    if (iosInstallCard) {
-      iosInstallCard.hidden = true;
-      iosInstallCard.classList.remove('install-card--final', 'is-visible');
-    }
-    if (installCardHint) installCardHint.hidden = true;
-    syncEntryInstallOffset(false);
-    syncInstallButton();
+    entryInstallButton.hidden = !available;
+    if (!available && entryInstallHint) entryInstallHint.hidden = true;
   }
   function showIosInstallHint() {
-    const target = installCard && !installCard.hidden
-      ? installCardHint
-      : entryInstallHint;
-    if (!target) return;
+    if (!entryInstallHint) return;
     window.clearTimeout(installHintTimer);
-    target.hidden = false;
+    entryInstallHint.hidden = false;
     installHintTimer = window.setTimeout(() => {
-      target.hidden = true;
+      entryInstallHint.hidden = true;
     }, 4000);
   }
   async function handleInstallClick(event) {
@@ -4508,13 +4134,11 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         await prompt.prompt();
         const choice = await prompt.userChoice;
         if (choice && choice.outcome === 'accepted') {
-          installCardDismissed = true;
           showInstalledState();
           try { window.close(); window.blur(); } catch (_) {}
         }
       } catch (_) {
       }
-      if (!isIos()) hideInstallCard();
       syncInstallButton();
       return;
     }
@@ -4532,16 +4156,12 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   window.addEventListener('beforeinstallprompt', (event) => {
     event.preventDefault();
     deferredPrompt = event;
-    if (installCard) installCard.classList.remove('install-card--info');
-    if (installCardInfo) installCardInfo.hidden = true;
-    if (installCardInstall) installCardInstall.hidden = false;
   });
   deferredPrompt = window.__deferredInstallPrompt || deferredPrompt;
   window.addEventListener('appinstalled', () => {
     trackEvent('pwa_installed', { mode: isStandaloneMode() ? 'pwa' : 'browser' });
     deferredPrompt = null;
     showInstalledState();
-    rememberInstalled();
     if (entryInstallButton) entryInstallButton.hidden = true;
     if (entryInstallHint) entryInstallHint.hidden = true;
   });
@@ -4555,36 +4175,12 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     entryInstallButton.addEventListener('pointerdown', (event) => event.stopPropagation());
     entryInstallButton.addEventListener('click', handleInstallClick);
   }
-  for (const card of [installCard, iosInstallCard]) {
-    if (!card) continue;
-    card.addEventListener('pointerdown', (event) => event.stopPropagation());
-    card.addEventListener('click', (event) => event.stopPropagation());
-  }
-  if (installCardInstall) installCardInstall.addEventListener('click', handleInstallClick);
   function showInstalledState() {
-    hideInstallCard();
-    for (const card of [installCard, iosInstallCard]) {
-      if (!card) continue;
-      card.hidden = true;
-      card.style.setProperty('display', 'none', 'important');
-    }
     if (entryGate) entryGate.classList.add('is-installed');
-    if (entryTapPrompt) entryTapPrompt.hidden = true;
+    if (entryInstallButton) entryInstallButton.hidden = true;
+    if (entryInstallHint) entryInstallHint.hidden = true;
     if (entryInstalledNote) entryInstalledNote.hidden = false;
   }
-  function closeInstallPrompt(event) {
-    event.preventDefault();
-    event.stopPropagation();
-    rememberInstallChoice();
-    installCardDismissed = true;
-    hideInstallCard();
-  }
-  for (const button of [installCardLater, iosInstallClose]) {
-    if (!button) continue;
-    button.addEventListener('pointerdown', closeInstallPrompt);
-    button.addEventListener('click', closeInstallPrompt);
-  }
-  if (installCardInstall) installCardInstall.hidden = true;
   if (entryGate) {
     entryGate.classList.toggle('is-gift', GIFT_MODE);
     entryGate.classList.toggle('is-standalone', isStandaloneMode());
@@ -4592,8 +4188,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     entryGate.classList.toggle('entry-app-mode', isStandaloneMode());
     entryGate.classList.toggle('entry-browser-mode', !isStandaloneMode());
   }
-  hideInstallCard();
-  if (entryTapPrompt) entryTapPrompt.hidden = true;
   if (entryInstalledNote) entryInstalledNote.hidden = true;
   syncInstallButton();
   function unlockExperience() {
@@ -4616,7 +4210,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       trackEvent('session_return');
       returnAfterLock = false;
     }
-    hideInstallCard();
     resetViewClock();
     markInteraction();
     setBreath(0);
@@ -4673,7 +4266,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   } else if (!entryGate) {
     gateOpen = true;
   }
-  if (entryBegin) entryBegin.addEventListener('click', unlockExperience);
   sessionLockAt = readSessionLock();
   returnAfterLock = Boolean(sessionLockAt && sessionLockAt <= Date.now());
   startSessionLockTicker();
@@ -4707,10 +4299,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   if (artLightboxClose) artLightboxClose.addEventListener('click', closeArtLightbox);
   window.addEventListener('keydown', (event) => { if (event.key === 'Escape' && artLightbox && !artLightbox.hidden) closeArtLightbox(); });
-  if (finaleInstallButton) finaleInstallButton.addEventListener('click', handleFinaleInstall);
-  if (backToStartButton) {
-    backToStartButton.addEventListener('click', returnToStart);
-  }
   if (entryLock) {
     entryLock.addEventListener('pointerdown', (event) => {
       event.stopPropagation();
