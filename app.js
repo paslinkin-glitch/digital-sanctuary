@@ -44,10 +44,10 @@
   const SWIPE_HAPTIC_COOLDOWN_MS = 600;
   const HOLD_HEARTBEAT_MS = 1800;
   const HAPTIC_PATTERNS = {
-    fire: { hold: [10], whisper: [8, 90, 10], anchor: [10, 80, 12] },
-    water: { hold: [8], whisper: [8, 90, 10], anchor: [8, 90, 10] },
-    fog: { hold: [10], whisper: [8, 90, 10], anchor: [10, 90, 10] },
-    space: { hold: [8], whisper: [8, 100, 12], anchor: [8, 100, 12] },
+    fire: { hold: [5], whisper: [4, 75, 5], anchor: [5, 75, 5] },
+    water: { hold: [4], whisper: [4, 85, 5], anchor: [4, 85, 5] },
+    fog: { hold: [4], whisper: [4, 80, 5], anchor: [4, 80, 5] },
+    space: { hold: [5], whisper: [5, 90, 5], anchor: [5, 90, 5] },
   };
   const PORTRAIT_TIMEOUT_MS = 1500;
   const DEEPSEEK_PROXY_ENDPOINT = '/api/deepseek';
@@ -81,7 +81,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       entrySub: 'Перед сном, после тяжёлого дня<br>или между созвонами',
       installApp: 'Установить приложение на экран',
       installHint: 'Нажмите «Поделиться» → «На экран Домой»',
-      installedTitle: 'Убежище установлено',
+      installedTitle: 'Пространство установлено',
       installedSub: 'Закройте браузер и откройте иконку с экрана телефона',
       inSilenceNow: 'СЕЙЧАС В ТИШИНЕ: {n}',
       installManual: 'Меню браузера ⋮ → Установить приложение / На экран Домой',
@@ -1143,14 +1143,14 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     stopHoldPulse();
     const pattern = hapticPatternForCurrent();
     holdBreathStep = 0;
-    safeVibrate(10, 0);
+    safeVibrate(5, 0);
     const breathe = () => {
       if (!gesture || !gesture.holding) return;
       holdBreathStep += 1;
-      safeVibrate(8, 0);
-      holdPulseTimer = window.setTimeout(breathe, 7500);
+      safeVibrate(4, 0);
+      holdPulseTimer = window.setTimeout(breathe, 9000);
     };
-    holdPulseTimer = window.setTimeout(breathe, 7500);
+    holdPulseTimer = window.setTimeout(breathe, 9000);
   }
   function stopHoldPulse() {
     const wasHolding = Boolean(holdPulseTimer);
@@ -1568,7 +1568,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         currentCaption.revealed = true;
         if (!currentCaption.haptic) {
           currentCaption.haptic = true;
-          safeVibrate(8, 5000);
+          safeVibrate(4, 6000);
         }
       }
       scheduleCaptionZero();
@@ -1593,7 +1593,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       currentCaption.revealed = true;
       if (!currentCaption.haptic) {
         currentCaption.haptic = true;
-        safeVibrate(8, 5000);
+        safeVibrate(4, 6000);
       }
     }
     scheduleCaptionZero();
@@ -2291,19 +2291,40 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   function liveTracksForCategory(category) {
     return LIVE_AUDIO_TRACKS.filter((track) => track.category === category);
   }
+  const relatedSoundCategories = {
+    rain: ['water', 'fog', 'space'],
+    water: ['rain', 'fog', 'space'],
+    fire: ['city', 'space', 'road'],
+    city: ['road', 'people', 'space'],
+    road: ['city', 'space', 'people'],
+    people: ['city', 'fog', 'road'],
+    fog: ['space', 'people', 'rain'],
+    space: ['fog', 'people', 'rain'],
+  };
+  const playedLiveTrackIds = new Set();
   function chooseLiveTrack(clip) {
     const category = (clip && clip.soundCategory) || semanticSoundKey(clip);
-    const candidates = liveTracksForCategory(category);
+    const pools = [category, ...(relatedSoundCategories[category] || [])];
+    const candidates = [];
+    for (const key of pools) {
+      for (const track of liveTracksForCategory(key)) {
+        if (!candidates.some((item) => item.id === track.id)) candidates.push(track);
+      }
+    }
     if (!candidates.length) return null;
     const preferred = candidates.find((track) => track.id === (clip && clip.trackId));
-    const free = candidates.filter((track) => !recentLiveTrackIds.includes(track.id));
-    const chosen = (preferred && !recentLiveTrackIds.includes(preferred.id) ? preferred : null)
-      || free[0]
+    const fresh = candidates.filter((track) => !recentLiveTrackIds.includes(track.id) && !playedLiveTrackIds.has(track.id));
+    const notRecent = candidates.filter((track) => !recentLiveTrackIds.includes(track.id));
+    const chosen = (preferred && fresh.includes(preferred) ? preferred : null)
+      || fresh[0]
+      || notRecent[0]
       || preferred
+      || candidates.find((track) => track.id !== recentLiveTrackIds[recentLiveTrackIds.length - 1])
       || candidates[0];
     if (!chosen) return null;
     recentLiveTrackIds.push(chosen.id);
-    if (recentLiveTrackIds.length > 15) recentLiveTrackIds.shift();
+    if (recentLiveTrackIds.length > 24) recentLiveTrackIds.shift();
+    playedLiveTrackIds.add(chosen.id);
     return chosen;
   }
   function applyLivePerspective(channel, clip) {
@@ -2693,7 +2714,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   function showCycleWhisper(completedCycle) {
     if (!cycleWhisperEl) return;
-    safeVibrate([10, 90, 12], 3000);
+    safeVibrate([5, 80, 5], 3000);
     window.clearTimeout(cycleWhisperTimer);
     const key = completedCycle === 1 ? 'cycle1' : (completedCycle === 2 ? 'cycle2' : 'cycle3');
     if (cycleWhisperKickerEl) cycleWhisperKickerEl.textContent = tr('cycleKicker');
@@ -3133,7 +3154,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
 
   function finishSession() {
     if (sessionComplete) return;
-    safeVibrate([10, 90, 12], 3000);
+    safeVibrate([5, 80, 5], 3000);
     window.clearTimeout(sessionFinalTimer);
     sessionFinalTimer = 0;
     sessionComplete = true;
@@ -3355,6 +3376,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   function startPathFirst() {
     isTransitioning = false;
+    playedLiveTrackIds.clear();
+    recentLiveTrackIds.length = 0;
     if (pathStarted || !pathPlan.length) return false;
     beginSession();
     if (!sceneOrdinal) sceneOrdinal = 1;
