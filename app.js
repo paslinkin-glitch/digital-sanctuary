@@ -1785,17 +1785,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       soundBank.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;pointer-events:none;';
       document.body.appendChild(soundBank);
     }
-    if (SCREEN_TIER === 'low' && trackAudio.size >= 2) {
-      for (const [id, oldAudio] of [...trackAudio]) {
-        if (id === sound?.activeTrackId) continue;
-        const oldChannel = sound && sound.channels.get(id);
-        if (oldChannel) disposeTrackChannel(oldChannel);
-        else if (oldAudio.volume <= 0.005) {
-          try { oldAudio.pause(); oldAudio.removeAttribute('src'); oldAudio.load(); oldAudio.remove(); } catch (_) {}
-          trackAudio.delete(id);
-        }
-      }
-    }
     const audio = document.createElement('audio');
     track.failed = false;
     audio.loop = true;
@@ -2601,10 +2590,19 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       channel.audio._graphPanner.pan.setValueAtTime(channel.audio._graphPanner.pan.value, now);
       channel.audio._graphPanner.pan.linearRampToValueAtTime(Math.max(-0.85, Math.min(0.85, pan)), now + 0.03);
     }
-    try {
-      const duration = Number(channel.audio.duration) || 17;
-      channel.audio.currentTime = (seed % Math.max(1, Math.floor(duration * 1000))) / 1000;
-    } catch (_) {}
+    const seek = () => {
+      try {
+        const duration = Number(channel.audio.duration);
+        if (channel.audio.readyState < 1 || !Number.isFinite(duration) || duration <= 0) return;
+        const offset = (seed % Math.max(1, Math.floor(duration * 1000))) / 1000;
+        channel.audio.currentTime = Math.min(offset, Math.max(0, duration - 0.2));
+      } catch (_) {}
+    };
+    if (channel.audio.readyState >= 1 && Number.isFinite(Number(channel.audio.duration))) {
+      seek();
+    } else {
+      channel.audio.addEventListener('loadedmetadata', seek, { once: true });
+    }
   }
   function switchSoundtrack(track, fadeMs) {
     if (!sound) return;
@@ -2638,9 +2636,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     for (const [id, item] of [...sound.channels]) {
       if (channel && id === targetId) {
         item.audio.volume = 0;
-        fadeChannelVolume(item, 0, duration);
       } else {
-        fadeChannelVolume(item, 0, 35, () => disposeTrackChannel(item, true));
+        fadeChannelVolume(item, 0, 45, () => disposeTrackChannel(item, true));
       }
     }
     const now = sound.ctx.currentTime;
@@ -2656,13 +2653,17 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       const begin = () => {
         if (!sound || fadeToken !== sound.fadeToken) return;
         const promise = channel.audio.play();
-        if (promise && typeof promise.catch === 'function') {
-          promise.catch(() => {
+        if (promise && typeof promise.then === 'function') {
+          promise.then(() => {
+            if (!sound || fadeToken !== sound.fadeToken) return;
+            fadeChannelVolume(channel, MUSIC_GAIN, 90);
+          }).catch(() => {
             if (!sound || sound.activeTrackId !== targetId) return;
             startSoundCrossfade(null, fadeMs);
           });
+        } else {
+          fadeChannelVolume(channel, MUSIC_GAIN, 90);
         }
-        fadeChannelVolume(channel, MUSIC_GAIN, 80);
       };
       window.setTimeout(begin, 30);
     }
