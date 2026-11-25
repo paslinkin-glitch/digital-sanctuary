@@ -1072,6 +1072,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   let sessionLockAt = 0;
   let lockTicker = 0;
   let returnAfterLock = false;
+  let contextualWhisperCount = 0;
+  let returnWhisperFrames = 0;
   let lastTrackedStage = 0;
   let lastHoldTrackedFrame = -1;
   let returnNotificationTimer = 0;
@@ -1599,7 +1601,30 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     scheduleCaptionZero();
     maybeRecordResonance();
   }
-  function activateCaption(category, clip, behavior, allowed, stageId) {
+  function contextualWhisperFor(clip, context) {
+    if (contextualWhisperCount >= 3) return '';
+    const ru = currentLang !== 'en';
+    if (returnWhisperFrames > 0) {
+      returnWhisperFrames -= 1;
+      contextualWhisperCount += 1;
+      return ru ? 'Тишина ждала твоего возвращения' : 'Silence waited for your return';
+    }
+    const hour = new Date().getHours();
+    if (hour >= 0 && hour < 5) {
+      contextualWhisperCount += 1;
+      return ru ? 'Ночь здесь тише твоих мыслей' : 'Night here is quieter now';
+    }
+    if (envContext.weatherType === 'rain' || envContext.weatherType === 'fog') {
+      contextualWhisperCount += 1;
+      return ru ? 'За окном сейчас та же влага' : 'The same rain falls outside';
+    }
+    if (context && context.held) {
+      contextualWhisperCount += 1;
+      return ru ? 'Контроль отпущен. Просто дыши' : 'Control released. Just breathe now';
+    }
+    return '';
+  }
+  function activateCaption(category, clip, behavior, allowed, stageId, context = null) {
     const token = ++captionSceneToken;
     window.clearTimeout(captionTimer);
     window.clearTimeout(captionMemoryTimer);
@@ -1642,6 +1667,14 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     };
     const key = captionKey(clip);
     const cached = captionCache.get(key);
+    const contextualWhisper = contextualWhisperFor(clip, context);
+    if (contextualWhisper) {
+      applyText(contextualWhisper);
+      captionMemoryTimer = window.setTimeout(() => {
+        if (token === captionSceneToken) maybeRecordResonance();
+      }, CAPTION_LINGER_MS);
+      return;
+    }
     const staticCaption = currentLang === 'en' ? clip.caption_en : clip.caption_ru;
     const fallbackFirst = () => {
       applyText(pickFallbackCaption(category.tag));
@@ -2350,6 +2383,12 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     lastPerspective = perspective;
     sound.currentPerspective = perspective;
   }
+  function finalDoorFade() {
+    if (pathPos === 29) return 0.48;
+    if (pathPos === 28) return 0.65;
+    if (pathPos === 27) return 0.82;
+    return 1;
+  }
   function switchSoundtrack(track, fadeMs) {
     if (!sound) return;
     const clip = activeClip() || currentSoundClip;
@@ -2384,7 +2423,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       const gain = ctx.createGain();
       const startAt = ctx.currentTime;
       gain.gain.setValueAtTime(0.0001, startAt);
-      gain.gain.linearRampToValueAtTime(1.0, startAt + 0.12);
+      gain.gain.linearRampToValueAtTime(finalDoorFade(), startAt + 0.12);
       source.connect(gain);
       gain.connect(sound.masterGain);
       try { source.start(startAt); } catch (_) { return; }
@@ -2402,7 +2441,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (!sound || !sound.masterGain) return;
     sound.held = deep;
     const now = sound.ctx.currentTime;
-    const target = deep ? MUSIC_GAIN * 0.45 : MUSIC_GAIN;
+    const target = (deep ? MUSIC_GAIN * 0.45 : MUSIC_GAIN) * finalDoorFade();
     sound.masterGain.gain.cancelScheduledValues(now);
     sound.masterGain.gain.setValueAtTime(sound.masterGain.gain.value, now);
     sound.masterGain.gain.linearRampToValueAtTime(target, now + 0.30);
@@ -2554,6 +2593,18 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (!entries.length) return false;
     pathPlan.push(...entries);
     return true;
+  }
+  function buildOrFillSessionPlan() {
+    if (buildSessionPlan()) return pathPlan.length === SESSION_LENGTH;
+    pathPlan = [];
+    pathPicked = new Set();
+    let guard = 0;
+    while (pathPlan.length < SESSION_LENGTH && guard < 12) {
+      if (!appendFallbackPath(true)) break;
+      guard += 1;
+    }
+    if (pathPlan.length > SESSION_LENGTH) pathPlan = pathPlan.slice(0, SESSION_LENGTH);
+    return pathPlan.length === SESSION_LENGTH;
   }
   function ensureFallbackCategories() {
     for (const category of categories) {
@@ -3252,6 +3303,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   function startNewSessionAfterUnlock() {
     clearSessionLock();
+    if (returnAfterLock || completedBefore) returnWhisperFrames = 2;
     if (returnAfterLock) {
       trackEvent('session_return');
       returnAfterLock = false;
@@ -3273,7 +3325,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
     stopFinaleSessionVideo();
     stage.classList.remove('is-finalizing');
-    if (!buildSessionPlan()) appendFallbackPath(true);
+    if (!buildOrFillSessionPlan()) appendFallbackPath(true);
     if (!pathPlan.length) {
       gateOpen = false;
       if (entryGate) {
@@ -3373,6 +3425,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     return entries;
   }
   function extendPathPlan() {
+    if (pathPlan.length >= SESSION_LENGTH) return false;
     for (const allowSeen of [false, true]) {
       const entries = makeCycleEntries(allowSeen);
       if (!entries) continue;
@@ -3392,6 +3445,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     playedLiveTrackIds.clear();
     recentLiveTrackIds.length = 0;
     if (pathStarted || !pathPlan.length) return false;
+    if (pathPlan.length > SESSION_LENGTH) pathPlan = pathPlan.slice(0, SESSION_LENGTH);
     beginSession();
     if (!sceneOrdinal) sceneOrdinal = 1;
     const entry = pathPlan[0];
@@ -3418,7 +3472,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     activeHapticStage = entry.stage;
     trackStageReached(entry.stage);
     updateSessionProgress();
-    activateCaption(category, activeClip(), behaviorContext(), false, entry.stage);
+    activateCaption(category, activeClip(), behaviorContext(), false, entry.stage, { held: false });
     switchSoundtrack(null, SLOW_FADE_MS);
     return true;
   }
@@ -3901,12 +3955,70 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     showFramePlaceholder(fromVideo, category, targetClip);
     preparePlaybackWindow(planned, pathPlan[pathPos + 1]);
     playCategory(category);
-    activateCaption(category, activeClip(), behavior, allowed, sceneStage);
+    activateCaption(category, activeClip(), behavior, allowed, sceneStage, sceneContext || {});
     switchSoundtrack(null, duration);
     if (direction === 'up') {
       engine.history = engine.history.slice(0, engine.historyPos + 1);
       engine.history.push(targetIndex);
       engine.historyPos = engine.history.length - 1;
+    }
+  }
+  function unusedEntries(filter) {
+    const found = [];
+    for (const category of categories) {
+      for (const clip of category.clips) {
+        if (!clip || clip.invalid || !clip.id || pathPicked.has(clip.id)) continue;
+        if (filter && !filter(clip, category)) continue;
+        found.push({
+          category,
+          clip,
+          stage: STAGE_BY_CATEGORY[category.tag] || 1,
+        });
+      }
+    }
+    return found;
+  }
+  function replaceFutureEntry(index, category, clip, stage) {
+    if (index < 0 || index >= pathPlan.length || !clip) return false;
+    const old = pathPlan[index];
+    if (old && old.clip && old.clip.id === clip.id) return false;
+    if (old && old.clip) pathPicked.delete(old.clip.id);
+    pathPicked.add(clip.id);
+    pathPlan[index] = { stage: stage || STAGE_BY_CATEGORY[category.tag] || 1, category, clip };
+    return true;
+  }
+  function adaptUpcomingPath(record, quickPair = false) {
+    if (!record || pathPlan.length !== 30) return;
+    const nextIndex = pathPos + 1;
+    if (nextIndex >= 30) return;
+    const current = activeClip();
+    if (!current) return;
+    const resonance = record.heldMs >= 1000 || record.loopCount >= 1;
+    if (resonance) {
+      const same = unusedEntries((clip, category) => clip.element === current.element && category !== (activeCategory() || {}));
+      if (same.length) {
+        const pick = same[Math.floor(Math.random() * same.length)];
+        replaceFutureEntry(nextIndex, pick.category, pick.clip, pick.stage);
+        const anchorIndex = Math.min(29, nextIndex + (Math.random() < 0.5 ? 5 : 6));
+        const anchorPool = same.filter((entry) => entry.clip.id !== pick.clip.id);
+        if (anchorPool.length) {
+          anchorPool.sort((a, b) => Math.abs((a.clip.lightPriority || 0) - (current.lightPriority || 0))
+            - Math.abs((b.clip.lightPriority || 0) - (current.lightPriority || 0)));
+          replaceFutureEntry(anchorIndex, anchorPool[0].category, anchorPool[0].clip, anchorPool[0].stage);
+        }
+      }
+    }
+    if (quickPair) {
+      const next = pathPlan[nextIndex];
+      if (next && next.stage === 'shadow') {
+        const calm = unusedEntries((clip, category) => (
+          category.tag === 'Calm' && (clip.element === 'water' || clip.element === 'fog')
+        ));
+        if (calm.length) {
+          const pick = calm[Math.floor(Math.random() * calm.length)];
+          replaceFutureEntry(nextIndex, pick.category, pick.clip, pick.stage);
+        }
+      }
     }
   }
   function reportSwipe(direction, speed) {
@@ -3965,8 +4077,12 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (!gateOpen || sessionComplete) return;
     if (sound && speed > 1.1) setSoundTransparency(true);
     hideCycleWhisper();
-    lastSwipeAt = now();
+    const previousSwipeAt = lastSwipeAt;
+    const swipeAt = now();
+    lastSwipeAt = swipeAt;
     const record = reportSwipe(direction, speed);
+    const quickPair = previousSwipeAt > 0 && swipeAt - previousSwipeAt < 1500;
+    adaptUpcomingPath(record, quickPair);
     updateUserAverage(record.viewedMs);
     const behavior = behaviorContext(record);
     const sceneContext = sceneContextFor(record, behavior);
@@ -4554,7 +4670,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       const total = categories.reduce((sum, category) => sum + category.clips.length, 0);
       const music = categories.reduce((sum, category) => sum + category.musicTracks.length, 0);
       try {
-        if (!buildSessionPlan()) appendFallbackPath(true);
+        if (!buildOrFillSessionPlan()) appendFallbackPath(true);
       } catch (error) {
         console.error('[sanctuary] session plan failed:', error);
       }
