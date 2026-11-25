@@ -68,8 +68,8 @@
 Return one short line strictly 4–6 words, 1–2 short lines. No riddles, jargon, judgments, advice, or Latin padding.
 Speak through images and presence: rain, shadow, water, light, breath, road. Do not name behavior or explain what the person is doing.
 Do not moralize, over-comfort, or ask questions. Return only the line.`;
-  const MUSIC_GAIN = 0.42;
-  const NOISE_GAIN = 0.22;
+  const MUSIC_GAIN = 0.36;
+  const NOISE_GAIN = 0.075;
   const LANG_STORAGE_KEY = 'sanctuary-lang';
   const I18N = {
     ru: {
@@ -1796,6 +1796,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     audio.loop = true;
     audio.preload = 'metadata';
     audio.setAttribute('playsinline', '');
+    audio.crossOrigin = 'anonymous';
     audio.style.display = 'none';
     audio.addEventListener('error', () => {
       track.failed = true;
@@ -1867,6 +1868,15 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     };
     channel.fadeRaf = requestAnimationFrame(step);
   }
+  function connectTrackToGraph(audio) {
+    if (!sound || !audio || audio._graphSource) return;
+    try {
+      audio._graphSource = sound.ctx.createMediaElementSource(audio);
+      audio._graphSource.connect(sound.bus);
+    } catch (_) {
+      audio._graphSource = null;
+    }
+  }
   function ensureTrackChannel(track) {
     if (!sound || !track || track.failed) return null;
     if (sound.channels.has(track.id)) return sound.channels.get(track.id);
@@ -1877,41 +1887,133 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
     const audio = trackAudio.get(track.id) || createTrackAudio(track);
     if (!audio) return null;
+    connectTrackToGraph(audio);
     audio.volume = 0;
     const channel = { track, audio, fadeRaf: 0 };
     sound.channels.set(track.id, channel);
     return channel;
   }
-  const ELEMENTAL_NOISE = {
-    water: { highpass: 90, lowpass: 1450, gain: 0.24, wind: 0.06, depth: 170 },
-    fire: { highpass: 180, lowpass: 2100, gain: 0.20, wind: 0.14, depth: 360 },
-    fog: { highpass: 120, lowpass: 950, gain: 0.17, wind: 0.05, depth: 280 },
-    space: { highpass: 160, lowpass: 1800, gain: 0.13, wind: 0.03, depth: 210 },
+  const AMBIENT_PROFILES = {
+    fire: {
+      root: 55, intervals: [1, 1.5, 2, 3.02], cutoff: 1100, q: 0.8,
+      voiceGains: [0.030, 0.018, 0.012, 0.008], pans: [-0.25, 0.35, -0.55, 0.6],
+      noiseType: 'bandpass', noiseHighpass: 180, noiseLowpass: 1600, noiseQ: 1.1, noiseGain: 0.014,
+      wind: 0.10, windDepth: 300, sparkle: 0.018, delay: 0.18, delayMix: 0.10, delayFeedback: 0.18, reverb: 0.06,
+    },
+    water: {
+      root: 46.25, intervals: [1, 1.5, 2, 3], cutoff: 620, q: 0.7,
+      voiceGains: [0.028, 0.020, 0.016, 0.010], pans: [-0.4, 0.4, -0.15, 0.15],
+      noiseType: 'lowpass', noiseHighpass: 70, noiseLowpass: 1100, noiseQ: 0.5, noiseGain: 0.020,
+      wind: 0.05, windDepth: 150, sparkle: 0, delay: 0.26, delayMix: 0.08, delayFeedback: 0.16, reverb: 0.18,
+    },
+    fog: {
+      root: 42, intervals: [1, 1.33, 1.5, 2], cutoff: 520, q: 1.0,
+      voiceGains: [0.026, 0.018, 0.012, 0.008], pans: [-0.2, 0.2, -0.35, 0.35],
+      noiseType: 'lowpass', noiseHighpass: 100, noiseLowpass: 600, noiseQ: 0.7, noiseGain: 0.025,
+      wind: 0.04, windDepth: 100, sparkle: 0, delay: 0.3, delayMix: 0.06, delayFeedback: 0.12, reverb: 0.20,
+    },
+    space: {
+      root: 110, intervals: [1, 1.5, 2, 2.997], cutoff: 9000, q: 0.4,
+      voiceGains: [0.022, 0.015, 0.012, 0.008], pans: [-0.7, 0.7, -0.45, 0.45],
+      noiseType: 'bandpass', noiseHighpass: 300, noiseLowpass: 7000, noiseQ: 0.5, noiseGain: 0.008,
+      wind: 0.02, windDepth: 500, sparkle: 0.006, delay: 0.42, delayMix: 0.22, delayFeedback: 0.28, reverb: 0.35,
+    },
   };
+  function createReverbImpulse(ctx, seconds = 2.2) {
+    const length = Math.max(1, Math.floor(ctx.sampleRate * seconds));
+    const buffer = ctx.createBuffer(2, length, ctx.sampleRate);
+    for (let channel = 0; channel < 2; channel += 1) {
+      const data = buffer.getChannelData(channel);
+      for (let i = 0; i < length; i += 1) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2.4) * 0.34;
+      }
+    }
+    return buffer;
+  }
+  function scheduleSparkle() {
+    if (!sound || !sound.sparkleGain) return;
+    window.clearTimeout(sound.sparkleTimer);
+    const profile = AMBIENT_PROFILES[sound.currentProfile] || AMBIENT_PROFILES.fog;
+    if (!profile.sparkle || sound.held) return;
+    const wait = (sound.currentProfile === 'fire' ? 2200 : 3600) + Math.random() * 4200;
+    sound.sparkleTimer = window.setTimeout(() => {
+      if (!sound || !sound.sparkleGain || sound.held) return;
+      const now = sound.ctx.currentTime;
+      const gain = sound.sparkleGain.gain;
+      gain.cancelScheduledValues(now);
+      gain.setValueAtTime(0.0001, now);
+      gain.linearRampToValueAtTime(profile.sparkle, now + 0.012);
+      gain.linearRampToValueAtTime(0.0001, now + 0.22 + Math.random() * 0.18);
+      scheduleSparkle();
+    }, wait);
+  }
+  function applyAmbientProfile(profile, duration = 1.6) {
+    if (!sound || !sound.ambientFilter) return;
+    const now = sound.ctx.currentTime;
+    const held = Boolean(sound.held);
+    const transparent = !held && sound.transparentUntil > Date.now();
+    let cutoff = held ? Math.min(profile.cutoff, 420) : profile.cutoff;
+    if (transparent) cutoff = Math.max(cutoff, 15000);
+    sound.ambientFilter.frequency.cancelScheduledValues(now);
+    sound.ambientFilter.frequency.setValueAtTime(sound.ambientFilter.frequency.value, now);
+    sound.ambientFilter.frequency.linearRampToValueAtTime(cutoff, now + duration);
+    sound.ambientFilter.Q.cancelScheduledValues(now);
+    sound.ambientFilter.Q.setValueAtTime(sound.ambientFilter.Q.value, now);
+    sound.ambientFilter.Q.linearRampToValueAtTime(profile.q, now + duration);
+    sound.voices.forEach((voice, index) => {
+      const frequency = profile.root * profile.intervals[index % profile.intervals.length];
+      voice.osc.frequency.cancelScheduledValues(now);
+      voice.osc.frequency.setValueAtTime(voice.osc.frequency.value, now);
+      voice.osc.frequency.linearRampToValueAtTime(frequency, now + duration);
+      const level = (profile.voiceGains[index % profile.voiceGains.length] || 0.008) * (held ? 0.82 : 1);
+      voice.gain.gain.cancelScheduledValues(now);
+      voice.gain.gain.setValueAtTime(voice.gain.gain.value, now);
+      voice.gain.gain.linearRampToValueAtTime(level, now + duration);
+      if (voice.panner) {
+        const pan = (profile.pans[index % profile.pans.length] || 0) * (held ? 0.55 : 1);
+        voice.panner.pan.cancelScheduledValues(now);
+        voice.panner.pan.setValueAtTime(voice.panner.pan.value, now);
+        voice.panner.pan.linearRampToValueAtTime(pan, now + duration);
+      }
+    });
+    sound.noiseCut.frequency.cancelScheduledValues(now);
+    sound.noiseCut.frequency.setValueAtTime(sound.noiseCut.frequency.value, now);
+    sound.noiseCut.frequency.linearRampToValueAtTime(profile.noiseHighpass, now + duration);
+    sound.noiseTone.type = profile.noiseType;
+    sound.noiseTone.frequency.cancelScheduledValues(now);
+    sound.noiseTone.frequency.setValueAtTime(sound.noiseTone.frequency.value, now);
+    sound.noiseTone.frequency.linearRampToValueAtTime(held ? Math.min(profile.noiseLowpass, 700) : profile.noiseLowpass, now + duration);
+    sound.noiseTone.Q.cancelScheduledValues(now);
+    sound.noiseTone.Q.setValueAtTime(sound.noiseTone.Q.value, now);
+    sound.noiseTone.Q.linearRampToValueAtTime(profile.noiseQ, now + duration);
+    const noiseLevel = profile.noiseGain * (held ? 0.45 : 1);
+    sound.noiseGain.gain.cancelScheduledValues(now);
+    sound.noiseGain.gain.setValueAtTime(sound.noiseGain.gain.value, now);
+    sound.noiseGain.gain.linearRampToValueAtTime(noiseLevel, now + duration);
+    sound.windDepth.gain.linearRampToValueAtTime(profile.windDepth, now + duration);
+    if (sound.delay) {
+      sound.delay.delayTime.cancelScheduledValues(now);
+      sound.delay.delayTime.setValueAtTime(sound.delay.delayTime.value, now);
+      sound.delay.delayTime.linearRampToValueAtTime(profile.delay, now + duration);
+      sound.delayWet.gain.linearRampToValueAtTime(profile.delayMix, now + duration);
+      sound.delayFeedback.gain.linearRampToValueAtTime(profile.delayFeedback, now + duration);
+    }
+    if (sound.reverbWet) sound.reverbWet.gain.linearRampToValueAtTime(profile.reverb, now + duration);
+    if (sound.sparkleGain) {
+      if (profile.sparkle && !held) scheduleSparkle();
+      else {
+        window.clearTimeout(sound.sparkleTimer);
+        sound.sparkleGain.gain.linearRampToValueAtTime(0.0001, now + 0.3);
+      }
+    }
+  }
   function setElementalNoise(element = currentOpticElement) {
     if (!sound || !sound.noiseGain) return;
     const weather = envContext.weatherType;
-    const key = weather === 'rain' ? 'water' : element;
-    const profile = ELEMENTAL_NOISE[key] || ELEMENTAL_NOISE.fog;
-    const now = sound.ctx.currentTime;
-    const held = Boolean(sound.held);
-    let targetGain = sound.activeType === 'music'
-      ? (held ? 0.018 : 0)
-      : (held ? Math.max(0.06, profile.gain * 0.55) : profile.gain);
-    if (SCREEN_TIER === 'low') targetGain = 0;
-    sound.elementalGain = profile.gain;
-    sound.noiseBaseGain = targetGain;
-    sound.noiseCut.frequency.cancelScheduledValues(now);
-    sound.noiseCut.frequency.setValueAtTime(sound.noiseCut.frequency.value, now);
-    sound.noiseCut.frequency.linearRampToValueAtTime(profile.highpass, now + 0.6);
-    sound.noiseTone.frequency.cancelScheduledValues(now);
-    sound.noiseTone.frequency.setValueAtTime(sound.noiseTone.frequency.value, now);
-    sound.noiseTone.frequency.linearRampToValueAtTime(held ? Math.min(profile.lowpass, 700) : profile.lowpass, now + 0.6);
-    sound.noiseGain.gain.cancelScheduledValues(now);
-    sound.noiseGain.gain.setValueAtTime(sound.noiseGain.gain.value, now);
-    sound.noiseGain.gain.linearRampToValueAtTime(targetGain, now + 0.6);
-    if (sound.wind) sound.wind.frequency.linearRampToValueAtTime(profile.wind, now + 0.8);
-    if (sound.windDepth) sound.windDepth.gain.linearRampToValueAtTime(profile.depth, now + 0.8);
+    const key = weather === 'rain' && element !== 'fire' ? 'water' : (AMBIENT_PROFILES[element] ? element : 'fog');
+    sound.currentProfile = key;
+    sound.elementalGain = AMBIENT_PROFILES[key].noiseGain;
+    applyAmbientProfile(AMBIENT_PROFILES[key], 1.6);
   }
   function setStageOvertone(stageId) {
     if (SCREEN_TIER === 'low') {
@@ -1968,37 +2070,53 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       if (promise && typeof promise.catch === 'function') promise.catch(() => {});
     }
   }
+  function disposeNativeAudio(audio) {
+    if (!audio) return;
+    try { audio.pause(); } catch (_) {}
+    try { audio.removeAttribute('src'); audio.load(); } catch (_) {}
+    try { audio.remove(); } catch (_) {}
+    for (const [id, item] of [...trackAudio]) {
+      if (item === audio) trackAudio.delete(id);
+    }
+  }
   function playNativeTrack(track) {
     if (!track || track.failed) {
-      if (nativeTrack) { nativeTrack.pause(); nativeTrack.volume = 0; }
+      if (nativeTrack) {
+        const previous = nativeTrack;
+        nativeTrack = null;
+        fadeChannelVolume({ audio: previous }, 0, 600);
+        window.setTimeout(() => {
+          if (nativeTrack !== previous) disposeNativeAudio(previous);
+        }, 650);
+      }
       return;
     }
     const audio = trackAudio.get(track.id) || createTrackAudio(track);
     if (!audio) return;
-    if (nativeTrack && nativeTrack !== audio) {
-      try { nativeTrack.pause(); nativeTrack.volume = 0; } catch (_) {}
+    if (nativeTrack === audio && !audio.paused) return;
+    const previous = nativeTrack;
+    if (previous && previous !== audio) {
+      fadeChannelVolume({ audio: previous }, 0, 650);
+      window.setTimeout(() => {
+        if (nativeTrack !== previous) disposeNativeAudio(previous);
+      }, 700);
     }
     nativeTrack = audio;
     audio.volume = 0;
     const promise = audio.play();
     if (promise && typeof promise.catch === 'function') promise.catch(() => {});
-    fadeChannelVolume({ audio }, MUSIC_GAIN, 800);
+    fadeChannelVolume({ audio }, MUSIC_GAIN, 700);
   }
 
   function enableSoundscape() {
-    if (/Android/i.test(navigator.userAgent) || SCREEN_TIER === 'low') return;
     activateAudioSession();
     if (sound) {
       if (sound.ctx.state === 'suspended') sound.ctx.resume().catch(() => {});
       return;
     }
     if (soundStarting) return;
-    if (!libraryPrepared) prepareSoundLibrary();
     const AudioCtor = window.AudioContext || window.webkitAudioContext;
-    if (!AudioCtor) {
-      preloadFirstTracks();
-      return;
-    }
+    if (!AudioCtor) return;
     soundStarting = true;
     try {
       const ctx = SCREEN_TIER === 'low' ? new AudioCtor({ latencyHint: 'playback' }) : new AudioCtor();
@@ -2024,7 +2142,13 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       const breathPulse = ctx.createGain();
       breathPulse.gain.value = 1;
       const master = ctx.createGain();
-      master.gain.value = 0.72;
+      master.gain.value = 0.68;
+      const safetyCompressor = ctx.createDynamicsCompressor();
+      safetyCompressor.threshold.value = -12;
+      safetyCompressor.knee.value = 12;
+      safetyCompressor.ratio.value = 4;
+      safetyCompressor.attack.value = 0.004;
+      safetyCompressor.release.value = 0.25;
       const limiter = ctx.createDynamicsCompressor();
       limiter.threshold.value = -2;
       limiter.knee.value = 2;
@@ -2037,7 +2161,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       breath.connect(compressor);
       compressor.connect(breathPulse);
       breathPulse.connect(master);
-      master.connect(limiter);
+      master.connect(safetyCompressor);
+      safetyCompressor.connect(limiter);
       limiter.connect(ctx.destination);
       const noise = ctx.createBufferSource();
       noise.buffer = createPinkNoiseBuffer(ctx, 4);
@@ -2088,6 +2213,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         breath,
         breathPulse,
         master,
+        safetyCompressor,
         limiter,
         noise,
         noiseCut,
@@ -2109,37 +2235,154 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         fadeToken: 0,
       };
       if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+      startGenerativeAmbient();
       setElementalNoise(currentOpticElement);
       setStageOvertone(sessionStage);
       setStageSubBass(sessionStage);
-      preloadFirstTracks();
     } catch (_) {
     } finally {
       soundStarting = false;
     }
   }
+  function tuneGenerativeScene(track, fadeMs) {
+    if (!sound) return;
+    sound.activeType = 'generative';
+    sound.activeTrack = track || null;
+    setElementalNoise(currentOpticElement);
+    if (!sound.driftTimer) scheduleAmbientDrift();
+  }
+  function startGenerativeAmbient() {
+    if (!sound || sound.voices) return;
+    const ctx = sound.ctx;
+    const now = ctx.currentTime;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 11000;
+    filter.Q.value = 0.55;
+    filter.connect(sound.bus);
+    const delay = ctx.createDelay(1.2);
+    delay.delayTime.value = 0.25;
+    const delayFeedback = ctx.createGain();
+    delayFeedback.gain.value = 0.18;
+    const delayWet = ctx.createGain();
+    delayWet.gain.value = 0.1;
+    filter.connect(delay);
+    delay.connect(delayFeedback);
+    delayFeedback.connect(delay);
+    delay.connect(delayWet);
+    delayWet.connect(sound.bus);
+    const reverb = ctx.createConvolver();
+    reverb.buffer = createReverbImpulse(ctx, 2.2);
+    const reverbWet = ctx.createGain();
+    reverbWet.gain.value = 0.1;
+    filter.connect(reverb);
+    reverb.connect(reverbWet);
+    reverbWet.connect(sound.bus);
+    const sparkle = ctx.createBufferSource();
+    sparkle.buffer = createPinkNoiseBuffer(ctx, 2);
+    sparkle.loop = true;
+    const sparkleFilter = ctx.createBiquadFilter();
+    sparkleFilter.type = 'bandpass';
+    sparkleFilter.frequency.value = 4200;
+    sparkleFilter.Q.value = 6;
+    const sparkleGain = ctx.createGain();
+    sparkleGain.gain.value = 0.0001;
+    sparkle.connect(sparkleFilter);
+    sparkleFilter.connect(sparkleGain);
+    sparkleGain.connect(sound.bus);
+    sparkle.start(now);
+    const count = SCREEN_TIER === 'low' ? 2 : 4;
+    const roots = [55, 73.42, 82.41, 110];
+    const levels = [0.024, 0.019, 0.016, 0.012];
+    const voices = [];
+    for (let index = 0; index < count; index += 1) {
+      const osc = ctx.createOscillator();
+      osc.type = index % 2 ? 'triangle' : 'sine';
+      osc.frequency.value = roots[index];
+      const gain = ctx.createGain();
+      gain.gain.value = 0;
+      const panner = typeof ctx.createStereoPanner === 'function' ? ctx.createStereoPanner() : null;
+      const lfo = ctx.createOscillator();
+      lfo.frequency.value = 0.035 + index * 0.017;
+      const lfoGain = ctx.createGain();
+      lfoGain.gain.value = 1.2 + index * 0.35;
+      lfo.connect(lfoGain);
+      lfoGain.connect(osc.frequency);
+      let panLfo = null;
+      let panDepth = null;
+      if (panner) {
+        panLfo = ctx.createOscillator();
+        panLfo.frequency.value = 0.021 + index * 0.011;
+        panDepth = ctx.createGain();
+        panDepth.gain.value = 0.24;
+        panLfo.connect(panDepth);
+        panDepth.connect(panner.pan);
+      }
+      osc.connect(gain);
+      if (panner) {
+        gain.connect(panner);
+        panner.connect(filter);
+      } else {
+        gain.connect(filter);
+      }
+      osc.start(now);
+      lfo.start(now);
+      if (panLfo) panLfo.start(now);
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(levels[index], now + 2.5 + index * 0.25);
+      voices.push({ osc, gain, panner, lfo, panLfo });
+    }
+    sound.voices = voices;
+    sound.ambientFilter = filter;
+    sound.delay = delay;
+    sound.delayFeedback = delayFeedback;
+    sound.delayWet = delayWet;
+    sound.reverb = reverb;
+    sound.reverbWet = reverbWet;
+    sound.sparkle = sparkle;
+    sound.sparkleFilter = sparkleFilter;
+    sound.sparkleGain = sparkleGain;
+    sound.sparkleTimer = 0;
+    sound.currentProfile = 'fog';
+    sound.driftTimer = 0;
+    scheduleAmbientDrift();
+  }
+  function scheduleAmbientDrift() {
+    if (!sound || !sound.voices || !sound.voices.length) return;
+    window.clearTimeout(sound.driftTimer);
+    const wait = 10000 + Math.random() * 10000;
+    sound.driftTimer = window.setTimeout(() => {
+      if (!sound) return;
+      const now = sound.ctx.currentTime;
+      const profile = AMBIENT_PROFILES[sound.currentProfile] || AMBIENT_PROFILES.fog;
+      const voice = sound.voices[Math.floor(Math.random() * sound.voices.length)];
+      const ratio = profile.intervals[Math.floor(Math.random() * profile.intervals.length)];
+      const target = profile.root * ratio;
+      voice.osc.frequency.cancelScheduledValues(now);
+      voice.osc.frequency.setValueAtTime(voice.osc.frequency.value, now);
+      voice.osc.frequency.linearRampToValueAtTime(target, now + 4);
+      if (voice.panner) {
+        voice.panner.pan.cancelScheduledValues(now);
+        voice.panner.pan.setValueAtTime(voice.panner.pan.value, now);
+        voice.panner.pan.linearRampToValueAtTime((Math.random() * 2 - 1) * 0.7, now + 5);
+      }
+      if (sound.ambientFilter) {
+        const cutoff = profile.cutoff * (0.88 + Math.random() * 0.24);
+        sound.ambientFilter.frequency.cancelScheduledValues(now);
+        sound.ambientFilter.frequency.setValueAtTime(sound.ambientFilter.frequency.value, now);
+        sound.ambientFilter.frequency.linearRampToValueAtTime(cutoff, now + 3);
+      }
+      scheduleAmbientDrift();
+    }, wait);
+  }
+  function stopAmbientDrift() {
+    if (!sound) return;
+    window.clearTimeout(sound.driftTimer);
+    sound.driftTimer = 0;
+  }
   function switchSoundtrack(track, fadeMs) {
-    if (!sound) {
-      playNativeTrack(track);
-      return;
-    }
-    const duration = fadeMs || SLOW_FADE_MS;
-    if (!track || track.failed) {
-      startSoundCrossfade(null, duration);
-      return;
-    }
-    const channel = ensureTrackChannel(track);
-    if (!channel) {
-      startSoundCrossfade(null, duration);
-      return;
-    }
-    if (sound.activeType === 'music' && sound.activeTrackId === track.id && !channel.audio.paused) {
-      channel.audio.playbackRate = SCREEN_TIER === 'low' ? 1 : (sound.held ? SLOW_RATE : 1);
-      return;
-    }
-    channel.audio.playbackRate = SCREEN_TIER === 'low' ? 1 : (sound.held ? SLOW_RATE : 1);
-    channel.audio.preload = 'auto';
-    startSoundCrossfade(channel, duration);
+    if (!sound) return;
+    tuneGenerativeScene(track, fadeMs);
   }
   function startSoundCrossfade(channel, fadeMs) {
     if (!sound) return;
@@ -2203,18 +2446,34 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   function setSoundDepth(deep) {
     if (!sound) return;
     sound.held = deep;
+    if (deep) sound.transparentUntil = 0;
     const now = sound.ctx.currentTime;
     const cutoff = deep ? (SCREEN_TIER === 'low' ? 650 : 750) : 18000;
     sound.depth.frequency.cancelScheduledValues(now);
     sound.depth.frequency.setValueAtTime(sound.depth.frequency.value, now);
     sound.depth.frequency.exponentialRampToValueAtTime(cutoff, now + 0.45);
+    if (sound.ambientFilter) {
+      sound.ambientFilter.frequency.cancelScheduledValues(now);
+      sound.ambientFilter.frequency.setValueAtTime(sound.ambientFilter.frequency.value, now);
+      const open = !deep && sound.transparentUntil > Date.now() ? 16000 : 11000;
+      sound.ambientFilter.frequency.linearRampToValueAtTime(deep ? 420 : open, now + 0.6);
+    }
     sound.master.gain.cancelScheduledValues(now);
     sound.master.gain.setValueAtTime(sound.master.gain.value, now);
-    sound.master.gain.linearRampToValueAtTime(deep ? 0.58 : 0.72, now + 0.4);
+    sound.master.gain.linearRampToValueAtTime(deep ? 0.52 : 0.68, now + 0.4);
     for (const channel of sound.channels.values()) {
       channel.audio.playbackRate = SCREEN_TIER === 'low' ? 1 : (deep ? SLOW_RATE : 1);
       fadeChannelVolume(channel, deep ? MUSIC_GAIN * 0.55 : MUSIC_GAIN, 420);
     }
+    setElementalNoise();
+  }
+  function setSoundTransparency(active) {
+    if (!sound || !sound.ambientFilter) return;
+    const now = sound.ctx.currentTime;
+    sound.transparentUntil = active ? Date.now() + 1200 : 0;
+    sound.ambientFilter.frequency.cancelScheduledValues(now);
+    sound.ambientFilter.frequency.setValueAtTime(sound.ambientFilter.frequency.value, now);
+    sound.ambientFilter.frequency.linearRampToValueAtTime(active ? 16000 : 11000, now + 0.45);
     setElementalNoise();
   }
   function pauseSound() {
@@ -2222,6 +2481,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       if (nativeTrack) nativeTrack.pause();
       return;
     }
+    stopAmbientDrift();
     sound.ctx.suspend().catch(() => {});
     for (const channel of sound.channels.values()) {
       channel.audio.pause();
@@ -2248,16 +2508,19 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   function chooseQuality() {
     const n = connectionSnapshot();
-    if (n.saveData || (n.cellular && (n.downlink < 4 || (n.effectiveType && n.effectiveType !== '4g')))) return '480';
-    if (n.wifi || (!n.cellular && n.downlink >= 10)) return '1080';
-    if (n.cellular && n.downlink >= 4) return '720';
-    return n.downlink >= 10 ? '1080' : '720';
+    if (n.saveData) return '480';
+    if (n.downlink > 0 && n.downlink < 2) return '480';
+    if (n.effectiveType === 'slow-2g' || n.effectiveType === '2g' || n.effectiveType === '3g') return '480';
+    if (n.effectiveType === '4g' || n.cellular) return '720';
+    if (n.wifi || n.type === 'ethernet' || n.downlink >= 10) return '1080';
+    if (n.downlink > 0 && n.downlink < 4) return '480';
+    return '1080';
   }
   function sourceForClip(clip) {
     if (!clip) return '';
     const raw = (window.VIDEOS_DATA || []).find((item) => item && item.url === clip.url) || {};
-    if (activeQuality === '480' && (clip.url480 || raw.url480)) return clip.url480 || raw.url480;
-    if (activeQuality === '720' && (clip.url720 || raw.url720)) return clip.url720 || raw.url720;
+    if (activeQuality === '480') return clip.url480 || raw.url480 || clip.url720 || raw.url720 || clip.url;
+    if (activeQuality === '720') return clip.url720 || raw.url720 || clip.url480 || raw.url480 || clip.url;
     return clip.url;
   }
   function setQuality(force) {
@@ -2992,6 +3255,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     try { localStorage.setItem(COMPLETED_KEY, '1'); } catch (_) {}
     stopHoldPulse();
     if (gesture) stopHold();
+    clearFramePlaceholder();
     const category = activeCategory();
     if (category) pauseCategory(category);
     pauseSound();
@@ -3234,7 +3498,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     activateCaption(category, activeClip(), behaviorContext(), false, entry.stage);
     const track = nextTrackFor(category);
     switchSoundtrack(track, SLOW_FADE_MS);
-    preloadNextTrack(category);
     return true;
   }
   function attachVideo(category, clip, index) {
@@ -3244,6 +3507,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const playUrl = playbackUrl(clip.url, clip);
     clip.playUrl = playUrl;
     video.className = 'clip';
+    video.style.zIndex = '1';
     video.muted = true;
     video.defaultMuted = true;
     video.loop = true;
@@ -3255,13 +3519,14 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     video.setAttribute('playsinline', '');
     video.setAttribute('webkit-playsinline', '');
     video.setAttribute('aria-hidden', 'true');
-    video.addEventListener('loadedmetadata', () => {
-      if (video.videoWidth > 0 && video.videoHeight > video.videoWidth) {
-        video.classList.add('is-ready');
-      }
+    const markReady = () => {
+      video.classList.add('is-ready');
+      if (category.index === state.index && category.activeIndex === index) clearFramePlaceholder();
+    };
+    video.addEventListener('canplaythrough', markReady);
+    video.addEventListener('playing', () => {
+      if (video.readyState >= 4) markReady();
     });
-    video.addEventListener('canplay', () => video.classList.add('is-ready'));
-    video.addEventListener('playing', () => video.classList.add('is-ready'));
     video.addEventListener('timeupdate', () => handleLoop(category, index, video));
     let fallbackCursor = 0;
     video.addEventListener('error', () => {
@@ -3336,6 +3601,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       const media = category.el.querySelector('.media');
       if (!media) continue;
       media.querySelectorAll('video').forEach((video) => {
+        if (video.classList.contains('frame-placeholder')) return;
         if (!keepIds.has(video.dataset.clipId)) {
           try {
             video.pause();
@@ -3361,25 +3627,19 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         if (current.clip.el.readyState === 0) current.clip.el.load();
       }
     }
+    if (next && next.clip) {
+      keep.add(next.clip.id);
+      ensureClipVideo(next.category, next.clip);
+      if (next.clip.el) {
+        next.clip.el.preload = 'auto';
+        if (next.clip.el.readyState === 0) next.clip.el.load();
+      }
+    }
     if (anchorClip && anchorClip.id) {
       keep.add(anchorClip.id);
       ensureClipVideo(activeCategory(), anchorClip);
     }
     prunePlaybackVideos(keep);
-    const currentVideo = current && current.clip && current.clip.el;
-    if (currentVideo && next && next.clip) {
-      const promote = () => {
-        if (!currentVideo.paused || currentVideo.readyState >= 3) {
-          ensureClipVideo(next.category, next.clip);
-          if (next.clip.el) {
-            next.clip.el.preload = 'auto';
-            if (next.clip.el.readyState === 0) next.clip.el.load();
-          }
-        }
-      };
-      if (currentVideo.readyState >= 3) promote();
-      else currentVideo.addEventListener('canplay', promote, { once: true });
-    }
   }
 
   const CATALOG_STAGE_CATEGORIES = {
@@ -3537,6 +3797,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       if (clipIndex === index) {
         video.classList.add('is-current');
         video.preload = 'auto';
+        if (video.readyState >= 4) clearFramePlaceholder();
         video.playbackRate = stage.classList.contains('is-held') ? SLOW_RATE : 1;
         clip.lastTime = video.currentTime;
         const promise = video.play();
@@ -3581,6 +3842,34 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const impulsive = speed >= IMPULSIVE_SPEED;
     return viewedMs < QUICK_VIEW_MS || impulsive ? QUICK_FADE_MS : SLOW_FADE_MS;
   }
+  let framePlaceholder = null;
+  function clearFramePlaceholder() {
+    if (!framePlaceholder) return;
+    const ghost = framePlaceholder;
+    framePlaceholder = null;
+    ghost.style.opacity = '0';
+    window.setTimeout(() => ghost.remove(), 450);
+  }
+  function showFramePlaceholder(fromVideo, targetCategory, targetClip) {
+    clearFramePlaceholder();
+    if (!fromVideo || !fromVideo.src || !targetCategory || !targetClip) return;
+    const media = targetCategory.el && targetCategory.el.querySelector('.media');
+    if (!media) return;
+    try {
+      const ghost = fromVideo.cloneNode(true);
+      ghost.removeAttribute('id');
+      ghost.className = 'frame-placeholder';
+      ghost.muted = true;
+      ghost.pause();
+      ghost.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#070709;filter:blur(16px) brightness(.55) saturate(.8);transform:scale(1.06);opacity:1;pointer-events:none;z-index:0;transition:opacity .45s ease';
+      try {
+        const time = Number(fromVideo.currentTime) || 0;
+        if (Number.isFinite(time)) ghost.currentTime = time;
+      } catch (_) {}
+      media.insertBefore(ghost, media.firstChild);
+      framePlaceholder = ghost;
+    } catch (_) {}
+  }
   function showFrameAfterglow() {
     if (SCREEN_TIER !== 'high') return;
     if (!gateOpen || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -3613,6 +3902,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const fromIndex = state.index;
     const from = slides[fromIndex];
     const to = slides[targetIndex];
+    const fromVideo = from.querySelector('video.is-current') || from.querySelector('video');
     const duration = fadeMs || SLOW_FADE_MS;
     stage.style.setProperty('--fade-duration', `${duration}ms`);
     stage.classList.remove('is-held');
@@ -3651,13 +3941,16 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       const plannedIndex = category.clips.findIndex((clip) => clip.id === planned.clip.id);
       if (plannedIndex >= 0) category.freshIndex = plannedIndex;
     }
+    const targetClip = forcedClipId
+      ? category.clips.find((clip) => clip.id === forcedClipId)
+      : (planned && planned.category === category ? planned.clip : category.clips[category.activeIndex]);
+    showFramePlaceholder(fromVideo, category, targetClip);
     preparePlaybackWindow(planned, pathPlan[pathPos + 1]);
     playCategory(category);
     setSceneElement(activeClip());
     activateCaption(category, activeClip(), behavior, allowed, sceneStage);
     const track = nextTrackFor(category);
     switchSoundtrack(track, duration);
-    preloadNextTrack(category);
     if (direction === 'up') {
       engine.history = engine.history.slice(0, engine.historyPos + 1);
       engine.history.push(targetIndex);
@@ -3719,6 +4012,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   function go(direction, speed) {
     if (!gateOpen || sessionComplete) return;
     safeVibrate(hapticPatternForCurrent().frame, SWIPE_HAPTIC_COOLDOWN_MS);
+    if (sound && speed > 1.1) setSoundTransparency(true);
     hideCycleWhisper();
     lastSwipeAt = now();
     const record = reportSwipe(direction, speed);
@@ -4071,10 +4365,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (gesture && gesture.holding) return;
     video.play().catch(() => {});
   });
-  try {
-    prepareSoundLibrary();
-  } catch (error) {
-  }
   stage.dataset.element = 'fog';
   stage.style.setProperty('--optic-x', '50%');
   stage.style.setProperty('--optic-y', '50%');
