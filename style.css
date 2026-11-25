@@ -3,3 +3,6 @@
 .stage[data-element="fog"]:not(.is-touching) .optic-haze { opacity: 0 !important; }
 
 .optic,.optic-haze,.optic-water,.optic-fire{transition:none!important}
+
+html[data-quality="480"] .clip{filter:contrast(1.12) saturate(1.08) brightness(0.96)}
+html[data-night-pupil="true"][data-quality="480"] .clip{filter:brightness(0.76) contrast(1.04) sepia(0.08)!important}

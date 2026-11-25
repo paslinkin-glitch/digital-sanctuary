@@ -2402,6 +2402,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (sound.activeTrack) switchSoundtrack(sound.activeTrack, SLOW_FADE_MS);
   }
   let activeQuality = chooseQuality();
+  document.documentElement.dataset.quality = activeQuality;
   function connectionSnapshot() {
     const c = navigator.connection || navigator.mozConnection || navigator.webkitConnection || null;
     const type = String((c && c.type) || '').toLowerCase();
@@ -2414,25 +2415,22 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   function chooseQuality() {
     const n = connectionSnapshot();
-    if (SCREEN_TIER === 'low' || n.saveData) return '480';
-    if (n.downlink > 0 && n.downlink < 3) return '480';
-    if (n.effectiveType === 'slow-2g' || n.effectiveType === '2g' || n.effectiveType === '3g') return '480';
-    if (SCREEN_TIER === 'mid' || n.effectiveType === '4g' || n.cellular) return '720';
-    if ((n.wifi || n.type === 'ethernet' || n.downlink >= 10) && SCREEN_TIER === 'high') return '1080';
-    return '720';
+    if (n.wifi === true && SCREEN_TIER === 'high') return '1080';
+    if (n.wifi === true) return '720';
+    return '480';
   }
   function sourceForClip(clip) {
     if (!clip) return '';
-    const raw = (window.VIDEOS_DATA || []).find((item) => item && item.url === clip.url) || {};
     const quality = clip._qualityOverride || activeQuality;
-    if (quality === '480') return clip.url480 || raw.url480 || clip.url720 || raw.url720 || clip.url;
-    if (quality === '720') return clip.url720 || raw.url720 || clip.url480 || raw.url480 || clip.url;
+    if (quality === '480') return clip.url480 || clip.url720 || clip.url;
+    if (quality === '720') return clip.url720 || clip.url480 || clip.url;
     return clip.url;
   }
   function setQuality(force) {
     const next = chooseQuality();
     if (!force && next === activeQuality) return;
     activeQuality = next;
+    document.documentElement.dataset.quality = activeQuality;
     const category = typeof activeCategory === 'function' ? activeCategory() : null;
     const clip = category && category.clips[category.activeIndex];
     if (!clip || !clip.el) return;
@@ -3430,9 +3428,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     video.setAttribute('webkit-playsinline', '');
     video.setAttribute('aria-hidden', 'true');
     const markReady = () => {
-      if (clip._fallbackTimer) {
-        window.clearTimeout(clip._fallbackTimer);
-        clip._fallbackTimer = 0;
+      if (clip._slowFrameTimer) {
+        window.clearTimeout(clip._slowFrameTimer);
+        clip._slowFrameTimer = 0;
       }
       video.classList.add('is-ready');
       if (category.index === state.index && category.activeIndex === index) clearFramePlaceholder();
@@ -3654,6 +3652,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         url: item.url,
         url720: String(item.url720 || ''),
         url480: String(item.url480 || ''),
+        urlPoster: String(item.urlPoster || ''),
         duration: Number.isFinite(Number(item.duration)) ? Number(item.duration) : 10,
         description: archetype,
         tags: [stageKey, archetype],
@@ -3708,26 +3707,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       rewardCategory(category, 'loops');
     }
   }
-  function scheduleBufferFallback(clip, video) {
-    if (!clip || !video) return;
-    if (clip._fallbackTimer) window.clearTimeout(clip._fallbackTimer);
-    clip._fallbackTimer = window.setTimeout(() => {
-      clip._fallbackTimer = 0;
-      if (!clip.el || clip.el !== video || video.readyState >= 2) return;
-      const order = ['1080', '720', '480'];
-      const current = clip._qualityOverride || activeQuality;
-      const index = Math.max(0, order.indexOf(current));
-      if (index >= order.length - 1) return;
-      clip._qualityOverride = order[index + 1];
-      const url = sourceForClip(clip);
-      if (!url) return;
-      video.src = url;
-      if (video.readyState < 1) video.load();
-      const promise = video.play();
-      if (promise && typeof promise.catch === 'function') promise.catch(() => {});
-      scheduleBufferFallback(clip, video);
-    }, 900);
-  }
   function playClip(category, index) {
     if (!category || category.index !== state.index) return;
     if (!gateOpen) return;
@@ -3746,7 +3725,13 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         if (video.readyState >= 4) clearFramePlaceholder();
         video.playbackRate = stage.classList.contains('is-held') ? SLOW_RATE : 1;
         clip.lastTime = video.currentTime;
-        scheduleBufferFallback(clip, video);
+        if (clip._slowFrameTimer) window.clearTimeout(clip._slowFrameTimer);
+        clip._slowFrameTimer = window.setTimeout(() => {
+          clip._slowFrameTimer = 0;
+          if (!clip.el || video.readyState >= 2 || activeQuality === '480') return;
+          activeQuality = '480';
+          document.documentElement.dataset.quality = activeQuality;
+        }, 2200);
         const promise = video.play();
         if (promise && typeof promise.catch === 'function') {
           promise.catch(() => {
@@ -4485,6 +4470,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   startSessionLockTicker();
   applyLanguage();
   activeQuality = chooseQuality();
+  document.documentElement.dataset.quality = activeQuality;
   const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
   if (connection && typeof connection.addEventListener === 'function') connection.addEventListener('change', () => setQuality(false));
   startPresenceCounter();
