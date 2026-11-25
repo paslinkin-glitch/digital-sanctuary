@@ -68,7 +68,7 @@
 Return one short line strictly 4–6 words, 1–2 short lines. No riddles, jargon, judgments, advice, or Latin padding.
 Speak through images and presence: rain, shadow, water, light, breath, road. Do not name behavior or explain what the person is doing.
 Do not moralize, over-comfort, or ask questions. Return only the line.`;
-  const MUSIC_GAIN = 0.36;
+  const MUSIC_GAIN = 0.34;
   const NOISE_GAIN = 0.075;
   const LANG_STORAGE_KEY = 'sanctuary-lang';
   const I18N = {
@@ -1763,144 +1763,54 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
     return buffer;
   }
-  function prepareSoundLibrary() {
-    if (libraryPrepared) return;
-    libraryPrepared = true;
-    soundBank = document.createElement('div');
-    soundBank.setAttribute('aria-hidden', 'true');
-    soundBank.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;pointer-events:none;';
-    document.body.appendChild(soundBank);
-    const first = categories[0].musicTracks[0];
-    if (first) {
-      createTrackAudio(first);
-      preloadTrack(first);
+  const audioBufferCache = new Map();
+  function ensureAudioContext() {
+    if (sound && sound.ctx) {
+      if (sound.ctx.state === 'suspended') sound.ctx.resume().catch(() => {});
+      return sound;
     }
-  }
-  function createTrackAudio(track) {
-    if (!track) return null;
-    if (trackAudio.has(track.id)) return trackAudio.get(track.id);
-    if (!soundBank) {
-      soundBank = document.createElement('div');
-      soundBank.setAttribute('aria-hidden', 'true');
-      soundBank.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;pointer-events:none;';
-      document.body.appendChild(soundBank);
-    }
-    const audio = document.createElement('audio');
-    track.failed = false;
-    audio.loop = true;
-    audio.preload = 'metadata';
-    audio.setAttribute('playsinline', '');
-    audio.crossOrigin = 'anonymous';
-    audio.style.display = 'none';
-    audio.addEventListener('error', () => {
-      track.failed = true;
-      if (sound && sound.activeTrackId === track.id) {
-        startSoundCrossfade(null, SLOW_FADE_MS);
-      }
-    });
-    audio.src = track.url;
-    soundBank.appendChild(audio);
-    audio.load();
-    trackAudio.set(track.id, audio);
-    return audio;
-  }
-  function preloadTrack(track) {
-    if (!track || track.failed) return;
-    const audio = trackAudio.get(track.id) || createTrackAudio(track);
-    if (!audio) return;
-    audio.preload = 'auto';
-    if (audio.readyState === 0) {
-      audio.load();
-    }
-  }
-  function preloadFirstTracks() {
-    const first = categories[0] && categories[0].musicTracks[0];
-    if (first) preloadTrack(first);
-  }
-  function preloadNextTrack(category) {
-    if (SCREEN_TIER === 'low') return;
-    if (!category || !category.musicTracks.length) return;
-    preloadTrack(category.musicTracks[category.trackCursor % category.musicTracks.length]);
-  }
-  let globalTrackCursor = 0;
-  function nextTrackFor(category) {
-    const tracks = ALL_MUSIC_TRACKS.length ? ALL_MUSIC_TRACKS : (category.musicTracks || []);
-    if (!tracks.length) return null;
-    let fallback = null;
-    for (let i = 0; i < tracks.length; i += 1) {
-      const track = tracks[globalTrackCursor % tracks.length];
-      globalTrackCursor = (globalTrackCursor + 1) % tracks.length;
-      if (!track.failed && !recentTrackIds.includes(track.id)) return track;
-      if (!fallback && !track.failed) fallback = track;
-    }
-    return fallback;
-  }
-  function disposeTrackChannel(channel, force = false) {
-    if (!channel) return;
-    const { track, audio } = channel;
-    // Never cut a running MP3 at non-zero amplitude: that is the Android click.
-    if (!force && audio.volume > 0.005) {
-      fadeChannelVolume(channel, 0, 35, () => disposeTrackChannel(channel, true));
-      return;
-    }
-    if (channel.fadeRaf) cancelAnimationFrame(channel.fadeRaf);
-    channel.fadeRaf = 0;
-    try { audio.pause(); } catch (_) {}
-    try { audio.removeAttribute('src'); audio.load(); } catch (_) {}
-    if (!(sound && sound.audioPool && sound.audioPool.includes(audio))) {
-      try { audio.remove(); } catch (_) {}
-    }
-    if (track) {
-      if (trackAudio.get(track.id) === audio) trackAudio.delete(track.id);
-      if (sound && sound.channels.get(track.id) === channel) sound.channels.delete(track.id);
-    }
-  }
-  function fadeChannelVolume(channel, target, ms, done) {
-    if (!channel || !channel.audio) return;
-    if (channel.fadeRaf) cancelAnimationFrame(channel.fadeRaf);
-    const from = Number(channel.audio.volume) || 0;
-    const duration = Math.max(8, ms || 400);
-    const started = performance.now();
-    const step = (ts) => {
-      const p = Math.min(1, (ts - started) / duration);
-      channel.audio.volume = Math.max(0, Math.min(1, from + (target - from) * p));
-      if (p < 1) channel.fadeRaf = requestAnimationFrame(step);
-      else {
-        channel.fadeRaf = 0;
-        channel.audio.volume = Math.max(0, Math.min(1, target));
-        if (typeof done === 'function') done();
-      }
+    const AudioCtor = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtor) return null;
+    const ctx = new AudioCtor({ latencyHint: 'playback' });
+    const masterGain = ctx.createGain();
+    masterGain.gain.value = MUSIC_GAIN;
+    masterGain.connect(ctx.destination);
+    sound = {
+      ctx, masterGain, activeSource: null, activeGain: null,
+      activeTrackId: null, activeTrack: null, activeType: 'music',
+      held: false, token: 0, currentPerspective: '',
     };
-    channel.fadeRaf = requestAnimationFrame(step);
+    return sound;
   }
-  function connectTrackToGraph(audio) {
-    // Native HTMLAudioElement playback only. Do not route MP3 through Web Audio
-    // on Android: MediaElementSource + compressors causes crackle and hiss.
-    return;
+  async function getTrackBuffer(track) {
+    if (!track) return null;
+    const engine = ensureAudioContext();
+    if (!engine) return null;
+    if (audioBufferCache.has(track.id)) return audioBufferCache.get(track.id);
+    const response = await fetch(track.url, { mode: 'cors', credentials: 'omit' });
+    if (!response.ok) throw new Error('audio fetch ' + response.status);
+    const data = await response.arrayBuffer();
+    const buffer = await new Promise((resolve, reject) => {
+      engine.ctx.decodeAudioData(data, resolve, reject);
+    });
+    audioBufferCache.set(track.id, buffer);
+    while (audioBufferCache.size > 10) {
+      const oldest = audioBufferCache.keys().next().value;
+      audioBufferCache.delete(oldest);
+    }
+    return buffer;
   }
-  function ensureTrackChannel(track) {
-    if (!sound || !track || track.failed) return null;
-    if (sound.channels.has(track.id)) return sound.channels.get(track.id);
-    if (sound.channels.size >= 2) {
-      for (const [id, item] of sound.channels) {
-        if (id !== sound.activeTrackId) { disposeTrackChannel(item); break; }
-      }
-    }
-    const used = new Set([...sound.channels.values()].map((item) => item.audio));
-    let audio = (sound.audioPool || []).find((item) => !used.has(item)) || null;
-    if (audio) {
-      audio.src = track.url;
-      audio.volume = 0;
-      audio.load();
-    } else {
-      audio = trackAudio.get(track.id) || createTrackAudio(track);
-    }
-    if (!audio) return null;
-    audio.volume = 0;
-    audio.playbackRate = 1;
-    const channel = { track, audio, fadeRaf: 0 };
-    sound.channels.set(track.id, channel);
-    return channel;
+  function findLiveTrackForClip(clip) {
+    if (!clip) return null;
+    return LIVE_AUDIO_TRACKS.find((track) => track.id === clip.trackId) || null;
+  }
+  function preloadBufferForClip(clip) {
+    const track = findLiveTrackForClip(clip);
+    if (track) getTrackBuffer(track).catch(() => {});
+  }
+  function preloadNextAudioFrame() {
+    const next = pathPlan[pathPos + 1];
+    if (next && next.clip) preloadBufferForClip(next.clip);
   }
   let currentSoundClip = null;
   let lastPerspective = '';
@@ -2235,87 +2145,13 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   function primeAudioGesture() {
     activateAudioSession();
-    if (!sound) return;
-    const channel = sound.activeTrackId ? sound.channels.get(sound.activeTrackId) : null;
-    if (channel && channel.audio.paused) {
-      channel.audio.volume = Math.max(channel.audio.volume, MUSIC_GAIN);
-      const promise = channel.audio.play();
-      if (promise && typeof promise.catch === 'function') promise.catch(() => {});
-    }
+    ensureAudioContext();
   }
-  function disposeNativeAudio(audio) {
-    if (!audio) return;
-    try { audio.pause(); } catch (_) {}
-    try { audio.removeAttribute('src'); audio.load(); } catch (_) {}
-    try { audio.remove(); } catch (_) {}
-    for (const [id, item] of [...trackAudio]) {
-      if (item === audio) trackAudio.delete(id);
-    }
-  }
-  function playNativeTrack(track) {
-    if (!track || track.failed) {
-      if (nativeTrack) {
-        const previous = nativeTrack;
-        nativeTrack = null;
-        fadeChannelVolume({ audio: previous }, 0, 600);
-        window.setTimeout(() => {
-          if (nativeTrack !== previous) disposeNativeAudio(previous);
-        }, 650);
-      }
-      return;
-    }
-    const audio = trackAudio.get(track.id) || createTrackAudio(track);
-    if (!audio) return;
-    if (nativeTrack === audio && !audio.paused) return;
-    const previous = nativeTrack;
-    if (previous && previous !== audio) {
-      fadeChannelVolume({ audio: previous }, 0, 650);
-      window.setTimeout(() => {
-        if (nativeTrack !== previous) disposeNativeAudio(previous);
-      }, 700);
-    }
-    nativeTrack = audio;
-    audio.volume = 0;
-    const promise = audio.play();
-    if (promise && typeof promise.catch === 'function') promise.catch(() => {});
-    fadeChannelVolume({ audio }, MUSIC_GAIN, 700);
-  }
-
   function enableSoundscape() {
     activateAudioSession();
-    if (sound) return;
-    if (soundStarting) return;
-    soundStarting = true;
-    try {
-      // Native <audio> only: no AudioContext, no oscillators, no compressors.
-      sound = {
-        channels: new Map(),
-        audioPool: [],
-        activeTrackId: null,
-        activeTrack: null,
-        activeType: 'music',
-        held: false,
-        fadeToken: 0,
-      };
-      if (!soundBank) {
-        soundBank = document.createElement('div');
-        soundBank.setAttribute('aria-hidden', 'true');
-        soundBank.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;pointer-events:none;';
-        document.body.appendChild(soundBank);
-      }
-      for (let i = 0; i < 2; i += 1) {
-        const audio = document.createElement('audio');
-        audio.loop = true;
-        audio.preload = 'metadata';
-        audio.setAttribute('playsinline', '');
-        audio.crossOrigin = 'anonymous';
-        audio.style.display = 'none';
-        soundBank.appendChild(audio);
-        sound.audioPool.push(audio);
-      }
-    } finally {
-      soundStarting = false;
-    }
+    const engine = ensureAudioContext();
+    if (!engine) return;
+    preloadBufferForClip(activeClip() || currentSoundClip);
   }
   function tuneGenerativeScene(track, fadeMs) {
     if (!sound) return;
@@ -2486,66 +2322,63 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const clip = activeClip() || currentSoundClip;
     const chosen = chooseLiveTrack(clip);
     if (!chosen) return;
-    const channel = ensureTrackChannel(chosen);
-    if (!channel) return;
-    applyLivePerspective(channel, clip);
-    startSoundCrossfade(channel, 60);
+    const engine = ensureAudioContext();
+    if (!engine) return;
+    const token = ++sound.token;
+    const now = engine.ctx.currentTime;
+    if (sound.activeGain) {
+      try {
+        sound.activeGain.gain.cancelScheduledValues(now);
+        sound.activeGain.gain.setValueAtTime(sound.activeGain.gain.value, now);
+        sound.activeGain.gain.linearRampToValueAtTime(0.0001, now + 0.06);
+      } catch (_) {}
+    }
+    if (sound.activeSource) {
+      try { sound.activeSource.stop(now + 0.065); } catch (_) {}
+    }
+    sound.activeSource = null;
+    sound.activeGain = null;
+    sound.activeTrackId = chosen.id;
+    sound.activeTrack = chosen;
+    getTrackBuffer(chosen).then((buffer) => {
+      if (!buffer || !sound || token !== sound.token) return;
+      const ctx = sound.ctx;
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      source.loop = true;
+      const gain = ctx.createGain();
+      const startAt = ctx.currentTime;
+      gain.gain.setValueAtTime(0.0001, startAt);
+      gain.gain.linearRampToValueAtTime(1.0, startAt + 0.12);
+      source.connect(gain);
+      gain.connect(sound.masterGain);
+      try { source.start(startAt); } catch (_) { return; }
+      sound.activeSource = source;
+      sound.activeGain = gain;
+      sound.activeType = 'music';
+      applyLivePerspective(chosen, clip);
+      preloadNextAudioFrame();
+    }).catch(() => {});
   }
   function startSoundCrossfade(channel, fadeMs) {
-    if (!sound) return;
-    const targetId = channel ? channel.track.id : null;
-    const fadeToken = ++sound.fadeToken;
-    sound.activeTrackId = targetId;
-    sound.activeTrack = channel ? channel.track : null;
-    sound.activeType = 'music';
-    if (channel && channel.track) {
-      recentTrackIds.push(channel.track.id);
-      recentTrackIds = recentTrackIds.slice(-18);
-    }
-    for (const [id, item] of [...sound.channels]) {
-      if (channel && id === targetId) {
-        item.audio.volume = 0;
-      } else {
-        fadeChannelVolume(item, 0, 60, () => disposeTrackChannel(item, true));
-      }
-    }
-    if (channel) {
-      channel.audio.playbackRate = 1;
-      channel.audio.volume = 0;
-      const begin = () => {
-        if (!sound || fadeToken !== sound.fadeToken) return;
-        const promise = channel.audio.play();
-        if (promise && typeof promise.then === 'function') {
-          promise.then(() => {
-            if (!sound || fadeToken !== sound.fadeToken) return;
-            fadeChannelVolume(channel, MUSIC_GAIN, 120);
-          }).catch(() => {});
-        } else {
-          fadeChannelVolume(channel, MUSIC_GAIN, 120);
-        }
-      };
-      window.setTimeout(begin, 30);
-    }
+    switchSoundtrack(null, fadeMs);
   }
   function setSoundDepth(deep) {
-    if (!sound) return;
+    if (!sound || !sound.masterGain) return;
     sound.held = deep;
-    for (const channel of sound.channels.values()) {
-      channel.audio.playbackRate = 1;
-      fadeChannelVolume(channel, deep ? MUSIC_GAIN * 0.45 : MUSIC_GAIN, 350);
-    }
-  }
-  function setSoundTransparency(active) {
-    return;
+    const now = sound.ctx.currentTime;
+    const target = deep ? MUSIC_GAIN * 0.45 : MUSIC_GAIN;
+    sound.masterGain.gain.cancelScheduledValues(now);
+    sound.masterGain.gain.setValueAtTime(sound.masterGain.gain.value, now);
+    sound.masterGain.gain.linearRampToValueAtTime(target, now + 0.30);
   }
   function pauseSound() {
-    if (!sound) return;
-    for (const channel of sound.channels.values()) {
-      try { channel.audio.pause(); } catch (_) {}
-    }
+    if (!sound || !sound.ctx) return;
+    sound.ctx.suspend().catch(() => {});
   }
   function resumeSound() {
-    if (!sound) return;
+    if (!sound || !sound.ctx) return;
+    sound.ctx.resume().catch(() => {});
     if (sound.activeTrack) switchSoundtrack(sound.activeTrack, SLOW_FADE_MS);
   }
   let activeQuality = chooseQuality();
@@ -3549,8 +3382,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     updateSessionProgress();
     setSceneElement(activeClip());
     activateCaption(category, activeClip(), behaviorContext(), false, entry.stage);
-    const track = nextTrackFor(category);
-    switchSoundtrack(track, SLOW_FADE_MS);
+    switchSoundtrack(null, SLOW_FADE_MS);
     return true;
   }
   function attachVideo(category, clip, index) {
@@ -3997,8 +3829,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     playCategory(category);
     setSceneElement(activeClip());
     activateCaption(category, activeClip(), behavior, allowed, sceneStage);
-    const track = nextTrackFor(category);
-    switchSoundtrack(track, duration);
+    switchSoundtrack(null, duration);
     if (direction === 'up') {
       engine.history = engine.history.slice(0, engine.historyPos + 1);
       engine.history.push(targetIndex);
