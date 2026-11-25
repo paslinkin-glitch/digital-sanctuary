@@ -2414,19 +2414,19 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   function chooseQuality() {
     const n = connectionSnapshot();
-    if (n.saveData) return '480';
-    if (n.downlink > 0 && n.downlink < 2) return '480';
+    if (SCREEN_TIER === 'low' || n.saveData) return '480';
+    if (n.downlink > 0 && n.downlink < 3) return '480';
     if (n.effectiveType === 'slow-2g' || n.effectiveType === '2g' || n.effectiveType === '3g') return '480';
-    if (n.effectiveType === '4g' || n.cellular) return '720';
-    if (n.wifi || n.type === 'ethernet' || n.downlink >= 10) return '1080';
-    if (n.downlink > 0 && n.downlink < 4) return '480';
-    return '1080';
+    if (SCREEN_TIER === 'mid' || n.effectiveType === '4g' || n.cellular) return '720';
+    if ((n.wifi || n.type === 'ethernet' || n.downlink >= 10) && SCREEN_TIER === 'high') return '1080';
+    return '720';
   }
   function sourceForClip(clip) {
     if (!clip) return '';
     const raw = (window.VIDEOS_DATA || []).find((item) => item && item.url === clip.url) || {};
-    if (activeQuality === '480') return clip.url480 || raw.url480 || clip.url720 || raw.url720 || clip.url;
-    if (activeQuality === '720') return clip.url720 || raw.url720 || clip.url480 || raw.url480 || clip.url;
+    const quality = clip._qualityOverride || activeQuality;
+    if (quality === '480') return clip.url480 || raw.url480 || clip.url720 || raw.url720 || clip.url;
+    if (quality === '720') return clip.url720 || raw.url720 || clip.url480 || raw.url480 || clip.url;
     return clip.url;
   }
   function setQuality(force) {
@@ -3424,11 +3424,16 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     video.controls = false;
     video.disablePictureInPicture = true;
     video.preload = category.index === state.index && index === 0 ? 'auto' : 'metadata';
+    if (clip.urlPoster) video.poster = clip.urlPoster;
     video.setAttribute('muted', '');
     video.setAttribute('playsinline', '');
     video.setAttribute('webkit-playsinline', '');
     video.setAttribute('aria-hidden', 'true');
     const markReady = () => {
+      if (clip._fallbackTimer) {
+        window.clearTimeout(clip._fallbackTimer);
+        clip._fallbackTimer = 0;
+      }
       video.classList.add('is-ready');
       if (category.index === state.index && category.activeIndex === index) clearFramePlaceholder();
     };
@@ -3526,6 +3531,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const base = pathPos < 0 ? 0 : pathPos;
     const current = currentEntry || pathPlan[base];
     const next = nextEntry || pathPlan[base + 1];
+    const next2 = pathPlan[base + 2];
     const keep = new Set();
     if (current && current.clip) {
       keep.add(current.clip.id);
@@ -3541,6 +3547,15 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       if (next.clip.el) {
         next.clip.el.preload = 'auto';
         if (next.clip.el.readyState === 0) next.clip.el.load();
+      }
+    }
+    if (next2 && next2.clip) {
+      keep.add(next2.clip.id);
+      ensureClipVideo(next2.category, next2.clip);
+      if (next2.clip.el) next2.clip.el.preload = 'metadata';
+      if (next2.clip.urlPoster) {
+        const img = new Image();
+        img.src = next2.clip.urlPoster;
       }
     }
     if (anchorClip && anchorClip.id) {
@@ -3693,6 +3708,26 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       rewardCategory(category, 'loops');
     }
   }
+  function scheduleBufferFallback(clip, video) {
+    if (!clip || !video) return;
+    if (clip._fallbackTimer) window.clearTimeout(clip._fallbackTimer);
+    clip._fallbackTimer = window.setTimeout(() => {
+      clip._fallbackTimer = 0;
+      if (!clip.el || clip.el !== video || video.readyState >= 2) return;
+      const order = ['1080', '720', '480'];
+      const current = clip._qualityOverride || activeQuality;
+      const index = Math.max(0, order.indexOf(current));
+      if (index >= order.length - 1) return;
+      clip._qualityOverride = order[index + 1];
+      const url = sourceForClip(clip);
+      if (!url) return;
+      video.src = url;
+      if (video.readyState < 1) video.load();
+      const promise = video.play();
+      if (promise && typeof promise.catch === 'function') promise.catch(() => {});
+      scheduleBufferFallback(clip, video);
+    }, 900);
+  }
   function playClip(category, index) {
     if (!category || category.index !== state.index) return;
     if (!gateOpen) return;
@@ -3711,6 +3746,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         if (video.readyState >= 4) clearFramePlaceholder();
         video.playbackRate = stage.classList.contains('is-held') ? SLOW_RATE : 1;
         clip.lastTime = video.currentTime;
+        scheduleBufferFallback(clip, video);
         const promise = video.play();
         if (promise && typeof promise.catch === 'function') {
           promise.catch(() => {
@@ -3769,7 +3805,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     try {
       const ghost = document.createElement('div');
       ghost.className = 'frame-placeholder';
-      ghost.style.cssText = 'position:absolute;inset:0;background:#070709;opacity:1;pointer-events:none;z-index:0;transition:opacity .65s ease';
+      const posterUrl = targetClip.urlPoster || '';
+      ghost.style.cssText = 'position:absolute;inset:0;background-color:#070709;background-size:cover;background-position:center;opacity:1;pointer-events:none;z-index:0;transition:opacity .65s ease';
+      if (posterUrl) ghost.style.backgroundImage = `url("${posterUrl}")`;
       media.insertBefore(ghost, media.firstChild);
       framePlaceholder = ghost;
     } catch (_) {}
