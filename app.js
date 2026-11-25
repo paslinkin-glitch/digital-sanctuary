@@ -1763,9 +1763,20 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     return buffer;
   }
   const audioBufferCache = new Map();
+  function unlockIosAudioContext(ctx) {
+    if (!ctx) return;
+    if (ctx.state !== 'running') ctx.resume().catch(() => {});
+    try {
+      const silent = ctx.createBuffer(1, 1, 22050);
+      const src = ctx.createBufferSource();
+      src.buffer = silent;
+      src.connect(ctx.destination);
+      src.start(0);
+    } catch (_) {}
+  }
   function ensureAudioContext() {
     if (sound && sound.ctx) {
-      if (sound.ctx.state === 'suspended') sound.ctx.resume().catch(() => {});
+      unlockIosAudioContext(sound.ctx);
       return sound;
     }
     const AudioCtor = window.AudioContext || window.webkitAudioContext;
@@ -1774,6 +1785,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const masterGain = ctx.createGain();
     masterGain.gain.value = MUSIC_GAIN;
     masterGain.connect(ctx.destination);
+    unlockIosAudioContext(ctx);
     sound = {
       ctx, masterGain, activeSource: null, activeGain: null,
       activeTrackId: null, activeTrack: null, activeType: 'music',
@@ -2144,7 +2156,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   function primeAudioGesture() {
     activateAudioSession();
-    ensureAudioContext();
+    const engine = ensureAudioContext();
+    if (engine) unlockIosAudioContext(engine.ctx);
   }
   function enableSoundscape() {
     activateAudioSession();
@@ -2344,6 +2357,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (!chosen) return;
     const engine = ensureAudioContext();
     if (!engine) return;
+    unlockIosAudioContext(engine.ctx);
     const token = ++sound.token;
     const now = engine.ctx.currentTime;
     if (sound.activeGain) {
@@ -2363,6 +2377,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     getTrackBuffer(chosen).then((buffer) => {
       if (!buffer || !sound || token !== sound.token) return;
       const ctx = sound.ctx;
+      if (ctx.state !== 'running') ctx.resume().catch(() => {});
       const source = ctx.createBufferSource();
       source.buffer = buffer;
       source.loop = true;
@@ -4185,6 +4200,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     touchOrigin.lastT = now();
   }, { passive: false });
   document.addEventListener('touchend', (event) => {
+    primeAudioGesture();
     if (!touchOrigin) return;
     const changed = event.changedTouches && event.changedTouches[0];
     const origin = touchOrigin;
@@ -4450,6 +4466,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       entryStart = { x: touch.clientX, y: touch.clientY };
     }, { passive: true });
     entryGate.addEventListener('touchend', (event) => {
+      primeAudioGesture();
       if (!entryStart) return;
       const touch = event.changedTouches && event.changedTouches[0];
       const start = entryStart;
