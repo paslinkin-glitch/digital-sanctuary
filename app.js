@@ -437,7 +437,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       { id: 'open-sky', title: 'Open Sky', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/open-sky.mp3' },
     ],
   };
-  const LIVE_AUDIO_TRACKS = [{"id":"city-01-night-current","category":"city","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/city-01-night-current.mp3"},{"id":"city-02-monolith","category":"city","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/city-02-monolith.mp3"},{"id":"city-03-night-alt","category":"city","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/city-03-night-alt.mp3"},{"id":"city-04-monolith-alt","category":"city","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/city-04-monolith-alt.mp3"},{"id":"fire-01-ember-breath","category":"fire","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/fire-01-ember-breath.mp3"},{"id":"fire-02-quiet-ember","category":"fire","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/fire-02-quiet-ember.mp3"},{"id":"fire-03-ember-alt","category":"fire","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/fire-03-ember-alt.mp3"},{"id":"fog-01-clouds","category":"fog","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/fog-01-clouds.mp3"},{"id":"fog-02-open-sky","category":"fog","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/fog-02-open-sky.mp3"},{"id":"fog-03-pale-horizon","category":"fog","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/fog-03-pale-horizon.mp3"},{"id":"fog-04-long-exposure","category":"fog","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/fog-04-long-exposure.mp3"},{"id":"fog-05-look-at-sky","category":"fog","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/fog-05-look-at-sky.mp3"},{"id":"people-01-inner-world","category":"people","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/people-01-inner-world.mp3"},{"id":"people-02-looking-glass","category":"people","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/people-02-looking-glass.mp3"},{"id":"people-03-inner-alt","category":"people","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/people-03-inner-alt.mp3"},{"id":"rain-01-crystal-rain","category":"rain","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/rain-01-crystal-rain.mp3"},{"id":"rain-02-tokio-rain","category":"rain","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/rain-02-tokio-rain.mp3"},{"id":"rain-03-distant-rain","category":"rain","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/rain-03-distant-rain.mp3"},{"id":"rain-04-rain-alt","category":"rain","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/rain-04-rain-alt.mp3"},{"id":"road-01-cinematic-visions","category":"road","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/road-01-cinematic-visions.mp3"},{"id":"road-02-piano-travel","category":"road","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/road-02-piano-travel.mp3"},{"id":"road-03-visions-alt","category":"road","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/road-03-visions-alt.mp3"},{"id":"road-04-piano-alt","category":"road","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/road-04-piano-alt.mp3"},{"id":"space-01-color-of-space","category":"space","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/space-01-color-of-space.mp3"},{"id":"space-02-deep-meditation","category":"space","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/space-02-deep-meditation.mp3"},{"id":"space-03-horizons","category":"space","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/space-03-horizons.mp3"},{"id":"water-01-still-water","category":"water","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/water-01-still-water.mp3"},{"id":"water-02-low-tide","category":"water","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/water-02-low-tide.mp3"},{"id":"water-03-whisper-canyon","category":"water","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/water-03-whisper-canyon.mp3"},{"id":"water-04-lotus-flower","category":"water","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/water-04-lotus-flower.mp3"}];
+  const LIVE_AUDIO_TRACKS = [{"id":"city-01-night-current","category":"city","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/city-01-night-current.mp3"},{"id":"city-02-monolith","category":"city","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/city-02-monolith.mp3"},{"id":"city-03-night-lights","category":"city","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/city-03-night-lights.mp3"},{"id":"city-04-deep-city","category":"city","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/city-04-deep-city.mp3"},{"id":"fire-01-ember-breath","category":"fire","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/fire-01-ember-breath.mp3"},{"id":"fire-02-quiet-ember","category":"fire","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/fire-02-quiet-ember.mp3"},{"id":"fire-03-candle-glow","category":"fire","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/fire-03-candle-glow.mp3"},{"id":"fog-01-clouds","category":"fog","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/fog-01-clouds.mp3"},{"id":"fog-02-open-sky","category":"fog","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/fog-02-open-sky.mp3"},{"id":"fog-03-pale-horizon","category":"fog","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/fog-03-pale-horizon.mp3"},{"id":"fog-04-long-exposure","category":"fog","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/fog-04-long-exposure.mp3"},{"id":"fog-05-look-at-sky","category":"fog","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/fog-05-look-at-sky.mp3"},{"id":"people-01-inner-world","category":"people","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/people-01-inner-world.mp3"},{"id":"people-02-looking-glass","category":"people","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/people-02-looking-glass.mp3"},{"id":"people-03-distant-steps","category":"people","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/people-03-distant-steps.mp3"},{"id":"rain-01-crystal-rain","category":"rain","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/rain-01-crystal-rain.mp3"},{"id":"rain-02-tokio-rain","category":"rain","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/rain-02-tokio-rain.mp3"},{"id":"rain-03-distant-rain","category":"rain","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/rain-03-distant-rain.mp3"},{"id":"rain-04-night-window","category":"rain","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/rain-04-night-window.mp3"},{"id":"road-01-cinematic-visions","category":"road","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/road-01-cinematic-visions.mp3"},{"id":"road-02-piano-travel","category":"road","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/road-02-piano-travel.mp3"},{"id":"road-03-wet-asphalt","category":"road","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/road-03-wet-asphalt.mp3"},{"id":"road-04-tunnel-road","category":"road","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/road-04-tunnel-road.mp3"},{"id":"space-01-color-of-space","category":"space","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/space-01-color-of-space.mp3"},{"id":"space-02-deep-meditation","category":"space","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/space-02-deep-meditation.mp3"},{"id":"space-03-horizons","category":"space","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/space-03-horizons.mp3"},{"id":"water-01-still-water","category":"water","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/water-01-still-water.mp3"},{"id":"water-02-low-tide","category":"water","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/water-02-low-tide.mp3"},{"id":"water-03-whisper-canyon","category":"water","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/water-03-whisper-canyon.mp3"},{"id":"water-04-lotus-flower","category":"water","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/water-04-lotus-flower.mp3"}];
   const ELEMENT_DEFAULT = {
     Shadow: 'fog',
     Calm: 'water',
@@ -1870,19 +1870,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     channel.fadeRaf = requestAnimationFrame(step);
   }
   function connectTrackToGraph(audio) {
-    if (!sound || !audio || audio._graphSource) return;
-    try {
-      audio._graphSource = sound.ctx.createMediaElementSource(audio);
-      if (typeof sound.ctx.createStereoPanner === 'function') {
-        audio._graphPanner = sound.ctx.createStereoPanner();
-        audio._graphSource.connect(audio._graphPanner);
-        audio._graphPanner.connect(sound.bus);
-      } else {
-        audio._graphSource.connect(sound.bus);
-      }
-    } catch (_) {
-      audio._graphSource = null;
-    }
+    // Native HTMLAudioElement playback only. Do not route MP3 through Web Audio
+    // on Android: MediaElementSource + compressors causes crackle and hiss.
+    return;
   }
   function ensureTrackChannel(track) {
     if (!sound || !track || track.failed) return null;
@@ -2632,17 +2622,19 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       recentTrackIds.push(channel.track.id);
       recentTrackIds = recentTrackIds.slice(-18);
     }
-    const hardSwap = SCREEN_TIER !== 'high';
     for (const [id, item] of [...sound.channels]) {
       if (channel && id === targetId) {
         item.audio.volume = 0;
         fadeChannelVolume(item, 0, duration);
-      } else if (hardSwap) {
-        item.audio.pause();
-        item.audio.volume = 0;
-        disposeTrackChannel(item);
       } else {
-        fadeChannelVolume(item, 0, duration);
+        fadeChannelVolume(item, 0, 25);
+        window.setTimeout(() => {
+          try {
+            item.audio.pause();
+            item.audio.volume = 0;
+          } catch (_) {}
+          disposeTrackChannel(item);
+        }, 25);
       }
     }
     const now = sound.ctx.currentTime;
@@ -2653,7 +2645,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       now + duration / 1000
     );
     if (channel) {
-      channel.audio.playbackRate = SCREEN_TIER === 'low' ? 1 : (sound.held ? SLOW_RATE : 1);
+      channel.audio.playbackRate = 1;
       channel.audio.volume = 0;
       const begin = () => {
         if (!sound || fadeToken !== sound.fadeToken) return;
@@ -2697,8 +2689,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     sound.master.gain.setValueAtTime(sound.master.gain.value, now);
     sound.master.gain.linearRampToValueAtTime(deep ? 0.52 : 0.68, now + 0.4);
     for (const channel of sound.channels.values()) {
-      channel.audio.playbackRate = SCREEN_TIER === 'low' ? 1 : (deep ? SLOW_RATE : 1);
-      fadeChannelVolume(channel, deep ? MUSIC_GAIN * 0.55 : MUSIC_GAIN, 420);
+      channel.audio.playbackRate = 1;
+      fadeChannelVolume(channel, deep ? MUSIC_GAIN * 0.45 : MUSIC_GAIN, 350);
     }
   }
   function setSoundTransparency(active) {

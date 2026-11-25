@@ -1,3 +1,5 @@
-
+﻿.env
+*.env
+timeweb.env
 concept.md
 AGENTS.md
