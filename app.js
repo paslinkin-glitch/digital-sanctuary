@@ -1847,7 +1847,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     channel.fadeRaf = 0;
     try { audio.pause(); } catch (_) {}
     try { audio.removeAttribute('src'); audio.load(); } catch (_) {}
-    try { audio.remove(); } catch (_) {}
+    if (!(sound && sound.audioPool && sound.audioPool.includes(audio))) {
+      try { audio.remove(); } catch (_) {}
+    }
     if (track) {
       if (trackAudio.get(track.id) === audio) trackAudio.delete(track.id);
       if (sound && sound.channels.get(track.id) === channel) sound.channels.delete(track.id);
@@ -1884,10 +1886,18 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         if (id !== sound.activeTrackId) { disposeTrackChannel(item); break; }
       }
     }
-    const audio = trackAudio.get(track.id) || createTrackAudio(track);
+    const used = new Set([...sound.channels.values()].map((item) => item.audio));
+    let audio = (sound.audioPool || []).find((item) => !used.has(item)) || null;
+    if (audio) {
+      audio.src = track.url;
+      audio.volume = 0;
+      audio.load();
+    } else {
+      audio = trackAudio.get(track.id) || createTrackAudio(track);
+    }
     if (!audio) return null;
-    connectTrackToGraph(audio);
     audio.volume = 0;
+    audio.playbackRate = 1;
     const channel = { track, audio, fadeRaf: 0 };
     sound.channels.set(track.id, channel);
     return channel;
@@ -2201,7 +2211,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     sound.overtoneGain.gain.linearRampToValueAtTime(0.008, now + 1.2);
   }
   function setStageSubBass(stageId) {
-    if (!sound || !sound.subBassGain) return;
+    if (!sound || !sound.ctx || !sound.subBassGain) return;
     const stage = Number(stageId) || 1;
     if (SCREEN_TIER === 'low') {
       sound.subBassGain.gain.cancelScheduledValues(sound.ctx.currentTime);
@@ -2225,15 +2235,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   function primeAudioGesture() {
     activateAudioSession();
-    if (!sound) {
-      if (nativeTrack && nativeTrack.paused) {
-        nativeTrack.volume = Math.max(nativeTrack.volume, MUSIC_GAIN);
-        const promise = nativeTrack.play();
-        if (promise && typeof promise.catch === 'function') promise.catch(() => {});
-      }
-      return;
-    }
-    if (sound.ctx.state === 'suspended') sound.ctx.resume().catch(() => {});
+    if (!sound) return;
     const channel = sound.activeTrackId ? sound.channels.get(sound.activeTrackId) : null;
     if (channel && channel.audio.paused) {
       channel.audio.volume = Math.max(channel.audio.volume, MUSIC_GAIN);
@@ -2281,136 +2283,36 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
 
   function enableSoundscape() {
     activateAudioSession();
-    if (sound) {
-      if (sound.ctx.state === 'suspended') sound.ctx.resume().catch(() => {});
-      return;
-    }
+    if (sound) return;
     if (soundStarting) return;
-    const AudioCtor = window.AudioContext || window.webkitAudioContext;
-    if (!AudioCtor) return;
     soundStarting = true;
     try {
-      const ctx = SCREEN_TIER === 'low' ? new AudioCtor({ latencyHint: 'playback' }) : new AudioCtor();
-      const bus = ctx.createGain();
-      const rumbleCut = ctx.createBiquadFilter();
-      rumbleCut.type = 'highpass';
-      rumbleCut.frequency.value = 110;
-      rumbleCut.Q.value = 0.7;
-      const depth = ctx.createBiquadFilter();
-      depth.type = 'lowpass';
-      depth.frequency.value = 18000;
-      depth.Q.value = 0.5;
-      const compressor = ctx.createDynamicsCompressor();
-      compressor.threshold.value = -20;
-      compressor.knee.value = 16;
-      compressor.ratio.value = 5;
-      compressor.attack.value = 0.006;
-      compressor.release.value = 0.3;
-      const breath = ctx.createBiquadFilter();
-      breath.type = 'lowpass';
-      breath.frequency.value = 20000;
-      breath.Q.value = 0.3;
-      const breathPulse = ctx.createGain();
-      breathPulse.gain.value = 1;
-      const master = ctx.createGain();
-      master.gain.value = 0.68;
-      const safetyCompressor = ctx.createDynamicsCompressor();
-      safetyCompressor.threshold.value = -12;
-      safetyCompressor.knee.value = 12;
-      safetyCompressor.ratio.value = 4;
-      safetyCompressor.attack.value = 0.004;
-      safetyCompressor.release.value = 0.25;
-      const limiter = ctx.createDynamicsCompressor();
-      limiter.threshold.value = -2;
-      limiter.knee.value = 2;
-      limiter.ratio.value = 20;
-      limiter.attack.value = 0.003;
-      limiter.release.value = 0.12;
-      bus.connect(rumbleCut);
-      rumbleCut.connect(depth);
-      depth.connect(breath);
-      breath.connect(compressor);
-      compressor.connect(breathPulse);
-      breathPulse.connect(master);
-      master.connect(safetyCompressor);
-      safetyCompressor.connect(limiter);
-      limiter.connect(ctx.destination);
-      const noise = ctx.createBufferSource();
-      noise.buffer = createPinkNoiseBuffer(ctx, 4);
-      noise.loop = true;
-      const noiseCut = ctx.createBiquadFilter();
-      noiseCut.type = 'highpass';
-      noiseCut.frequency.value = 180;
-      noiseCut.Q.value = 0.5;
-      const noiseTone = ctx.createBiquadFilter();
-      noiseTone.type = 'lowpass';
-      noiseTone.frequency.value = 2400;
-      noiseTone.Q.value = 0.4;
-      const noiseGain = ctx.createGain();
-      noiseGain.gain.value = 0;
-      noise.connect(noiseCut);
-      noiseCut.connect(noiseTone);
-      noiseTone.connect(noiseGain);
-      noiseGain.connect(bus);
-      noise.start();
-      const wind = ctx.createOscillator();
-      wind.frequency.value = 0.07;
-      const windDepth = ctx.createGain();
-      windDepth.gain.value = 420;
-      wind.connect(windDepth);
-      windDepth.connect(noiseTone.frequency);
-      wind.start();
-      const overtone = ctx.createOscillator();
-      overtone.type = 'triangle';
-      overtone.frequency.value = 110;
-      const overtoneGain = ctx.createGain();
-      overtoneGain.gain.value = 0.008;
-      overtone.connect(overtoneGain);
-      overtoneGain.connect(bus);
-      overtone.start();
-      const subBass = ctx.createOscillator();
-      subBass.type = 'triangle';
-      subBass.frequency.value = 42;
-      const subBassGain = ctx.createGain();
-      subBassGain.gain.value = 0;
-      subBass.connect(subBassGain);
-      subBassGain.connect(master);
-      subBass.start();
+      // Native <audio> only: no AudioContext, no oscillators, no compressors.
       sound = {
-        ctx,
-        bus,
-        rumbleCut,
-        depth,
-        breath,
-        breathPulse,
-        master,
-        safetyCompressor,
-        limiter,
-        noise,
-        noiseCut,
-        noiseTone,
-        noiseGain,
-        wind,
-        windDepth,
-        overtone,
-        overtoneGain,
-        subBass,
-        subBassGain,
-        elementalGain: NOISE_GAIN,
-        bank: soundBank,
         channels: new Map(),
+        audioPool: [],
         activeTrackId: null,
         activeTrack: null,
-        activeType: null,
+        activeType: 'music',
         held: false,
         fadeToken: 0,
       };
-      try { noise.stop(); wind.stop(); overtone.stop(); subBass.stop(); } catch (_) {}
-      if (ctx.state === 'suspended') ctx.resume().catch(() => {});
-      sound.activeType = 'music';
-      setStageOvertone(sessionStage);
-      setStageSubBass(sessionStage);
-    } catch (_) {
+      if (!soundBank) {
+        soundBank = document.createElement('div');
+        soundBank.setAttribute('aria-hidden', 'true');
+        soundBank.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;pointer-events:none;';
+        document.body.appendChild(soundBank);
+      }
+      for (let i = 0; i < 2; i += 1) {
+        const audio = document.createElement('audio');
+        audio.loop = true;
+        audio.preload = 'metadata';
+        audio.setAttribute('playsinline', '');
+        audio.crossOrigin = 'anonymous';
+        audio.style.display = 'none';
+        soundBank.appendChild(audio);
+        sound.audioPool.push(audio);
+      }
     } finally {
       soundStarting = false;
     }
@@ -2576,20 +2478,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const letters = Object.keys(recipes).filter((letter) => letter !== lastPerspective);
     const seed = soundSeedForClip(clip);
     const perspective = letters[seed % letters.length] || Object.keys(recipes)[0];
-    const recipe = recipes[perspective];
     lastPerspective = perspective;
     sound.currentPerspective = perspective;
-    const now = sound.ctx.currentTime;
-    const cutoff = recipe.cutoff || 800;
-    sound.depth.frequency.cancelScheduledValues(now);
-    sound.depth.frequency.setValueAtTime(sound.depth.frequency.value, now);
-    sound.depth.frequency.linearRampToValueAtTime(cutoff, now + 0.03);
-    if (channel.audio._graphPanner) {
-      const pan = (recipe.panScale || 1) * ((seed % 100) / 100 * 2 - 1) * 0.55;
-      channel.audio._graphPanner.pan.cancelScheduledValues(now);
-      channel.audio._graphPanner.pan.setValueAtTime(channel.audio._graphPanner.pan.value, now);
-      channel.audio._graphPanner.pan.linearRampToValueAtTime(Math.max(-0.85, Math.min(0.85, pan)), now + 0.03);
-    }
   }
   function switchSoundtrack(track, fadeMs) {
     if (!sound) return;
@@ -2599,23 +2489,15 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const channel = ensureTrackChannel(chosen);
     if (!channel) return;
     applyLivePerspective(channel, clip);
-    const now = sound.ctx.currentTime;
-    sound.master.gain.cancelScheduledValues(now);
-    sound.master.gain.setValueAtTime(sound.master.gain.value, now);
-    sound.master.gain.linearRampToValueAtTime(0.0001, now + 0.025);
-    sound.master.gain.setValueAtTime(0.0001, now + 0.03);
-    sound.master.gain.linearRampToValueAtTime(0.68, now + 0.1);
-    startSoundCrossfade(channel, 25);
+    startSoundCrossfade(channel, 60);
   }
   function startSoundCrossfade(channel, fadeMs) {
     if (!sound) return;
-    const duration = Math.max(25, fadeMs || SLOW_FADE_MS);
     const targetId = channel ? channel.track.id : null;
-    const firstPlayback = !sound.activeTrackId;
     const fadeToken = ++sound.fadeToken;
     sound.activeTrackId = targetId;
     sound.activeTrack = channel ? channel.track : null;
-    sound.activeType = channel ? 'music' : 'noise';
+    sound.activeType = 'music';
     if (channel && channel.track) {
       recentTrackIds.push(channel.track.id);
       recentTrackIds = recentTrackIds.slice(-18);
@@ -2624,16 +2506,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       if (channel && id === targetId) {
         item.audio.volume = 0;
       } else {
-        fadeChannelVolume(item, 0, 45, () => disposeTrackChannel(item, true));
+        fadeChannelVolume(item, 0, 60, () => disposeTrackChannel(item, true));
       }
     }
-    const now = sound.ctx.currentTime;
-    sound.noiseGain.gain.cancelScheduledValues(now);
-    sound.noiseGain.gain.setValueAtTime(sound.noiseGain.gain.value, now);
-    sound.noiseGain.gain.linearRampToValueAtTime(
-      channel ? 0 : (sound.noiseBaseGain || NOISE_GAIN),
-      now + duration / 1000
-    );
     if (channel) {
       channel.audio.playbackRate = 1;
       channel.audio.volume = 0;
@@ -2643,76 +2518,34 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         if (promise && typeof promise.then === 'function') {
           promise.then(() => {
             if (!sound || fadeToken !== sound.fadeToken) return;
-            fadeChannelVolume(channel, MUSIC_GAIN, 90);
-          }).catch(() => {
-            if (!sound || sound.activeTrackId !== targetId) return;
-            startSoundCrossfade(null, fadeMs);
-          });
+            fadeChannelVolume(channel, MUSIC_GAIN, 120);
+          }).catch(() => {});
         } else {
-          fadeChannelVolume(channel, MUSIC_GAIN, 90);
+          fadeChannelVolume(channel, MUSIC_GAIN, 120);
         }
       };
       window.setTimeout(begin, 30);
     }
-    window.setTimeout(() => {
-      if (!sound || fadeToken !== sound.fadeToken) return;
-      for (const [id, item] of [...sound.channels]) {
-        if ((!channel || id !== targetId) && item.audio.volume < 0.01) {
-          disposeTrackChannel(item);
-        }
-      }
-    }, duration + 260);
   }
   function setSoundDepth(deep) {
     if (!sound) return;
     sound.held = deep;
-    if (deep) sound.transparentUntil = 0;
-    const now = sound.ctx.currentTime;
-    const cutoff = deep ? 520 : 18000;
-    sound.depth.frequency.cancelScheduledValues(now);
-    sound.depth.frequency.setValueAtTime(sound.depth.frequency.value, now);
-    sound.depth.frequency.exponentialRampToValueAtTime(cutoff, now + 0.45);
-    if (sound.ambientFilter) {
-      const profile = AMBIENT_PROFILES[sound.currentProfile] || AMBIENT_PROFILES.fog;
-      const open = !deep && sound.transparentUntil > Date.now() ? 16000 : profile.cutoff;
-      sound.ambientFilter.frequency.cancelScheduledValues(now);
-      sound.ambientFilter.frequency.setValueAtTime(sound.ambientFilter.frequency.value, now);
-      sound.ambientFilter.frequency.linearRampToValueAtTime(deep ? 520 : open, now + 0.6);
-    }
-    sound.master.gain.cancelScheduledValues(now);
-    sound.master.gain.setValueAtTime(sound.master.gain.value, now);
-    sound.master.gain.linearRampToValueAtTime(deep ? 0.52 : 0.68, now + 0.4);
     for (const channel of sound.channels.values()) {
       channel.audio.playbackRate = 1;
       fadeChannelVolume(channel, deep ? MUSIC_GAIN * 0.45 : MUSIC_GAIN, 350);
     }
   }
   function setSoundTransparency(active) {
-    if (!sound || !sound.ambientFilter) return;
-    const now = sound.ctx.currentTime;
-    sound.transparentUntil = active ? Date.now() + 1200 : 0;
-    sound.ambientFilter.frequency.cancelScheduledValues(now);
-    sound.ambientFilter.frequency.setValueAtTime(sound.ambientFilter.frequency.value, now);
-    const profile = AMBIENT_PROFILES[sound.currentProfile] || AMBIENT_PROFILES.fog;
-    sound.ambientFilter.frequency.linearRampToValueAtTime(active ? 16000 : profile.cutoff, now + 0.45);
+    return;
   }
   function pauseSound() {
-    if (!sound) {
-      if (nativeTrack) nativeTrack.pause();
-      return;
-    }
-    stopAmbientDrift();
-    sound.ctx.suspend().catch(() => {});
+    if (!sound) return;
     for (const channel of sound.channels.values()) {
-      channel.audio.pause();
+      try { channel.audio.pause(); } catch (_) {}
     }
   }
   function resumeSound() {
-    if (!sound) {
-      if (nativeTrack && nativeTrack.paused) nativeTrack.play().catch(() => {});
-      return;
-    }
-    sound.ctx.resume().catch(() => {});
+    if (!sound) return;
     if (sound.activeTrack) switchSoundtrack(sound.activeTrack, SLOW_FADE_MS);
   }
   let activeQuality = chooseQuality();
@@ -3743,9 +3576,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       video.classList.add('is-ready');
       if (category.index === state.index && category.activeIndex === index) clearFramePlaceholder();
     };
-    video.addEventListener('canplaythrough', markReady);
+    video.addEventListener('loadeddata', markReady);
     video.addEventListener('playing', () => {
-      if (video.readyState >= 4) markReady();
+      if (video.readyState >= 2) markReady();
     });
     video.addEventListener('timeupdate', () => handleLoop(category, index, video));
     let fallbackCursor = 0;
@@ -4074,20 +3907,13 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   function showFramePlaceholder(fromVideo, targetCategory, targetClip) {
     clearFramePlaceholder();
-    if (!fromVideo || !fromVideo.src || !targetCategory || !targetClip) return;
+    if (!targetCategory || !targetClip) return;
     const media = targetCategory.el && targetCategory.el.querySelector('.media');
     if (!media) return;
     try {
-      const ghost = fromVideo.cloneNode(true);
-      ghost.removeAttribute('id');
+      const ghost = document.createElement('div');
       ghost.className = 'frame-placeholder';
-      ghost.muted = true;
-      ghost.pause();
-      ghost.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#070709;filter:blur(16px) brightness(.55) saturate(.8);transform:scale(1.06);opacity:1;pointer-events:none;z-index:0;transition:opacity .45s ease';
-      try {
-        const time = Number(fromVideo.currentTime) || 0;
-        if (Number.isFinite(time)) ghost.currentTime = time;
-      } catch (_) {}
+      ghost.style.cssText = 'position:absolute;inset:0;background:#070709;opacity:1;pointer-events:none;z-index:0;transition:opacity .45s ease';
       media.insertBefore(ghost, media.firstChild);
       framePlaceholder = ghost;
     } catch (_) {}
@@ -4485,7 +4311,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     setBreath(0);
     abortGesture();
     scheduleCaptionZero();
-    primeAudioGesture();
     if (Math.abs(dy) > 35 && Math.abs(dy) > Math.abs(dx)) {
       go(dy < 0 ? 'up' : 'down', velocity);
     }
@@ -4709,6 +4534,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     resetViewClock();
     markInteraction();
     setBreath(0);
+    primeAudioGesture();
     if (entryGate) {
       entryGate.classList.add('is-open');
       entryGate.setAttribute('aria-hidden', 'true');
