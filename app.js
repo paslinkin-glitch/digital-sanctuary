@@ -1377,6 +1377,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     ];
   }
   async function callDeepSeek(messages, temperature) {
+    return null;
     if (location.protocol === 'file:') return null;
     if (location.hostname.endsWith('.github.io') || location.hostname === 's3.twcstorage.ru' || location.hostname === 'localhost' || location.hostname === '127.0.0.1') return null;
     if (captionApiUnavailable) return null;
@@ -1648,19 +1649,17 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const fallbackFirst = () => {
       applyText(pickFallbackCaption(category.tag));
     };
-    if (cached) applyText(cached);
-    else if (staticCaption) applyText(staticCaption);
-    if (!cached && (captionAllow || hiddenEligible)) {
-      requestCaption(clip, category, behavior, stage)
-        .then((text) => {
-          if (text) applyText(text);
-          else if (!staticCaption) fallbackFirst();
-        })
-        .catch(() => {
-          if (!staticCaption) fallbackFirst();
-        });
+    if (staticCaption) {
+      applyText(staticCaption);
+      captionMemoryTimer = window.setTimeout(() => {
+        if (token === captionSceneToken) maybeRecordResonance();
+      }, CAPTION_LINGER_MS);
+      return;
     }
-    prefetchNextCaptions(behavior);
+    if (cached) applyText(cached);
+    else if (captionAllow || hiddenEligible) {
+      fallbackFirst();
+    }
     captionMemoryTimer = window.setTimeout(() => {
       if (token === captionSceneToken) maybeRecordResonance();
     }, CAPTION_LINGER_MS);
@@ -3735,6 +3734,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   function go(direction, speed) {
     if (!gateOpen || sessionComplete) return;
+    safeVibrate(hapticPatternForCurrent().frame, SWIPE_HAPTIC_COOLDOWN_MS);
     hideCycleWhisper();
     lastSwipeAt = now();
     const record = reportSwipe(direction, speed);
