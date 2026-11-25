@@ -3,8 +3,20 @@
   'use strict';
   if (window.SANCTUARY_MAINTENANCE) {
     document.documentElement.dataset.maintenance = 'true';
-    const screen = document.getElementById('maintenance-screen');
-    if (screen) screen.hidden = false;
+    const screen = document.createElement('div');
+    screen.id = 'maintenance-screen';
+    screen.setAttribute('aria-live', 'polite');
+    screen.innerHTML = `
+      <div class="maintenance-inner">
+        <span class="maintenance-thread" aria-hidden="true"></span>
+        <p class="maintenance-kicker">YOURSANCTUARY</p>
+        <h1>THE SANCTUARY IS TEMPORARILY CLOSED</h1>
+        <p>Technical maintenance is underway. Please return shortly.</p>
+        <span class="maintenance-rule" aria-hidden="true"></span>
+        <h2>A QUIET SPACE</h2>
+        <p>The space will return shortly.</p>
+      </div>`;
+    document.body.appendChild(screen);
     return;
   }
   const SLOW_FADE_MS = parseFloat(
