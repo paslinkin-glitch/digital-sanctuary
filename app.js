@@ -1894,6 +1894,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     return channel;
   }
   let currentSoundClip = null;
+  let lastPerspective = '';
   let soundSessionSalt = (Math.random() * 0xffffffff) >>> 0;
   const usedSoundSeeds = new Set();
   const SEMANTIC_SOUND_RULES = [
@@ -1961,14 +1962,38 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const base = profileForSoundKey(key);
     const seed = soundSeedForClip(clip);
     const random = seededRandom(seed);
-    const root = base.root * (0.94 + random() * 0.12);
-    const cutoff = base.cutoff * (0.9 + random() * 0.2);
-    const voiceGains = base.voiceGains.map((gain) => gain * (0.88 + random() * 0.24));
-    const pans = base.pans.map((pan) => Math.max(-0.85, Math.min(0.85, pan + (random() * 2 - 1) * 0.14)));
-    const profile = { ...base, root, cutoff, voiceGains, pans };
+    const recipes = PERSPECTIVE_RECIPES[key] || PERSPECTIVE_RECIPES.fog;
+    const letters = Object.keys(recipes).filter((letter) => letter !== lastPerspective);
+    const perspective = letters[Math.floor(random() * letters.length)] || Object.keys(recipes)[0];
+    const recipe = recipes[perspective];
+    const root = base.root * (recipe.rootScale || 1) * (0.94 + random() * 0.12);
+    const cutoff = (recipe.cutoff || base.cutoff) * (0.92 + random() * 0.16);
+    const voiceGains = base.voiceGains.map((gain) => gain * (recipe.voiceScale || 1) * (0.9 + random() * 0.2));
+    const pans = base.pans.map((pan) => Math.max(-0.85, Math.min(0.85, pan * (recipe.panScale || 1) + (random() * 2 - 1) * 0.1)));
+    const profile = {
+      ...base,
+      root,
+      cutoff,
+      q: recipe.q || base.q,
+      voiceGains,
+      pans,
+      noiseType: recipe.noiseType || base.noiseType,
+      noiseHighpass: recipe.noiseHighpass || base.noiseHighpass,
+      noiseLowpass: recipe.noiseLowpass || base.noiseLowpass,
+      noiseQ: recipe.noiseQ || base.noiseQ,
+      noiseGain: base.noiseGain * (recipe.noiseGainScale || 1),
+      sparkle: recipe.sparkle !== undefined ? recipe.sparkle : base.sparkle,
+      delay: recipe.delay !== undefined ? recipe.delay : base.delay,
+      delayMix: recipe.delayMix !== undefined ? recipe.delayMix : base.delayMix,
+      delayFeedback: recipe.delayFeedback !== undefined ? recipe.delayFeedback : base.delayFeedback,
+      reverb: recipe.reverb !== undefined ? recipe.reverb : base.reverb,
+      lfoScale: recipe.lfoScale || 1,
+    };
     sound.currentClip = clip || null;
     sound.currentSeed = seed;
     sound.currentProfile = key;
+    sound.currentPerspective = perspective;
+    lastPerspective = perspective;
     applyAmbientProfile(profile, 1.6, seed, instant);
   }
   const AMBIENT_PROFILES = {
@@ -2019,6 +2044,56 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       voiceGains: [0.018, 0.012, 0.008, 0.005], pans: [-0.45, 0.45, -0.2, 0.2],
       noiseType: 'bandpass', noiseHighpass: 420, noiseLowpass: 2600, noiseQ: 0.8, noiseGain: 0.022,
       wind: 0.05, windDepth: 220, sparkle: 0.006, delay: 0.18, delayMix: 0.05, delayFeedback: 0.1, reverb: 0.12,
+    },
+  };
+  const PERSPECTIVE_RECIPES = {
+    water: {
+      A: { cutoff: 150, voiceScale: 1.10, panScale: 0.55, noiseGainScale: 1.05, lfoScale: 0.55, delayMix: 0.05, reverb: 0.25 },
+      B: { cutoff: 420, noiseType: 'bandpass', noiseLowpass: 900, noiseHighpass: 240, noiseQ: 1.1, noiseGainScale: 1.30, voiceScale: 0.78, panScale: 1.30, lfoScale: 1.8, delayMix: 0.04, reverb: 0.12 },
+      C: { cutoff: 760, noiseType: 'bandpass', noiseLowpass: 1200, noiseHighpass: 260, noiseQ: 1.5, noiseGainScale: 0.45, voiceScale: 0.55, panScale: 0.8, lfoScale: 0.35, delayMix: 0.16, delayFeedback: 0.34, reverb: 0.42, sparkle: 0.010 },
+      D: { cutoff: 480, voiceScale: 1.18, panScale: 1.45, noiseGainScale: 1.45, lfoScale: 0.28, delayMix: 0.08, reverb: 0.26 },
+    },
+    rain: {
+      A: { cutoff: 520, noiseType: 'lowpass', noiseLowpass: 1600, noiseHighpass: 240, noiseGainScale: 1.2, voiceScale: 0.75, panScale: 0.8, lfoScale: 0.6, delayMix: 0.06, reverb: 0.2 },
+      B: { cutoff: 1200, noiseType: 'bandpass', noiseLowpass: 3200, noiseHighpass: 700, noiseQ: 1.4, noiseGainScale: 0.9, voiceScale: 0.55, panScale: 1.2, lfoScale: 1.6, delayMix: 0.05, reverb: 0.16 },
+      C: { cutoff: 360, noiseType: 'lowpass', noiseLowpass: 900, noiseHighpass: 180, noiseGainScale: 1.0, voiceScale: 0.7, panScale: 0.6, lfoScale: 0.4, delayMix: 0.10, reverb: 0.3 },
+      D: { cutoff: 2200, noiseType: 'bandpass', noiseLowpass: 3600, noiseHighpass: 500, noiseQ: 0.9, noiseGainScale: 1.45, voiceScale: 0.6, panScale: 1.4, lfoScale: 2.1, delayMix: 0.04, reverb: 0.10 },
+    },
+    fire: {
+      A: { cutoff: 650, voiceScale: 1.15, panScale: 0.7, noiseGainScale: 0.8, sparkle: 0.006, lfoScale: 0.6, delayMix: 0.06, reverb: 0.12 },
+      B: { cutoff: 1800, noiseType: 'bandpass', noiseLowpass: 2400, noiseHighpass: 420, noiseQ: 1.6, noiseGainScale: 1.4, voiceScale: 0.8, panScale: 1.3, sparkle: 0.030, lfoScale: 1.4, delayMix: 0.04, reverb: 0.08 },
+      C: { cutoff: 360, noiseType: 'lowpass', noiseLowpass: 900, noiseHighpass: 160, noiseGainScale: 0.7, voiceScale: 0.65, panScale: 0.5, sparkle: 0.008, lfoScale: 0.4, delayMix: 0.10, reverb: 0.30 },
+      D: { cutoff: 1100, voiceScale: 1.2, panScale: 1.0, noiseGainScale: 1.0, sparkle: 0.020, lfoScale: 1.0, delayMix: 0.03, reverb: 0.10 },
+    },
+    fog: {
+      A: { cutoff: 400, voiceScale: 1.1, panScale: 0.6, noiseGainScale: 1.35, lfoScale: 0.45, delayMix: 0.04, reverb: 0.24 },
+      B: { cutoff: 620, noiseType: 'bandpass', noiseLowpass: 1200, noiseHighpass: 280, noiseQ: 0.9, noiseGainScale: 1.2, voiceScale: 0.85, panScale: 1.4, lfoScale: 1.5, delayMix: 0.04, reverb: 0.12 },
+      C: { cutoff: 260, noiseType: 'lowpass', noiseLowpass: 420, noiseHighpass: 90, noiseGainScale: 0.55, voiceScale: 0.65, panScale: 0.4, lfoScale: 0.25, delayMix: 0.14, reverb: 0.45 },
+      D: { cutoff: 540, noiseType: 'lowpass', noiseLowpass: 820, noiseHighpass: 150, noiseGainScale: 1.5, voiceScale: 1.0, panScale: 1.6, lfoScale: 0.8, delayMix: 0.06, reverb: 0.28 },
+    },
+    people: {
+      A: { cutoff: 300, noiseType: 'bandpass', noiseLowpass: 520, noiseHighpass: 140, noiseQ: 1.3, noiseGainScale: 1.0, voiceScale: 0.8, panScale: 0.5, lfoScale: 0.4, delayMix: 0.06, reverb: 0.36 },
+      B: { cutoff: 460, noiseType: 'bandpass', noiseLowpass: 780, noiseHighpass: 220, noiseQ: 1.0, noiseGainScale: 1.25, voiceScale: 0.65, panScale: 1.5, lfoScale: 1.2, delayMix: 0.04, reverb: 0.28 },
+      C: { cutoff: 260, noiseType: 'lowpass', noiseLowpass: 420, noiseHighpass: 100, noiseGainScale: 0.6, voiceScale: 0.55, panScale: 0.4, lfoScale: 0.3, delayMix: 0.12, reverb: 0.48 },
+      D: { cutoff: 620, noiseType: 'bandpass', noiseLowpass: 1000, noiseHighpass: 260, noiseQ: 0.8, noiseGainScale: 1.4, voiceScale: 0.75, panScale: 1.7, lfoScale: 1.8, delayMix: 0.03, reverb: 0.22 },
+    },
+    road: {
+      A: { cutoff: 140, voiceScale: 1.15, panScale: 0.5, noiseGainScale: 1.2, lfoScale: 0.35, delayMix: 0.06, reverb: 0.14 },
+      B: { cutoff: 260, noiseType: 'bandpass', noiseLowpass: 700, noiseHighpass: 100, noiseQ: 0.8, noiseGainScale: 1.25, voiceScale: 0.75, panScale: 1.8, lfoScale: 0.7, delayMix: 0.05, reverb: 0.10 },
+      C: { cutoff: 320, noiseType: 'lowpass', noiseLowpass: 760, noiseHighpass: 120, noiseGainScale: 1.35, voiceScale: 0.85, panScale: 1.2, lfoScale: 1.3, delayMix: 0.04, reverb: 0.18 },
+      D: { cutoff: 180, voiceScale: 1.0, panScale: 0.7, noiseGainScale: 0.8, lfoScale: 0.25, delayMix: 0.2, delayFeedback: 0.4, reverb: 0.5 },
+    },
+    city: {
+      A: { cutoff: 140, voiceScale: 1.1, panScale: 0.6, noiseGainScale: 1.2, lfoScale: 0.4, delayMix: 0.05, reverb: 0.3 },
+      B: { cutoff: 260, noiseType: 'bandpass', noiseLowpass: 700, noiseHighpass: 100, noiseQ: 0.9, noiseGainScale: 1.1, voiceScale: 0.8, panScale: 1.7, lfoScale: 0.8, delayMix: 0.06, reverb: 0.14 },
+      C: { cutoff: 220, noiseType: 'lowpass', noiseLowpass: 620, noiseHighpass: 90, noiseGainScale: 1.3, voiceScale: 0.75, panScale: 1.1, lfoScale: 0.5, delayMix: 0.04, reverb: 0.24 },
+      D: { cutoff: 150, voiceScale: 1.0, panScale: 0.5, noiseGainScale: 0.7, lfoScale: 0.3, delayMix: 0.22, delayFeedback: 0.45, reverb: 0.58 },
+    },
+    space: {
+      A: { cutoff: 4200, voiceScale: 0.9, panScale: 1.1, noiseGainScale: 0.7, lfoScale: 0.4, delayMix: 0.18, reverb: 0.35 },
+      B: { cutoff: 7600, noiseType: 'bandpass', noiseLowpass: 5200, noiseHighpass: 600, noiseQ: 0.7, noiseGainScale: 0.8, voiceScale: 0.8, panScale: 1.8, lfoScale: 0.9, delayMix: 0.24, reverb: 0.48 },
+      C: { cutoff: 3000, voiceScale: 1.0, panScale: 0.7, noiseGainScale: 0.5, lfoScale: 0.3, delayMix: 0.35, delayFeedback: 0.42, reverb: 0.62 },
+      D: { cutoff: 6000, noiseType: 'lowpass', noiseLowpass: 4200, noiseHighpass: 200, noiseGainScale: 0.6, voiceScale: 1.15, panScale: 1.5, lfoScale: 0.55, delayMix: 0.12, reverb: 0.38 },
     },
   };
   function createReverbImpulse(ctx, seconds = 2.2) {
@@ -2083,7 +2158,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         const pan = (profile.pans[index % profile.pans.length] || 0) * (held ? 0.55 : 1);
         target(voice.panner.pan, pan);
       }
-      if (voice.lfo) target(voice.lfo.frequency, 0.024 + index * 0.012 + random() * 0.025);
+      if (voice.lfo) target(voice.lfo.frequency, (0.024 + index * 0.012 + random() * 0.025) * (profile.lfoScale || 1));
       if (voice.panLfo) target(voice.panLfo.frequency, 0.018 + index * 0.009 + random() * 0.02);
     });
     target(sound.noiseCut.frequency, profile.noiseHighpass);
