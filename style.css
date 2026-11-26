@@ -29,3 +29,7 @@ html[data-quality="480"] .clip{filter:contrast(1.12) saturate(1.08) brightness(0
 .stage[data-element="space"],.stage[data-element="city"],.stage[data-element="road"],.stage[data-element="people"]{--aura-color:rgba(237,232,223,0.21)}
 .touch-aura{position:fixed;inset:0;pointer-events:none;z-index:5;opacity:0;transform:translateZ(0);transition:opacity 650ms cubic-bezier(.22,1,.36,1);mix-blend-mode:screen;background:radial-gradient(circle 130px at var(--touch-x) var(--touch-y),var(--aura-color) 0%,rgba(237,232,223,0.08) 52%,rgba(6,6,7,0) 100%)}
 .stage.is-held .touch-aura{opacity:1}
+
+/* v111 night pupil without GPU filters */
+.night-veil{position:absolute;inset:0;pointer-events:none;z-index:5;background:rgba(20,15,10,0.35);opacity:0;transition:opacity 1s ease}
+.night-veil.is-active{opacity:1}

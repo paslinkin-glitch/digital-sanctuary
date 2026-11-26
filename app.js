@@ -274,7 +274,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   };
   function applyNightPupil() {
     const hour = new Date().getHours();
-    document.documentElement.dataset.nightPupil = (hour >= 22 || hour < 6) ? 'true' : 'false';
+    setNightPupil(hour >= 22 || hour < 6);
   }
   async function loadEnvironment() {
     applyNightPupil();
@@ -283,7 +283,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         const sensor = new window.AmbientLightSensor({ frequency: 1 });
         sensor.addEventListener('reading', () => {
           if (sensor.illuminance !== null && sensor.illuminance < 18) {
-            document.documentElement.dataset.nightPupil = 'true';
+            setNightPupil(true);
           }
         });
         sensor.start();
@@ -501,6 +501,14 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   if (!stage || !slides.length || slides.some((slide) => !slide.querySelector('.media'))) {
     console.error('[sanctuary] stage markup is missing or incomplete');
     return;
+  }
+  const nightVeil = document.createElement('div');
+  nightVeil.className = 'night-veil';
+  nightVeil.setAttribute('aria-hidden', 'true');
+  stage.appendChild(nightVeil);
+  function setNightPupil(active) {
+    document.documentElement.dataset.nightPupil = active ? 'true' : 'false';
+    nightVeil.classList.toggle('is-active', active);
   }
   const progressFill = document.getElementById('session-progress-fill');
   const entryInstallButton = document.getElementById('install-btn');
@@ -2491,6 +2499,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     sound.ctx.resume().catch(() => {});
     if (sound.activeTrack) switchSoundtrack(sound.activeTrack, SLOW_FADE_MS);
   }
+  let qualityFallbackLocked = false;
   let activeQuality = chooseQuality();
   document.documentElement.dataset.quality = activeQuality;
   function connectionSnapshot() {
@@ -2504,10 +2513,17 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     return { type, effectiveType, downlink, saveData, cellular, wifi };
   }
   function chooseQuality() {
-    if (isMobileViewport()) return '480';
+    if (qualityFallbackLocked) return '480';
     const n = connectionSnapshot();
-    if (n.wifi === true && SCREEN_TIER === 'high') return '1080';
-    if (n.wifi === true) return '720';
+    const mobile = isMobileViewport();
+    const slowNetwork = n.saveData || n.effectiveType === 'slow-2g'
+      || n.effectiveType === '2g' || n.effectiveType === '3g';
+    if (slowNetwork) return '480';
+    if (!mobile) return '1080';
+    const wifi = n.wifi === true || (!n.type && !n.effectiveType && !n.saveData);
+    if (SCREEN_TIER === 'high' && wifi) return '1080';
+    if (SCREEN_TIER === 'low') return '480';
+    if (SCREEN_TIER === 'mid' || n.effectiveType === '4g') return '720';
     return '480';
   }
   function sourceForClip(clip) {
@@ -3611,7 +3627,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     video.addEventListener('timeupdate', () => handleLoop(category, index, video));
     let fallbackCursor = 0;
     video.addEventListener('error', () => {
-      const original = clip.url;
+      const original = playbackUrl(clip.url, clip);
       if (original && video.src !== original) {
         video.classList.remove('is-ready');
         video.src = original;
@@ -3626,7 +3642,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       if (!alternatives.length) return;
       const replacement = alternatives[fallbackCursor % alternatives.length];
       fallbackCursor += 1;
-      const nextUrl = replacement.playUrl || playbackUrl(replacement.url);
+      const nextUrl = playbackUrl(replacement.url, replacement);
       const current = video.currentSrc || video.src || '';
       if (current === nextUrl && video.readyState >= 1) return;
       video.classList.remove('is-ready');
@@ -3671,6 +3687,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   function releaseClipVideo(clip) {
     if (!clip || !clip.el) return;
     const video = clip.el;
+    if (clip._slowFrameTimer) {
+      window.clearTimeout(clip._slowFrameTimer);
+      clip._slowFrameTimer = 0;
+    }
     clip.el = null;
     clip.lastTime = 0;
     disposeVideoElement(video);
@@ -3897,6 +3917,14 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       rewardCategory(category, 'loops');
     }
   }
+  function syncClipSourceQuality(clip, video) {
+    if (!clip || !video) return false;
+    const desiredUrl = playbackUrl(clip.url, clip);
+    if (!desiredUrl || video.src === desiredUrl) return false;
+    clip.playUrl = desiredUrl;
+    video.src = desiredUrl;
+    return true;
+  }
   function playClip(category, index) {
     if (!category || category.index !== state.index) return;
     if (!gateOpen) return;
@@ -3910,16 +3938,19 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       const video = clip.el;
       if (!video) return;
       if (clipIndex === index) {
+        const sourceChanged = syncClipSourceQuality(clip, video);
         video.classList.add('is-current');
         video.preload = 'auto';
-        if (video.readyState === 0) video.load();
+        if (sourceChanged || video.readyState === 0) video.load();
         if (video.readyState >= 4) clearFramePlaceholder();
         video.playbackRate = stage.classList.contains('is-held') ? SLOW_RATE : 1;
         clip.lastTime = video.currentTime;
         if (clip._slowFrameTimer) window.clearTimeout(clip._slowFrameTimer);
         clip._slowFrameTimer = window.setTimeout(() => {
           clip._slowFrameTimer = 0;
-          if (!clip.el || video.readyState >= 2 || activeQuality === '480') return;
+          if (!clip.el || video.readyState >= 2) return;
+          if (activeQuality !== '1080' && activeQuality !== '720') return;
+          qualityFallbackLocked = true;
           activeQuality = '480';
           document.documentElement.dataset.quality = activeQuality;
         }, 2200);
