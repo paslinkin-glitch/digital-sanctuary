@@ -1049,6 +1049,12 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   const captionPending = new Map();
   const captionSeen = new Set();
   let pathPlan = [];
+  let surrealClips = [];
+  let surrealInserts = 0;
+  let lastSurrealIndex = -99;
+  let surrealResonanceHolds = 0;
+  let fastSurrealStreak = 0;
+  let auraRaf = 0;
   let pathPos = -1;
   let pathPicked = new Set();
   let pathStarted = false;
@@ -1188,11 +1194,20 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     stage.style.setProperty('--optic-x', '50%');
     stage.style.setProperty('--optic-y', '50%');
   }
+  function queueTouchAura(x, y) {
+    if (auraRaf) return;
+    auraRaf = window.requestAnimationFrame(() => {
+      auraRaf = 0;
+      stage.style.setProperty('--touch-x', `${x}px`);
+      stage.style.setProperty('--touch-y', `${y}px`);
+    });
+  }
   function startOptics(event) {
     if (!gateOpen) return;
     const point = pointForEvent(event);
     stage.classList.add('is-touching');
     stage.style.setProperty('--optic-x', `${point.x}px`);
+    queueTouchAura(point.x, point.y);
     stage.style.setProperty('--optic-y', `${point.y}px`);
     if (currentOpticElement === 'space') {
       stage.style.setProperty('--optic-zoom', '1.04');
@@ -1203,6 +1218,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const point = pointForEvent(event);
     stage.style.setProperty('--optic-x', `${point.x}px`);
     stage.style.setProperty('--optic-y', `${point.y}px`);
+    queueTouchAura(point.x, point.y);
     if (currentOpticElement === 'space') {
       const dy = event.clientY - gesture.y0;
       const amount = clamp(-dy / 160, -1, 1);
@@ -2560,6 +2576,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         Boolean(clip)
         && Boolean(clip.id)
         && !clip.invalid
+        && !clip.is_surreal
         && !pathPicked.has(clip.id)
         && !picked.has(clip.id)
         && (allowSeen || !isVideoSeen(clip.id))
@@ -2593,6 +2610,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         if (!category) continue;
         const clip = category.clips.find((item) => (
           item.id
+          && !item.is_surreal
           && !pathPicked.has(item.id)
           && (allowSeen || !isVideoSeen(item.id))
         ));
@@ -3455,6 +3473,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     isTransitioning = false;
     playedLiveTrackIds.clear();
     recentLiveTrackIds.length = 0;
+    surrealInserts = 0;
+    lastSurrealIndex = -99;
+    surrealResonanceHolds = 0;
+    fastSurrealStreak = 0;
     if (pathStarted || !pathPlan.length) return false;
     if (pathPlan.length > SESSION_LENGTH) pathPlan = pathPlan.slice(0, SESSION_LENGTH);
     beginSession();
@@ -3785,6 +3807,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         tags: [stageKey, archetype],
         vertical: Boolean(item.vertical),
         is_finale: Boolean(item.is_finale),
+        is_surreal: Boolean(item.is_surreal),
         element: elementForClip(title, [stageKey, archetype], tag, archetype),
         archetype,
         stage: stageKey,
@@ -3811,6 +3834,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       category.freshIndex = null;
       mountClips(category);
     }
+    surrealClips = categories.flatMap((category) => category.clips
+      .filter((clip) => clip && clip.is_surreal)
+      .map((clip) => ({ category, clip, stage: 2 })));
     catalogVideoIds = new Set();
     for (const category of categories) {
       for (const clip of category.clips) {
@@ -4039,7 +4065,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     pathPlan[index] = { stage: stage || STAGE_BY_CATEGORY[category.tag] || 1, category, clip };
     return true;
   }
-  function adaptUpcomingPath(record, quickPair = false) {
+  function adaptUpcomingPath(record, quickPair = false, fastSurreal = false) {
     if (!record || pathPlan.length !== 30) return;
     const nextIndex = pathPos + 1;
     if (nextIndex >= 30) return;
@@ -4069,6 +4095,30 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         if (calm.length) {
           const pick = calm[Math.floor(Math.random() * calm.length)];
           replaceFutureEntry(nextIndex, pick.category, pick.clip, pick.stage);
+        }
+      }
+    }
+    if (record.heldMs >= 1000) surrealResonanceHolds += 1;
+    const threshold = pathPos === 13 || pathPos === 14;
+    const resonanceReady = surrealResonanceHolds >= 2;
+    if (
+      (threshold || resonanceReady || fastSurreal)
+      && surrealInserts < 2
+      && nextIndex >= 5 && nextIndex <= 26
+      && nextIndex - lastSurrealIndex >= 7
+      && surrealClips.length
+    ) {
+      const pool = surrealClips.filter((entry) => entry.clip && !pathPicked.has(entry.clip.id));
+      if (pool.length) {
+        const pick = pool[Math.floor(Math.random() * pool.length)];
+        const old = pathPlan[nextIndex];
+        if (old && old.clip && old.clip.id !== pick.clip.id) {
+          pathPicked.delete(old.clip.id);
+          pathPicked.add(pick.clip.id);
+          pathPlan[nextIndex] = { stage: 2, category: pick.category, clip: pick.clip };
+          surrealInserts += 1;
+          lastSurrealIndex = nextIndex;
+          fastSurrealStreak = 0;
         }
       }
     }
@@ -4134,7 +4184,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     lastSwipeAt = swipeAt;
     const record = reportSwipe(direction, speed);
     const quickPair = previousSwipeAt > 0 && swipeAt - previousSwipeAt < 1500;
-    adaptUpcomingPath(record, quickPair);
+    fastSurrealStreak = record.viewedMs < 1400 ? fastSurrealStreak + 1 : 0;
+    adaptUpcomingPath(record, quickPair, fastSurrealStreak >= 3);
     updateUserAverage(record.viewedMs);
     const behavior = behaviorContext(record);
     const sceneContext = sceneContextFor(record, behavior);

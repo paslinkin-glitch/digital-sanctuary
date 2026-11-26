@@ -18,3 +18,11 @@ html[data-night-pupil="true"][data-quality="480"] .clip{filter:brightness(0.76) 
 .caption-line{text-shadow:0 1px 2px rgba(6,6,7,0.98),0 4px 22px rgba(6,6,7,0.96),0 0 40px rgba(6,6,7,0.78)!important}
 .cycle-whisper{z-index:11!important}
 .stage.is-caption-active .veil{opacity:0.32}
+
+/* v110 elemental touch aura */
+.stage{--aura-color:rgba(237,232,223,0.21);--touch-x:50%;--touch-y:50%}
+.stage[data-element="fire"]{--aura-color:rgba(235,186,108,0.26)}
+.stage[data-element="water"],.stage[data-element="rain"],.stage[data-element="fog"]{--aura-color:rgba(232,240,248,0.24)}
+.stage[data-element="space"],.stage[data-element="city"],.stage[data-element="road"],.stage[data-element="people"]{--aura-color:rgba(237,232,223,0.21)}
+.touch-aura{position:fixed;inset:0;pointer-events:none;z-index:5;opacity:0;transform:translateZ(0);transition:opacity 650ms cubic-bezier(.22,1,.36,1);mix-blend-mode:screen;background:radial-gradient(circle 130px at var(--touch-x) var(--touch-y),var(--aura-color) 0%,rgba(237,232,223,0.08) 52%,rgba(6,6,7,0) 100%)}
+.stage.is-held .touch-aura{opacity:1}
