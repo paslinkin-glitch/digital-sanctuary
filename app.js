@@ -256,6 +256,12 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
     return window.matchMedia(`(max-width: ${MOBILE_MAX_WIDTH}px)`).matches;
   }
+  function isMobileDevice() {
+    const ua = navigator.userAgent || '';
+    if (/iphone|ipod|ipad|android|windows phone/i.test(ua)) return true;
+    if (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) return true;
+    return false;
+  }
   const GIFT_MODE = new URLSearchParams(location.search).get('gift') === '1';
   const APP_ENTRY = new URLSearchParams(location.search).get('app') === '1';
   const COMPLETED_KEY = 'sanctuary-session-completed';
@@ -2515,7 +2521,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   function chooseQuality() {
     if (qualityFallbackLocked) return '480';
     const n = connectionSnapshot();
-    const mobile = isMobileViewport();
+    const mobile = isMobileDevice();
     const slowNetwork = n.saveData || n.effectiveType === 'slow-2g'
       || n.effectiveType === '2g' || n.effectiveType === '3g';
     if (slowNetwork) return '480';
