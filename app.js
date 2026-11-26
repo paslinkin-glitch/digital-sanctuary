@@ -1,4 +1,4 @@
-﻿
+
 (() => {
   'use strict';
   if (window.SANCTUARY_MAINTENANCE) {
@@ -247,6 +247,15 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     return 'mid';
   }
   const SCREEN_TIER = detectScreenTier();
+  const MOBILE_MAX_WIDTH = 900;
+  function isMobileViewport() {
+    const ua = navigator.userAgent || '';
+    if (/iphone|ipod|android.*mobile|windows phone/i.test(ua)) return true;
+    if (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) {
+      return window.innerWidth <= MOBILE_MAX_WIDTH;
+    }
+    return window.matchMedia(`(max-width: ${MOBILE_MAX_WIDTH}px)`).matches;
+  }
   const GIFT_MODE = new URLSearchParams(location.search).get('gift') === '1';
   const APP_ENTRY = new URLSearchParams(location.search).get('app') === '1';
   const COMPLETED_KEY = 'sanctuary-session-completed';
@@ -2495,6 +2504,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     return { type, effectiveType, downlink, saveData, cellular, wifi };
   }
   function chooseQuality() {
+    if (isMobileViewport()) return '480';
     const n = connectionSnapshot();
     if (n.wifi === true && SCREEN_TIER === 'high') return '1080';
     if (n.wifi === true) return '720';
@@ -2507,7 +2517,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (quality === '720') return clip.url720 || clip.url480 || clip.url;
     return clip.url;
   }
+  let qualitySyncTimer = 0;
   function setQuality(force) {
+    if (document.hidden && !force) return;
     const next = chooseQuality();
     if (!force && next === activeQuality) return;
     activeQuality = next;
@@ -2524,6 +2536,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     try { clip.el.currentTime = time; } catch (_) {}
     const promise = clip.el.play();
     if (promise && typeof promise.catch === 'function') promise.catch(() => {});
+  }
+  function scheduleQualitySync() {
+    window.clearTimeout(qualitySyncTimer);
+    qualitySyncTimer = window.setTimeout(() => setQuality(false), 250);
   }
   function playbackUrl(url, clip) {
     return clip ? sourceForClip(clip) : url;
@@ -2777,6 +2793,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     try {
       finaleSessionVideo.pause();
       finaleSessionVideo.removeAttribute('src');
+      finaleSessionVideo.preload = 'none';
       finaleSessionVideo.load();
     } catch (_) {
     }
@@ -3544,6 +3561,19 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       if (promise && typeof promise.catch === 'function') promise.catch(() => {});
     }, 300);
   }
+  const posterPreloads = new Map();
+  function preloadPoster(clip) {
+    const url = clip && clip.urlPoster;
+    if (!url || posterPreloads.has(url)) return;
+    const image = new Image();
+    image.decoding = 'async';
+    posterPreloads.set(url, image);
+    if (posterPreloads.size > 6) {
+      const oldestUrl = posterPreloads.keys().next().value;
+      posterPreloads.delete(oldestUrl);
+    }
+    image.src = url;
+  }
   function attachVideo(category, clip, index) {
     const media = category.el.querySelector('.media');
     if (!media) return null;
@@ -3552,7 +3582,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     clip.playUrl = playUrl;
     video.className = 'clip';
     video.style.zIndex = '1';
-    video.style.willChange = 'opacity, transform';
     video._stallRecoveries = 0;
     video.muted = true;
     video.defaultMuted = true;
@@ -3561,7 +3590,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     video.playsInline = true;
     video.controls = false;
     video.disablePictureInPicture = true;
-    video.preload = category.index === state.index && index === 0 ? 'auto' : 'metadata';
+    video.preload = 'none';
     if (clip.urlPoster) video.poster = clip.urlPoster;
     video.setAttribute('muted', '');
     video.setAttribute('playsinline', '');
@@ -3624,18 +3653,27 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     });
     media.textContent = '';
   }
-  function releaseClipVideo(clip) {
-    if (!clip || !clip.el) return;
-    const video = clip.el;
+  function disposeVideoElement(video) {
+    if (!video) return;
     try {
       video.pause();
       video.removeAttribute('src');
+      video.removeAttribute('poster');
+      video.preload = 'none';
       video.load();
+    } catch (_) {
+    }
+    try {
       video.remove();
     } catch (_) {
     }
+  }
+  function releaseClipVideo(clip) {
+    if (!clip || !clip.el) return;
+    const video = clip.el;
     clip.el = null;
     clip.lastTime = 0;
+    disposeVideoElement(video);
   }
   function ensureClipVideo(category, clip) {
     if (!category || !clip) return null;
@@ -3654,22 +3692,36 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       media.querySelectorAll('video').forEach((video) => {
         if (video.classList.contains('frame-placeholder')) return;
         if (!keepIds.has(video.dataset.clipId)) {
-          try {
-            video.pause();
-            video.removeAttribute('src');
-            video.load();
-            video.remove();
-          } catch (_) {
-          }
+          disposeVideoElement(video);
         }
       });
     }
+  }
+  function handlePageHide(event) {
+    if (event && event.persisted) return;
+    releaseAllPlaybackVideos();
+  }
+  function releaseAllPlaybackVideos() {
+    for (const category of categories) {
+      for (const clip of category.clips) {
+        if (clip.el) releaseClipVideo(clip);
+      }
+    }
+    if (finaleSessionVideo) {
+      try {
+        finaleSessionVideo.pause();
+        finaleSessionVideo.removeAttribute('src');
+        finaleSessionVideo.preload = 'none';
+        finaleSessionVideo.load();
+      } catch (_) {
+      }
+    }
+    posterPreloads.clear();
   }
   function preparePlaybackWindow(currentEntry, nextEntry) {
     const base = pathPos < 0 ? 0 : pathPos;
     const current = currentEntry || pathPlan[base];
     const next = nextEntry || pathPlan[base + 1];
-    const next2 = pathPlan[base + 2];
     const keep = new Set();
     if (current && current.clip) {
       keep.add(current.clip.id);
@@ -3682,29 +3734,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (next && next.clip) {
       keep.add(next.clip.id);
       ensureClipVideo(next.category, next.clip);
-      if (next.clip.el) {
-        // Only headers next; full preload starts after current is playing.
-        next.clip.el.preload = 'metadata';
-      }
+      if (next.clip.el) next.clip.el.preload = 'none';
+      preloadPoster(next.clip);
     }
-    if (next2 && next2.clip) {
-      // Never create a third <video>; only warm the lightweight poster.
-      if (next2.clip.urlPoster) {
-        const img = new Image();
-        img.src = next2.clip.urlPoster;
-      }
-    }
-    if (current && current.clip && current.clip.el) {
-      const currentVideo = current.clip.el;
-      const warmNext = () => {
-        if (!next || !next.clip || !next.clip.el) return;
-        if (next.clip.el.preload === 'auto') return;
-        next.clip.el.preload = 'auto';
-        if (next.clip.el.readyState === 0) next.clip.el.load();
-      };
-      if (currentVideo.readyState >= 3) warmNext();
-      else currentVideo.addEventListener('playing', warmNext, { once: true });
-    }
+    // Never create a third <video>; the next frame is poster-only until it becomes current.
     if (anchorClip && anchorClip.id) {
       keep.add(anchorClip.id);
       ensureClipVideo(activeCategory(), anchorClip);
@@ -3897,6 +3930,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         }
       } else {
         video.classList.remove('is-current');
+        video.preload = 'none';
         video.pause();
       }
     });
@@ -3956,7 +3990,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     } catch (_) {}
   }
   function showFrameAfterglow() {
-    if (SCREEN_TIER !== 'high') return;
+    if (SCREEN_TIER !== 'high' || isMobileViewport()) return;
     if (!gateOpen || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const video = document.querySelector('.slide.is-active video');
     if (!video || !video.src) return;
@@ -3972,7 +4006,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         if (Number.isFinite(time)) ghost.currentTime = time;
       } catch (_) {}
       requestAnimationFrame(() => ghost.classList.add('is-visible'));
-      window.setTimeout(() => ghost.remove(), 520);
+      window.setTimeout(() => disposeVideoElement(ghost), 520);
     } catch (_) {}
   }
   function navigateTo(targetIndex, direction, fadeMs, forcedClipId, sceneContext) {
@@ -4512,6 +4546,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       releaseWakeLock();
       abortGesture();
       pauseCategory(activeCategory());
+      if (finaleSessionVideo) finaleSessionVideo.pause();
       pauseSound();
     } else if (state.hiddenAt !== null) {
       state.viewStart += now() - state.hiddenAt;
@@ -4524,6 +4559,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       if (category.clips.length) playClip(category, category.activeIndex);
       if (gateOpen) requestWakeLock();
       wakePlayback();
+      if (finaleEl && !finaleEl.hidden) syncFinaleSessionVideo();
+      scheduleQualitySync();
       resumeSound();
     }
   });
@@ -4721,6 +4758,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   startVideoWatchdog();
   const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
   if (connection && typeof connection.addEventListener === 'function') connection.addEventListener('change', () => setQuality(false));
+  window.addEventListener('resize', scheduleQualitySync, { passive: true });
+  window.addEventListener('orientationchange', scheduleQualitySync, { passive: true });
+  window.addEventListener('pagehide', handlePageHide, { passive: true });
   startPresenceCounter();
   initEntryAbstract();
   trackEvent('entry_view', { mode: isStandaloneMode() ? 'pwa' : 'browser', directApp: APP_ENTRY });
