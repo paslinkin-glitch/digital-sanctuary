@@ -3487,6 +3487,41 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     switchSoundtrack(null, SLOW_FADE_MS);
     return true;
   }
+  function restartVideo(video, clip) {
+    if (!video || !clip || clip._restarting) return;
+    clip._restarting = true;
+    state.loopsInView += 1;
+    state.totalLoops += 1;
+    clip.lastTime = 0.04;
+    try { video.currentTime = 0.04; } catch (_) {}
+    const promise = video.play();
+    if (promise && typeof promise.catch === 'function') promise.catch(() => {});
+    window.setTimeout(() => { clip._restarting = false; }, 120);
+  }
+  function startVideoWatchdog() {
+    if (window.__sanctuaryWatchdog) return;
+    window.__sanctuaryWatchdog = window.setInterval(() => {
+      if (!gateOpen || sessionComplete) return;
+      const video = document.querySelector('.slide.is-active video.is-current');
+      if (!video || video.paused || video.readyState < 2) return;
+      const clip = activeClip();
+      if (!clip || clip.el !== video) return;
+      const nowMs = performance.now();
+      const last = video._watchState;
+      if (!last || Math.abs(video.currentTime - last.time) > 0.02) {
+        video._watchState = { time: video.currentTime, stamp: nowMs };
+        return;
+      }
+      if (nowMs - last.stamp < 2000) return;
+      const recoveries = Number(video._stallRecoveries || 0);
+      video._watchState = { time: video.currentTime, stamp: nowMs };
+      if (recoveries >= 2) return;
+      video._stallRecoveries = recoveries + 1;
+      try { video.currentTime = 0.05; } catch (_) {}
+      const promise = video.play();
+      if (promise && typeof promise.catch === 'function') promise.catch(() => {});
+    }, 300);
+  }
   function attachVideo(category, clip, index) {
     const media = category.el.querySelector('.media');
     if (!media) return null;
@@ -3496,9 +3531,11 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     video.className = 'clip';
     video.style.zIndex = '1';
     video.style.willChange = 'opacity, transform';
+    video._stallRecoveries = 0;
     video.muted = true;
     video.defaultMuted = true;
-    video.loop = true;
+    video.loop = false;
+    video.addEventListener('ended', () => restartVideo(video, clip));
     video.playsInline = true;
     video.controls = false;
     video.disablePictureInPicture = true;
@@ -3788,6 +3825,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const clip = category.clips[clipIndex];
     if (!clip) return;
     const current = video.currentTime;
+    if (Number.isFinite(video.duration) && video.duration > 1 && current >= video.duration - 0.18) {
+      restartVideo(video, clip);
+      return;
+    }
     if (clip.lastTime > 0.5 && current + 0.35 < clip.lastTime) {
       state.loopsInView += 1;
       state.totalLoops += 1;
@@ -4626,6 +4667,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   applyLanguage();
   activeQuality = chooseQuality();
   document.documentElement.dataset.quality = activeQuality;
+  startVideoWatchdog();
   const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
   if (connection && typeof connection.addEventListener === 'function') connection.addEventListener('change', () => setQuality(false));
   startPresenceCounter();

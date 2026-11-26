@@ -8,3 +8,13 @@ html[data-quality="480"] .clip{filter:contrast(1.12) saturate(1.08) brightness(0
 html[data-night-pupil="true"][data-quality="480"] .clip{filter:brightness(0.76) contrast(1.04) sepia(0.08)!important}
 
 .stage.is-caption-active .veil{opacity:0.24}
+
+/* v108 GPU vignette layering and cinematic caption mist */
+.slide{transform:translateZ(0);isolation:isolate}
+.media{isolation:isolate;transform:translateZ(0) scale(var(--stupor-scale,1))}
+.stage::after{z-index:6!important;transform:translateZ(0);backface-visibility:hidden}
+.sanctuary-frame{z-index:7!important;transform:translateZ(0);backface-visibility:hidden;transition:none!important}
+.caption{z-index:10!important;padding:26px 22px!important;background:radial-gradient(ellipse 82% 72% at 50% 50%,rgba(6,6,7,0.64) 0%,rgba(6,6,7,0.30) 56%,rgba(6,6,7,0) 100%)!important}
+.caption-line{text-shadow:0 1px 2px rgba(6,6,7,0.98),0 4px 22px rgba(6,6,7,0.96),0 0 40px rgba(6,6,7,0.78)!important}
+.cycle-whisper{z-index:11!important}
+.stage.is-caption-active .veil{opacity:0.32}
