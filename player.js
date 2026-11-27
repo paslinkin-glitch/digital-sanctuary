@@ -1,4 +1,4 @@
-/* Yoursanctuary — SanctuaryPlayer (v126).
+/* Yoursanctuary — SanctuaryPlayer (v127).
  *
  * One small isolated video layer. It owns exactly two <video> elements and no
  * poster image: the stream itself is the picture, from the very first frame.
@@ -7,7 +7,11 @@
  *   the other slot                   the frame warming up, z-index 1
  *
  * One show(clip, nextClip) does:
- *   1. pick the source: url720 on phones, url1080 on desktop;
+ *   1. pick the source: 1080p by default on every device, including phones on
+ *      Wi-Fi and iOS Safari; 720p only when the Network Information API says
+ *      the link is slow, or after two mobile frames in a row took longer than
+ *      1800 ms from src assignment to loadeddata; two fast 720p starts
+ *      (< 450 ms) bring 1080p back;
  *   2. if the hidden slot already holds that source, promote it — the outgoing
  *      frame stays visible underneath while the new one fades in over 240 ms;
  *   3. otherwise load the source into the hidden slot, keep playing whatever is
@@ -20,6 +24,7 @@
  * Public surface (window.SanctuaryPlayer):
  *   show(clip, nextClip)  warm(clip)  setRate(rate)  pause()  resume()
  *   duration()  snapshot()  destroy()  onLoop(clip)  init()
+ * snapshot() reports the active stream level as '1080' or '720'.
  */
 (function () {
   'use strict';
@@ -29,6 +34,10 @@
   var MOBILE_MAX_WIDTH = 900;
   var FADE_MS = 240;
   var HANDOFF_MS = FADE_MS + 40;
+  var SLOW_START_MS = 1800;
+  var FAST_START_MS = 450;
+  var SLOW_EFFECTIVE_TYPES = ['slow-2g', '2g', '3g'];
+  var FAST_DOWNLINK_MBPS = 5;
 
   var current = null;
   var next = null;
@@ -45,6 +54,10 @@
   var handoffTimer = 0;
   var coldTimer = 0;
   var mobile = detectMobile();
+  var prefer720 = isSlowNetwork();
+  var slowStarts = 0;
+  var fastStarts = 0;
+  var connectionWatched = false;
 
   var api = {
     ready: false,
@@ -72,11 +85,55 @@
     }
   }
 
+  function connectionInfo() {
+    try {
+      return navigator.connection || navigator.mozConnection || navigator.webkitConnection || null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // The Network Information API is the only explicit slow-link hint. If the
+  // browser has no API (iOS Safari), the link is treated as fast and 1080p
+  // remains the default; the live measurement below can still lower it.
+  function isSlowNetwork() {
+    var connection = connectionInfo();
+    if (!connection) return false;
+    if (connection.saveData === true) return true;
+    if (SLOW_EFFECTIVE_TYPES.indexOf(connection.effectiveType) !== -1) return true;
+    var downlink = Number(connection.downlink);
+    return isFinite(downlink) && downlink > 0 && downlink < FAST_DOWNLINK_MBPS;
+  }
+
+  // A link that turns slow mid-session (Wi-Fi -> 3G) lowers the level at once;
+  // the return to 1080p still needs two genuinely fast mobile starts.
+  function watchConnection() {
+    if (connectionWatched) return;
+    var connection = connectionInfo();
+    if (!connection || typeof connection.addEventListener !== 'function') return;
+    connectionWatched = true;
+    connection.addEventListener('change', function () {
+      if (destroyed || !isSlowNetwork() || prefer720) return;
+      prefer720 = true;
+      slowStarts = 0;
+      fastStarts = 0;
+    });
+  }
+
+  function nowMs() {
+    return (window.performance && typeof window.performance.now === 'function')
+      ? window.performance.now()
+      : Date.now();
+  }
+
+  function levelOf(src) {
+    return String(src || '').indexOf('/mp4-720/') !== -1 ? '720' : '1080';
+  }
+
   function sourceFor(clip) {
     if (!clip) return '';
-    return mobile
-      ? (clip.url720 || clip.url || '')
-      : (clip.url1080 || clip.url || '');
+    if (prefer720) return clip.url720 || clip.url1080 || clip.url || '';
+    return clip.url1080 || clip.url || '';
   }
 
   function other(video) {
@@ -95,6 +152,8 @@
     video.preload = 'auto';
     if (video.getAttribute('src') !== src) {
       video.setAttribute('src', src);
+      video._sanctuaryLoadAt = nowMs();
+      video._sanctuaryMeasured = false;
       try { video.load(); } catch (_) {}
     }
   }
@@ -151,6 +210,42 @@
     scheduleWarmFollowing();
   }
 
+  // Live channel measurement: from src assignment to the first decoded frame.
+  // Only a mobile link changes the level, and only two frames in a row.
+  function noteLoadTime(video) {
+    if (!video || video._sanctuaryMeasured) return;
+    var startedAt = video._sanctuaryLoadAt;
+    if (typeof startedAt !== 'number') return;
+    video._sanctuaryMeasured = true;
+    if (!mobile) return;
+
+    var elapsed = nowMs() - startedAt;
+    if (prefer720) {
+      if (elapsed < FAST_START_MS) {
+        fastStarts += 1;
+        slowStarts = 0;
+        if (fastStarts >= 2) {
+          prefer720 = false;
+          fastStarts = 0;
+        }
+      } else {
+        fastStarts = 0;
+      }
+      return;
+    }
+
+    if (elapsed > SLOW_START_MS) {
+      slowStarts += 1;
+      fastStarts = 0;
+      if (slowStarts >= 2) {
+        prefer720 = true;
+        slowStarts = 0;
+      }
+    } else {
+      slowStarts = 0;
+    }
+  }
+
   function bind(video) {
     if (!video || video.dataset.playerBound === '1') return;
     video.dataset.playerBound = '1';
@@ -162,6 +257,7 @@
     video.setAttribute('disablepictureinpicture', '');
     var onReady = function () {
       if (destroyed) return;
+      if (video.readyState >= 2) noteLoadTime(video);
       if (video === pending) promotePending();
     };
     video.addEventListener('loadeddata', onReady);
@@ -210,6 +306,8 @@
 
   function init() {
     if (ready) return api;
+    if (!prefer720 && isSlowNetwork()) prefer720 = true;
+    watchConnection();
     var first = document.getElementById('playerCurrent');
     var second = document.getElementById('playerNext');
     if (!first || !second) return api;
@@ -341,6 +439,8 @@
     }
     return {
       mobile: mobile,
+      level: levelOf(currentSrc),
+      prefer720: prefer720,
       rate: rate,
       clip: (currentClip && currentClip.id) || null,
       warmed: (nextClip && nextClip.id) || null,

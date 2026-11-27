@@ -11,11 +11,11 @@
 .player-video.is-current{opacity:1;z-index:2}
 .player-video.is-outgoing{opacity:1;z-index:1}
 @media (prefers-reduced-motion:reduce){.player-video{transition:none}}
-.dream-atmosphere{position:absolute;inset:0;z-index:4;pointer-events:none;opacity:.55;background:radial-gradient(ellipse 90% 70% at 50% 42%,rgba(236,234,230,.03) 0%,transparent 62%),linear-gradient(180deg,rgba(6,6,7,.10) 0%,transparent 28%,transparent 72%,rgba(6,6,7,.20) 100%)}
+.dream-atmosphere{position:absolute;inset:0;z-index:4;pointer-events:none;opacity:.72;background:radial-gradient(ellipse 92% 74% at 50% 42%,rgba(236,234,230,.028) 0%,rgba(236,234,230,.012) 32%,transparent 58%),linear-gradient(180deg,rgba(6,6,7,.34) 0%,rgba(6,6,7,.16) 16%,transparent 38%,transparent 62%,rgba(6,6,7,.18) 78%,rgba(6,6,7,.42) 100%)}
 
 
 /* ==========================================================================
-   v126 — Quiet Luxury
+   v127 — Quiet Luxury
    One type system, two video layers owned by player.js and a direct entry into
    the stream: no still posters, no WebGL prologue, no hidden scrollbars.
    ========================================================================== */
