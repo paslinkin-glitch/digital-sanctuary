@@ -1,4 +1,4 @@
-/* Yoursanctuary — PWA shell cache (v127).
+/* Yoursanctuary — PWA shell cache (v128).
  * install() precaches only the critical shell: the app, styles, catalog and
  * manifest. Fonts and icons are cached on first use but served cache-first
  * afterwards, so they return from disk instantly instead of holding the
@@ -6,12 +6,13 @@
  * network-first, so a fresh deployment wins online. Cross-origin video CDN
  * requests and the umami beacon deliberately pass through untouched.
  */
-const CACHE = 'sanctuary-shell-v127';
+const CACHE = 'sanctuary-shell-v128';
 const SHELL = [
   './',
   './index.html',
   './style.css',
   './player.js',
+  './interactive.js',
   './app.js',
   './videos-data.js',
   './manifest.json',

@@ -93,3 +93,77 @@ body::-webkit-scrollbar,
 
 /* ---------- direct entry, no prologue ---------- */
 
+
+/* ==========================================================================
+   v128 — Quiet Luxury HUD and the interactive forest
+   The lower line is a 5–8 word whisper now: smaller serif, one or two airy
+   lines, nothing clipped, and a light gradient instead of a dark shelf. The
+   interactive stage sits in the same layer order as the stream: above the
+   video, below the caption.
+   ========================================================================== */
+
+.stage .bottom-hud .caption-body {
+  font-size: clamp(16px, 4.1vw, 19px) !important;
+  line-height: 1.42 !important;
+  max-width: min(74vw, 340px) !important;
+  max-height: none !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+  display: block !important;
+  -webkit-line-clamp: unset !important;
+  -webkit-box-orient: initial !important;
+}
+
+.bottom-hud::before {
+  height: 170px;
+  background: linear-gradient(
+    to top,
+    rgba(6, 6, 7, 0.56) 0%,
+    rgba(6, 6, 7, 0.20) 55%,
+    rgba(6, 6, 7, 0) 100%
+  ) !important;
+}
+
+.interactive-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  background: #101611;
+  isolation: isolate;
+  transition: opacity 900ms var(--organic, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+.interactive-stage.is-active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.interactive-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  outline: none;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.stage.is-interactive .bottom-hud .caption-body {
+  color: #F5F5F0 !important;
+}
+
+.stage.is-interactive .like-btn {
+  opacity: 0.55;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .interactive-stage {
+    transition: none;
+  }
+}
+
