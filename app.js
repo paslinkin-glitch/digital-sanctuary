@@ -142,6 +142,18 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       giftSub: 'Nothing to do — just watch.',
       giftShareText: 'Someone sent you 3 minutes of silence. Just watch.',
       giftShareTitle: 'Silence for you',
+      thresholdKicker1: 'ABOUT THIS SPACE',
+      thresholdText1: 'A quiet sanctuary before sleep — 30 dreams without hurry to let thoughts settle',
+      thresholdSub1: 'Nothing to judge or decide — just watch',
+      thresholdKicker2: 'RHYTHM OF SLOWNESS',
+      thresholdText2: 'Touch and hold the screen — time and sound will slow down',
+      thresholdSub2: 'Try it now: light and mist respond to your touch',
+      thresholdKicker3: 'ENTER THE STREAM',
+      thresholdText3: 'Swipe up to move through frames. Pull up whenever you are ready',
+      thresholdSub3: '',
+      thresholdKickerReturn: 'RETURN',
+      thresholdTextReturn: 'Welcome back to silence…',
+      thresholdSubReturn: '',
     },
     ru: {
       docTitle: 'Quiet Space — когда мысли не останавливаются',
@@ -180,6 +192,18 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       giftSub: 'Ничего не нужно делать — просто смотри.',
       giftShareText: 'Тебе передали 3 минуты тишины. Просто смотри.',
       giftShareTitle: 'Тишина для тебя',
+      thresholdKicker1: 'О ПРОСТРАНСТВЕ',
+      thresholdText1: 'Тихое убежище перед сном — 30 снов без спешки, чтобы остановить поток мыслей',
+      thresholdSub1: 'Ничего не нужно оценивать и решать — просто смотри',
+      thresholdKicker2: 'РИТМ ЗАМЕДЛЕНИЯ',
+      thresholdText2: 'Коснись и удерживай экран — время и звук замедлятся',
+      thresholdSub2: 'Попробуй прямо сейчас: свет и дымка откликнутся на прикосновение',
+      thresholdKicker3: 'ВХОД В ПОТОК',
+      thresholdText3: 'Листай вверх, чтобы переходить дальше. Потяни экран, когда будешь готов',
+      thresholdSub3: '',
+      thresholdKickerReturn: 'ВОЗВРАЩЕНИЕ',
+      thresholdTextReturn: 'С возвращением в тишину…',
+      thresholdSubReturn: '',
     },
   };
   const CAPTION_FALLBACK_POOL = {
@@ -502,9 +526,14 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   const stage = document.querySelector('.stage');
   const videoSlotA = document.getElementById('slotA');
   const videoSlotB = document.getElementById('slotB');
-  const videoSlots = [videoSlotA, videoSlotB].filter(Boolean);
-  const frameHoldCanvas = document.getElementById('frameHoldCanvas');
-  const frameHoldCtx = frameHoldCanvas ? frameHoldCanvas.getContext('2d') : null;
+  const videoSlotC = document.getElementById('slotC');
+  const videoSlots = [videoSlotA, videoSlotB, videoSlotC].filter(Boolean);
+  const thresholdEl = document.getElementById('threshold-webgl');
+  let thresholdCanvas = document.getElementById('threshold-canvas');
+  const thresholdKickerEl = document.getElementById('threshold-kicker');
+  const thresholdTextEl = document.getElementById('threshold-text');
+  const thresholdSubEl = document.getElementById('threshold-sub');
+  const thresholdGuideEl = document.getElementById('threshold-guide');
   const cycleWhisperEl = document.getElementById('cycle-whisper');
   const cycleWhisperKickerEl = document.getElementById('cycle-whisper-kicker');
   const cycleWhisperTextEl = document.getElementById('cycle-whisper-text');
@@ -911,6 +940,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     } catch (_) {
     }
     applyLanguage();
+    thresholdRefreshLanguage();
   }
   if (langSwitch) {
     langSwitch.addEventListener('pointerdown', (event) => event.stopPropagation());
@@ -3323,10 +3353,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
 
     const category = activeCategory();
     if (category) pauseCategory(category);
-    for (const slot of videoSlots) abortSlotStream(slot);
+    for (const slot of videoSlots) releaseSlotVideo(slot);
     activeSlot = null;
     previousSlot = null;
-    clearFrameHold();
     pauseSound();
     stage.classList.add('is-finalizing');
     releaseWakeLock();
@@ -3433,16 +3462,18 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       updateSessionLockUI();
       return;
     }
-    gateOpen = true;
-    if (!startPathFirst()) {
-      gateOpen = false;
-      if (entryGate) {
-        entryGate.hidden = false;
-        entryGate.classList.remove('is-open');
-        entryGate.setAttribute('aria-hidden', 'false');
-      }
-      updateSessionLockUI();
-    }
+    // v123: a return through the two-hour door gets the short WebGL breath
+    // (2.5 s, no lesson) while the first three scenes warm, then the stream
+    // opens automatically without another swipe.
+    gateOpen = false;
+    thresholdEntered = false;
+    if (!sceneOrdinal) sceneOrdinal = 1;
+    activateAudioSession();
+    primeAudioGesture();
+    enableSoundscape();
+    switchSoundtrack(null, SLOW_FADE_MS);
+    warmThresholdScenes();
+    openThreshold({ mode: 'return' });
   }
   function attachLockSwipe(surface, onSwipe) {
     if (!surface) return;
@@ -3648,195 +3679,35 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     });
   }
   for (const slot of videoSlots) bindSlot(slot);
-  // v121: the active clip owns the start; the inactive slot may preload the next
-  // frame (preload="auto", no autoplay) as soon as the active one really plays.
-  // A canvas freeze-frame covers a swipe between the two.
-  // v121: a mobile carrier can black-hole a Range request; the browser then sits
-  // on the dead socket until its own timeout. 2.5 s is long enough for a real 4G
-  // start and short enough that the visitor never sees a minute of frozen frame.
-  const SLOT_START_GUARD_MS = 2500;
-  const SLOT_START_GUARD_RETRIES = 2;
+  // v123: three permanent <video> slots and no destructive resets. A swipe keeps
+  // the outgoing stream alive under the incoming layer; load() is only called
+  // when a slot does not already hold the needed source.
   const SLOT_FADE_MS = 280;
-  const FRAME_HOLD_CLEAR_MS = 340;
+  const SLOT_FADE_HOLD_MS = SLOT_FADE_MS + 40;
   let activeSlot = null;
   let previousSlot = null;
   let slotHandoffTimer = 0;
-  let nextFrameToken = 0;
-  let frameHoldDrawn = false;
-  let frameHoldVisible = false;
-  let frameHoldHideTimer = 0;
-  let frameHoldClearTimer = 0;
 
-  function otherSlot(slot) {
-    return videoSlots.find((item) => item !== slot) || null;
-  }
   function idleSlot() {
     return videoSlots.find((slot) => slot !== activeSlot && slot !== previousSlot) || null;
   }
-  // v120: one lightweight canvas keeps the last real video frame visible while
-  // the outgoing stream is torn down and the next one starts alone on the 4G
-  // link. It sits at z-index 1, under .is-current.is-ready (z-index 2).
-  function sizeFrameHoldCanvas() {
-    if (!frameHoldCanvas) return null;
-    const rect = stage.getBoundingClientRect();
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const width = Math.max(1, Math.round(rect.width * dpr));
-    const height = Math.max(1, Math.round(rect.height * dpr));
-    if (frameHoldCanvas.width !== width || frameHoldCanvas.height !== height) {
-      frameHoldCanvas.width = width;
-      frameHoldCanvas.height = height;
-    }
-    return { width, height };
-  }
-  function drawFrameToCanvas(video) {
-    if (!frameHoldCanvas || !frameHoldCtx || !video) return false;
-    if (video.readyState < 2 || !video.videoWidth || !video.videoHeight) return false;
-    const size = sizeFrameHoldCanvas();
-    if (!size) return false;
-    window.clearTimeout(frameHoldClearTimer);
-    const targetAspect = size.width / size.height;
-    const sourceAspect = video.videoWidth / video.videoHeight;
-    let sx = 0;
-    let sy = 0;
-    let sw = video.videoWidth;
-    let sh = video.videoHeight;
-    if (sourceAspect > targetAspect) {
-      sw = video.videoHeight * targetAspect;
-      sx = (video.videoWidth - sw) / 2;
-    } else {
-      sh = video.videoWidth / targetAspect;
-      sy = (video.videoHeight - sh) / 2;
-    }
-    try {
-      frameHoldCtx.drawImage(video, sx, sy, sw, sh, 0, 0, size.width, size.height);
-    } catch (_) {
-      return false;
-    }
-    return true;
-  }
-  function showFrameHold() {
-    if (!frameHoldCanvas) return;
-    window.clearTimeout(frameHoldHideTimer);
-    window.clearTimeout(frameHoldClearTimer);
-    frameHoldHideTimer = 0;
-    frameHoldCanvas.classList.add('is-visible');
-    frameHoldCanvas.setAttribute('aria-hidden', 'false');
-    frameHoldVisible = true;
-  }
-  function clearFrameHold() {
-    window.clearTimeout(frameHoldHideTimer);
-    window.clearTimeout(frameHoldClearTimer);
-    frameHoldHideTimer = 0;
-    frameHoldVisible = false;
-    frameHoldDrawn = false;
-    if (!frameHoldCanvas) return;
-    frameHoldCanvas.classList.remove('is-visible');
-    frameHoldCanvas.setAttribute('aria-hidden', 'true');
-    if (!frameHoldCtx) return;
-    frameHoldClearTimer = window.setTimeout(() => {
-      try { frameHoldCtx.clearRect(0, 0, frameHoldCanvas.width, frameHoldCanvas.height); } catch (_) {}
-    }, FRAME_HOLD_CLEAR_MS);
-  }
-  function releaseFrameHoldAfterReveal() {
-    window.clearTimeout(frameHoldHideTimer);
-    frameHoldHideTimer = window.setTimeout(clearFrameHold, SLOT_FADE_MS + 40);
-  }
-  function abortSlotStream(slot) {
-    if (!slot) return;
-    clearStartGuard(slot);
-    const clip = slot._clip;
-    if (clip && clip.el === slot) clip.el = null;
-    slot._clip = null;
-    slot._category = null;
-    slot._index = -1;
-    slot._srcKey = '';
-    slot.dataset.clipId = '';
-    slot.classList.remove('is-current', 'is-previous', 'is-ready', 'is-entry-frame');
-    try { slot.pause(); } catch (_) {}
-    try { slot.removeAttribute('src'); } catch (_) {}
-    slot.preload = 'none';
-    try { slot.load(); } catch (_) {}
-    if (activeSlot === slot) activeSlot = null;
-    if (previousSlot === slot) previousSlot = null;
-  }
-  // Called at the very beginning of a swipe: freeze the painted frame, then cut
-  // every stream that is not the incoming preloaded slot, so the new clip gets
-  // the whole 4G channel instead of sharing it with the outgoing video.
-  function beginSwipeFrameHold(keepSlot) {
-    const frozen = drawFrameToCanvas(activeSlot);
-    if (frozen) {
-      showFrameHold();
-      frameHoldDrawn = true;
-    } else {
-      // v121: if the outgoing slot has no decoded frame, do not keep showing the
-      // frame from a swipe two steps back. Clear the canvas so the visitor sees
-      // the real transition instead of stale imagery.
-      clearFrameHold();
-    }
-    for (const slot of videoSlots) {
-      if (slot === keepSlot && slot !== activeSlot) continue;
-      abortSlotStream(slot);
-    }
-    window.clearTimeout(slotHandoffTimer);
-    nextFrameToken += 1;
-    return frozen;
-  }
+  // v123: warm-up starts once the current clip is genuinely playing; there is no
+  // full-buffer gate and no timer that restarts the network request.
   function activeStreamPlayable() {
     return Boolean(activeSlot)
       && activeSlot.readyState >= 2
       && !activeSlot.paused
       && activeSlot.currentTime > 0.4;
   }
-  function clearStartGuard(slot) {
-    if (!slot) return;
-    if (slot._startGuardTimer) {
-      window.clearTimeout(slot._startGuardTimer);
-      slot._startGuardTimer = 0;
-    }
-  }
-  // v121: if the active slot has not reached readyState >= 2 within 2.5 s, the
-  // Range request is treated as hung and restarted on the spot (max 2 tries per
-  // frame), instead of waiting a minute for the carrier socket to time out.
-  function armStartGuard(slot, clip) {
-    if (!slot || !clip) return;
-    clearStartGuard(slot);
-    slot._startGuardTimer = window.setTimeout(() => {
-      slot._startGuardTimer = 0;
-      if (slot !== activeSlot || slot._clip !== clip) return;
-      if (slot.readyState >= 2 && !slot.paused) return;
-      const attempts = Number(clip._startGuardAttempts || 0);
-      if (attempts >= SLOT_START_GUARD_RETRIES) return;
-      clip._startGuardAttempts = attempts + 1;
-      restartHangingStream(slot, clip);
-    }, SLOT_START_GUARD_MS);
-  }
-  function restartHangingStream(slot, clip) {
-    if (!slot || !clip || slot !== activeSlot || slot._clip !== clip) return;
-    const source = playbackUrlFor(clip);
-    if (!source) return;
-    clearStartGuard(slot);
-    slot.classList.remove('is-ready');
-    slot._srcKey = '';
-    slot.preload = 'auto';
-    try { slot.pause(); } catch (_) {}
-    if (slot.getAttribute('src') !== source) slot.setAttribute('src', source);
-    // load() aborts the stalled resource fetch and re-runs resource selection,
-    // so the browser opens a fresh Range request on the current network.
-    try { slot.load(); } catch (_) {}
-    const promise = slot.play();
-    if (promise && typeof promise.catch === 'function') promise.catch(() => {});
-    armStartGuard(slot, clip);
-  }
   function releaseSlotVideo(slot) {
     if (!slot) return;
-    clearStartGuard(slot);
     const clip = slot._clip;
     slot._clip = null;
     slot._category = null;
     slot._index = -1;
     slot._srcKey = '';
     slot.dataset.clipId = '';
-    slot.classList.remove('is-current', 'is-previous', 'is-ready', 'is-entry-frame');
+    slot.classList.remove('is-current', 'is-previous', 'is-ready', 'is-entry-frame', 'is-warm');
     if (clip && clip.el === slot) clip.el = null;
     try { slot.pause(); } catch (_) {}
     try { slot.removeAttribute('src'); } catch (_) {}
@@ -3860,16 +3731,22 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const source = playbackUrlFor(clip);
     if (!source) return false;
     const key = (clip.id || '') + '|' + source;
-    const alreadyLoading = slot.readyState === 0 && slot.getAttribute('src') === source;
-    if (slot._srcKey !== key || (slot.readyState === 0 && !alreadyLoading)) {
+    slot.muted = true;
+    slot.defaultMuted = true;
+    slot.playsInline = true;
+    // v123: never call load() on a slot that is already loading the needed src.
+    // load() aborts the Range request, and on high-ping 4G the browser then starts
+    // the MP4 headers from zero (the old 2.5 s watchdog did this over and over).
+    const sameSource = slot.getAttribute('src') === source && slot.networkState !== 3;
+    if (!sameSource) {
       slot._srcKey = key;
       slot.classList.remove('is-ready');
       slot.preload = 'auto';
-      slot.muted = true;
-      slot.defaultMuted = true;
-      slot.playsInline = true;
       if (slot.getAttribute('src') !== source) slot.setAttribute('src', source);
       try { slot.load(); } catch (_) {}
+    } else if (slot.preload !== 'auto' || slot._srcKey !== key) {
+      slot._srcKey = key;
+      slot.preload = 'auto';
     }
     if (autoplay) {
       const promise = slot.play();
@@ -3880,8 +3757,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   function stageEntry(entry) {
     if (!entry || !entry.clip) return null;
     let slot = entry.clip.el && videoSlots.includes(entry.clip.el) ? entry.clip.el : null;
-    // v119: the underlay that still shows the last painted frame is off limits
-    // for staging. Reusing it blanked the only visible layer during a swipe.
+    // The layer still showing the outgoing frame is never reused for staging.
     if (slot === previousSlot) slot = null;
     if (!slot) slot = idleSlot();
     if (!slot) return null;
@@ -3889,9 +3765,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       ? entry.category.clips.findIndex((item) => item.id === entry.clip.id)
       : -1;
     if (slot._clip !== entry.clip) bindClipToSlot(slot, entry.category, entry.clip, index);
-    // v121: no currentTime / seekSlot() before loadeddata. Setting currentTime
-    // while the MP4 headers are still in flight makes Safari and Chrome fire an
-    // extra HTTP Range request and stall the start on 4G.
+    // v123: no currentTime / seek before loadeddata; the browser owns the buffer.
     loadSlotSource(slot, entry.clip, false);
     return slot;
   }
@@ -3903,62 +3777,52 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   function markSlotReady(slot) {
     if (!slot || !slot._clip) return;
-    // v122: the active slot may reveal as soon as the browser has decoded the
-    // first frame (loadeddata/canplay, readyState >= 2). Waiting for "playing"
-    // kept the entry curtain over a black stage while the first second of the
-    // MP4 was still buffering. Inactive preloaded slots just get .is-ready.
+    // v122: the active layer reveals on the first decoded frame, not on playing.
     if (slot.readyState < 2) return;
     slot.classList.add('is-ready');
-    if (slot === activeSlot) {
-      releaseFrameHoldAfterReveal();
-      finishSlotHandoff();
-    }
+    if (slot === activeSlot) scheduleSlotHandoff();
   }
   function markSlotPlaying(slot) {
     if (!slot || !slot._clip || slot !== activeSlot) return;
     if (slot.readyState < 2 || slot.paused) return;
-    clearStartGuard(slot);
-    slot._clip._startGuardAttempts = 0;
     slot.classList.add('is-ready');
     noteClipStarted(slot._clip);
-    // Crossfade 0 -> 1 over 280 ms, then drop the held canvas.
-    releaseFrameHoldAfterReveal();
+    scheduleSlotHandoff();
     window.setTimeout(warmNextFrame, 260);
-    finishSlotHandoff();
   }
-  function finishSlotHandoff() {
+  // v123: the outgoing slot keeps its live picture until the incoming frame has
+  // decoded (readyState >= 2) and the 280 ms crossfade is over. Then it is only
+  // paused: its buffer stays in the slot for a backward swipe, and no HTTP
+  // connection is aborted.
+  function scheduleSlotHandoff() {
     const leaving = previousSlot;
     if (!leaving || leaving === activeSlot) return;
-    // v119: the last painted frame may only leave once the new active slot has
-    // decoded its first frame (readyState >= 2 / loadeddata). A blind timer
-    // during a burst of swipes used to reveal the empty layer underneath.
     if (!slotHasFrame(activeSlot)) return;
     window.clearTimeout(slotHandoffTimer);
     slotHandoffTimer = window.setTimeout(() => {
-      if (leaving === activeSlot || previousSlot !== leaving) return;
+      if (previousSlot !== leaving || leaving === activeSlot) return;
       if (!slotHasFrame(activeSlot)) return;
       previousSlot = null;
       try { leaving.pause(); } catch (_) {}
       leaving.classList.remove('is-previous');
-      releaseSlotVideo(leaving);
       warmNextFrame();
-    }, SLOT_FADE_MS + 20);
+    }, SLOT_FADE_HOLD_MS);
+  }
+  function warmFrameAt(entry) {
+    if (!entry || !entry.clip) return false;
+    if (entry.clip.el && videoSlots.includes(entry.clip.el)) return false;
+    const slot = idleSlot();
+    if (!slot) return false;
+    const staged = stageEntry(entry);
+    if (staged) staged.classList.add('is-warm');
+    return Boolean(staged);
   }
   function warmNextFrame() {
     if (pathPos < 0 || !pathPlan.length) return;
-    // v121: no "buffered.end >= duration" gate. Mobile browsers buffer MP4 in
-    // chunks and do not pull the tail ahead of playback, so that condition never
-    // became true on 4G and the next frame was never warmed. Warming starts as
-    // soon as the active stream is genuinely playing (playing, readyState >= 2,
-    // currentTime > 0.4) and the inactive slot only preloads without autoplay.
     if (!activeStreamPlayable()) return;
-    nextFrameToken += 1;
-    const nextEntry = pathPlan[pathPos + 1];
-    if (!nextEntry || !nextEntry.clip) return;
-    if (nextEntry.clip.el && videoSlots.includes(nextEntry.clip.el)) return;
-    const slot = idleSlot();
-    if (!slot) return;
-    stageEntry(nextEntry);
+    warmFrameAt(pathPlan[pathPos + 1]);
+    // v123: the third slot warms pathPos + 2 once the outgoing frame is gone.
+    if (!previousSlot) warmFrameAt(pathPlan[pathPos + 2]);
   }
   function playClip(category, index) {
     if (!category || category.index !== state.index) return;
@@ -3968,40 +3832,33 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (selected.id) markVideoViewed(selected.id);
     category.activeIndex = index;
     let slot = selected.el && videoSlots.includes(selected.el) ? selected.el : null;
+    // Never take the underlay that is still showing the outgoing live frame.
+    if (slot === previousSlot) slot = null;
     if (!slot) slot = idleSlot();
-    if (!slot) slot = otherSlot(activeSlot) || videoSlots[0] || null;
+    if (!slot) slot = videoSlots.find((item) => item !== activeSlot) || videoSlots[0] || null;
     if (!slot) return;
-    // v120: any slot that is not the incoming target must stop downloading at
-    // once, otherwise a preloaded frame could still split the 4G channel.
-    for (const other of videoSlots) {
-      if (other === slot || other === activeSlot) continue;
-      abortSlotStream(other);
-    }
     const outgoing = activeSlot && activeSlot !== slot ? activeSlot : null;
     const sameClip = slot === activeSlot && slot._clip === selected;
-    if ((outgoing || (slot === activeSlot && !sameClip)) && !frameHoldVisible) {
-      // Navigation without an explicit swipe (forced scene, first entry): keep
-      // the frame alive on the canvas before the old source is dropped.
-      if (drawFrameToCanvas(outgoing || activeSlot)) {
-        showFrameHold();
-        frameHoldDrawn = true;
-      }
+    // A second swipe inside one crossfade must not stack a third picture: the
+    // older underlay is dropped immediately, the current one becomes previous.
+    if (previousSlot && previousSlot !== outgoing) {
+      window.clearTimeout(slotHandoffTimer);
+      try { previousSlot.pause(); } catch (_) {}
+      previousSlot.classList.remove('is-previous');
+      previousSlot = null;
+    }
+    window.clearTimeout(slotHandoffTimer);
+    if (outgoing) {
+      // v123: the outgoing clip stays visible and playing under the new layer.
+      // Its HTTP stream is never aborted; it is paused after the crossfade.
+      outgoing.classList.remove('is-current');
+      outgoing.classList.add('is-previous');
+      previousSlot = outgoing;
     }
     bindClipToSlot(slot, category, selected, index);
-    window.clearTimeout(slotHandoffTimer);
-    // v120: exactly one video may own the network. The outgoing slot is torn
-    // down immediately; the canvas covers the gap with its last painted frame.
-    if (outgoing) abortSlotStream(outgoing);
-    previousSlot = null;
-    slot.classList.remove('is-previous');
-    if (sameClip) {
-      clearFrameHold();
-    } else {
-      slot.classList.remove('is-ready');
-    }
+    slot.classList.remove('is-previous', 'is-warm');
+    if (!sameClip) slot.classList.remove('is-ready');
     slot.classList.add('is-current');
-    // v122: the very first frame of the session pops in without the 280 ms fade,
-    // so the entry curtain never uncovers a black stage.
     if (pathStarted) {
       slot.classList.remove('is-entry-frame');
     } else {
@@ -4010,20 +3867,19 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     slot.playbackRate = stage.classList.contains('is-held') ? SLOW_RATE : 1;
     activeSlot = slot;
     selected._startNoted = false;
-    selected._startGuardAttempts = 0;
     selected._startRequestedAt = performance.now();
-    loadSlotSource(slot, selected, true);
-    // v122: the entry-screen preload may already hold a decoded frame. Reveal the
-    // active slot in this same tick instead of waiting for a new loadeddata or
-    // "playing" event that will never fire again for an unchanged source. The src
-    // check keeps a stale frame of another clip from being revealed.
+    // v123: only reveal immediately when this slot already held the needed source
+    // (a warm frame). A cold slot must wait for its own loadeddata event, so the
+    // old picture is never flashed for one frame.
     const activeSource = playbackUrlFor(selected);
-    if (slot.readyState >= 2 && activeSource && slot.getAttribute('src') === activeSource) {
+    const hadSource = Boolean(activeSource)
+      && slot.getAttribute('src') === activeSource
+      && slot.networkState !== 3;
+    loadSlotSource(slot, selected, true);
+    if (hadSource && slot.readyState >= 2) {
       slot.classList.add('is-ready');
+      scheduleSlotHandoff();
     }
-    // v121: one 2.5 s start guard per clip; a hung mobile Range request is
-    // restarted instead of freezing the frame until the carrier gives up.
-    armStartGuard(slot, selected);
   }
   function mountClips(category) {
     const media = category.el.querySelector('.media');
@@ -4057,15 +3913,14 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   function handlePageHide(event) {
     if (event && event.persisted) return;
+    thresholdStopGl();
     releaseAllPlaybackVideos();
   }
   function releaseAllPlaybackVideos() {
     window.clearTimeout(slotHandoffTimer);
-    nextFrameToken += 1;
     for (const slot of videoSlots) releaseSlotVideo(slot);
     activeSlot = null;
     previousSlot = null;
-    clearFrameHold();
     if (finaleSessionVideo) {
       try {
         finaleSessionVideo.pause();
@@ -4255,7 +4110,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (!slides[targetIndex]) return;
     maybeRecordResonance();
     markInteraction();
-    setBreath(0);    window.clearTimeout(captionRevealTimer);
+    setBreath(0);
+    window.clearTimeout(captionRevealTimer);
     const fromIndex = state.index;
     const from = slides[fromIndex];
     const to = slides[targetIndex];
@@ -4488,9 +4344,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       pathPos -= 1;
       const previous = pathPlan[pathPos];
       if (!previous) return;
-      // v120: freeze the live frame and cut the old stream before the route
-      // change, so only the incoming clip uses the 4G link.
-      beginSwipeFrameHold(previous.clip.el);
+      // v123: no frame hold and no stream abort; playClip() keeps the outgoing
+      // frame live under the incoming one.
       sceneContext.stage = previous.stage;
       updateStageLabel(previous.stage);
       trackStageReached(previous.stage);
@@ -4526,9 +4381,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
     const entry = pathPlan[pathPos + 1];
     if (!entry) return;
-    // v120: freeze the live frame and cut every other stream at the exact swipe
-    // moment, keeping the preloaded target (if any) as the only live download.
-    beginSwipeFrameHold(entry.clip.el);
+    // v123: no frame hold and no stream abort; the outgoing slot stays visible
+    // under the incoming one until the new frame has decoded.
     pathPos += 1;
     trackFrameMilestone();
     sceneContext.stage = entry.stage;
@@ -4635,7 +4489,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
     stopHoldPulse();
     setActivePlaybackRate(1);
-    setBreath(0);    stage.classList.remove('is-held');
+    setBreath(0);
+    stage.classList.remove('is-held');
   }
   function isInterfaceTarget(target) {
     return Boolean(target && target.closest('button, a, .install-card, .install-card--ios, .lang-switch, .finale'));
@@ -4681,7 +4536,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const touch = event.touches[0];
     const dx = touch.clientX - touchOrigin.x;
     const dy = touch.clientY - touchOrigin.y;
-    if (event.cancelable) event.preventDefault();    if (Math.abs(dy) > Math.abs(dx)) {
+    if (event.cancelable) event.preventDefault();
+    if (Math.abs(dy) > Math.abs(dx)) {
       setBreath(clamp(-dy / 140, -1, 1));
     }
     if (Math.hypot(dx, dy) > 22 && !gesture.moved) {
@@ -4708,7 +4564,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const dx = changed.clientX - origin.x;
     const dy = changed.clientY - origin.y;
     const velocity = Math.abs(dy) / Math.max(1, now() - origin.t);
-    if (gesture && gesture.holding) stopHold();    setActivePlaybackRate(1);
+    if (gesture && gesture.holding) stopHold();
+    setActivePlaybackRate(1);
     setBreath(0);
     abortGesture();
     scheduleCaptionZero();
@@ -4717,7 +4574,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
   }, { passive: false });
   document.addEventListener('touchcancel', () => {
-    if (gesture && gesture.holding) stopHold();    scheduleCaptionZero();
+    if (gesture && gesture.holding) stopHold();
+    scheduleCaptionZero();
     touchOrigin = null;
     setActivePlaybackRate(1);
     setBreath(0);
@@ -4835,7 +4693,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       state.viewStart += now() - state.hiddenAt;
       state.hiddenAt = null;
       markInteraction();
-      setBreath(0);      setSceneElement(activeClip());
+      setBreath(0);
+      setSceneElement(activeClip());
       const category = activeCategory();
       if (category.clips.length) playClip(category, category.activeIndex);
       if (gateOpen) requestWakeLock();
@@ -4952,8 +4811,389 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   if (entryInstalledNote) entryInstalledNote.hidden = true;
   syncInstallButton();
+  // ---------------------------------------------------------------------------
+  // v123 WebGL threshold: a quiet-luxury prologue that teaches the two gestures
+  // while slotA/slotB/slotC preload the first three scenes. As soon as the video
+  // stream takes over, the rAF loop stops and the GL context is released.
+  // ---------------------------------------------------------------------------
+  const THRESHOLD_STEP_MS = [3500, 7000];
+  const THRESHOLD_COPY = [
+    { kicker: 'thresholdKicker1', text: 'thresholdText1', sub: 'thresholdSub1' },
+    { kicker: 'thresholdKicker2', text: 'thresholdText2', sub: 'thresholdSub2' },
+    { kicker: 'thresholdKicker3', text: 'thresholdText3', sub: 'thresholdSub3' },
+  ];
+  const THRESHOLD_RETURN_COPY = {
+    kicker: 'thresholdKickerReturn',
+    text: 'thresholdTextReturn',
+    sub: 'thresholdSubReturn',
+  };
+  const THRESHOLD_RETURN_MS = 2500;
+  const ONBOARDED_KEY = 'sanctuary-onboarded-v1';
+  const THRESHOLD_VERTEX = 'attribute vec2 a_pos;void main(){gl_Position=vec4(a_pos,0.0,1.0);}';
+  const THRESHOLD_FRAGMENT = `
+precision mediump float;
+uniform vec2 u_res;
+uniform float u_time;
+uniform vec2 u_touch;
+uniform float u_touch_active;
+uniform float u_hold;
+float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453123);}
+float noise(vec2 p){
+  vec2 i=floor(p); vec2 f=fract(p); vec2 u=f*f*(3.0-2.0*f);
+  return mix(mix(hash(i),hash(i+vec2(1.0,0.0)),u.x),
+             mix(hash(i+vec2(0.0,1.0)),hash(i+vec2(1.0,1.0)),u.x),u.y);
+}
+float fbm(vec2 p){ float v=0.0; float a=0.5; for(int i=0;i<5;i++){ v+=a*noise(p); p*=2.02; a*=0.5; } return v; }
+void main(){
+  vec2 uv=gl_FragCoord.xy/u_res;
+  float aspect=u_res.x/max(1.0,u_res.y);
+  vec2 p=vec2(uv.x*aspect,uv.y);
+  float t=u_time*mix(0.055,0.020,u_hold);
+  float n1=fbm(p*1.35+vec2(0.0,t));
+  float n2=fbm(p*2.60-vec2(t*0.75,0.0)+n1*0.65);
+  vec3 obsidian=vec3(0.0235,0.0235,0.0275);
+  vec3 champagne=vec3(0.839,0.780,0.698);
+  vec3 sage=vec3(0.494,0.561,0.510);
+  float fog=smoothstep(0.12,0.92,n2);
+  float silk=smoothstep(0.18,1.0,n1*n2*1.9);
+  vec3 col=obsidian;
+  col=mix(col,sage*0.22,fog*0.55);
+  col=mix(col,champagne*0.18,silk*0.60);
+  col+=champagne*0.022*(1.0-smoothstep(0.0,1.0,uv.y));
+  vec2 tp=vec2(u_touch.x*aspect,u_touch.y);
+  float glow=exp(-distance(p,tp)*5.0)*u_touch_active;
+  col+=champagne*0.20*glow;
+  col+=sage*0.05*glow;
+  col*=1.0-smoothstep(0.10,0.72,distance(uv,vec2(0.5)))*0.30;
+  col+=(hash(gl_FragCoord.xy+fract(u_time))-0.5)*0.010;
+  gl_FragColor=vec4(col,1.0);
+}`;
+  let thresholdOpen = false;
+  let thresholdEntered = false;
+  let thresholdStep = 0;
+  let thresholdTimers = [];
+  let thresholdRaf = 0;
+  let thresholdGl = null;
+  let thresholdGlState = null;
+  let threshold2d = null;
+  let thresholdStartedAt = 0;
+  let thresholdHold = 0;
+  let thresholdHoldTarget = 0;
+  let thresholdPointer = { x: 0.5, y: 0.5, active: 0, target: 0 };
+  let thresholdGestureStart = null;
+  let thresholdMode = 'first';
+  let thresholdAutoTimer = 0;
+
+  function thresholdReplaceCanvas() {
+    // A canvas whose WebGL context was released with WEBGL_lose_context cannot be
+    // reused safely for the next visit (the 2-hour return). Swap in a fresh one.
+    if (!thresholdEl || !thresholdCanvas || !thresholdCanvas.parentNode) return;
+    const fresh = document.createElement('canvas');
+    fresh.id = 'threshold-canvas';
+    fresh.setAttribute('aria-hidden', 'true');
+    thresholdCanvas.parentNode.replaceChild(fresh, thresholdCanvas);
+    thresholdCanvas = fresh;
+  }
+  function thresholdCompile(gl, type, source) {
+    const shader = gl.createShader(type);
+    if (!shader) return null;
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      gl.deleteShader(shader);
+      return null;
+    }
+    return shader;
+  }
+  function thresholdSizeCanvas() {
+    if (!thresholdCanvas) return null;
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    const width = Math.max(1, Math.round(thresholdCanvas.clientWidth * dpr));
+    const height = Math.max(1, Math.round(thresholdCanvas.clientHeight * dpr));
+    if (thresholdCanvas.width !== width || thresholdCanvas.height !== height) {
+      thresholdCanvas.width = width;
+      thresholdCanvas.height = height;
+    }
+    return { width, height };
+  }
+  function thresholdInitGl() {
+    if (!thresholdCanvas) return false;
+    thresholdSizeCanvas();
+    let gl = null;
+    try {
+      gl = thresholdCanvas.getContext('webgl', {
+        alpha: false,
+        antialias: false,
+        depth: false,
+        stencil: false,
+        preserveDrawingBuffer: false,
+        powerPreference: 'low-power',
+      }) || thresholdCanvas.getContext('experimental-webgl');
+    } catch (_) {
+      gl = null;
+    }
+    if (!gl) return false;
+    const vertex = thresholdCompile(gl, gl.VERTEX_SHADER, THRESHOLD_VERTEX);
+    const fragment = thresholdCompile(gl, gl.FRAGMENT_SHADER, THRESHOLD_FRAGMENT);
+    if (!vertex || !fragment) return false;
+    const program = gl.createProgram();
+    if (!program) return false;
+    gl.attachShader(program, vertex);
+    gl.attachShader(program, fragment);
+    gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return false;
+    gl.useProgram(program);
+    const buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+    const position = gl.getAttribLocation(program, 'a_pos');
+    gl.enableVertexAttribArray(position);
+    gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
+    thresholdGl = gl;
+    thresholdGlState = {
+      uRes: gl.getUniformLocation(program, 'u_res'),
+      uTime: gl.getUniformLocation(program, 'u_time'),
+      uTouch: gl.getUniformLocation(program, 'u_touch'),
+      uTouchActive: gl.getUniformLocation(program, 'u_touch_active'),
+      uHold: gl.getUniformLocation(program, 'u_hold'),
+    };
+    return true;
+  }
+  function thresholdInit2d() {
+    if (!thresholdCanvas) return false;
+    thresholdSizeCanvas();
+    try {
+      threshold2d = thresholdCanvas.getContext('2d');
+    } catch (_) {
+      threshold2d = null;
+    }
+    return Boolean(threshold2d);
+  }
+  function thresholdStopGl() {
+    if (thresholdRaf) {
+      window.cancelAnimationFrame(thresholdRaf);
+      thresholdRaf = 0;
+    }
+    if (thresholdGl) {
+      try {
+        const lose = thresholdGl.getExtension('WEBGL_lose_context');
+        if (lose) lose.loseContext();
+      } catch (_) {
+      }
+      thresholdGl = null;
+      thresholdGlState = null;
+    }
+    threshold2d = null;
+  }
+  function thresholdPause() {
+    if (thresholdRaf) {
+      window.cancelAnimationFrame(thresholdRaf);
+      thresholdRaf = 0;
+    }
+  }
+  function thresholdDrawFallback(time) {
+    const ctx = threshold2d;
+    const canvas = thresholdCanvas;
+    if (!ctx || !canvas) return;
+    const w = canvas.width;
+    const h = canvas.height;
+    ctx.fillStyle = '#060607';
+    ctx.fillRect(0, 0, w, h);
+    const drift = Math.sin(time * (0.05 - thresholdHold * 0.02));
+    const sage = ctx.createRadialGradient(
+      w * (0.5 + drift * 0.08), h * 0.38, 0,
+      w * 0.5, h * 0.38, Math.max(w, h) * 0.62
+    );
+    sage.addColorStop(0, 'rgba(126,143,130,0.16)');
+    sage.addColorStop(0.55, 'rgba(126,143,130,0.05)');
+    sage.addColorStop(1, 'rgba(6,6,7,0)');
+    ctx.fillStyle = sage;
+    ctx.fillRect(0, 0, w, h);
+    const warm = ctx.createRadialGradient(
+      w * (0.46 - drift * 0.06), h * 0.62, 0,
+      w * 0.5, h * 0.6, Math.max(w, h) * 0.55
+    );
+    warm.addColorStop(0, 'rgba(214,199,178,0.10)');
+    warm.addColorStop(1, 'rgba(6,6,7,0)');
+    ctx.fillStyle = warm;
+    ctx.fillRect(0, 0, w, h);
+    const glowX = thresholdPointer.x * w;
+    const glowY = (1 - thresholdPointer.y) * h;
+    const pearl = ctx.createRadialGradient(glowX, glowY, 0, glowX, glowY, Math.max(w, h) * 0.35);
+    pearl.addColorStop(0, `rgba(238,226,206,${0.16 * thresholdPointer.active})`);
+    pearl.addColorStop(1, 'rgba(6,6,7,0)');
+    ctx.fillStyle = pearl;
+    ctx.fillRect(0, 0, w, h);
+  }
+  function thresholdFrame(now) {
+    if (!thresholdOpen) return;
+    const time = Math.max(0, (now - thresholdStartedAt) / 1000);
+    thresholdHold += (thresholdHoldTarget - thresholdHold) * 0.05;
+    thresholdPointer.active += (thresholdPointer.target - thresholdPointer.active) * 0.10;
+    if (thresholdGl && thresholdGlState) {
+      thresholdSizeCanvas();
+      const gl = thresholdGl;
+      const state = thresholdGlState;
+      gl.viewport(0, 0, thresholdCanvas.width, thresholdCanvas.height);
+      gl.uniform2f(state.uRes, thresholdCanvas.width, thresholdCanvas.height);
+      gl.uniform1f(state.uTime, time);
+      gl.uniform2f(state.uTouch, thresholdPointer.x, thresholdPointer.y);
+      gl.uniform1f(state.uTouchActive, thresholdPointer.active);
+      gl.uniform1f(state.uHold, thresholdHold);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    } else {
+      thresholdDrawFallback(time);
+    }
+    thresholdRaf = window.requestAnimationFrame(thresholdFrame);
+  }
+  function thresholdSetPointer(clientX, clientY, active) {
+    thresholdPointer.x = Math.min(1, Math.max(0, clientX / Math.max(1, window.innerWidth)));
+    thresholdPointer.y = Math.min(1, Math.max(0, 1 - clientY / Math.max(1, window.innerHeight)));
+    thresholdPointer.target = active ? 1 : 0;
+  }
+  function hasOnboarded() {
+    try {
+      return window.localStorage.getItem(ONBOARDED_KEY) === '1';
+    } catch (_) {
+      return false;
+    }
+  }
+  function markOnboarded() {
+    try {
+      window.localStorage.setItem(ONBOARDED_KEY, '1');
+    } catch (_) {
+    }
+  }
+  function thresholdApplyCopy(copy, animate = true) {
+    if (!thresholdEl || !copy) return;
+    if (thresholdKickerEl) thresholdKickerEl.textContent = tr(copy.kicker);
+    if (thresholdTextEl) thresholdTextEl.textContent = tr(copy.text);
+    if (thresholdSubEl) thresholdSubEl.textContent = tr(copy.sub);
+    if (!animate) return;
+    thresholdEl.classList.remove('is-step-in');
+    void thresholdEl.offsetWidth;
+    thresholdEl.classList.add('is-step-in');
+  }
+  function thresholdApplyStep(step) {
+    thresholdStep = Math.max(0, Math.min(2, step));
+    const copy = THRESHOLD_COPY[thresholdStep];
+    if (!thresholdEl || !copy) return;
+    thresholdEl.dataset.step = String(thresholdStep + 1);
+    thresholdEl.classList.toggle('is-guide', thresholdStep === 2);
+    thresholdApplyCopy(copy);
+  }
+  function thresholdRefreshLanguage() {
+    if (!thresholdOpen) return;
+    if (thresholdMode === 'return') {
+      thresholdApplyCopy(THRESHOLD_RETURN_COPY, false);
+      return;
+    }
+    const copy = THRESHOLD_COPY[thresholdStep];
+    if (copy) thresholdApplyCopy(copy, false);
+  }
+  function warmThresholdScenes() {
+    if (!pathPlan.length) return;
+    for (let index = 0; index < Math.min(3, pathPlan.length); index += 1) {
+      const entry = pathPlan[index];
+      if (!entry || !entry.clip) continue;
+      if (entry.clip.el && videoSlots.includes(entry.clip.el)) continue;
+      stageEntry(entry);
+    }
+  }
+  function openThreshold(options) {
+    if (thresholdOpen || thresholdEntered) return;
+    const opts = options || {};
+    // v123: first visit gets the full three-step lesson; a returning visitor
+    // (or the 2-hour door) gets one short 2.5 s breath and an automatic entry.
+    thresholdMode = (opts.mode === 'return' || hasOnboarded()) ? 'return' : 'first';
+    if (!thresholdEl) {
+      enterVideoStream();
+      return;
+    }
+    thresholdOpen = true;
+    thresholdEntered = false;
+    thresholdStep = 0;
+    thresholdHold = 0;
+    thresholdHoldTarget = 0;
+    thresholdPointer = { x: 0.5, y: 0.5, active: 0, target: 0 };
+    thresholdEl.hidden = false;
+    thresholdEl.setAttribute('aria-hidden', 'false');
+    thresholdEl.dataset.mode = thresholdMode;
+    thresholdEl.classList.remove('is-leaving', 'is-guide', 'is-step-in');
+    window.requestAnimationFrame(() => thresholdEl.classList.add('is-visible'));
+    thresholdStartedAt = performance.now();
+    for (const timer of thresholdTimers) window.clearTimeout(timer);
+    thresholdTimers = [];
+    window.clearTimeout(thresholdAutoTimer);
+    thresholdAutoTimer = 0;
+    if (thresholdMode === 'return') {
+      thresholdEl.dataset.step = 'return';
+      thresholdApplyCopy(THRESHOLD_RETURN_COPY);
+      thresholdAutoTimer = window.setTimeout(
+        () => enterVideoStream({ auto: true }),
+        THRESHOLD_RETURN_MS
+      );
+    } else {
+      thresholdEl.dataset.step = '1';
+      thresholdApplyStep(0);
+      thresholdTimers = [
+        window.setTimeout(() => thresholdApplyStep(1), THRESHOLD_STEP_MS[0]),
+        window.setTimeout(() => thresholdApplyStep(2), THRESHOLD_STEP_MS[1]),
+      ];
+    }
+    warmThresholdScenes();
+    thresholdReplaceCanvas();
+    if (!thresholdInitGl()) thresholdInit2d();
+    thresholdRaf = window.requestAnimationFrame(thresholdFrame);
+    trackEvent('threshold_open', { mode: thresholdMode });
+  }
+  function enterVideoStream(options) {
+    const opts = options || {};
+    if (thresholdEntered) return;
+    if (thresholdOpen && thresholdMode === 'first' && thresholdStep < 2) return;
+    thresholdEntered = true;
+    thresholdOpen = false;
+    window.clearTimeout(thresholdAutoTimer);
+    thresholdAutoTimer = 0;
+    for (const timer of thresholdTimers) window.clearTimeout(timer);
+    thresholdTimers = [];
+    markOnboarded();
+    thresholdStopGl();
+    if (thresholdEl) {
+      thresholdEl.classList.remove('is-visible');
+      thresholdEl.classList.add('is-leaving');
+      thresholdEl.setAttribute('aria-hidden', 'true');
+      window.setTimeout(() => {
+        if (thresholdEl) {
+          thresholdEl.hidden = true;
+          thresholdEl.classList.remove('is-leaving', 'is-guide', 'is-step-in');
+        }
+      }, 850);
+    }
+    gateOpen = true;
+    isTransitioning = false;
+    resetViewClock();
+    if (!pathPlan.length) {
+      try { buildOrFillSessionPlan(); } catch (_) {}
+      if (pathPlan.length) warmThresholdScenes();
+    }
+    if (!pathPlan.length) {
+      forceNextAvailableScene('up');
+      return;
+    }
+    if (!sceneOrdinal) sceneOrdinal = 1;
+    try {
+      if (!startPathFirst()) pathStartPending = true;
+    } catch (error) {
+      pathStartPending = true;
+      console.error('[sanctuary] threshold start failed:', error);
+    }
+    if (pathStartPending) forceNextAvailableScene('up');
+    trackEvent('threshold_enter', { mode: thresholdMode, auto: Boolean(opts.auto) });
+  }
+
   function unlockExperience() {
-    if (gateOpen) return;
+    if (gateOpen || thresholdOpen || thresholdEntered) return;
     activateAudioSession();
     isTransitioning = false;
     window.setTimeout(() => { isTransitioning = false; }, 1000);
@@ -4961,7 +5201,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       updateSessionLockUI();
       return;
     }
-    gateOpen = true;
     isTransitioning = false;
     requestWakeLock();
     let completedBefore = false;
@@ -4984,13 +5223,11 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       }, 1100);
     }
     enableSoundscape();
+    switchSoundtrack(null, SLOW_FADE_MS);
     if (!sceneOrdinal) sceneOrdinal = 1;
-    try {
-      if (!startPathFirst()) pathStartPending = true;
-    } catch (error) {
-      pathStartPending = true;
-      console.error('[sanctuary] gate start failed:', error);
-    }
+    // v123: the video starts only after the three-step threshold. The entry
+    // gesture opens the prologue and the three slots begin preloading now.
+    openThreshold();
   }
   if (entryGate) {
     let entryStart = null;
@@ -5030,6 +5267,75 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   } else if (!entryGate) {
     gateOpen = true;
   }
+  if (thresholdEl) {
+    thresholdEl.addEventListener('pointerdown', (event) => {
+      thresholdHoldTarget = 1;
+      thresholdSetPointer(event.clientX, event.clientY, true);
+    }, { passive: true });
+    thresholdEl.addEventListener('pointermove', (event) => {
+      if (event.pointerType === 'mouse' && !event.buttons) return;
+      thresholdSetPointer(event.clientX, event.clientY, true);
+    }, { passive: true });
+    const releaseThresholdPointer = () => {
+      thresholdHoldTarget = 0;
+      thresholdPointer.target = 0;
+    };
+    thresholdEl.addEventListener('pointerup', releaseThresholdPointer, { passive: true });
+    thresholdEl.addEventListener('pointercancel', releaseThresholdPointer, { passive: true });
+    thresholdEl.addEventListener('pointerleave', releaseThresholdPointer, { passive: true });
+    thresholdEl.addEventListener('touchstart', (event) => {
+      if (event.touches.length !== 1) return;
+      const touch = event.touches[0];
+      thresholdGestureStart = { x: touch.clientX, y: touch.clientY };
+      thresholdHoldTarget = 1;
+      thresholdSetPointer(touch.clientX, touch.clientY, true);
+    }, { passive: true });
+    thresholdEl.addEventListener('touchmove', (event) => {
+      const touch = event.touches[0];
+      if (touch) thresholdSetPointer(touch.clientX, touch.clientY, true);
+    }, { passive: true });
+    thresholdEl.addEventListener('touchend', (event) => {
+      thresholdHoldTarget = 0;
+      thresholdPointer.target = 0;
+      if (!thresholdGestureStart) return;
+      const touch = event.changedTouches && event.changedTouches[0];
+      const start = thresholdGestureStart;
+      thresholdGestureStart = null;
+      if (!touch) return;
+      const dx = touch.clientX - start.x;
+      const dy = touch.clientY - start.y;
+      if (thresholdStep >= 2 && dy < -35 && Math.abs(dy) > Math.abs(dx)) {
+        event.preventDefault();
+        enterVideoStream();
+      }
+    }, { passive: false });
+    thresholdEl.addEventListener('wheel', (event) => {
+      if (event.deltaY >= 0) return;
+      event.preventDefault();
+      if (thresholdStep >= 2) enterVideoStream();
+    }, { passive: false });
+    if (thresholdGuideEl) {
+      thresholdGuideEl.addEventListener('click', (event) => {
+        event.stopPropagation();
+        if (thresholdStep >= 2) enterVideoStream();
+      });
+    }
+  }
+  window.addEventListener('keydown', (event) => {
+    if (!thresholdOpen) return;
+    if (event.key !== 'ArrowUp' && event.key !== 'Enter' && event.key !== ' ' && event.key !== 'Spacebar') return;
+    event.preventDefault();
+    if (thresholdStep >= 2) enterVideoStream();
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (!thresholdOpen) return;
+    if (document.hidden) {
+      thresholdPause();
+    } else if (!thresholdRaf) {
+      thresholdStartedAt = performance.now();
+      thresholdRaf = window.requestAnimationFrame(thresholdFrame);
+    }
+  });
   sessionLockAt = readSessionLock();
   returnAfterLock = Boolean(sessionLockAt && sessionLockAt <= Date.now());
   startSessionLockTicker();
@@ -5039,7 +5345,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   startPresenceCounter();
   initEntryAbstract();
   trackEvent('entry_view', { mode: isStandaloneMode() ? 'pwa' : 'browser', directApp: APP_ENTRY });
-  window.addEventListener('load', () => trackEvent('threshold_open'), { once: true });
   if (notifyReturnButton) {
     notifyReturnButton.addEventListener('click', () => {
       trackEvent('finale_action', { type: 'notify' });
@@ -5111,6 +5416,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         preparePlaybackWindow(pathPlan[0]);
         const first = pathPlan[0];
         prefetchCaption(first.clip, first.category, behaviorContext(), first.stage);
+        // v123: if the visitor already opened the threshold before the catalog
+        // finished, the three warm slots start downloading as soon as it is ready.
+        if (thresholdOpen) warmThresholdScenes();
       } catch (error) {
       }
       if (gateOpen && !pathStarted) {
@@ -5150,12 +5458,13 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
           key: String(slot._srcKey || '').slice(0, 46),
         }));
       },
-      get frameHold() {
+      get threshold() {
         return {
-          visible: Boolean(frameHoldCanvas && frameHoldCanvas.classList.contains('is-visible')),
-          drawn: frameHoldDrawn,
-          width: frameHoldCanvas ? frameHoldCanvas.width : 0,
-          height: frameHoldCanvas ? frameHoldCanvas.height : 0,
+          open: thresholdOpen,
+          entered: thresholdEntered,
+          mode: thresholdMode,
+          step: thresholdStep,
+          gl: Boolean(thresholdGl),
         };
       },
       get audio() {

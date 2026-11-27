@@ -8,8 +8,6 @@
    No filter, backdrop-filter or blend mode touches the video tag, .media or this layer. */
 .video-slots{position:absolute;inset:0;z-index:3;pointer-events:none;overflow:hidden}
 .video-slot{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;z-index:0;background:#070709;transition:opacity 280ms ease;pointer-events:none}
-.frame-hold{position:absolute;inset:0;width:100%;height:100%;z-index:1;opacity:0;pointer-events:none;transition:opacity 120ms linear;background:transparent}
-.frame-hold.is-visible{opacity:1}
 .video-slot.is-previous{opacity:1;z-index:1;transition:none}
 .video-slot.is-current{z-index:2}
 .video-slot.is-current:not(.is-ready){opacity:0;transition:none}
@@ -18,3 +16,196 @@
    fade from black when the entry curtain lifts. */
 .video-slot.is-entry-frame.is-current.is-ready{opacity:1;z-index:2;transition:none}
 .dream-atmosphere{position:absolute;inset:0;z-index:4;pointer-events:none;opacity:.55;background:radial-gradient(ellipse 90% 70% at 50% 42%,rgba(236,234,230,.03) 0%,transparent 62%),linear-gradient(180deg,rgba(6,6,7,.10) 0%,transparent 28%,transparent 72%,rgba(6,6,7,.20) 100%)}
+
+
+/* ==========================================================================
+   v123 — Quiet Luxury
+   One type system, three permanent video slots, hidden scrollbars, and the
+   WebGL threshold (3-step first visit, 2.5 s return breath).
+   ========================================================================== */
+
+/* ---------- one typography scale ---------- */
+.entry-title,
+.installed-title,
+.cycle-whisper-text,
+.caption-line,
+.stage .bottom-hud .caption-body,
+.finale-reflection,
+#threshold-text,
+#maintenance-screen h1,
+#maintenance-screen h2,
+.maintenance-inner h1,
+.maintenance-inner h2 {
+  font-family: var(--serif) !important;
+  font-weight: 300 !important;
+  letter-spacing: 0.018em !important;
+  color: #F5F5F0 !important;
+  font-style: normal !important;
+  text-transform: none !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+.entry-sub,
+.installed-sub,
+.entry-install-hint,
+.entry-lock-hint,
+.finale-door-note,
+.finale-art-note,
+.finale-notify,
+#threshold-sub,
+.maintenance-inner p {
+  font-family: var(--sans) !important;
+  font-weight: 300 !important;
+  letter-spacing: 0.01em !important;
+  color: var(--silk-dim) !important;
+  font-style: normal !important;
+  text-transform: none !important;
+}
+.entry-kicker,
+.entry-lock-kicker,
+.entry-lock-time,
+.caption-kicker,
+.cycle-whisper-kicker,
+.finale-countdown,
+.lang-switch-btn,
+.lang-switch-sep,
+.guide-line,
+.entry-gesture-guide .guide-line,
+#threshold-kicker,
+.maintenance-kicker {
+  font-family: var(--mono) !important;
+  font-weight: 300 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.24em !important;
+  color: var(--champagne) !important;
+  font-style: normal !important;
+}
+
+/* ---------- no scrollbars anywhere in the experience ---------- */
+html,
+body,
+.entry,
+.finale,
+#threshold-webgl {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+.entry::-webkit-scrollbar,
+.finale::-webkit-scrollbar,
+#threshold-webgl::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* ---------- v123 stage: three persistent slots, live outgoing frame ---------- */
+.video-slot.is-warm { opacity: 0; }
+
+/* ---------- WebGL threshold ---------- */
+#threshold-webgl {
+  position: fixed;
+  inset: 0;
+  z-index: 24;
+  overflow: hidden;
+  background: #060607;
+  opacity: 0;
+  transition: opacity 850ms var(--organic);
+  touch-action: none;
+  cursor: pointer;
+}
+#threshold-webgl[hidden] { display: none; }
+#threshold-webgl.is-visible { opacity: 1; }
+#threshold-webgl.is-leaving { opacity: 0; }
+#threshold-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.threshold-inner {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(18px, 4vh, 34px);
+  padding: max(28px, env(safe-area-inset-top)) 8vw max(32px, env(safe-area-inset-bottom));
+  text-align: center;
+  pointer-events: none;
+}
+.threshold-rule {
+  width: min(52vw, 240px);
+  height: 0.5px;
+  background: linear-gradient(90deg, transparent, #D6C7B2, transparent);
+  opacity: 0.82;
+}
+.threshold-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(14px, 2.6vh, 22px);
+  max-width: min(86vw, 420px);
+}
+#threshold-kicker {
+  margin: 0;
+  font-size: 9px;
+  line-height: 1.5;
+}
+#threshold-text {
+  margin: 0;
+  font-size: clamp(1.55rem, 6vw, 2.2rem);
+  line-height: 1.34;
+  text-wrap: balance;
+}
+#threshold-sub {
+  margin: 0;
+  max-width: 26rem;
+  font-size: clamp(12.5px, 3.4vw, 14.5px);
+  line-height: 1.65;
+}
+#threshold-sub:empty { display: none; }
+#threshold-webgl.is-step-in .threshold-copy { animation: thresholdCopyIn 900ms var(--organic) both; }
+@keyframes thresholdCopyIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+#threshold-webgl .guide-thread {
+  position: relative;
+  display: block;
+  width: 0.5px;
+  height: clamp(46px, 10vh, 86px);
+  background: linear-gradient(180deg, transparent, #D6C7B2 35%, #D6C7B2 65%, transparent);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 900ms var(--organic), transform 900ms var(--organic);
+  pointer-events: auto;
+  cursor: pointer;
+}
+#threshold-webgl .guide-thread i {
+  position: absolute;
+  left: 50%;
+  top: -3px;
+  width: 5px;
+  height: 5px;
+  margin-left: -2.5px;
+  border-radius: 50%;
+  background: #D6C7B2;
+  box-shadow: 0 0 12px rgba(214, 199, 178, 0.5);
+  animation: thresholdThread 2.8s var(--organic) infinite;
+}
+#threshold-webgl.is-guide .guide-thread { opacity: 0.9; transform: translateY(0); }
+#threshold-webgl[data-mode="return"] .guide-thread { display: none; }
+#threshold-webgl[data-mode="return"] .threshold-copy { gap: clamp(10px, 2vh, 16px); }
+@keyframes thresholdThread {
+  0% { transform: translateY(0); opacity: 0; }
+  35% { opacity: 1; }
+  100% { transform: translateY(clamp(36px, 8vh, 72px)); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #threshold-webgl.is-step-in .threshold-copy { animation: none; }
+  #threshold-webgl .guide-thread i { animation: none; }
+}
