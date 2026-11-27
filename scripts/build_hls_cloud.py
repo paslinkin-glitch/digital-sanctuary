@@ -134,14 +134,22 @@ def encode_hls(source, clip_dir, variant, height, bitrate):
 
 
 def build_poster(source, out):
-    for quality in (45, 40, 35, 30, 25, 20, 15, 12, 10, 8, 6, 5, 4, 3, 2):
-        run([
-            "ffmpeg", "-y", "-v", "error", "-ss", "0.8", "-i", str(source), "-frames:v", "1",
-            "-vf", "scale=540:960:flags=lanczos", "-c:v", "libwebp", "-quality", str(quality), str(out),
-        ])
-        if 15000 <= out.stat().st_size <= 25000:
-            return
-    raise RuntimeError(f"poster size out of range: {out}")
+    png = out.with_suffix(".png")
+    run([
+        "ffmpeg", "-y", "-v", "error", "-ss", "0.8", "-i", str(source), "-frames:v", "1",
+        "-vf", "scale=540:960:flags=lanczos", str(png),
+    ])
+    try:
+        run(["cwebp", "-quiet", "-size", "20000", str(png), "-o", str(out)])
+        if not (15000 <= out.stat().st_size <= 25000):
+            run(["cwebp", "-quiet", "-size", "18000", str(png), "-o", str(out)])
+        if not (15000 <= out.stat().st_size <= 25000):
+            raise RuntimeError(f"poster size out of range: {out.stat().st_size}")
+    finally:
+        try:
+            png.unlink()
+        except Exception:
+            pass
 
 
 def s3_client():
