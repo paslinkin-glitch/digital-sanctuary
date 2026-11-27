@@ -2596,7 +2596,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         if (next.clip.urlHls) startHlsForClip(next.clip, false);
         else next.clip.el.preload = 'auto';
       }
-    }, 1200);
+    }, 0);
   }
   function noteClipStarted(clip) {
     if (!clip || clip._startNoted) return;
@@ -3374,7 +3374,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     try { localStorage.setItem(COMPLETED_KEY, '1'); } catch (_) {}
     stopHoldPulse();
     if (gesture) stopHold();
-    clearFramePlaceholder();
+
     const category = activeCategory();
     if (category) pauseCategory(category);
     pauseSound();
@@ -3668,7 +3668,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (isVideoSeen(entry.clip.id)) sessionUsedVideoIds.delete(entry.clip.id);
     category.freshIndex = index;
     preparePlaybackWindow(entry, pathPlan[1]);
-    showFramePlaceholder(null, category, entry.clip);
+
     const clipIndex = playCategory(category);
     if (clipIndex === null) return false;
     pathPos = 0;
@@ -3716,43 +3716,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       const promise = video.play();
       if (promise && typeof promise.catch === 'function') promise.catch(() => {});
     }, 300);
-  }
-  const posterPreloads = new Map();
-  function preloadPoster(clip) {
-    if (!clip) return Promise.resolve();
-    if (clip._posterPromise) return clip._posterPromise;
-    const url = clip.urlPoster;
-    if (!url) return Promise.resolve();
-    const cached = posterPreloads.get(url);
-    if (cached && cached.promise) return cached.promise;
-    const image = new Image();
-    image.decoding = 'async';
-    const promise = new Promise((resolve) => {
-      let settled = false;
-      const finish = () => {
-        if (settled) return;
-        settled = true;
-        clip._posterReady = true;
-        resolve();
-      };
-      image.onload = () => {
-        clip._posterLoaded = true;
-        finish();
-      };
-      image.onerror = () => {
-        clip._posterFailed = true;
-        finish();
-      };
-      window.setTimeout(finish, 250);
-    });
-    posterPreloads.set(url, { image, promise });
-    if (posterPreloads.size > 6) {
-      const oldestUrl = posterPreloads.keys().next().value;
-      posterPreloads.delete(oldestUrl);
-    }
-    clip._posterPromise = promise;
-    image.src = url;
-    return promise;
   }
   function destroyHls(video) {
     if (!video) return;
@@ -3828,7 +3791,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       if (!slot._clip) return;
       slot.classList.add('is-ready');
       if (active()) {
-        clearFramePlaceholder();
+
         noteClipStarted(slot._clip);
       }
     });
@@ -3836,7 +3799,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       if (!slot._clip) return;
       if (slot.readyState >= 2) slot.classList.add('is-ready');
       if (active()) {
-        clearFramePlaceholder();
+
         noteClipStarted(slot._clip);
       }
     });
@@ -3876,7 +3839,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     slot._category = category;
     slot._index = index;
     slot.dataset.clipId = clip.id || '';
-    slot.poster = clip.urlPoster || '';
+
     slot.className = 'clip video-slot';
     slot.preload = 'none';
     slot.muted = true;
@@ -3916,7 +3879,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     try {
       video.pause();
       video.removeAttribute('src');
-      video.removeAttribute('poster');
+
       video.preload = 'none';
       video.load();
     } catch (_) {
@@ -3956,7 +3919,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       const media = category.el.querySelector('.media');
       if (!media) continue;
       media.querySelectorAll('video').forEach((video) => {
-        if (video.classList.contains('frame-placeholder')) return;
+
         if (!keepIds.has(video.dataset.clipId)) {
           disposeVideoElement(video);
         }
@@ -3982,7 +3945,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       } catch (_) {
       }
     }
-    posterPreloads.clear();
+
   }
   function preparePlaybackWindow(currentEntry, nextEntry) {
     const base = pathPos < 0 ? 0 : pathPos;
@@ -4001,13 +3964,13 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       ensureClipVideo(current.category, current.clip);
       if (current.clip.el) {
         current.clip.el.preload = 'auto';
-        preloadPoster(current.clip);
+
       }
     }
     if (next && next.clip) {
       ensureClipVideo(next.category, next.clip);
       if (next.clip.el) next.clip.el.preload = 'none';
-      preloadPoster(next.clip);
+
     }
   }
 
@@ -4053,7 +4016,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         title_ru: String(item.title_ru || ''),
         url: item.urlHls,
         urlHls: item.urlHls,
-        urlPoster: String(item.urlPoster || ''),
         tier: 'hls',
         duration: Number(item.duration) || 12,
         description: String(item.description || archetype),
@@ -4173,7 +4135,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         url: item.url,
         url720: String(item.url720 || ''),
         url480: String(item.url480 || ''),
-        urlPoster: String(item.urlPoster || ''),
         tier,
         duration: Number.isFinite(Number(item.duration)) ? Number(item.duration) : 10,
         description: archetype,
@@ -4267,7 +4228,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
             video.preload = 'auto';
             if (sourceChanged || video.readyState === 0) video.load();
           }
-          if (video.readyState >= 4) clearFramePlaceholder();
+
           video.playbackRate = stage.classList.contains('is-held') ? SLOW_RATE : 1;
           clip.lastTime = video.currentTime;
           const promise = video.play();
@@ -4285,16 +4246,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
           window.clearTimeout(clip._preloadTimer);
           clip._preloadTimer = 0;
         }
-        const posterPromise = preloadPoster(clip);
-        if (clip._posterReady) {
-          startCurrent();
-        } else {
-          video.preload = 'none';
-          Promise.race([
-            posterPromise,
-            new Promise((resolve) => window.setTimeout(resolve, 250)),
-          ]).then(startCurrent);
-        }
+
+        startCurrent();
         if (clip._slowFrameTimer) window.clearTimeout(clip._slowFrameTimer);
         clip._slowFrameTimer = window.setTimeout(() => {
           clip._slowFrameTimer = 0;
@@ -4340,29 +4293,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   function fadeDurationFor(viewedMs, speed) {
     const impulsive = speed >= IMPULSIVE_SPEED;
     return viewedMs < QUICK_VIEW_MS || impulsive ? QUICK_FADE_MS : SLOW_FADE_MS;
-  }
-  let framePlaceholder = null;
-  function clearFramePlaceholder() {
-    if (!framePlaceholder) return;
-    const ghost = framePlaceholder;
-    framePlaceholder = null;
-    ghost.style.opacity = '0';
-    window.setTimeout(() => ghost.remove(), 450);
-  }
-  function showFramePlaceholder(fromVideo, targetCategory, targetClip) {
-    clearFramePlaceholder();
-    if (!targetCategory || !targetClip) return;
-    const media = targetCategory.el && targetCategory.el.querySelector('.media');
-    if (!media) return;
-    try {
-      const ghost = document.createElement('div');
-      ghost.className = 'frame-placeholder';
-      const posterUrl = targetClip.urlPoster || '';
-      ghost.style.cssText = 'position:absolute;inset:0;background-color:#070709;background-size:cover;background-position:center;opacity:1;pointer-events:none;z-index:0;transition:opacity .65s ease';
-      if (posterUrl) ghost.style.backgroundImage = `url("${posterUrl}")`;
-      media.insertBefore(ghost, media.firstChild);
-      framePlaceholder = ghost;
-    } catch (_) {}
   }
   function navigateTo(targetIndex, direction, fadeMs, forcedClipId, sceneContext) {
     if (targetIndex === null || targetIndex === undefined) return;
@@ -4416,7 +4346,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
     updateStageLabel(sceneStage);
     updateSessionProgress();
-    showFramePlaceholder(fromVideo, category, targetClip);
+
     preparePlaybackWindow(planned, pathPlan[pathPos + 1]);
     playCategory(category);
     activateCaption(category, activeClip(), behavior, allowed, sceneStage, sceneContext || {});
