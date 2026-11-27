@@ -2,23 +2,22 @@
 @keyframes likePop{0%{transform:scale(.86)}55%{transform:scale(1.12)}100%{transform:scale(1)}}.double-tap-heart{position:fixed;left:0;top:0;z-index:32;width:82px;height:82px;margin:-41px 0 0 -41px;color:#E6B88A;pointer-events:none;opacity:0;transform:translate3d(-100px,-100px,0) scale(.4);filter:drop-shadow(0 0 14px rgba(230,184,138,.45))}.double-tap-heart svg{width:100%;height:100%;fill:currentColor}.double-tap-heart.is-active{animation:doubleHeart .9s cubic-bezier(.22,1,.36,1) both}
 @keyframes doubleHeart{0%{opacity:0;transform:translate3d(var(--heart-x,-100px),var(--heart-y,-100px),0) scale(.4)}18%{opacity:1;transform:translate3d(var(--heart-x,-100px),var(--heart-y,-100px),0) scale(1.12)}55%{opacity:.95;transform:translate3d(var(--heart-x,-100px),var(--heart-y,-100px),0) scale(.98)}100%{opacity:0;transform:translate3d(var(--heart-x,-100px),var(--heart-y,-100px),0) scale(1.05)}}
 
-/* v124: player.js owns this layer. The WebP poster (z-index 1) paints the
-   incoming frame in the same tick as the swipe, so the two <video> layers
-   (z-index 2) only ever fade in on top of a picture — the screen is never
-   black while an MP4 buffers. No filter, backdrop-filter or blend mode
-   touches these nodes. */
-.video-slots{position:absolute;inset:0;z-index:3;pointer-events:none;overflow:hidden}
-.player-poster{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;pointer-events:none;background:#070709;transform:translateZ(0)}
-.player-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:2;opacity:0;background:transparent;transition:opacity 240ms ease;pointer-events:none;transform:translateZ(0)}
-.player-video.is-visible{opacity:1}
+/* v126: player.js owns two <video> layers and no still image. The outgoing
+   slot stays at z-index 1 while the incoming one fades in at z-index 2, so the
+   handoff never exposes an empty frame. No filter, backdrop-filter or blend
+   mode touches these nodes. */
+.video-slots{position:absolute;inset:0;z-index:3;pointer-events:none;overflow:hidden;background:#070709}
+.player-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;opacity:0;background:transparent;transition:opacity 240ms ease;pointer-events:none;transform:translateZ(0)}
+.player-video.is-current{opacity:1;z-index:2}
+.player-video.is-outgoing{opacity:1;z-index:1}
 @media (prefers-reduced-motion:reduce){.player-video{transition:none}}
 .dream-atmosphere{position:absolute;inset:0;z-index:4;pointer-events:none;opacity:.55;background:radial-gradient(ellipse 90% 70% at 50% 42%,rgba(236,234,230,.03) 0%,transparent 62%),linear-gradient(180deg,rgba(6,6,7,.10) 0%,transparent 28%,transparent 72%,rgba(6,6,7,.20) 100%)}
 
 
 /* ==========================================================================
-   v124 — Quiet Luxury
-   One type system, one poster plus two video layers owned by player.js, hidden
-   scrollbars, and the WebGL threshold (3-step first visit, 2.5 s return breath).
+   v126 — Quiet Luxury
+   One type system, two video layers owned by player.js and a direct entry into
+   the stream: no still posters, no WebGL prologue, no hidden scrollbars.
    ========================================================================== */
 
 /* ---------- one typography scale ---------- */
@@ -28,7 +27,6 @@
 .caption-line,
 .stage .bottom-hud .caption-body,
 .finale-reflection,
-#threshold-text,
 #maintenance-screen h1,
 #maintenance-screen h2,
 .maintenance-inner h1,
@@ -48,7 +46,6 @@
 .finale-door-note,
 .finale-art-note,
 .finale-notify,
-#threshold-sub,
 .maintenance-inner p {
   font-family: var(--sans) !important;
   font-weight: 300 !important;
@@ -67,7 +64,6 @@
 .lang-switch-sep,
 .guide-line,
 .entry-gesture-guide .guide-line,
-#threshold-kicker,
 .maintenance-kicker {
   font-family: var(--mono) !important;
   font-weight: 300 !important;
@@ -81,126 +77,19 @@
 html,
 body,
 .entry,
-.finale,
-#threshold-webgl {
+.finale {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
 html::-webkit-scrollbar,
 body::-webkit-scrollbar,
 .entry::-webkit-scrollbar,
-.finale::-webkit-scrollbar,
-#threshold-webgl::-webkit-scrollbar {
+.finale::-webkit-scrollbar {
   display: none;
   width: 0;
   height: 0;
 }
 
 
-/* ---------- WebGL threshold ---------- */
-#threshold-webgl {
-  position: fixed;
-  inset: 0;
-  z-index: 24;
-  overflow: hidden;
-  background: #060607;
-  opacity: 0;
-  transition: opacity 850ms var(--organic);
-  touch-action: none;
-  cursor: pointer;
-}
-#threshold-webgl[hidden] { display: none; }
-#threshold-webgl.is-visible { opacity: 1; }
-#threshold-webgl.is-leaving { opacity: 0; }
-#threshold-canvas {
-  position: absolute;
-  inset: 0;
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-.threshold-inner {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: clamp(18px, 4vh, 34px);
-  padding: max(28px, env(safe-area-inset-top)) 8vw max(32px, env(safe-area-inset-bottom));
-  text-align: center;
-  pointer-events: none;
-}
-.threshold-rule {
-  width: min(52vw, 240px);
-  height: 0.5px;
-  background: linear-gradient(90deg, transparent, #D6C7B2, transparent);
-  opacity: 0.82;
-}
-.threshold-copy {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: clamp(14px, 2.6vh, 22px);
-  max-width: min(86vw, 420px);
-}
-#threshold-kicker {
-  margin: 0;
-  font-size: 9px;
-  line-height: 1.5;
-}
-#threshold-text {
-  margin: 0;
-  font-size: clamp(1.55rem, 6vw, 2.2rem);
-  line-height: 1.34;
-  text-wrap: balance;
-}
-#threshold-sub {
-  margin: 0;
-  max-width: 26rem;
-  font-size: clamp(12.5px, 3.4vw, 14.5px);
-  line-height: 1.65;
-}
-#threshold-sub:empty { display: none; }
-#threshold-webgl.is-step-in .threshold-copy { animation: thresholdCopyIn 900ms var(--organic) both; }
-@keyframes thresholdCopyIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-#threshold-webgl .guide-thread {
-  position: relative;
-  display: block;
-  width: 0.5px;
-  height: clamp(46px, 10vh, 86px);
-  background: linear-gradient(180deg, transparent, #D6C7B2 35%, #D6C7B2 65%, transparent);
-  opacity: 0;
-  transform: translateY(8px);
-  transition: opacity 900ms var(--organic), transform 900ms var(--organic);
-  pointer-events: auto;
-  cursor: pointer;
-}
-#threshold-webgl .guide-thread i {
-  position: absolute;
-  left: 50%;
-  top: -3px;
-  width: 5px;
-  height: 5px;
-  margin-left: -2.5px;
-  border-radius: 50%;
-  background: #D6C7B2;
-  box-shadow: 0 0 12px rgba(214, 199, 178, 0.5);
-  animation: thresholdThread 2.8s var(--organic) infinite;
-}
-#threshold-webgl.is-guide .guide-thread { opacity: 0.9; transform: translateY(0); }
-#threshold-webgl[data-mode="return"] .guide-thread { display: none; }
-#threshold-webgl[data-mode="return"] .threshold-copy { gap: clamp(10px, 2vh, 16px); }
-@keyframes thresholdThread {
-  0% { transform: translateY(0); opacity: 0; }
-  35% { opacity: 1; }
-  100% { transform: translateY(clamp(36px, 8vh, 72px)); opacity: 0; }
-}
-@media (prefers-reduced-motion: reduce) {
-  #threshold-webgl.is-step-in .threshold-copy { animation: none; }
-  #threshold-webgl .guide-thread i { animation: none; }
-}
+/* ---------- direct entry, no prologue ---------- */
+

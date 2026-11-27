@@ -142,18 +142,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       giftSub: 'Nothing to do — just watch.',
       giftShareText: 'Someone sent you 3 minutes of silence. Just watch.',
       giftShareTitle: 'Silence for you',
-      thresholdKicker1: 'ABOUT THIS SPACE',
-      thresholdText1: 'A quiet sanctuary before sleep — 30 dreams without hurry to let thoughts settle',
-      thresholdSub1: 'Nothing to judge or decide — just watch',
-      thresholdKicker2: 'RHYTHM OF SLOWNESS',
-      thresholdText2: 'Touch and hold the screen — time and sound will slow down',
-      thresholdSub2: 'Try it now: light and mist respond to your touch',
-      thresholdKicker3: 'ENTER THE STREAM',
-      thresholdText3: 'Swipe up to move through frames. Pull up whenever you are ready',
-      thresholdSub3: '',
-      thresholdKickerReturn: 'RETURN',
-      thresholdTextReturn: 'Welcome back to silence…',
-      thresholdSubReturn: '',
     },
     ru: {
       docTitle: 'Quiet Space — когда мысли не останавливаются',
@@ -192,18 +180,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       giftSub: 'Ничего не нужно делать — просто смотри.',
       giftShareText: 'Тебе передали 3 минуты тишины. Просто смотри.',
       giftShareTitle: 'Тишина для тебя',
-      thresholdKicker1: 'О ПРОСТРАНСТВЕ',
-      thresholdText1: 'Тихое убежище перед сном — 30 снов без спешки, чтобы остановить поток мыслей',
-      thresholdSub1: 'Ничего не нужно оценивать и решать — просто смотри',
-      thresholdKicker2: 'РИТМ ЗАМЕДЛЕНИЯ',
-      thresholdText2: 'Коснись и удерживай экран — время и звук замедлятся',
-      thresholdSub2: 'Попробуй прямо сейчас: свет и дымка откликнутся на прикосновение',
-      thresholdKicker3: 'ВХОД В ПОТОК',
-      thresholdText3: 'Листай вверх, чтобы переходить дальше. Потяни экран, когда будешь готов',
-      thresholdSub3: '',
-      thresholdKickerReturn: 'ВОЗВРАЩЕНИЕ',
-      thresholdTextReturn: 'С возвращением в тишину…',
-      thresholdSubReturn: '',
     },
   };
   const CAPTION_FALLBACK_POOL = {
@@ -526,12 +502,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   const stage = document.querySelector('.stage');
   // v124: the video layer lives entirely in player.js (window.SanctuaryPlayer).
   // app.js never touches a <video> element for the streamed scenes any more.
-  const thresholdEl = document.getElementById('threshold-webgl');
-  let thresholdCanvas = document.getElementById('threshold-canvas');
-  const thresholdKickerEl = document.getElementById('threshold-kicker');
-  const thresholdTextEl = document.getElementById('threshold-text');
-  const thresholdSubEl = document.getElementById('threshold-sub');
-  const thresholdGuideEl = document.getElementById('threshold-guide');
   const cycleWhisperEl = document.getElementById('cycle-whisper');
   const cycleWhisperKickerEl = document.getElementById('cycle-whisper-kicker');
   const cycleWhisperTextEl = document.getElementById('cycle-whisper-text');
@@ -938,7 +908,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     } catch (_) {
     }
     applyLanguage();
-    thresholdRefreshLanguage();
   }
   if (langSwitch) {
     langSwitch.addEventListener('pointerdown', (event) => event.stopPropagation());
@@ -3456,18 +3425,13 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       updateSessionLockUI();
       return;
     }
-    // v123: a return through the two-hour door gets the short WebGL breath
-    // (2.5 s, no lesson) while the first three scenes warm, then the stream
-    // opens automatically without another swipe.
-    gateOpen = false;
-    thresholdEntered = false;
+    // v126: a return through the two-hour door opens the stream directly.
     if (!sceneOrdinal) sceneOrdinal = 1;
     activateAudioSession();
     primeAudioGesture();
     enableSoundscape();
     switchSoundtrack(null, SLOW_FADE_MS);
-    warmThresholdScenes();
-    openThreshold({ mode: 'return' });
+    openVideoLounge();
   }
   function attachLockSwipe(surface, onSwipe) {
     if (!surface) return;
@@ -3610,16 +3574,11 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   // v124: every streamed scene is owned by the isolated player module. app.js
   // only decides which frame is on screen and which frame warms up behind it.
   function nextPlannedClip() {
-    if (pathPos < 0 || !pathPlan.length) return null;
-    const entry = pathPlan[pathPos + 1];
+    if (!pathPlan.length) return null;
+    // pathPos is still -1 while the very first frame is presented, so the
+    // warm-up slot must read pathPlan[1], not the frame already on screen.
+    const entry = pathPlan[pathPos >= 0 ? pathPos + 1 : 1];
     return entry && entry.clip ? entry.clip : null;
-  }
-  function preloadPoster(clip) {
-    const src = clip && clip.poster;
-    if (!src) return;
-    const image = new window.Image();
-    image.decoding = 'async';
-    image.src = src;
   }
   function presentClip(clip) {
     if (!clip || !clip.url) return false;
@@ -3658,7 +3617,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   function handlePageHide(event) {
     if (event && event.persisted) return;
-    thresholdStopGl();
     releaseAllPlaybackVideos();
   }
 
@@ -3720,10 +3678,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         title,
         title_ru: String(item.title_ru || ''),
         url: item.url,
-        // v124: the player picks the stream per device and paints the still first.
+        // v124: the player picks the stream per device and paints it live.
         url1080: String(item.url1080 || item.url || ''),
         url720: String(item.url720 || ''),
-        poster: String(item.poster || ''),
         size720: Number(item.size720) || 0,
         duration: Number.isFinite(Number(item.duration)) ? Number(item.duration) : 10,
         description: archetype,
@@ -4502,370 +4459,14 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   if (entryInstalledNote) entryInstalledNote.hidden = true;
   syncInstallButton();
-  // ---------------------------------------------------------------------------
-  // v123 WebGL threshold: a quiet-luxury prologue that teaches the two gestures
-  // while the first three posters preload. As soon as the video stream takes
-  // over, the rAF loop stops and the GL context is released.
-  // ---------------------------------------------------------------------------
-  const THRESHOLD_STEP_MS = [3500, 7000];
-  const THRESHOLD_COPY = [
-    { kicker: 'thresholdKicker1', text: 'thresholdText1', sub: 'thresholdSub1' },
-    { kicker: 'thresholdKicker2', text: 'thresholdText2', sub: 'thresholdSub2' },
-    { kicker: 'thresholdKicker3', text: 'thresholdText3', sub: 'thresholdSub3' },
-  ];
-  const THRESHOLD_RETURN_COPY = {
-    kicker: 'thresholdKickerReturn',
-    text: 'thresholdTextReturn',
-    sub: 'thresholdSubReturn',
-  };
-  const THRESHOLD_RETURN_MS = 2500;
-  const ONBOARDED_KEY = 'sanctuary-onboarded-v1';
-  const THRESHOLD_VERTEX = 'attribute vec2 a_pos;void main(){gl_Position=vec4(a_pos,0.0,1.0);}';
-  const THRESHOLD_FRAGMENT = `
-precision mediump float;
-uniform vec2 u_res;
-uniform float u_time;
-uniform vec2 u_touch;
-uniform float u_touch_active;
-uniform float u_hold;
-float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453123);}
-float noise(vec2 p){
-  vec2 i=floor(p); vec2 f=fract(p); vec2 u=f*f*(3.0-2.0*f);
-  return mix(mix(hash(i),hash(i+vec2(1.0,0.0)),u.x),
-             mix(hash(i+vec2(0.0,1.0)),hash(i+vec2(1.0,1.0)),u.x),u.y);
-}
-float fbm(vec2 p){ float v=0.0; float a=0.5; for(int i=0;i<5;i++){ v+=a*noise(p); p*=2.02; a*=0.5; } return v; }
-void main(){
-  vec2 uv=gl_FragCoord.xy/u_res;
-  float aspect=u_res.x/max(1.0,u_res.y);
-  vec2 p=vec2(uv.x*aspect,uv.y);
-  float t=u_time*mix(0.055,0.020,u_hold);
-  float n1=fbm(p*1.35+vec2(0.0,t));
-  float n2=fbm(p*2.60-vec2(t*0.75,0.0)+n1*0.65);
-  vec3 obsidian=vec3(0.0235,0.0235,0.0275);
-  vec3 champagne=vec3(0.839,0.780,0.698);
-  vec3 sage=vec3(0.494,0.561,0.510);
-  float fog=smoothstep(0.12,0.92,n2);
-  float silk=smoothstep(0.18,1.0,n1*n2*1.9);
-  vec3 col=obsidian;
-  col=mix(col,sage*0.22,fog*0.55);
-  col=mix(col,champagne*0.18,silk*0.60);
-  col+=champagne*0.022*(1.0-smoothstep(0.0,1.0,uv.y));
-  vec2 tp=vec2(u_touch.x*aspect,u_touch.y);
-  float glow=exp(-distance(p,tp)*5.0)*u_touch_active;
-  col+=champagne*0.20*glow;
-  col+=sage*0.05*glow;
-  col*=1.0-smoothstep(0.10,0.72,distance(uv,vec2(0.5)))*0.30;
-  col+=(hash(gl_FragCoord.xy+fract(u_time))-0.5)*0.010;
-  gl_FragColor=vec4(col,1.0);
-}`;
-  let thresholdOpen = false;
-  let thresholdEntered = false;
-  let thresholdStep = 0;
-  let thresholdTimers = [];
-  let thresholdRaf = 0;
-  let thresholdGl = null;
-  let thresholdGlState = null;
-  let threshold2d = null;
-  let thresholdStartedAt = 0;
-  let thresholdHold = 0;
-  let thresholdHoldTarget = 0;
-  let thresholdPointer = { x: 0.5, y: 0.5, active: 0, target: 0 };
-  let thresholdGestureStart = null;
-  let thresholdMode = 'first';
-  let thresholdAutoTimer = 0;
-
-  function thresholdReplaceCanvas() {
-    // A canvas whose WebGL context was released with WEBGL_lose_context cannot be
-    // reused safely for the next visit (the 2-hour return). Swap in a fresh one.
-    if (!thresholdEl || !thresholdCanvas || !thresholdCanvas.parentNode) return;
-    const fresh = document.createElement('canvas');
-    fresh.id = 'threshold-canvas';
-    fresh.setAttribute('aria-hidden', 'true');
-    thresholdCanvas.parentNode.replaceChild(fresh, thresholdCanvas);
-    thresholdCanvas = fresh;
-  }
-  function thresholdCompile(gl, type, source) {
-    const shader = gl.createShader(type);
-    if (!shader) return null;
-    gl.shaderSource(shader, source);
-    gl.compileShader(shader);
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-      gl.deleteShader(shader);
-      return null;
-    }
-    return shader;
-  }
-  function thresholdSizeCanvas() {
-    if (!thresholdCanvas) return null;
-    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-    const width = Math.max(1, Math.round(thresholdCanvas.clientWidth * dpr));
-    const height = Math.max(1, Math.round(thresholdCanvas.clientHeight * dpr));
-    if (thresholdCanvas.width !== width || thresholdCanvas.height !== height) {
-      thresholdCanvas.width = width;
-      thresholdCanvas.height = height;
-    }
-    return { width, height };
-  }
-  function thresholdInitGl() {
-    if (!thresholdCanvas) return false;
-    thresholdSizeCanvas();
-    let gl = null;
-    try {
-      gl = thresholdCanvas.getContext('webgl', {
-        alpha: false,
-        antialias: false,
-        depth: false,
-        stencil: false,
-        preserveDrawingBuffer: false,
-        powerPreference: 'low-power',
-      }) || thresholdCanvas.getContext('experimental-webgl');
-    } catch (_) {
-      gl = null;
-    }
-    if (!gl) return false;
-    const vertex = thresholdCompile(gl, gl.VERTEX_SHADER, THRESHOLD_VERTEX);
-    const fragment = thresholdCompile(gl, gl.FRAGMENT_SHADER, THRESHOLD_FRAGMENT);
-    if (!vertex || !fragment) return false;
-    const program = gl.createProgram();
-    if (!program) return false;
-    gl.attachShader(program, vertex);
-    gl.attachShader(program, fragment);
-    gl.linkProgram(program);
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return false;
-    gl.useProgram(program);
-    const buffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
-    const position = gl.getAttribLocation(program, 'a_pos');
-    gl.enableVertexAttribArray(position);
-    gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
-    thresholdGl = gl;
-    thresholdGlState = {
-      uRes: gl.getUniformLocation(program, 'u_res'),
-      uTime: gl.getUniformLocation(program, 'u_time'),
-      uTouch: gl.getUniformLocation(program, 'u_touch'),
-      uTouchActive: gl.getUniformLocation(program, 'u_touch_active'),
-      uHold: gl.getUniformLocation(program, 'u_hold'),
-    };
-    return true;
-  }
-  function thresholdInit2d() {
-    if (!thresholdCanvas) return false;
-    thresholdSizeCanvas();
-    try {
-      threshold2d = thresholdCanvas.getContext('2d');
-    } catch (_) {
-      threshold2d = null;
-    }
-    return Boolean(threshold2d);
-  }
-  function thresholdStopGl() {
-    if (thresholdRaf) {
-      window.cancelAnimationFrame(thresholdRaf);
-      thresholdRaf = 0;
-    }
-    if (thresholdGl) {
-      try {
-        const lose = thresholdGl.getExtension('WEBGL_lose_context');
-        if (lose) lose.loseContext();
-      } catch (_) {
-      }
-      thresholdGl = null;
-      thresholdGlState = null;
-    }
-    threshold2d = null;
-  }
-  function thresholdPause() {
-    if (thresholdRaf) {
-      window.cancelAnimationFrame(thresholdRaf);
-      thresholdRaf = 0;
-    }
-  }
-  function thresholdDrawFallback(time) {
-    const ctx = threshold2d;
-    const canvas = thresholdCanvas;
-    if (!ctx || !canvas) return;
-    const w = canvas.width;
-    const h = canvas.height;
-    ctx.fillStyle = '#060607';
-    ctx.fillRect(0, 0, w, h);
-    const drift = Math.sin(time * (0.05 - thresholdHold * 0.02));
-    const sage = ctx.createRadialGradient(
-      w * (0.5 + drift * 0.08), h * 0.38, 0,
-      w * 0.5, h * 0.38, Math.max(w, h) * 0.62
-    );
-    sage.addColorStop(0, 'rgba(126,143,130,0.16)');
-    sage.addColorStop(0.55, 'rgba(126,143,130,0.05)');
-    sage.addColorStop(1, 'rgba(6,6,7,0)');
-    ctx.fillStyle = sage;
-    ctx.fillRect(0, 0, w, h);
-    const warm = ctx.createRadialGradient(
-      w * (0.46 - drift * 0.06), h * 0.62, 0,
-      w * 0.5, h * 0.6, Math.max(w, h) * 0.55
-    );
-    warm.addColorStop(0, 'rgba(214,199,178,0.10)');
-    warm.addColorStop(1, 'rgba(6,6,7,0)');
-    ctx.fillStyle = warm;
-    ctx.fillRect(0, 0, w, h);
-    const glowX = thresholdPointer.x * w;
-    const glowY = (1 - thresholdPointer.y) * h;
-    const pearl = ctx.createRadialGradient(glowX, glowY, 0, glowX, glowY, Math.max(w, h) * 0.35);
-    pearl.addColorStop(0, `rgba(238,226,206,${0.16 * thresholdPointer.active})`);
-    pearl.addColorStop(1, 'rgba(6,6,7,0)');
-    ctx.fillStyle = pearl;
-    ctx.fillRect(0, 0, w, h);
-  }
-  function thresholdFrame(now) {
-    if (!thresholdOpen) return;
-    const time = Math.max(0, (now - thresholdStartedAt) / 1000);
-    thresholdHold += (thresholdHoldTarget - thresholdHold) * 0.05;
-    thresholdPointer.active += (thresholdPointer.target - thresholdPointer.active) * 0.10;
-    if (thresholdGl && thresholdGlState) {
-      thresholdSizeCanvas();
-      const gl = thresholdGl;
-      const state = thresholdGlState;
-      gl.viewport(0, 0, thresholdCanvas.width, thresholdCanvas.height);
-      gl.uniform2f(state.uRes, thresholdCanvas.width, thresholdCanvas.height);
-      gl.uniform1f(state.uTime, time);
-      gl.uniform2f(state.uTouch, thresholdPointer.x, thresholdPointer.y);
-      gl.uniform1f(state.uTouchActive, thresholdPointer.active);
-      gl.uniform1f(state.uHold, thresholdHold);
-      gl.drawArrays(gl.TRIANGLES, 0, 3);
-    } else {
-      thresholdDrawFallback(time);
-    }
-    thresholdRaf = window.requestAnimationFrame(thresholdFrame);
-  }
-  function thresholdSetPointer(clientX, clientY, active) {
-    thresholdPointer.x = Math.min(1, Math.max(0, clientX / Math.max(1, window.innerWidth)));
-    thresholdPointer.y = Math.min(1, Math.max(0, 1 - clientY / Math.max(1, window.innerHeight)));
-    thresholdPointer.target = active ? 1 : 0;
-  }
-  function hasOnboarded() {
-    try {
-      return window.localStorage.getItem(ONBOARDED_KEY) === '1';
-    } catch (_) {
-      return false;
-    }
-  }
-  function markOnboarded() {
-    try {
-      window.localStorage.setItem(ONBOARDED_KEY, '1');
-    } catch (_) {
-    }
-  }
-  function thresholdApplyCopy(copy, animate = true) {
-    if (!thresholdEl || !copy) return;
-    if (thresholdKickerEl) thresholdKickerEl.textContent = tr(copy.kicker);
-    if (thresholdTextEl) thresholdTextEl.textContent = tr(copy.text);
-    if (thresholdSubEl) thresholdSubEl.textContent = tr(copy.sub);
-    if (!animate) return;
-    thresholdEl.classList.remove('is-step-in');
-    void thresholdEl.offsetWidth;
-    thresholdEl.classList.add('is-step-in');
-  }
-  function thresholdApplyStep(step) {
-    thresholdStep = Math.max(0, Math.min(2, step));
-    const copy = THRESHOLD_COPY[thresholdStep];
-    if (!thresholdEl || !copy) return;
-    thresholdEl.dataset.step = String(thresholdStep + 1);
-    thresholdEl.classList.toggle('is-guide', thresholdStep === 2);
-    thresholdApplyCopy(copy);
-  }
-  function thresholdRefreshLanguage() {
-    if (!thresholdOpen) return;
-    if (thresholdMode === 'return') {
-      thresholdApplyCopy(THRESHOLD_RETURN_COPY, false);
-      return;
-    }
-    const copy = THRESHOLD_COPY[thresholdStep];
-    if (copy) thresholdApplyCopy(copy, false);
-  }
-  function warmThresholdScenes() {
-    if (!pathPlan.length) return;
-    for (let index = 0; index < Math.min(3, pathPlan.length); index += 1) {
-      const entry = pathPlan[index];
-      if (!entry || !entry.clip) continue;
-      preloadPoster(entry.clip);
-    }
-  }
-  function openThreshold(options) {
-    if (thresholdOpen || thresholdEntered) return;
-    const opts = options || {};
-    // v123: first visit gets the full three-step lesson; a returning visitor
-    // (or the 2-hour door) gets one short 2.5 s breath and an automatic entry.
-    thresholdMode = (opts.mode === 'return' || hasOnboarded()) ? 'return' : 'first';
-    if (!thresholdEl) {
-      enterVideoStream();
-      return;
-    }
-    thresholdOpen = true;
-    thresholdEntered = false;
-    thresholdStep = 0;
-    thresholdHold = 0;
-    thresholdHoldTarget = 0;
-    thresholdPointer = { x: 0.5, y: 0.5, active: 0, target: 0 };
-    thresholdEl.hidden = false;
-    thresholdEl.setAttribute('aria-hidden', 'false');
-    thresholdEl.dataset.mode = thresholdMode;
-    thresholdEl.classList.remove('is-leaving', 'is-guide', 'is-step-in');
-    window.requestAnimationFrame(() => thresholdEl.classList.add('is-visible'));
-    thresholdStartedAt = performance.now();
-    for (const timer of thresholdTimers) window.clearTimeout(timer);
-    thresholdTimers = [];
-    window.clearTimeout(thresholdAutoTimer);
-    thresholdAutoTimer = 0;
-    if (thresholdMode === 'return') {
-      thresholdEl.dataset.step = 'return';
-      thresholdApplyCopy(THRESHOLD_RETURN_COPY);
-      thresholdAutoTimer = window.setTimeout(
-        () => enterVideoStream({ auto: true }),
-        THRESHOLD_RETURN_MS
-      );
-    } else {
-      thresholdEl.dataset.step = '1';
-      thresholdApplyStep(0);
-      thresholdTimers = [
-        window.setTimeout(() => thresholdApplyStep(1), THRESHOLD_STEP_MS[0]),
-        window.setTimeout(() => thresholdApplyStep(2), THRESHOLD_STEP_MS[1]),
-      ];
-    }
-    warmThresholdScenes();
-    thresholdReplaceCanvas();
-    if (!thresholdInitGl()) thresholdInit2d();
-    thresholdRaf = window.requestAnimationFrame(thresholdFrame);
-    trackEvent('threshold_open', { mode: thresholdMode });
-  }
-  function enterVideoStream(options) {
-    const opts = options || {};
-    if (thresholdEntered) return;
-    if (thresholdOpen && thresholdMode === 'first' && thresholdStep < 2) return;
-    thresholdEntered = true;
-    thresholdOpen = false;
-    window.clearTimeout(thresholdAutoTimer);
-    thresholdAutoTimer = 0;
-    for (const timer of thresholdTimers) window.clearTimeout(timer);
-    thresholdTimers = [];
-    markOnboarded();
-    thresholdStopGl();
-    if (thresholdEl) {
-      thresholdEl.classList.remove('is-visible');
-      thresholdEl.classList.add('is-leaving');
-      thresholdEl.setAttribute('aria-hidden', 'true');
-      window.setTimeout(() => {
-        if (thresholdEl) {
-          thresholdEl.hidden = true;
-          thresholdEl.classList.remove('is-leaving', 'is-guide', 'is-step-in');
-        }
-      }, 850);
-    }
+  // v126: the entry swipe, the keyboard and the 2-hour door all land here.
+  // There is no prologue any more: gateOpen flips and the live stream starts.
+  function openVideoLounge() {
     gateOpen = true;
     isTransitioning = false;
     resetViewClock();
     if (!pathPlan.length) {
       try { buildOrFillSessionPlan(); } catch (_) {}
-      if (pathPlan.length) warmThresholdScenes();
     }
     if (!pathPlan.length) {
       forceNextAvailableScene('up');
@@ -4876,14 +4477,13 @@ void main(){
       if (!startPathFirst()) pathStartPending = true;
     } catch (error) {
       pathStartPending = true;
-      console.error('[sanctuary] threshold start failed:', error);
+      console.error('[sanctuary] first scene failed:', error);
     }
     if (pathStartPending) forceNextAvailableScene('up');
-    trackEvent('threshold_enter', { mode: thresholdMode, auto: Boolean(opts.auto) });
   }
 
   function unlockExperience() {
-    if (gateOpen || thresholdOpen || thresholdEntered) return;
+    if (gateOpen) return;
     activateAudioSession();
     isTransitioning = false;
     window.setTimeout(() => { isTransitioning = false; }, 1000);
@@ -4915,9 +4515,8 @@ void main(){
     enableSoundscape();
     switchSoundtrack(null, SLOW_FADE_MS);
     if (!sceneOrdinal) sceneOrdinal = 1;
-    // v123: the video starts only after the three-step threshold. The entry
-    // gesture opens the prologue and the three slots begin preloading now.
-    openThreshold();
+    // v126: straight into the stream — the first frame is already warming.
+    openVideoLounge();
   }
   if (entryGate) {
     let entryStart = null;
@@ -4957,75 +4556,6 @@ void main(){
   } else if (!entryGate) {
     gateOpen = true;
   }
-  if (thresholdEl) {
-    thresholdEl.addEventListener('pointerdown', (event) => {
-      thresholdHoldTarget = 1;
-      thresholdSetPointer(event.clientX, event.clientY, true);
-    }, { passive: true });
-    thresholdEl.addEventListener('pointermove', (event) => {
-      if (event.pointerType === 'mouse' && !event.buttons) return;
-      thresholdSetPointer(event.clientX, event.clientY, true);
-    }, { passive: true });
-    const releaseThresholdPointer = () => {
-      thresholdHoldTarget = 0;
-      thresholdPointer.target = 0;
-    };
-    thresholdEl.addEventListener('pointerup', releaseThresholdPointer, { passive: true });
-    thresholdEl.addEventListener('pointercancel', releaseThresholdPointer, { passive: true });
-    thresholdEl.addEventListener('pointerleave', releaseThresholdPointer, { passive: true });
-    thresholdEl.addEventListener('touchstart', (event) => {
-      if (event.touches.length !== 1) return;
-      const touch = event.touches[0];
-      thresholdGestureStart = { x: touch.clientX, y: touch.clientY };
-      thresholdHoldTarget = 1;
-      thresholdSetPointer(touch.clientX, touch.clientY, true);
-    }, { passive: true });
-    thresholdEl.addEventListener('touchmove', (event) => {
-      const touch = event.touches[0];
-      if (touch) thresholdSetPointer(touch.clientX, touch.clientY, true);
-    }, { passive: true });
-    thresholdEl.addEventListener('touchend', (event) => {
-      thresholdHoldTarget = 0;
-      thresholdPointer.target = 0;
-      if (!thresholdGestureStart) return;
-      const touch = event.changedTouches && event.changedTouches[0];
-      const start = thresholdGestureStart;
-      thresholdGestureStart = null;
-      if (!touch) return;
-      const dx = touch.clientX - start.x;
-      const dy = touch.clientY - start.y;
-      if (thresholdStep >= 2 && dy < -35 && Math.abs(dy) > Math.abs(dx)) {
-        event.preventDefault();
-        enterVideoStream();
-      }
-    }, { passive: false });
-    thresholdEl.addEventListener('wheel', (event) => {
-      if (event.deltaY >= 0) return;
-      event.preventDefault();
-      if (thresholdStep >= 2) enterVideoStream();
-    }, { passive: false });
-    if (thresholdGuideEl) {
-      thresholdGuideEl.addEventListener('click', (event) => {
-        event.stopPropagation();
-        if (thresholdStep >= 2) enterVideoStream();
-      });
-    }
-  }
-  window.addEventListener('keydown', (event) => {
-    if (!thresholdOpen) return;
-    if (event.key !== 'ArrowUp' && event.key !== 'Enter' && event.key !== ' ' && event.key !== 'Spacebar') return;
-    event.preventDefault();
-    if (thresholdStep >= 2) enterVideoStream();
-  });
-  document.addEventListener('visibilitychange', () => {
-    if (!thresholdOpen) return;
-    if (document.hidden) {
-      thresholdPause();
-    } else if (!thresholdRaf) {
-      thresholdStartedAt = performance.now();
-      thresholdRaf = window.requestAnimationFrame(thresholdFrame);
-    }
-  });
   sessionLockAt = readSessionLock();
   returnAfterLock = Boolean(sessionLockAt && sessionLockAt <= Date.now());
   startSessionLockTicker();
@@ -5100,14 +4630,12 @@ void main(){
         return;
       }
       try {
-        // v124: warm the first WebP poster while the entry screen is still up,
-        // so the entrance frame paints before its MP4 has decoded a single byte.
-        preloadPoster(pathPlan[0] && pathPlan[0].clip);
+        // v126: buffer the first frame in #playerCurrent while the entry screen
+        // is still up, so the swipe up opens a live stream, not a buffer.
+        const player = window.SanctuaryPlayer;
+        if (player && typeof player.warm === 'function') player.warm(pathPlan[0] && pathPlan[0].clip);
         const first = pathPlan[0];
         prefetchCaption(first.clip, first.category, behaviorContext(), first.stage);
-        // v123: if the visitor already opened the threshold before the catalog
-        // finished, the three warm slots start downloading as soon as it is ready.
-        if (thresholdOpen) warmThresholdScenes();
       } catch (error) {
       }
       if (gateOpen && !pathStarted) {
@@ -5131,15 +4659,6 @@ void main(){
         return window.SanctuaryPlayer && typeof window.SanctuaryPlayer.snapshot === 'function'
           ? window.SanctuaryPlayer.snapshot()
           : null;
-      },
-      get threshold() {
-        return {
-          open: thresholdOpen,
-          entered: thresholdEntered,
-          mode: thresholdMode,
-          step: thresholdStep,
-          gl: Boolean(thresholdGl),
-        };
       },
       get audio() {
         return sound && sound.ctx
