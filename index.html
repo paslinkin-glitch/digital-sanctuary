@@ -36,10 +36,10 @@
   <link rel="manifest" href="manifest.json">
   <link rel="preconnect" href="https://s3.twcstorage.ru" crossorigin>
   <link rel="dns-prefetch" href="https://s3.twcstorage.ru">
-  <link rel="stylesheet" href="style.css?v=113">
+  <link rel="stylesheet" href="style.css?v=114">
 </head>
 <body>
-  <script>window.SANCTUARY_MAINTENANCE = true; if (window.SANCTUARY_MAINTENANCE) document.documentElement.dataset.maintenance = 'true';</script>
+  <script>window.SANCTUARY_MAINTENANCE = false; if (window.SANCTUARY_MAINTENANCE) document.documentElement.dataset.maintenance = 'true';</script>
 <main class="stage" id="stage">
     <section class="slide is-active" data-tag="Shadow">
       <div class="media" aria-hidden="true"></div>
@@ -78,12 +78,22 @@
     </div>
     <div class="touch-vignette" aria-hidden="true"></div>
     <div class="touch-glow" aria-hidden="true"></div>
+    <div class="touch-trail" id="touchTrail" aria-hidden="true"></div>
     <div class="touch-aura" aria-hidden="true"></div>
     <div class="veil" aria-hidden="true"></div>
-    <div class="caption-shade" aria-hidden="true"></div>
-    <div class="caption" id="caption" aria-live="polite" aria-hidden="true">
-      <span class="caption-line"></span>
-      <span class="caption-line"></span>
+    <div class="bottom-hud" id="bottomHud">
+      <div class="caption" id="caption" aria-live="polite" aria-hidden="true">
+        <span class="caption-kicker" id="captionKicker"></span>
+        <span class="caption-body caption-line" id="captionBody"></span>
+      </div>
+      <button class="like-btn" id="likeBtn" type="button" aria-label="Like this frame" aria-pressed="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M12 20.2c-.3 0-.6-.1-.8-.3C7.4 16.7 3 13 3 8.6 3 6 5 4 7.5 4c1.6 0 3.1.8 4.5 2.4C13.4 4.8 14.9 4 16.5 4 19 4 21 6 21 8.6c0 4.4-4.4 8.1-8.2 11.3-.2.2-.5.3-.8.3Z" fill="none" stroke="currentColor" stroke-width="1.15"/>
+        </svg>
+      </button>
+      <div class="double-tap-heart" id="doubleTapHeart" aria-hidden="true">
+        <svg viewBox="0 0 24 24" focusable="false"><path d="M12 20.2c-.3 0-.6-.1-.8-.3C7.4 16.7 3 13 3 8.6 3 6 5 4 7.5 4c1.6 0 3.1.8 4.5 2.4C13.4 4.8 14.9 4 16.5 4 19 4 21 6 21 8.6c0 4.4-4.4 8.1-8.2 11.3-.2.2-.5.3-.8.3Z"/></svg>
+      </div>
     </div>
 </main>
 
@@ -175,7 +185,7 @@
       window.__deferredInstallPrompt = event;
     });
   </script>
-  <script src="videos-data.js?v=113"></script>
-  <script src="app.js?v=113"></script>
+  <script src="videos-data.js?v=114"></script>
+  <script src="app.js?v=114"></script>
 </body>
 </html>

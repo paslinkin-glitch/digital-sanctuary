@@ -63,7 +63,26 @@
   };
   const PORTRAIT_TIMEOUT_MS = 1500;
   const DEEPSEEK_PROXY_ENDPOINT = '/api/deepseek';
-  const CAPTION_START_DELAY_MS = 1200;
+  const CAPTION_START_DELAY_MS = 1800;
+  const LIKED_STORAGE_KEY = 'sanctuary_liked_v1';
+  const CAPTION_QUESTIONS = {
+    en: [
+      'What do you feel right now?',
+      'Where does this touch you?',
+      'What stirs quietly inside?',
+      'What do you recognize here?',
+      'What is this silence asking you?',
+      'What softens as you watch?',
+    ],
+    ru: [
+      'Что ты сейчас чувствуешь?',
+      'Где это отзывается внутри?',
+      'Что поднимается в тишине?',
+      'Что ты узнаёшь в этом кадре?',
+      'О чём молчит это чувство?',
+      'Что отпускает, когда ты смотришь?',
+    ],
+  };
   const CAPTION_MIN_WORDS = 4;
   const CAPTION_MAX_WORDS = 6;
   const CAPTION_MAX_RATIO = 0.30;
@@ -501,9 +520,13 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   const cycleWhisperTextEl = document.getElementById('cycle-whisper-text');
   const slides = Array.from(document.querySelectorAll('.slide'));
   const captionEl = document.querySelector('.caption');
-  const captionLines = captionEl
-    ? Array.from(captionEl.querySelectorAll('.caption-line'))
-    : [];
+  const captionKickerEl = document.getElementById('captionKicker');
+  const captionBodyEl = document.getElementById('captionBody');
+  const captionLines = captionBodyEl ? [captionBodyEl] : [];
+  const likeButton = document.getElementById('likeBtn');
+  const doubleTapHeart = document.getElementById('doubleTapHeart');
+  const touchTrailEl = document.getElementById('touchTrail');
+  let lastCaptionQuestion = -1;
   if (!stage || !slides.length || slides.some((slide) => !slide.querySelector('.media'))) {
     console.error('[sanctuary] stage markup is missing or incomplete');
     return;
@@ -515,6 +538,96 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   function setNightPupil(active) {
     document.documentElement.dataset.nightPupil = active ? 'true' : 'false';
     nightVeil.classList.toggle('is-active', active);
+  }
+  const likedIds = new Set();
+  try {
+    const savedLikes = JSON.parse(localStorage.getItem(LIKED_STORAGE_KEY) || '[]');
+    if (Array.isArray(savedLikes)) {
+      for (const id of savedLikes) if (typeof id === 'string' && id) likedIds.add(id);
+    }
+  } catch (_) {
+  }
+  function persistLikes() {
+    try { localStorage.setItem(LIKED_STORAGE_KEY, JSON.stringify([...likedIds])); } catch (_) {}
+  }
+  function syncLikeButton(clip) {
+    if (!likeButton) return;
+    const selected = clip || (typeof activeClip === 'function' ? activeClip() : null);
+    const liked = Boolean(selected && selected.id && likedIds.has(selected.id));
+    likeButton.classList.toggle('is-liked', liked);
+    likeButton.setAttribute('aria-pressed', liked ? 'true' : 'false');
+  }
+  function registerResonance(clip) {
+    if (!clip) return;
+    const phrase = (currentCaption && currentCaption.text)
+      || (currentLang === 'en' ? clip.caption_en : clip.caption_ru)
+      || clip.title
+      || '';
+    resonanceMemory.push({
+      category: (activeCategory() && activeCategory().tag) || clip.stage || '',
+      image: clip.title || 'без названия',
+      phrase,
+    });
+    if (resonanceMemory.length > 4) resonanceMemory.shift();
+    resonanceMemoryVersion += 1;
+  }
+  function toggleLike(clip, force) {
+    if (!clip || !clip.id) return false;
+    const wasLiked = likedIds.has(clip.id);
+    const liked = typeof force === 'boolean' ? force : !wasLiked;
+    if (liked) likedIds.add(clip.id);
+    else likedIds.delete(clip.id);
+    persistLikes();
+    syncLikeButton(clip);
+    if (liked && !wasLiked) registerResonance(clip);
+    return liked;
+  }
+  function showDoubleTapHeart(x, y) {
+    if (!doubleTapHeart) return;
+    doubleTapHeart.style.setProperty('--heart-x', `${Math.round(x)}px`);
+    doubleTapHeart.style.setProperty('--heart-y', `${Math.round(y)}px`);
+    doubleTapHeart.classList.remove('is-active');
+    void doubleTapHeart.offsetWidth;
+    doubleTapHeart.classList.add('is-active');
+    window.setTimeout(() => doubleTapHeart.classList.remove('is-active'), 950);
+  }
+  let lastSceneTapAt = 0;
+  let lastSceneTapX = 0;
+  let lastSceneTapY = 0;
+  const trailPoints = [];
+  if (touchTrailEl) {
+    for (let i = 0; i < 4; i += 1) {
+      const point = document.createElement('i');
+      touchTrailEl.appendChild(point);
+      trailPoints.push({ el: point, x: 0, y: 0 });
+    }
+  }
+  let trailRaf = 0;
+  const trailTarget = { x: 0, y: 0, lastAt: 0 };
+  function paintTouchTrail(now) {
+    trailRaf = 0;
+    const age = Math.max(0, now - trailTarget.lastAt);
+    const strength = Math.max(0, 1 - age / 650);
+    let alive = false;
+    trailPoints.forEach((point, index) => {
+      const targetX = trailTarget.x - index * 5;
+      const targetY = trailTarget.y - index * 5;
+      const inertia = 0.2 - index * 0.03;
+      point.x += (targetX - point.x) * inertia;
+      point.y += (targetY - point.y) * inertia;
+      const opacity = Math.max(0, strength * (0.38 - index * 0.07));
+      point.el.style.transform = `translate3d(${point.x.toFixed(1)}px,${point.y.toFixed(1)}px,0) scale(${(1 - index * 0.08).toFixed(2)})`;
+      point.el.style.opacity = opacity.toFixed(3);
+      if (opacity > 0.008) alive = true;
+    });
+    if (alive) trailRaf = window.requestAnimationFrame(paintTouchTrail);
+  }
+  function queueTouchTrail(x, y) {
+    if (!trailPoints.length) return;
+    trailTarget.x = x;
+    trailTarget.y = y;
+    trailTarget.lastAt = performance.now();
+    if (!trailRaf) trailRaf = window.requestAnimationFrame(paintTouchTrail);
   }
   const progressFill = document.getElementById('session-progress-fill');
   const entryInstallButton = document.getElementById('install-btn');
@@ -841,6 +954,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       button.classList.toggle('is-active', active);
       button.setAttribute('aria-pressed', active ? 'true' : 'false');
     }
+    if (currentCaption) renderCaptionKicker();
     updateSessionLockUI();
   }
   function setLanguage(lang) {
@@ -1229,8 +1343,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (!gateOpen) return;
     const point = pointForEvent(event);
     stage.classList.add('is-touching');
+    revealCaptionNow();
     stage.style.setProperty('--optic-x', `${point.x}px`);
     queueTouchAura(point.x, point.y);
+    queueTouchTrail(point.x, point.y);
     stage.style.setProperty('--optic-y', `${point.y}px`);
     if (currentOpticElement === 'space') {
       stage.style.setProperty('--optic-zoom', '1.04');
@@ -1242,6 +1358,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     stage.style.setProperty('--optic-x', `${point.x}px`);
     stage.style.setProperty('--optic-y', `${point.y}px`);
     queueTouchAura(point.x, point.y);
+    queueTouchTrail(point.x, point.y);
     if (currentOpticElement === 'space') {
       const dy = event.clientY - gesture.y0;
       const amount = clamp(-dy / 160, -1, 1);
@@ -1526,9 +1643,21 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         if (index < list.length - 1) line.appendChild(document.createTextNode(' '));
       });
     };
-    renderLine(captionLines[0], words.slice(0, middle), 0);
-    renderLine(captionLines[1], words.slice(middle), middle);
+    if (captionLines.length > 1) {
+      renderLine(captionLines[0], words.slice(0, middle), 0);
+      renderLine(captionLines[1], words.slice(middle), middle);
+    } else {
+      renderLine(captionLines[0], words, 0);
+    }
     captionEl.setAttribute('aria-label', text);
+  }
+  function renderCaptionKicker() {
+    if (!captionKickerEl) return;
+    const pool = CAPTION_QUESTIONS[currentLang] || CAPTION_QUESTIONS.en;
+    let index = Math.floor(Math.random() * pool.length);
+    if (pool.length > 1 && index === lastCaptionQuestion) index = (index + 1) % pool.length;
+    lastCaptionQuestion = index;
+    captionKickerEl.textContent = pool[index];
   }
   function registerCaptionFrame() {
     sessionTextFrames = Math.min(
@@ -1583,17 +1712,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   function scheduleCaptionZero() {
     window.clearTimeout(captionZeroTimer);
-    if (!captionEl || !captionHasText || !captionEl.classList.contains('is-visible')) return;
-    captionZeroTimer = window.setTimeout(() => {
-      if (captionEl && captionEl.classList.contains('is-visible') && !stage.classList.contains('is-touching') && !stage.classList.contains('is-held')) {
-        captionEl.classList.remove('is-visible', 'is-zero');
-        stage.classList.remove('is-caption-active');
-        captionRevealed = false;
-        captionSuppressed = true;
-        captionHoldReady = false;
-        if (currentCaption) currentCaption.revealed = false;
-      }
-    }, 4800);
+    captionZeroTimer = 0;
   }
   function wakeCaption() {
     if (!captionEl) return;
@@ -1626,6 +1745,20 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       scheduleCaptionZero();
       maybeRecordResonance();
     }, delay);
+  }
+  function revealCaptionNow() {
+    if (!captionEl) return;
+    if (!captionHasText) {
+      captionStartDelayOverride = 1;
+      return;
+    }
+    window.clearTimeout(captionTimer);
+    captionEl.setAttribute('aria-hidden', 'false');
+    captionEl.classList.remove('is-zero');
+    captionEl.classList.add('is-visible');
+    stage.classList.add('is-caption-active');
+    captionRevealed = true;
+    if (currentCaption) currentCaption.revealed = true;
   }
   function revealCaptionForHold() {
     if (!captionSuppressed || captionHoldReady) return;
@@ -1680,8 +1813,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     window.clearTimeout(captionMemoryTimer);
     window.clearTimeout(captionRevealTimer);
     const stage = stageId || STAGE_BY_CATEGORY[category && category.tag] || 1;
-    captionAllow = Boolean(allowed);
-    captionSuppressed = !captionAllow;
+    captionAllow = true;
+    captionSuppressed = false;
     captionHoldReady = false;
     captionHasText = false;
     captionRevealed = false;
@@ -1701,6 +1834,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       haptic: false,
       token,
     };
+    renderCaptionKicker();
+    syncLikeButton(clip);
     const hiddenEligible = true;
     const started = now();
     const applyText = (text) => {
@@ -3640,16 +3775,40 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   const posterPreloads = new Map();
   function preloadPoster(clip) {
-    const url = clip && clip.urlPoster;
-    if (!url || posterPreloads.has(url)) return;
+    if (!clip) return Promise.resolve();
+    if (clip._posterPromise) return clip._posterPromise;
+    const url = clip.urlPoster;
+    if (!url) return Promise.resolve();
+    const cached = posterPreloads.get(url);
+    if (cached && cached.promise) return cached.promise;
     const image = new Image();
     image.decoding = 'async';
-    posterPreloads.set(url, image);
+    const promise = new Promise((resolve) => {
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        clip._posterReady = true;
+        resolve();
+      };
+      image.onload = () => {
+        clip._posterLoaded = true;
+        finish();
+      };
+      image.onerror = () => {
+        clip._posterFailed = true;
+        finish();
+      };
+      window.setTimeout(finish, 250);
+    });
+    posterPreloads.set(url, { image, promise });
     if (posterPreloads.size > 6) {
       const oldestUrl = posterPreloads.keys().next().value;
       posterPreloads.delete(oldestUrl);
     }
+    clip._posterPromise = promise;
     image.src = url;
+    return promise;
   }
   function attachVideo(category, clip, index) {
     const media = category.el.querySelector('.media');
@@ -4008,13 +4167,40 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       const video = clip.el;
       if (!video) return;
       if (clipIndex === index) {
-        const sourceChanged = syncClipSourceQuality(clip, video);
+        const startCurrent = () => {
+          if (selected.el !== video) return;
+          const sourceChanged = syncClipSourceQuality(clip, video);
+          video.preload = 'auto';
+          if (sourceChanged || video.readyState === 0) video.load();
+          if (video.readyState >= 4) clearFramePlaceholder();
+          video.playbackRate = stage.classList.contains('is-held') ? SLOW_RATE : 1;
+          clip.lastTime = video.currentTime;
+          const promise = video.play();
+          if (promise && typeof promise.catch === 'function') {
+            promise.catch(() => {
+            });
+          }
+        };
         video.classList.add('is-current');
-        video.preload = 'auto';
-        if (sourceChanged || video.readyState === 0) video.load();
-        if (video.readyState >= 4) clearFramePlaceholder();
         video.playbackRate = stage.classList.contains('is-held') ? SLOW_RATE : 1;
-        clip.lastTime = video.currentTime;
+        const posterPromise = preloadPoster(clip);
+        if (clip._posterReady) {
+          startCurrent();
+        } else {
+          video.preload = 'none';
+          Promise.race([
+            posterPromise,
+            new Promise((resolve) => window.setTimeout(resolve, 250)),
+          ]).then(startCurrent);
+        }
+        window.setTimeout(() => {
+          if (selected.el !== video || clip._posterLoaded || clip._posterFailed) return;
+          if (activeQuality !== '1080' && activeQuality !== '720') return;
+          qualityFallbackLocked = true;
+          activeQuality = '480';
+          document.documentElement.dataset.quality = activeQuality;
+          rebuildRemainingPath('480');
+        }, 820);
         if (clip._slowFrameTimer) window.clearTimeout(clip._slowFrameTimer);
         clip._slowFrameTimer = window.setTimeout(() => {
           clip._slowFrameTimer = 0;
@@ -4025,11 +4211,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
           document.documentElement.dataset.quality = activeQuality;
           rebuildRemainingPath('480');
         }, 2200);
-        const promise = video.play();
-        if (promise && typeof promise.catch === 'function') {
-          promise.catch(() => {
-          });
-        }
       } else {
         video.classList.remove('is-current');
         video.preload = 'none';
@@ -4648,6 +4829,47 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       lastBottomTapAt = t;
     }
   });
+  if (likeButton) {
+    likeButton.addEventListener('pointerdown', (event) => event.stopPropagation());
+    likeButton.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const clip = activeClip();
+      if (!clip) return;
+      const liked = toggleLike(clip);
+      if (liked && typeof navigator.vibrate === 'function') {
+        try { navigator.vibrate(8); } catch (_) {}
+      }
+    });
+  }
+  document.addEventListener('touchend', (event) => {
+    if (!gateOpen || sessionComplete) return;
+    if (isInterfaceTarget(event.target)) {
+      lastSceneTapAt = 0;
+      return;
+    }
+    const touch = event.changedTouches && event.changedTouches[0];
+    if (!touch) return;
+    const tapAt = performance.now();
+    const x = touch.clientX;
+    const y = touch.clientY;
+    if (lastSceneTapAt && tapAt - lastSceneTapAt < 280
+      && Math.hypot(x - lastSceneTapX, y - lastSceneTapY) < 24) {
+      const clip = activeClip();
+      if (clip) {
+        toggleLike(clip, true);
+        showDoubleTapHeart(x, y);
+        if (typeof navigator.vibrate === 'function') {
+          try { navigator.vibrate(12); } catch (_) {}
+        }
+      }
+      lastSceneTapAt = 0;
+      return;
+    }
+    lastSceneTapAt = tapAt;
+    lastSceneTapX = x;
+    lastSceneTapY = y;
+  }, { passive: true });
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
       state.hiddenAt = now();
