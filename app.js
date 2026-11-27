@@ -3557,11 +3557,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     resetViewClock();
     if (isVideoSeen(entry.clip.id)) sessionUsedVideoIds.delete(entry.clip.id);
     category.freshIndex = index;
-    // v120: the first +faststart stream is already staged by
-    // preparePlaybackWindow() on the entry screen, so entering plays the native
-    // stream without starting a second download.
-    preparePlaybackWindow(entry);
-
+    // v121: playClip() owns the single src assignment + load() + play() for the
+    // entry frame. Staging it here as well issued a second load() in the same
+    // tick, and mobile browsers hung the first HTTP Range request on the
+    // superseded one. The entry screen still stages pathPlan[0] once.
     const clipIndex = playCategory(category);
     if (clipIndex === null) return false;
     pathPos = 0;
@@ -3618,9 +3617,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     slot.addEventListener('canplay', () => markSlotReady(slot));
     slot.addEventListener('timeupdate', () => {
       if (slot._clip && slot._category) handleLoop(slot._category, slot._index, slot);
-      // v120: the next frame may preload only after the active stream is
-      // really playing and has moved past its first 0.15 s.
-      if (slot === activeSlot && slot.currentTime > 0.15) warmNextFrame();
+      // v121: warm the next frame once the active stream has really started and
+      // moved past 0.4 s of playback (no full-buffer wait on 4G).
+      if (slot === activeSlot && slot.currentTime > 0.4) warmNextFrame();
     });
     slot.addEventListener('ended', () => {
       if (slot._clip) restartVideo(slot, slot._clip);
@@ -3639,9 +3638,14 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     });
   }
   for (const slot of videoSlots) bindSlot(slot);
-  // v120: exactly one slot owns the network. The other one stays empty (or
-  // holds a fully buffered next clip) and a canvas freeze-frame covers a swipe.
-  const SLOT_START_AT = 0.04;
+  // v121: the active clip owns the start; the inactive slot may preload the next
+  // frame (preload="auto", no autoplay) as soon as the active one really plays.
+  // A canvas freeze-frame covers a swipe between the two.
+  // v121: a mobile carrier can black-hole a Range request; the browser then sits
+  // on the dead socket until its own timeout. 2.5 s is long enough for a real 4G
+  // start and short enough that the visitor never sees a minute of frozen frame.
+  const SLOT_START_GUARD_MS = 2500;
+  const SLOT_START_GUARD_RETRIES = 2;
   const SLOT_FADE_MS = 280;
   const FRAME_HOLD_CLEAR_MS = 340;
   let activeSlot = null;
@@ -3729,6 +3733,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   function abortSlotStream(slot) {
     if (!slot) return;
+    clearStartGuard(slot);
     const clip = slot._clip;
     if (clip && clip.el === slot) clip.el = null;
     slot._clip = null;
@@ -3752,6 +3757,11 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (frozen) {
       showFrameHold();
       frameHoldDrawn = true;
+    } else {
+      // v121: if the outgoing slot has no decoded frame, do not keep showing the
+      // frame from a swipe two steps back. Clear the canvas so the visitor sees
+      // the real transition instead of stale imagery.
+      clearFrameHold();
     }
     for (const slot of videoSlots) {
       if (slot === keepSlot && slot !== activeSlot) continue;
@@ -3765,32 +3775,51 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     return Boolean(activeSlot)
       && activeSlot.readyState >= 2
       && !activeSlot.paused
-      && activeSlot.currentTime > 0.15;
+      && activeSlot.currentTime > 0.4;
   }
-  // v120: the next clip may warm up only after the active one is playing AND
-  // has already pulled its whole file, so two <video> elements can never share
-  // the 4G channel. Until then the active clip owns 100% of the bandwidth.
-  function activeStreamFullyBuffered() {
-    const video = activeSlot;
-    if (!video || !Number.isFinite(video.duration) || video.duration <= 0) return false;
-    const ranges = video.buffered;
-    if (!ranges || !ranges.length) return false;
-    return ranges.end(ranges.length - 1) >= video.duration - 0.5;
-  }
-  function seekSlot(slot, time) {
+  function clearStartGuard(slot) {
     if (!slot) return;
-    const apply = () => {
-      try { slot.currentTime = time; } catch (_) {}
-    };
-    if (slot.readyState >= 1) {
-      apply();
-      return;
+    if (slot._startGuardTimer) {
+      window.clearTimeout(slot._startGuardTimer);
+      slot._startGuardTimer = 0;
     }
-    slot.addEventListener('loadedmetadata', apply, { once: true });
-    apply();
+  }
+  // v121: if the active slot has not reached readyState >= 2 within 2.5 s, the
+  // Range request is treated as hung and restarted on the spot (max 2 tries per
+  // frame), instead of waiting a minute for the carrier socket to time out.
+  function armStartGuard(slot, clip) {
+    if (!slot || !clip) return;
+    clearStartGuard(slot);
+    slot._startGuardTimer = window.setTimeout(() => {
+      slot._startGuardTimer = 0;
+      if (slot !== activeSlot || slot._clip !== clip) return;
+      if (slot.readyState >= 2 && !slot.paused) return;
+      const attempts = Number(clip._startGuardAttempts || 0);
+      if (attempts >= SLOT_START_GUARD_RETRIES) return;
+      clip._startGuardAttempts = attempts + 1;
+      restartHangingStream(slot, clip);
+    }, SLOT_START_GUARD_MS);
+  }
+  function restartHangingStream(slot, clip) {
+    if (!slot || !clip || slot !== activeSlot || slot._clip !== clip) return;
+    const source = playbackUrlFor(clip);
+    if (!source) return;
+    clearStartGuard(slot);
+    slot.classList.remove('is-ready');
+    slot._srcKey = '';
+    slot.preload = 'auto';
+    try { slot.pause(); } catch (_) {}
+    if (slot.getAttribute('src') !== source) slot.setAttribute('src', source);
+    // load() aborts the stalled resource fetch and re-runs resource selection,
+    // so the browser opens a fresh Range request on the current network.
+    try { slot.load(); } catch (_) {}
+    const promise = slot.play();
+    if (promise && typeof promise.catch === 'function') promise.catch(() => {});
+    armStartGuard(slot, clip);
   }
   function releaseSlotVideo(slot) {
     if (!slot) return;
+    clearStartGuard(slot);
     const clip = slot._clip;
     slot._clip = null;
     slot._category = null;
@@ -3850,8 +3879,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       ? entry.category.clips.findIndex((item) => item.id === entry.clip.id)
       : -1;
     if (slot._clip !== entry.clip) bindClipToSlot(slot, entry.category, entry.clip, index);
+    // v121: no currentTime / seekSlot() before loadeddata. Setting currentTime
+    // while the MP4 headers are still in flight makes Safari and Chrome fire an
+    // extra HTTP Range request and stall the start on 4G.
     loadSlotSource(slot, entry.clip, false);
-    seekSlot(slot, SLOT_START_AT);
     return slot;
   }
   function slotHasFrame(slot) {
@@ -3870,6 +3901,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   function markSlotPlaying(slot) {
     if (!slot || !slot._clip || slot !== activeSlot) return;
     if (slot.readyState < 2 || slot.paused) return;
+    clearStartGuard(slot);
+    slot._clip._startGuardAttempts = 0;
     slot.classList.add('is-ready');
     noteClipStarted(slot._clip);
     // Crossfade 0 -> 1 over 280 ms, then drop the held canvas.
@@ -3897,10 +3930,12 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   function warmNextFrame() {
     if (pathPos < 0 || !pathPlan.length) return;
-    // v120 strict single stream: nothing may preload while the clip the visitor
-    // is watching has not started playing and moved past its first frames, and
-    // nothing may preload while that clip still owns the network.
-    if (!activeStreamPlayable() || !activeStreamFullyBuffered()) return;
+    // v121: no "buffered.end >= duration" gate. Mobile browsers buffer MP4 in
+    // chunks and do not pull the tail ahead of playback, so that condition never
+    // became true on 4G and the next frame was never warmed. Warming starts as
+    // soon as the active stream is genuinely playing (playing, readyState >= 2,
+    // currentTime > 0.4) and the inactive slot only preloads without autoplay.
+    if (!activeStreamPlayable()) return;
     nextFrameToken += 1;
     const nextEntry = pathPlan[pathPos + 1];
     if (!nextEntry || !nextEntry.clip) return;
@@ -3952,8 +3987,12 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     slot.playbackRate = stage.classList.contains('is-held') ? SLOW_RATE : 1;
     activeSlot = slot;
     selected._startNoted = false;
+    selected._startGuardAttempts = 0;
     selected._startRequestedAt = performance.now();
     loadSlotSource(slot, selected, true);
+    // v121: one 2.5 s start guard per clip; a hung mobile Range request is
+    // restarted instead of freezing the frame until the carrier gives up.
+    armStartGuard(slot, selected);
   }
   function mountClips(category) {
     const media = category.el.querySelector('.media');
@@ -4011,9 +4050,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (!current || !current.clip) return;
     if (activeSlot && activeSlot._clip === current.clip) return;
     if (current.clip.el && videoSlots.includes(current.clip.el)) return;
-    // v120: only the target of the current swipe is allowed to touch the
-    // network here. The next frame is warmed later by warmNextFrame(), once the
-    // active stream is genuinely playing.
+    // v121: only the entry screen calls this, once, to stage pathPlan[0] before
+    // the gate opens. Swipes are staged by playClip() alone so no slot is loaded
+    // twice in the same tick.
     stageEntry(current);
   }
 
@@ -4233,7 +4272,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     updateStageLabel(sceneStage);
     updateSessionProgress();
 
-    preparePlaybackWindow(planned);
+    // v121: no pre-staging here. playClip() assigns src, calls load() once and
+    // starts playing in one pass; a second load() a millisecond later made the
+    // mobile browser drop the real request and hang on 4G.
     playCategory(category);
     activateCaption(category, activeClip(), behavior, allowed, sceneStage, sceneContext || {});
     switchSoundtrack(null, duration);
@@ -4422,7 +4463,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       sceneContext.stage = previous.stage;
       updateStageLabel(previous.stage);
       trackStageReached(previous.stage);
-      preparePlaybackWindow(previous);
+      // v121: playClip() stages the backward target itself, one load() only.
       navigateTo(
         previous.category.index,
         'down',
