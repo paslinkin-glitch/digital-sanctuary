@@ -17,7 +17,8 @@ Every scene ends up as three objects:
                                         -maxrate 1700k -bufsize 3400k,
                                         +faststart, 1.4-2.3 MB
   digital-sanctuary/posters/<id>.webp   frame at 0.2 s, 480x854, quality 68,
-                                        20-35 KB
+                                        targeted at 20-35 KB and never above it
+                                        (a smooth gradient frame weighs less)
 
 The four rejected scenes (a coverr+ watermark, a bright riverside thicket and
 two blown-out daytime skies) are deleted from S3 and from the catalog. Old
@@ -273,29 +274,54 @@ def build_720(source, out):
         + " byte band, closest " + str(closest[1] if closest else 0) + " bytes")
 
 
+def render_poster(source, out, quality):
+    run([
+        "ffmpeg", "-y", "-v", "error", "-ss", "0.2", "-i", str(source),
+        "-frames:v", "1", "-an",
+        "-vf", "scale=" + str(WPOSTER) + ":" + str(HPOSTER)
+        + ":force_original_aspect_ratio=increase,crop=" + str(WPOSTER) + ":" + str(HPOSTER)
+        + ",setsar=1",
+        "-c:v", "libwebp", "-quality", str(quality), "-compression_level", "6",
+        "-map_metadata", "-1", str(out),
+    ])
+    return out.stat().st_size
+
+
 def build_poster(source, out):
-    """A 480x854 WebP still from 0.2 s, tuned into the 20-35 KB band."""
-    qualities = [POSTER_QUALITY, 78, 88, 60, 52]
-    closest = None
-    for quality in qualities:
-        run([
-            "ffmpeg", "-y", "-v", "error", "-ss", "0.2", "-i", str(source),
-            "-frames:v", "1", "-an",
-            "-vf", "scale=" + str(WPOSTER) + ":" + str(HPOSTER)
-            + ":force_original_aspect_ratio=increase,crop=" + str(WPOSTER) + ":" + str(HPOSTER)
-            + ",setsar=1",
-            "-c:v", "libwebp", "-quality", str(quality), "-compression_level", "6",
-            "-map_metadata", "-1", str(out),
-        ])
-        size = out.stat().st_size
+    """A 480x854 WebP still from 0.2 s, tuned towards the 20-35 KB band.
+
+    Quality 68 is the target. A frame that comes out heavier is re-rendered
+    downward until it fits under 35 KB. A very smooth frame (a blurred sunset,
+    a flat fog bank) simply cannot pass 20 KB at this size — WebP wins there —
+    so the lightest still is kept instead of being padded up: a 13 KB poster
+    is a better poster, and the band is a ceiling we never want to cross.
+    """
+    size = render_poster(source, out, POSTER_QUALITY)
+    if POSTER_MIN <= size <= POSTER_MAX:
+        return size
+    if size > POSTER_MAX:
+        for quality in (56, 48, 40, 32):
+            size = render_poster(source, out, quality)
+            if POSTER_MIN <= size <= POSTER_MAX:
+                return size
+            if size < POSTER_MIN:
+                print("  " + out.name + ": " + str(size) + " bytes after quality "
+                      + str(quality) + ", keeping it lighter", flush=True)
+                return size
+        raise RuntimeError(out.name + ": " + str(size) + " bytes is still above "
+                           + str(POSTER_MAX) + " bytes")
+    best = size
+    for quality in (82, 94, 100):
+        size = render_poster(source, out, quality)
         if POSTER_MIN <= size <= POSTER_MAX:
             return size
-        distance = min(abs(size - POSTER_MIN), abs(size - POSTER_MAX))
-        if closest is None or distance < closest[0]:
-            closest = (distance, size)
-    raise RuntimeError(
-        out.name + ": could not reach the " + str(POSTER_MIN) + "-" + str(POSTER_MAX)
-        + " byte band, closest " + str(closest[1] if closest else 0) + " bytes")
+        if size > POSTER_MAX:
+            render_poster(source, out, POSTER_QUALITY)
+            return best
+        best = size
+    print("  " + out.name + ": " + str(best) + " bytes is a smooth frame under the "
+          + str(POSTER_MIN) + " byte target, keeping the lighter still", flush=True)
+    return best
 
 
 def s3_client():
