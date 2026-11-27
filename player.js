@@ -39,6 +39,7 @@
   var rate = 1;
   var ready = false;
   var destroyed = false;
+  var warmTimer = 0;
   var mobile = detectMobile();
 
   var api = {
@@ -125,7 +126,12 @@
     video.addEventListener('playing', function () {
       if (destroyed || video !== current) return;
       reveal(video);
-      warmFollowing();
+      // Wait out the 240 ms fade before the hidden layer is reused: the
+      // outgoing picture must never change while it is still visible.
+      window.clearTimeout(warmTimer);
+      warmTimer = window.setTimeout(function () {
+        if (!destroyed) warmFollowing();
+      }, 260);
     });
     video.addEventListener('timeupdate', function () {
       if (destroyed || video !== current || !currentClip) return;
@@ -143,6 +149,7 @@
   // 5. The next frame is fetched only after the current one really plays.
   function warmFollowing() {
     if (!nextClip || !next) return;
+    if (next.classList.contains('is-visible')) return;
     var src = sourceFor(nextClip);
     if (!src || nextSrc === src) return;
     nextSrc = src;
@@ -267,6 +274,7 @@
 
   function destroy() {
     destroyed = true;
+    window.clearTimeout(warmTimer);
     pause();
     [current, next].forEach(function (video) {
       if (!video) return;

@@ -4504,8 +4504,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   syncInstallButton();
   // ---------------------------------------------------------------------------
   // v123 WebGL threshold: a quiet-luxury prologue that teaches the two gestures
-  // while slotA/slotB/slotC preload the first three scenes. As soon as the video
-  // stream takes over, the rAF loop stops and the GL context is released.
+  // while the first three posters preload. As soon as the video stream takes
+  // over, the rAF loop stops and the GL context is released.
   // ---------------------------------------------------------------------------
   const THRESHOLD_STEP_MS = [3500, 7000];
   const THRESHOLD_COPY = [
