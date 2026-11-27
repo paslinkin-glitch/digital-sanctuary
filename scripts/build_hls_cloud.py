@@ -134,7 +134,7 @@ def encode_hls(source, clip_dir, variant, height, bitrate):
 
 
 def build_poster(source, out):
-    for quality in (45, 40, 35, 30, 25, 20):
+    for quality in (45, 40, 35, 30, 25, 20, 15, 12, 10, 8, 6, 5, 4, 3, 2):
         run([
             "ffmpeg", "-y", "-v", "error", "-ss", "0.8", "-i", str(source), "-frames:v", "1",
             "-vf", "scale=540:960:flags=lanczos", "-c:v", "libwebp", "-quality", str(quality), str(out),
