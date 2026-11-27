@@ -14,4 +14,7 @@
 .video-slot.is-current{z-index:2}
 .video-slot.is-current:not(.is-ready){opacity:0;transition:none}
 .video-slot.is-current.is-ready{opacity:1;z-index:2}
+/* v122: the session's very first decoded frame appears instantly — no 280 ms
+   fade from black when the entry curtain lifts. */
+.video-slot.is-entry-frame.is-current.is-ready{opacity:1;z-index:2;transition:none}
 .dream-atmosphere{position:absolute;inset:0;z-index:4;pointer-events:none;opacity:.55;background:radial-gradient(ellipse 90% 70% at 50% 42%,rgba(236,234,230,.03) 0%,transparent 62%),linear-gradient(180deg,rgba(6,6,7,.10) 0%,transparent 28%,transparent 72%,rgba(6,6,7,.20) 100%)}

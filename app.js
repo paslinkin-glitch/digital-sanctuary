@@ -2589,6 +2589,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   function pickStageClips(stage, count, picked, allowSeen = false, options = {}) {
     const reuse = Boolean(options && options.reuse);
     const preferUnused = options && options.preferUnused instanceof Set ? options.preferUnused : null;
+    // v122: the opening frame of the session is the lightest clip of its stage,
+    // so on 4G the first MP4 starts about twice as fast as a 10-11 MB scene.
+    const lightestFirst = Boolean(options && options.lightestFirst);
     const stageCategories = categories.filter((category) => stage.categories.includes(category.tag));
     const pools = stageCategories.map((category) => {
       const matches = (clip, allowSurreal) => (
@@ -2610,9 +2613,13 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       // taste is a preference here, never an exclusion: dropping a frame would
       // break the 30-frame queue.
       const ordered = shuffleArray(filtered).sort((a, b) => (
+        // v122: ascending file size for the opening stage only.
+        (lightestFirst
+          ? (Number(a.size) || Number.MAX_SAFE_INTEGER) - (Number(b.size) || Number.MAX_SAFE_INTEGER)
+          : 0)
         // On the second cycle prefer the five scenes the first cycle left
         // unused, so all 20 light clips appear inside one 30-step session.
-        (Number(preferUnused && preferUnused.has(a.id)) - Number(preferUnused && preferUnused.has(b.id)))
+        || (Number(preferUnused && preferUnused.has(a.id)) - Number(preferUnused && preferUnused.has(b.id)))
         || (Number(contextAllowsClip(b)) - Number(contextAllowsClip(a)))
         || (b.envScore || 0) - (a.envScore || 0)
       ));
@@ -2766,6 +2773,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
           const picks = pickStageClips(stage, spec.count, picked, allowSeen, {
             reuse: cycle > 0,
             preferUnused: usedBefore,
+            // v122: cycle 0, stage 1 (Shadow) opens on the lightest available
+            // clip instead of a random 10-11 MB scene.
+            lightestFirst: cycle === 0 && spec.id === 1,
           });
           if (picks.length < spec.count) return null;
           cycleEntries.push(...picks);
@@ -3741,7 +3751,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     slot._index = -1;
     slot._srcKey = '';
     slot.dataset.clipId = '';
-    slot.classList.remove('is-current', 'is-previous', 'is-ready');
+    slot.classList.remove('is-current', 'is-previous', 'is-ready', 'is-entry-frame');
     try { slot.pause(); } catch (_) {}
     try { slot.removeAttribute('src'); } catch (_) {}
     slot.preload = 'none';
@@ -3826,7 +3836,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     slot._index = -1;
     slot._srcKey = '';
     slot.dataset.clipId = '';
-    slot.classList.remove('is-current', 'is-previous', 'is-ready');
+    slot.classList.remove('is-current', 'is-previous', 'is-ready', 'is-entry-frame');
     if (clip && clip.el === slot) clip.el = null;
     try { slot.pause(); } catch (_) {}
     try { slot.removeAttribute('src'); } catch (_) {}
@@ -3893,10 +3903,16 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   function markSlotReady(slot) {
     if (!slot || !slot._clip) return;
-    // v120: a current slot never fades in on loadeddata/canplay alone. The
-    // canvas keeps the last painted frame until the video really plays.
-    if (slot === activeSlot) return;
-    if (slot.readyState >= 2) slot.classList.add('is-ready');
+    // v122: the active slot may reveal as soon as the browser has decoded the
+    // first frame (loadeddata/canplay, readyState >= 2). Waiting for "playing"
+    // kept the entry curtain over a black stage while the first second of the
+    // MP4 was still buffering. Inactive preloaded slots just get .is-ready.
+    if (slot.readyState < 2) return;
+    slot.classList.add('is-ready');
+    if (slot === activeSlot) {
+      releaseFrameHoldAfterReveal();
+      finishSlotHandoff();
+    }
   }
   function markSlotPlaying(slot) {
     if (!slot || !slot._clip || slot !== activeSlot) return;
@@ -3984,12 +4000,27 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       slot.classList.remove('is-ready');
     }
     slot.classList.add('is-current');
+    // v122: the very first frame of the session pops in without the 280 ms fade,
+    // so the entry curtain never uncovers a black stage.
+    if (pathStarted) {
+      slot.classList.remove('is-entry-frame');
+    } else {
+      slot.classList.add('is-entry-frame');
+    }
     slot.playbackRate = stage.classList.contains('is-held') ? SLOW_RATE : 1;
     activeSlot = slot;
     selected._startNoted = false;
     selected._startGuardAttempts = 0;
     selected._startRequestedAt = performance.now();
     loadSlotSource(slot, selected, true);
+    // v122: the entry-screen preload may already hold a decoded frame. Reveal the
+    // active slot in this same tick instead of waiting for a new loadeddata or
+    // "playing" event that will never fire again for an unchanged source. The src
+    // check keeps a stale frame of another clip from being revealed.
+    const activeSource = playbackUrlFor(selected);
+    if (slot.readyState >= 2 && activeSource && slot.getAttribute('src') === activeSource) {
+      slot.classList.add('is-ready');
+    }
     // v121: one 2.5 s start guard per clip; a hung mobile Range request is
     // restarted instead of freezing the frame until the carrier gives up.
     armStartGuard(slot, selected);
