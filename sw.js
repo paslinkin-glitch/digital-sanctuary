@@ -6,7 +6,7 @@
  * network-first, so a fresh deployment wins online. Cross-origin video CDN
  * requests and the umami beacon deliberately pass through untouched.
  */
-const CACHE = 'sanctuary-shell-v119';
+const CACHE = 'sanctuary-shell-v120';
 const SHELL = [
   './',
   './index.html',

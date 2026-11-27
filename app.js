@@ -503,6 +503,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   const videoSlotA = document.getElementById('slotA');
   const videoSlotB = document.getElementById('slotB');
   const videoSlots = [videoSlotA, videoSlotB].filter(Boolean);
+  const frameHoldCanvas = document.getElementById('frameHoldCanvas');
+  const frameHoldCtx = frameHoldCanvas ? frameHoldCanvas.getContext('2d') : null;
   const cycleWhisperEl = document.getElementById('cycle-whisper');
   const cycleWhisperKickerEl = document.getElementById('cycle-whisper-kicker');
   const cycleWhisperTextEl = document.getElementById('cycle-whisper-text');
@@ -3311,6 +3313,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
 
     const category = activeCategory();
     if (category) pauseCategory(category);
+    for (const slot of videoSlots) abortSlotStream(slot);
+    activeSlot = null;
+    previousSlot = null;
+    clearFrameHold();
     pauseSound();
     stage.classList.add('is-finalizing');
     releaseWakeLock();
@@ -3551,10 +3557,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     resetViewClock();
     if (isVideoSeen(entry.clip.id)) sessionUsedVideoIds.delete(entry.clip.id);
     category.freshIndex = index;
-    // v119: the first +faststart stream is already staged by
+    // v120: the first +faststart stream is already staged by
     // preparePlaybackWindow() on the entry screen, so entering plays the native
-    // stream instead of waiting for any background download.
-    preparePlaybackWindow(entry, pathPlan[1]);
+    // stream without starting a second download.
+    preparePlaybackWindow(entry);
 
     const clipIndex = playCategory(category);
     if (clipIndex === null) return false;
@@ -3608,10 +3614,13 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (!slot || slot._bound) return;
     slot._bound = true;
     slot.addEventListener('loadeddata', () => markSlotReady(slot));
-    slot.addEventListener('playing', () => markSlotReady(slot));
+    slot.addEventListener('playing', () => markSlotPlaying(slot));
     slot.addEventListener('canplay', () => markSlotReady(slot));
     slot.addEventListener('timeupdate', () => {
       if (slot._clip && slot._category) handleLoop(slot._category, slot._index, slot);
+      // v120: the next frame may preload only after the active stream is
+      // really playing and has moved past its first 0.15 s.
+      if (slot === activeSlot && slot.currentTime > 0.15) warmNextFrame();
     });
     slot.addEventListener('ended', () => {
       if (slot._clip) restartVideo(slot, slot._clip);
@@ -3630,21 +3639,143 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     });
   }
   for (const slot of videoSlots) bindSlot(slot);
-  // Two permanent slots (v117). One slot is always live, the other already
-  // holds the next frame, so a swipe is a 320 ms crossfade between two living
-  // videos instead of a black screen.
+  // v120: exactly one slot owns the network. The other one stays empty (or
+  // holds a fully buffered next clip) and a canvas freeze-frame covers a swipe.
   const SLOT_START_AT = 0.04;
-  const SLOT_FADE_MS = 320;
+  const SLOT_FADE_MS = 280;
+  const FRAME_HOLD_CLEAR_MS = 340;
   let activeSlot = null;
   let previousSlot = null;
   let slotHandoffTimer = 0;
   let nextFrameToken = 0;
+  let frameHoldDrawn = false;
+  let frameHoldVisible = false;
+  let frameHoldHideTimer = 0;
+  let frameHoldClearTimer = 0;
 
   function otherSlot(slot) {
     return videoSlots.find((item) => item !== slot) || null;
   }
   function idleSlot() {
     return videoSlots.find((slot) => slot !== activeSlot && slot !== previousSlot) || null;
+  }
+  // v120: one lightweight canvas keeps the last real video frame visible while
+  // the outgoing stream is torn down and the next one starts alone on the 4G
+  // link. It sits at z-index 1, under .is-current.is-ready (z-index 2).
+  function sizeFrameHoldCanvas() {
+    if (!frameHoldCanvas) return null;
+    const rect = stage.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const width = Math.max(1, Math.round(rect.width * dpr));
+    const height = Math.max(1, Math.round(rect.height * dpr));
+    if (frameHoldCanvas.width !== width || frameHoldCanvas.height !== height) {
+      frameHoldCanvas.width = width;
+      frameHoldCanvas.height = height;
+    }
+    return { width, height };
+  }
+  function drawFrameToCanvas(video) {
+    if (!frameHoldCanvas || !frameHoldCtx || !video) return false;
+    if (video.readyState < 2 || !video.videoWidth || !video.videoHeight) return false;
+    const size = sizeFrameHoldCanvas();
+    if (!size) return false;
+    window.clearTimeout(frameHoldClearTimer);
+    const targetAspect = size.width / size.height;
+    const sourceAspect = video.videoWidth / video.videoHeight;
+    let sx = 0;
+    let sy = 0;
+    let sw = video.videoWidth;
+    let sh = video.videoHeight;
+    if (sourceAspect > targetAspect) {
+      sw = video.videoHeight * targetAspect;
+      sx = (video.videoWidth - sw) / 2;
+    } else {
+      sh = video.videoWidth / targetAspect;
+      sy = (video.videoHeight - sh) / 2;
+    }
+    try {
+      frameHoldCtx.drawImage(video, sx, sy, sw, sh, 0, 0, size.width, size.height);
+    } catch (_) {
+      return false;
+    }
+    return true;
+  }
+  function showFrameHold() {
+    if (!frameHoldCanvas) return;
+    window.clearTimeout(frameHoldHideTimer);
+    window.clearTimeout(frameHoldClearTimer);
+    frameHoldHideTimer = 0;
+    frameHoldCanvas.classList.add('is-visible');
+    frameHoldCanvas.setAttribute('aria-hidden', 'false');
+    frameHoldVisible = true;
+  }
+  function clearFrameHold() {
+    window.clearTimeout(frameHoldHideTimer);
+    window.clearTimeout(frameHoldClearTimer);
+    frameHoldHideTimer = 0;
+    frameHoldVisible = false;
+    frameHoldDrawn = false;
+    if (!frameHoldCanvas) return;
+    frameHoldCanvas.classList.remove('is-visible');
+    frameHoldCanvas.setAttribute('aria-hidden', 'true');
+    if (!frameHoldCtx) return;
+    frameHoldClearTimer = window.setTimeout(() => {
+      try { frameHoldCtx.clearRect(0, 0, frameHoldCanvas.width, frameHoldCanvas.height); } catch (_) {}
+    }, FRAME_HOLD_CLEAR_MS);
+  }
+  function releaseFrameHoldAfterReveal() {
+    window.clearTimeout(frameHoldHideTimer);
+    frameHoldHideTimer = window.setTimeout(clearFrameHold, SLOT_FADE_MS + 40);
+  }
+  function abortSlotStream(slot) {
+    if (!slot) return;
+    const clip = slot._clip;
+    if (clip && clip.el === slot) clip.el = null;
+    slot._clip = null;
+    slot._category = null;
+    slot._index = -1;
+    slot._srcKey = '';
+    slot.dataset.clipId = '';
+    slot.classList.remove('is-current', 'is-previous', 'is-ready');
+    try { slot.pause(); } catch (_) {}
+    try { slot.removeAttribute('src'); } catch (_) {}
+    slot.preload = 'none';
+    try { slot.load(); } catch (_) {}
+    if (activeSlot === slot) activeSlot = null;
+    if (previousSlot === slot) previousSlot = null;
+  }
+  // Called at the very beginning of a swipe: freeze the painted frame, then cut
+  // every stream that is not the incoming preloaded slot, so the new clip gets
+  // the whole 4G channel instead of sharing it with the outgoing video.
+  function beginSwipeFrameHold(keepSlot) {
+    const frozen = drawFrameToCanvas(activeSlot);
+    if (frozen) {
+      showFrameHold();
+      frameHoldDrawn = true;
+    }
+    for (const slot of videoSlots) {
+      if (slot === keepSlot && slot !== activeSlot) continue;
+      abortSlotStream(slot);
+    }
+    window.clearTimeout(slotHandoffTimer);
+    nextFrameToken += 1;
+    return frozen;
+  }
+  function activeStreamPlayable() {
+    return Boolean(activeSlot)
+      && activeSlot.readyState >= 2
+      && !activeSlot.paused
+      && activeSlot.currentTime > 0.15;
+  }
+  // v120: the next clip may warm up only after the active one is playing AND
+  // has already pulled its whole file, so two <video> elements can never share
+  // the 4G channel. Until then the active clip owns 100% of the bandwidth.
+  function activeStreamFullyBuffered() {
+    const video = activeSlot;
+    if (!video || !Number.isFinite(video.duration) || video.duration <= 0) return false;
+    const ranges = video.buffered;
+    if (!ranges || !ranges.length) return false;
+    return ranges.end(ranges.length - 1) >= video.duration - 0.5;
   }
   function seekSlot(slot, time) {
     if (!slot) return;
@@ -3731,13 +3862,19 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   function markSlotReady(slot) {
     if (!slot || !slot._clip) return;
-    if (slot !== activeSlot) {
-      if (slot.readyState >= 2) slot.classList.add('is-ready');
-      return;
-    }
-    if (slot.readyState < 2) return;
+    // v120: a current slot never fades in on loadeddata/canplay alone. The
+    // canvas keeps the last painted frame until the video really plays.
+    if (slot === activeSlot) return;
+    if (slot.readyState >= 2) slot.classList.add('is-ready');
+  }
+  function markSlotPlaying(slot) {
+    if (!slot || !slot._clip || slot !== activeSlot) return;
+    if (slot.readyState < 2 || slot.paused) return;
     slot.classList.add('is-ready');
     noteClipStarted(slot._clip);
+    // Crossfade 0 -> 1 over 280 ms, then drop the held canvas.
+    releaseFrameHoldAfterReveal();
+    window.setTimeout(warmNextFrame, 260);
     finishSlotHandoff();
   }
   function finishSlotHandoff() {
@@ -3760,11 +3897,16 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   function warmNextFrame() {
     if (pathPos < 0 || !pathPlan.length) return;
+    // v120 strict single stream: nothing may preload while the clip the visitor
+    // is watching has not started playing and moved past its first frames, and
+    // nothing may preload while that clip still owns the network.
+    if (!activeStreamPlayable() || !activeStreamFullyBuffered()) return;
     nextFrameToken += 1;
     const nextEntry = pathPlan[pathPos + 1];
     if (!nextEntry || !nextEntry.clip) return;
+    if (nextEntry.clip.el && videoSlots.includes(nextEntry.clip.el)) return;
     const slot = idleSlot();
-    if (!slot || slot._clip === nextEntry.clip) return;
+    if (!slot) return;
     stageEntry(nextEntry);
   }
   function playClip(category, index) {
@@ -3776,42 +3918,35 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     category.activeIndex = index;
     let slot = selected.el && videoSlots.includes(selected.el) ? selected.el : null;
     if (!slot) slot = idleSlot();
-    if (!slot && activeSlot && !slotHasFrame(activeSlot)) {
-      // Rapid swipe: the active slot has not painted anything yet, so reload it
-      // instead of stealing the visible underlay and showing a black frame.
-      slot = activeSlot;
-    }
     if (!slot) slot = otherSlot(activeSlot) || videoSlots[0] || null;
     if (!slot) return;
-    if (slot === previousSlot) {
-      if (!slotHasFrame(activeSlot)) {
-        // The underlay is the only painted layer: reload the hidden active slot
-        // and leave the retained frame untouched underneath.
-        slot = activeSlot;
-        if (!slot) return;
-      } else {
-        previousSlot.classList.remove('is-previous');
-        previousSlot = null;
-      }
+    // v120: any slot that is not the incoming target must stop downloading at
+    // once, otherwise a preloaded frame could still split the 4G channel.
+    for (const other of videoSlots) {
+      if (other === slot || other === activeSlot) continue;
+      abortSlotStream(other);
     }
     const outgoing = activeSlot && activeSlot !== slot ? activeSlot : null;
+    const sameClip = slot === activeSlot && slot._clip === selected;
+    if ((outgoing || (slot === activeSlot && !sameClip)) && !frameHoldVisible) {
+      // Navigation without an explicit swipe (forced scene, first entry): keep
+      // the frame alive on the canvas before the old source is dropped.
+      if (drawFrameToCanvas(outgoing || activeSlot)) {
+        showFrameHold();
+        frameHoldDrawn = true;
+      }
+    }
     bindClipToSlot(slot, category, selected, index);
     window.clearTimeout(slotHandoffTimer);
+    // v120: exactly one video may own the network. The outgoing slot is torn
+    // down immediately; the canvas covers the gap with its last painted frame.
+    if (outgoing) abortSlotStream(outgoing);
+    previousSlot = null;
     slot.classList.remove('is-previous');
-    if (outgoing) {
-      outgoing.classList.remove('is-current');
-      if (slotHasFrame(outgoing)) {
-        // The outgoing slot really held a frame: keep it visible underneath
-        // until the new current slot has decoded its first frame.
-        if (previousSlot && previousSlot !== outgoing && previousSlot !== slot) {
-          previousSlot.classList.remove('is-previous');
-        }
-        outgoing.classList.add('is-previous');
-        previousSlot = outgoing;
-      } else {
-        // It never painted: never let an empty layer cover the retained frame.
-        outgoing.classList.remove('is-ready');
-      }
+    if (sameClip) {
+      clearFrameHold();
+    } else {
+      slot.classList.remove('is-ready');
     }
     slot.classList.add('is-current');
     slot.playbackRate = stage.classList.contains('is-held') ? SLOW_RATE : 1;
@@ -3819,7 +3954,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     selected._startNoted = false;
     selected._startRequestedAt = performance.now();
     loadSlotSource(slot, selected, true);
-    if (slot.readyState >= 2) markSlotReady(slot);
   }
   function mountClips(category) {
     const media = category.el.querySelector('.media');
@@ -3861,6 +3995,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     for (const slot of videoSlots) releaseSlotVideo(slot);
     activeSlot = null;
     previousSlot = null;
+    clearFrameHold();
     if (finaleSessionVideo) {
       try {
         finaleSessionVideo.pause();
@@ -3871,24 +4006,15 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       }
     }
   }
-  function preparePlaybackWindow(currentEntry, nextEntry) {
+  function preparePlaybackWindow(currentEntry) {
     const current = currentEntry && currentEntry.clip ? currentEntry : (pathPlan[pathPos] || null);
-    const next = nextEntry && nextEntry.clip ? nextEntry : (pathPlan[pathPos + 1] || null);
-    let currentSlot = current && current.clip ? current.clip.el : null;
-    if (current && !(activeSlot && activeSlot._clip === current.clip)) {
-      currentSlot = stageEntry(current);
-    }
-    if (!next) return;
-    const spare = videoSlots.find((slot) => slot !== activeSlot
-      && slot !== previousSlot
-      && slot !== currentSlot);
-    if (!spare || spare._clip === next.clip) return;
-    const index = next.category
-      ? next.category.clips.findIndex((item) => item.id === next.clip.id)
-      : -1;
-    bindClipToSlot(spare, next.category, next.clip, index);
-    loadSlotSource(spare, next.clip, false);
-    seekSlot(spare, SLOT_START_AT);
+    if (!current || !current.clip) return;
+    if (activeSlot && activeSlot._clip === current.clip) return;
+    if (current.clip.el && videoSlots.includes(current.clip.el)) return;
+    // v120: only the target of the current swipe is allowed to touch the
+    // network here. The next frame is warmed later by warmNextFrame(), once the
+    // active stream is genuinely playing.
+    stageEntry(current);
   }
 
   const CATALOG_STAGE_CATEGORIES = {
@@ -4107,7 +4233,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     updateStageLabel(sceneStage);
     updateSessionProgress();
 
-    preparePlaybackWindow(planned, pathPlan[pathPos + 1]);
+    preparePlaybackWindow(planned);
     playCategory(category);
     activateCaption(category, activeClip(), behavior, allowed, sceneStage, sceneContext || {});
     switchSoundtrack(null, duration);
@@ -4290,10 +4416,13 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       pathPos -= 1;
       const previous = pathPlan[pathPos];
       if (!previous) return;
+      // v120: freeze the live frame and cut the old stream before the route
+      // change, so only the incoming clip uses the 4G link.
+      beginSwipeFrameHold(previous.clip.el);
       sceneContext.stage = previous.stage;
       updateStageLabel(previous.stage);
       trackStageReached(previous.stage);
-      preparePlaybackWindow(previous, pathPlan[pathPos + 1]);
+      preparePlaybackWindow(previous);
       navigateTo(
         previous.category.index,
         'down',
@@ -4325,6 +4454,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
     const entry = pathPlan[pathPos + 1];
     if (!entry) return;
+    // v120: freeze the live frame and cut every other stream at the exact swipe
+    // moment, keeping the preloaded target (if any) as the only live download.
+    beginSwipeFrameHold(entry.clip.el);
     pathPos += 1;
     trackFrameMilestone();
     sceneContext.stage = entry.stage;
@@ -4904,7 +5036,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       try {
         // v119: stage the first two +faststart streams while the entry screen
         // is still up, so the first swipe starts from a warm native buffer.
-        preparePlaybackWindow(pathPlan[0], pathPlan[1]);
+        preparePlaybackWindow(pathPlan[0]);
         const first = pathPlan[0];
         prefetchCaption(first.clip, first.category, behaviorContext(), first.stage);
       } catch (error) {
@@ -4938,11 +5070,21 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
           width: slot.videoWidth,
           height: slot.videoHeight,
           src: String(slot.getAttribute('src') || '').slice(0, 24),
+          hasSrc: Boolean(slot.getAttribute('src')),
+          networkState: slot.networkState,
           time: Math.round(slot.currentTime * 100) / 100,
           opacity: getComputedStyle(slot).opacity,
           cls: slot.className,
           key: String(slot._srcKey || '').slice(0, 46),
         }));
+      },
+      get frameHold() {
+        return {
+          visible: Boolean(frameHoldCanvas && frameHoldCanvas.classList.contains('is-visible')),
+          drawn: frameHoldDrawn,
+          width: frameHoldCanvas ? frameHoldCanvas.width : 0,
+          height: frameHoldCanvas ? frameHoldCanvas.height : 0,
+        };
       },
       get audio() {
         return sound && sound.ctx

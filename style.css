@@ -2,12 +2,14 @@
 @keyframes likePop{0%{transform:scale(.86)}55%{transform:scale(1.12)}100%{transform:scale(1)}}.double-tap-heart{position:fixed;left:0;top:0;z-index:32;width:82px;height:82px;margin:-41px 0 0 -41px;color:#E6B88A;pointer-events:none;opacity:0;transform:translate3d(-100px,-100px,0) scale(.4);filter:drop-shadow(0 0 14px rgba(230,184,138,.45))}.double-tap-heart svg{width:100%;height:100%;fill:currentColor}.double-tap-heart.is-active{animation:doubleHeart .9s cubic-bezier(.22,1,.36,1) both}
 @keyframes doubleHeart{0%{opacity:0;transform:translate3d(var(--heart-x,-100px),var(--heart-y,-100px),0) scale(.4)}18%{opacity:1;transform:translate3d(var(--heart-x,-100px),var(--heart-y,-100px),0) scale(1.12)}55%{opacity:.95;transform:translate3d(var(--heart-x,-100px),var(--heart-y,-100px),0) scale(.98)}100%{opacity:0;transform:translate3d(var(--heart-x,-100px),var(--heart-y,-100px),0) scale(1.05)}}
 
-/* v119: two permanent native-stream slots, 320ms crossfade, no black frame.
-   .is-previous stays fully visible underneath (z-index 1) and .is-current only
-   becomes visible once .is-ready confirms the first decoded frame (z-index 2).
+/* v120: one live native stream plus a canvas freeze-frame, no black frame.
+   #frameHoldCanvas (z-index 1) holds the last painted frame while the outgoing
+   video is torn down; .is-current.is-ready (z-index 2) fades in over 280 ms.
    No filter, backdrop-filter or blend mode touches the video tag, .media or this layer. */
 .video-slots{position:absolute;inset:0;z-index:3;pointer-events:none;overflow:hidden}
-.video-slot{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;z-index:0;background:#070709;transition:opacity 320ms ease;pointer-events:none}
+.video-slot{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;z-index:0;background:#070709;transition:opacity 280ms ease;pointer-events:none}
+.frame-hold{position:absolute;inset:0;width:100%;height:100%;z-index:1;opacity:0;pointer-events:none;transition:opacity 120ms linear;background:transparent}
+.frame-hold.is-visible{opacity:1}
 .video-slot.is-previous{opacity:1;z-index:1;transition:none}
 .video-slot.is-current{z-index:2}
 .video-slot.is-current:not(.is-ready){opacity:0;transition:none}
