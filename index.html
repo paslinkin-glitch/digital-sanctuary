@@ -36,10 +36,10 @@
   <link rel="manifest" href="manifest.json">
   <link rel="preconnect" href="https://s3.twcstorage.ru" crossorigin>
   <link rel="dns-prefetch" href="https://s3.twcstorage.ru">
-  <link rel="stylesheet" href="style.css?v=115">
+  <link rel="stylesheet" href="style.css?v=116">
 </head>
 <body>
-  <script>window.SANCTUARY_MAINTENANCE = true; if (window.SANCTUARY_MAINTENANCE) document.documentElement.dataset.maintenance = 'true';</script>
+  <script>window.SANCTUARY_MAINTENANCE = false; if (window.SANCTUARY_MAINTENANCE) document.documentElement.dataset.maintenance = 'true';</script>
 <main class="stage" id="stage">
     <section class="slide is-active" data-tag="Shadow">
       <div class="media" aria-hidden="true"></div>
@@ -61,6 +61,11 @@
       <div class="media" aria-hidden="true"></div>
       <span class="tag">04 / EXIT</span>
     </section>
+    <div class="video-slots" aria-hidden="true">
+      <video id="slotA" class="clip video-slot" muted playsinline webkit-playsinline disablepictureinpicture aria-hidden="true"></video>
+      <video id="slotB" class="clip video-slot" muted playsinline webkit-playsinline disablepictureinpicture aria-hidden="true"></video>
+    </div>
+    <div class="dream-atmosphere" aria-hidden="true"></div>
     <div class="session-progress" aria-hidden="true">
       <span class="session-progress-fill" id="session-progress-fill"></span>
     </div>
@@ -174,7 +179,8 @@
       window.__deferredInstallPrompt = event;
     });
   </script>
-  <script src="videos-data.js?v=115"></script>
-  <script src="app.js?v=115"></script>
+  <script src="hls.min.js?v=116"></script>
+  <script src="videos-data.js?v=116"></script>
+  <script src="app.js?v=116"></script>
 </body>
 </html>
