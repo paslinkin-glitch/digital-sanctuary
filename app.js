@@ -2532,6 +2532,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   let qualityFallbackLocked = false;
   let activeQuality = chooseQuality();
+  let slowStartStreak = 0;
+  let fastStartStreak = 0;
+  const START_FALLBACK_MS = 5000;
+  const QUICK_START_MS = 1500;
   document.documentElement.dataset.quality = activeQuality;
   function connectionSnapshot() {
     const c = navigator.connection || navigator.mozConnection || navigator.webkitConnection || null;
@@ -2551,11 +2555,11 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       || n.effectiveType === '2g' || n.effectiveType === '3g';
     if (slowNetwork) return '480';
     if (!mobile) return '1080';
-    const wifi = n.wifi === true || (!n.type && !n.effectiveType && !n.saveData);
-    if (SCREEN_TIER === 'high' && wifi) return '1080';
-    if (SCREEN_TIER === 'low') return '480';
-    if (SCREEN_TIER === 'mid' || n.effectiveType === '4g') return '720';
-    return '480';
+    // iOS Safari often exposes no Network Information API. Treat that as
+    // mobile cellular and start at the sharp 720p pool instead of guessing
+    // Wi-Fi/1080p.
+    if (n.wifi === true) return '1080';
+    return '720';
   }
   function sourceForClip(clip) {
     if (!clip) return '';
@@ -2565,11 +2569,55 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     return clip.url;
   }
   let qualitySyncTimer = 0;
+  function fallbackTo480() {
+    if (activeQuality === '480') return;
+    qualityFallbackLocked = true;
+    activeQuality = '480';
+    slowStartStreak = 0;
+    fastStartStreak = 0;
+    document.documentElement.dataset.quality = activeQuality;
+    rebuildRemainingPath('480');
+  }
+  function armNextPreload(clip) {
+    if (!clip) return;
+    if (clip._preloadTimer) window.clearTimeout(clip._preloadTimer);
+    clip._preloadTimer = window.setTimeout(() => {
+      clip._preloadTimer = 0;
+      const current = activeClip();
+      const video = current && current.el;
+      if (!current || current.id !== clip.id || !video || video.paused || video.readyState < 2) return;
+      const next = pathPlan[pathPos + 1];
+      if (!next || !next.clip) return;
+      ensureClipVideo(next.category, next.clip);
+      if (next.clip.el) next.clip.el.preload = 'auto';
+    }, 1200);
+  }
+  function noteClipStarted(clip) {
+    if (!clip || clip._startNoted) return;
+    clip._startNoted = true;
+    const elapsed = clip._startRequestedAt ? performance.now() - clip._startRequestedAt : 0;
+    slowStartStreak = 0;
+    if (qualityFallbackLocked && activeQuality === '480' && elapsed > 0 && elapsed < QUICK_START_MS) {
+      fastStartStreak += 1;
+      if (fastStartStreak >= 2) {
+        qualityFallbackLocked = false;
+        fastStartStreak = 0;
+        activeQuality = '720';
+        document.documentElement.dataset.quality = activeQuality;
+        rebuildRemainingPath('720');
+      }
+    } else {
+      fastStartStreak = 0;
+    }
+    armNextPreload(clip);
+  }
   function setQuality(force) {
     if (document.hidden && !force) return;
     const next = chooseQuality();
     if (!force && next === activeQuality) return;
     activeQuality = next;
+    slowStartStreak = 0;
+    fastStartStreak = 0;
     document.documentElement.dataset.quality = activeQuality;
     if (pathStarted && pathPos >= 0 && pathPlan.length) {
       rebuildRemainingPath(activeQuality);
@@ -3728,7 +3776,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         clip._slowFrameTimer = 0;
       }
       video.classList.add('is-ready');
-      if (category.index === state.index && category.activeIndex === index) clearFramePlaceholder();
+      if (category.index === state.index && category.activeIndex === index) {
+        clearFramePlaceholder();
+        noteClipStarted(clip);
+      }
     };
     video.addEventListener('loadeddata', markReady);
     video.addEventListener('playing', () => {
@@ -3804,6 +3855,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       window.clearTimeout(clip._slowFrameTimer);
       clip._slowFrameTimer = 0;
     }
+    if (clip._preloadTimer) {
+      window.clearTimeout(clip._preloadTimer);
+      clip._preloadTimer = 0;
+    }
     clip.el = null;
     clip.lastTime = 0;
     disposeVideoElement(video);
@@ -3871,10 +3926,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       preloadPoster(next.clip);
     }
     // Never create a third <video>; the next frame is poster-only until it becomes current.
-    if (anchorClip && anchorClip.id) {
-      keep.add(anchorClip.id);
-      ensureClipVideo(activeCategory(), anchorClip);
-    }
     prunePlaybackVideos(keep);
   }
 
@@ -4070,9 +4121,16 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
             promise.catch(() => {
             });
           }
+          if (video.readyState >= 2) noteClipStarted(clip);
         };
         video.classList.add('is-current');
         video.playbackRate = stage.classList.contains('is-held') ? SLOW_RATE : 1;
+        clip._startNoted = false;
+        clip._startRequestedAt = performance.now();
+        if (clip._preloadTimer) {
+          window.clearTimeout(clip._preloadTimer);
+          clip._preloadTimer = 0;
+        }
         const posterPromise = preloadPoster(clip);
         if (clip._posterReady) {
           startCurrent();
@@ -4083,24 +4141,14 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
             new Promise((resolve) => window.setTimeout(resolve, 250)),
           ]).then(startCurrent);
         }
-        window.setTimeout(() => {
-          if (selected.el !== video || clip._posterLoaded || clip._posterFailed) return;
-          if (activeQuality !== '1080' && activeQuality !== '720') return;
-          qualityFallbackLocked = true;
-          activeQuality = '480';
-          document.documentElement.dataset.quality = activeQuality;
-          rebuildRemainingPath('480');
-        }, 820);
         if (clip._slowFrameTimer) window.clearTimeout(clip._slowFrameTimer);
         clip._slowFrameTimer = window.setTimeout(() => {
           clip._slowFrameTimer = 0;
-          if (!clip.el || video.readyState >= 2) return;
+          if (!clip.el || selected.el !== video || video.readyState >= 2) return;
           if (activeQuality !== '1080' && activeQuality !== '720') return;
-          qualityFallbackLocked = true;
-          activeQuality = '480';
-          document.documentElement.dataset.quality = activeQuality;
-          rebuildRemainingPath('480');
-        }, 2200);
+          slowStartStreak += 1;
+          if (slowStartStreak >= 2) fallbackTo480();
+        }, START_FALLBACK_MS);
       } else {
         video.classList.remove('is-current');
         video.preload = 'none';
@@ -4162,30 +4210,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       framePlaceholder = ghost;
     } catch (_) {}
   }
-  function showFrameAfterglow() {
-    if (SCREEN_TIER !== 'high' || isMobileViewport()) return;
-    if (!gateOpen || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const video = document.querySelector('.slide.is-active video');
-    if (!video || !video.src) return;
-    try {
-      const ghost = video.cloneNode(true);
-      ghost.removeAttribute('id');
-      ghost.className = 'afterglow-video';
-      ghost.muted = true;
-      document.body.appendChild(ghost);
-      try { ghost.pause(); } catch (_) {}
-      try {
-        const time = Number(video.currentTime) || 0;
-        if (Number.isFinite(time)) ghost.currentTime = time;
-      } catch (_) {}
-      requestAnimationFrame(() => ghost.classList.add('is-visible'));
-      window.setTimeout(() => disposeVideoElement(ghost), 520);
-    } catch (_) {}
-  }
   function navigateTo(targetIndex, direction, fadeMs, forcedClipId, sceneContext) {
     if (targetIndex === null || targetIndex === undefined) return;
     if (!slides[targetIndex]) return;
-    showFrameAfterglow();
     maybeRecordResonance();
     markInteraction();
     setBreath(0);    window.clearTimeout(captionRevealTimer);
