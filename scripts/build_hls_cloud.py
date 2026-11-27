@@ -1,17 +1,29 @@
 #!/usr/bin/env python3
-"""Build 20 light studio-quality vertical dream scenes and publish the catalog.
+"""Build the 30-scene Quiet Luxury video catalog in the cloud (v124).
 
-v119: the catalog is capped at 20 scenes, each one a 10-second 1080x1920
-H.264 High MP4 at studio quality (CRF 16, preset slow, +faststart) that must
-never exceed the hard 12 MB (12_000_000 bytes) ceiling. A larger file is
-re-encoded once with -maxrate 8500k -bufsize 17000k and, if it still does not
-fit, refused before it can reach S3. The ten scenes above 12 MB were removed
-in v119, so the 30-frame session is assembled from these 20 frames (15 unique
-per cycle; the second cycle repeats some and uses every scene).
-Files live at digital-sanctuary/mp4-1080/<clip_id>.mp4 and are streamed
-natively by slotA / slotB via +faststart: no Blob prefetch and no hidden
-fetch() keeping the browser loading bar alive. Old digital-sanctuary/hls/
-objects are removed; the digital-sanctuary/audio/ library is never touched.
+The catalog is exactly 30 unique vertical dream scenes, grouped as
+10 shadow / 8 trickster_abyss (4 of them surreal) / 6 calm / 6 path (4 of them
+finale). Sixteen of them already live in S3 as 1080p masters and are never
+re-encoded or overwritten: only their 720p twin and their WebP poster are
+derived from the published master. The other fourteen are downloaded from free,
+watermark-free Coverr files, cropped to 1080x1920 and encoded here.
+
+Every scene ends up as three objects:
+
+  digital-sanctuary/mp4-1080/<id>.mp4  1080x1920, 10 s, 30 fps, -an, CRF 18,
+                                        -maxrate 7500k -bufsize 15000k,
+                                        +faststart, at most 11.5 MB
+  digital-sanctuary/mp4-720/<id>.mp4   720x1280, 10 s, 30 fps, -an, CRF 22,
+                                        -maxrate 1700k -bufsize 3400k,
+                                        +faststart, 1.4-2.3 MB
+  digital-sanctuary/posters/<id>.webp   frame at 0.2 s, 480x854, quality 68,
+                                        20-35 KB
+
+The four rejected scenes (a coverr+ watermark, a bright riverside thicket and
+two blown-out daytime skies) are deleted from S3 and from the catalog. Old
+digital-sanctuary/hls/ objects are removed; the digital-sanctuary/audio/
+library is never touched. videos-data.js and videos.json are rewritten with
+url1080, url720, size720, poster and the legacy url field.
 """
 import json
 import os
@@ -19,124 +31,143 @@ import shutil
 import subprocess
 from pathlib import Path
 
-import boto3
-from botocore.config import Config
-
 ROOT = Path(__file__).resolve().parents[1]
 WORK = ROOT / "mp4-work"
-OUT = WORK / "clips"
+SOURCE_DIR = WORK / "sources"
+OUT_1080 = WORK / "1080"
+OUT_720 = WORK / "720"
+OUT_POSTER = WORK / "posters"
+
 S3_BUCKET = os.environ.get("S3_BUCKET", "digital-sanctuary")
 S3_ENDPOINT = os.environ.get("S3_ENDPOINT", "https://s3.twcstorage.ru").rstrip("/")
 S3_PREFIX = S3_ENDPOINT + "/" + S3_BUCKET
-MP4_PREFIX = "mp4-1080"
+
+PREFIX_1080 = "mp4-1080"
+PREFIX_720 = "mp4-720"
+PREFIX_POSTER = "posters"
+
 DURATION = 10
-WIDTH = 1080
-HEIGHT = 1920
 FPS = 30
-# The light 20-scene catalog starts at 4.1 MB, so the floor follows it.
-SIZE_MIN = 4_000_000
-# Hard per-file ceiling (v119). Nothing heavier may ever be published.
-MAX_FILE_BYTES = 12_000_000
-SIZE_MAX = MAX_FILE_BYTES
-BUFSIZE = "17000k"
-FALLBACK_MAXRATE = "8500k"
+W1080, H1080 = 1080, 1920
+W720, H720 = 720, 1280
+WPOSTER, HPOSTER = 480, 854
 
-# Curated from the Coverr sitemap: only unused dreamlike nature/water/sky/fog
-# sources, no people, crowds, streets, vehicles, buildings, logos or animals
-# in close-up. The workflow still downloads every original itself.
-# v119: the ten sources whose CRF 16 render exceeded 12 MB are gone, so only
-# these 20 light scenes (4.1-11.7 MB) are ever built and published again.
-SCENES = [
-    ("dream-shadow-01", "Misty Mountains in Sao Vicente", "https://cdn.coverr.co/videos/coverr-misty-mountains-in-sao-vicente-portugal-3617/1080p.mp4", "shadow", "fog-01", False, False),
-    ("dream-shadow-03", "Glade in Fanal", "https://cdn.coverr.co/videos/coverr-glade-in-fanal-madeira-island-8331/1080p.mp4", "shadow", "fog-03", False, False),
-    ("dream-shadow-05", "Fast-Flowing River", "https://cdn.coverr.co/videos/coverr-fast-flowing-river-7623/1080p.mp4", "shadow", "fog-05", False, False),
-    ("dream-shadow-06", "Forest in Geres", "https://cdn.coverr.co/videos/coverr-forest-in-ger-s-national-park-8003/1080p.mp4", "shadow", "rain-01", False, False),
-    ("dream-shadow-07", "A Lake Near a Forest", "https://cdn.coverr.co/videos/coverr-a-lake-near-a-forest-6426/1080p.mp4", "shadow", "rain-02", False, False),
-    ("dream-shadow-08", "Cloudy Day in Fanal", "https://cdn.coverr.co/videos/coverr-cloudy-day-in-fanal-madeira-island-3143/1080p.mp4", "shadow", "rain-03", False, False),
-    ("dream-shadow-10", "Mountain Tops", "https://cdn.coverr.co/videos/coverr-mountain-tops-9327/1080p.mp4", "shadow", "water-01", False, False),
-    ("dream-trickster-01", "Blurry Sunset", "https://cdn.coverr.co/videos/coverr-blurry-sunset-2693/1080p.mp4", "trickster_abyss", "fire-01", True, False),
-    ("dream-trickster-02", "Rock Formation in the Sea", "https://cdn.coverr.co/videos/coverr-premium-rock-formation-in-the-sea-1789/1080p.mp4", "trickster_abyss", "fire-02", True, False),
-    ("dream-trickster-05", "Calm Waves in a Gulf", "https://cdn.coverr.co/videos/coverr-calm-waves-in-an-ocean-gulf-4513/1080p.mp4", "trickster_abyss", "water-03", False, False),
-    ("dream-trickster-06", "A Tide of Foamy Waves", "https://cdn.coverr.co/videos/coverr-a-tide-of-foamy-waves-4378/1080p.mp4", "trickster_abyss", "water-04", False, False),
-    ("dream-trickster-07", "Bioluminescent Waves", "https://cdn.coverr.co/videos/coverr-bioluminescent-plankton-illuminate-the-waves-on-a-tropical-beach/1080p.mp4", "trickster_abyss", "space-01", True, False),
-    ("dream-trickster-08", "Sunset over the Atlantic", "https://cdn.coverr.co/videos/coverr-sunset-over-the-atlantic-ocean-1409/1080p.mp4", "trickster_abyss", "city-01", True, False),
-    ("dream-calm-01", "Sunset in Costa Rica", "https://cdn.coverr.co/videos/coverr-sunset-in-costa-rica-5323/1080p.mp4", "calm", "city-02", False, False),
-    ("dream-calm-03", "A View of the Lake", "https://cdn.coverr.co/videos/coverr-a-view-of-the-lake-2273/1080p.mp4", "calm", "city-04", False, False),
-    ("dream-calm-04", "Lake Landscape in Salta", "https://cdn.coverr.co/videos/coverr-lake-landscape-in-salta-argentina-9045/1080p.mp4", "calm", "people-01", False, False),
-    ("dream-calm-05", "Lago di Braies Reflection", "https://cdn.coverr.co/videos/coverr-lago-di-braies-reflection-1734/1080p.mp4", "calm", "people-02", False, False),
-    ("dream-path-01", "The Endless Horizon", "https://cdn.coverr.co/videos/coverr-a-spectacular-view-of-the-endless-horizon-4469/1080p.mp4", "path", "road-01", False, True),
-    ("dream-path-04", "Island in the Sea", "https://cdn.coverr.co/videos/coverr-island-in-the-sea-5236/1080p.mp4", "path", "road-04", False, True),
-    ("dream-path-05", "A Pier in the Ocean", "https://cdn.coverr.co/videos/coverr-a-pier-in-the-ocean-5436/1080p.mp4", "path", "space-03", False, False),
-]
+MAX_1080_BYTES = 11_500_000
+SIZE_720_MIN = 1_400_000
+SIZE_720_MAX = 2_300_000
+POSTER_MIN = 20_000
+POSTER_MAX = 35_000
+POSTER_QUALITY = 68
 
-# Hand-written live captions, one pair per scene, in SCENES order. Each line
-# describes what actually happens in that shot, in plain human language.
-CAPTIONS = [
-    ("Cloud slides down the green ridges and stops above the valley. Nothing in this weather asks you to decide.",
-     "Облако сползает по зелёным хребтам и замирает над долиной. В такую погоду решать нечего."),
-    ("Laurel trees close around a small clearing and the moss holds the damp air. Some places in a person are this old and this green.",
-     "Лавры смыкаются вокруг маленькой поляны, мох держит влажный воздух. Есть в человеке места такие же древние и зелёные."),
-    ("Cold water runs over the stones without pausing to explain itself. It only moves.",
-     "Холодная вода бежит по камням и не пытается ничего объяснить. Она просто движется."),
-    ("Trunks stand close together and the path between them narrows. The forest does not ask you to be quick.",
-     "Стволы стоят близко, тропа между ними сужается. Лес не просит тебя торопиться."),
-    ("Still water holds a second forest, darker than the first. The reflection knows more than it says.",
-     "Тихая вода держит второй лес, темнее первого. Отражение знает больше, чем говорит."),
-    ("Low cloud drifts between the trees and softens every edge. Even the sharp things breathe here.",
-     "Низкое облако идёт между деревьями и смягчает все края. Даже острое здесь дышит."),
-    ("Peaks stand above the cloud layer in the early light. From this height the worry looks small.",
-     "Вершины стоят над облаками в раннем свете. С этой высоты тревога кажется маленькой."),
-    ("The sun blurs into the horizon and the whole frame forgets its edges. Let the day dissolve a little too.",
-     "Солнце расплывается у горизонта, и весь кадр забывает свои края. Дай и дню немного раствориться."),
-    ("A dark stone stands in the surf while the water keeps changing shape around it. Some things survive by staying still.",
-     "Тёмный камень стоит в прибое, вода снова и снова меняет форму вокруг него. Иное выживает, оставаясь на месте."),
-    ("Small waves arrive one after another and each one is slightly different. Stillness keeps moving.",
-     "Небольшие волны приходят одна за другой, и каждая чуть другая. Покой продолжает двигаться."),
-    ("Foam slides up the shore and the sea takes it back almost at once. Everything here is brief.",
-     "Пена поднимается по берегу, и море почти сразу забирает её назад. Всё здесь ненадолго."),
-    ("Blue light burns along the breaking waves in the dark and vanishes behind them. Something glows only where it breaks.",
-     "Синий свет горит по гребням волн в темноте и гаснет за ними. Иное светится только там, где сломалось."),
-    ("The sky turns copper and the whole ocean carries the colour for a moment. Then the light gives itself to the water.",
-     "Небо становится медным, и весь океан на миг удерживает этот цвет. Потом свет отдаёт себя воде."),
-    ("Warm light settles on the water and the day stops asking for anything. You can put the weight down here.",
-     "Тёплый свет ложится на воду, и день перестаёт чего-то требовать. Здесь можно опустить груз."),
-    ("The water is so still that the far shore doubles itself. Nothing needs to be added to this.",
-     "Вода так тиха, что дальний берег удваивается. К этому ничего не нужно добавлять."),
-    ("Clouds and mountains share the surface of the lake without arguing. Both of them are held.",
-     "Облака и горы делят поверхность озера без спора. Оба удержаны."),
-    ("Wooden boats rest on green water and the peaks lean into it exactly. Mountains look gentler when they mirror.",
-     "Деревянные лодки стоят на зелёной воде, вершины наклоняются в неё точно так же. Горы выглядят мягче, когда отражаются."),
-    ("A long line of light opens all the way to the edge of sight. You do not need a map for this.",
-     "Длинная полоса света открывается до самого края зрения. Карта здесь не нужна."),
-    ("A small island holds its ground while the whole ocean moves past. You do not have to follow every wave.",
-     "Маленький остров держится, пока мимо идёт целый океан. Не обязательно идти за каждой волной."),
-    ("The pier reaches into open water and ends there, still pointing forward. Not every road has to arrive.",
-     "Причал уходит в открытую воду и заканчивается там, всё ещё указывая вперёд. Не каждая дорога должна привести к цели."),
-]
+# v124: these four frames are gone for good — one carries the coverr+ watermark,
+# one is a bright daytime river thicket and two are flat midday blue skies.
+REJECTED_IDS = (
+    "dream-trickster-02",
+    "dream-shadow-05",
+    "dream-calm-03",
+    "dream-path-04",
+)
+# No premium, plus, watermarked or preview file may ever be downloaded.
+FORBIDDEN_URL_TOKENS = ("coverr+", "premium", "watermark", "preview", "/plus", "plus-")
 
+STAGE_COUNTS = {"shadow": 10, "trickster_abyss": 8, "calm": 6, "path": 6}
+STAGE_ARCH = {"shadow": "Shadow", "trickster_abyss": "Trickster", "calm": "Calm", "path": "Path"}
 TRACK_CATEGORY = {
     "fog": "fog", "rain": "rain", "water": "water", "fire": "fire",
     "space": "space", "city": "city", "people": "people", "road": "road",
 }
-STAGE_ARCH = {"shadow": "Shadow", "trickster_abyss": "Trickster", "calm": "Calm", "path": "Path"}
 
+# (id, title, free source url or "" when the 1080 master already lives in S3,
+#  stage, track id, is_surreal, is_finale, published 1080 size, caption_en,
+#  caption_ru) — in catalog order.
+SCENES = [
+    ("dream-shadow-01", "Misty Mountains in Sao Vicente", "", "shadow", "fog-01", False, False, 5549780, "Cloud slides down the green ridges and stops above the valley. Nothing in this weather asks you to decide.", "Облако сползает по зелёным хребтам и замирает над долиной. В такую погоду решать нечего."),
+    ("dream-shadow-03", "Glade in Fanal", "", "shadow", "fog-03", False, False, 10654112, "Laurel trees close around a small clearing and the moss holds the damp air. Some places in a person are this old and this green.", "Лавры смыкаются вокруг маленькой поляны, мох держит влажный воздух. Есть в человеке места такие же древние и зелёные."),
+    ("dream-shadow-06", "Forest in Geres", "", "shadow", "rain-01", False, False, 9406561, "Trunks stand close together and the path between them narrows. The forest does not ask you to be quick.", "Стволы стоят близко, тропа между ними сужается. Лес не просит тебя торопиться."),
+    ("dream-shadow-07", "A Lake Near a Forest", "", "shadow", "rain-02", False, False, 8334140, "Still water holds a second forest, darker than the first. The reflection knows more than it says.", "Тихая вода держит второй лес, темнее первого. Отражение знает больше, чем говорит."),
+    ("dream-shadow-08", "Cloudy Day in Fanal", "", "shadow", "rain-03", False, False, 9791360, "Low cloud drifts between the trees and softens every edge. Even the sharp things breathe here.", "Низкое облако идёт между деревьями и смягчает все края. Даже острое здесь дышит."),
+    ("dream-shadow-10", "Mountain Tops", "", "shadow", "water-01", False, False, 7219737, "Peaks stand above the cloud layer in the early light. From this height the worry looks small.", "Вершины стоят над облаками в раннем свете. С этой высоты тревога кажется маленькой."),
+    ("dream-trickster-01", "Blurry Sunset", "", "trickster_abyss", "fire-01", True, False, 7097670, "The sun blurs into the horizon and the whole frame forgets its edges. Let the day dissolve a little too.", "Солнце расплывается у горизонта, и весь кадр забывает свои края. Дай и дню немного раствориться."),
+    ("dream-trickster-05", "Calm Waves in a Gulf", "", "trickster_abyss", "water-03", False, False, 11728153, "Small waves arrive one after another and each one is slightly different. Stillness keeps moving.", "Небольшие волны приходят одна за другой, и каждая чуть другая. Покой продолжает двигаться."),
+    ("dream-trickster-06", "A Tide of Foamy Waves", "", "trickster_abyss", "water-04", False, False, 10603905, "Foam slides up the shore and the sea takes it back almost at once. Everything here is brief.", "Пена поднимается по берегу, и море почти сразу забирает её назад. Всё здесь ненадолго."),
+    ("dream-trickster-07", "Bioluminescent Waves", "", "trickster_abyss", "space-01", True, False, 11118678, "Blue light burns along the breaking waves in the dark and vanishes behind them. Something glows only where it breaks.", "Синий свет горит по гребням волн в темноте и гаснет за ними. Иное светится только там, где сломалось."),
+    ("dream-trickster-08", "Sunset over the Atlantic", "", "trickster_abyss", "city-01", True, False, 8994648, "The sky turns copper and the whole ocean carries the colour for a moment. Then the light gives itself to the water.", "Небо становится медным, и весь океан на миг удерживает этот цвет. Потом свет отдаёт себя воде."),
+    ("dream-calm-01", "Sunset in Costa Rica", "", "calm", "city-02", False, False, 9221751, "Warm light settles on the water and the day stops asking for anything. You can put the weight down here.", "Тёплый свет ложится на воду, и день перестаёт чего-то требовать. Здесь можно опустить груз."),
+    ("dream-calm-04", "Lake Landscape in Salta", "", "calm", "people-01", False, False, 7802994, "Clouds and mountains share the surface of the lake without arguing. Both of them are held.", "Облака и горы делят поверхность озера без спора. Оба удержаны."),
+    ("dream-calm-05", "Lago di Braies Reflection", "", "calm", "people-02", False, False, 7736194, "Wooden boats rest on green water and the peaks lean into it exactly. Mountains look gentler when they mirror.", "Деревянные лодки стоят на зелёной воде, вершины наклоняются в неё точно так же. Горы выглядят мягче, когда отражаются."),
+    ("dream-path-01", "The Endless Horizon", "", "path", "road-01", False, True, 4168594, "A long line of light opens all the way to the edge of sight. You do not need a map for this.", "Длинная полоса света открывается до самого края зрения. Карта здесь не нужна."),
+    ("dream-path-05", "A Pier in the Ocean", "", "path", "space-03", False, False, 4399847, "The pier reaches into open water and ends there, still pointing forward. Not every road has to arrive.", "Причал уходит в открытую воду и заканчивается там, всё ещё указывая вперёд. Не каждая дорога должна привести к цели."),
+    ("dream-shadow-11", "Trees in the Misty Forest", "https://cdn.coverr.co/videos/coverr-trees-in-the-misty-forest-442/1080p.mp4", "shadow", "fog-06", False, False, 0, "Trunks fade one into the next and the fog keeps the distance soft. Nothing here is in a hurry to be seen.", "Стволы переходят один в другой, и туман держит расстояние мягким. Ничто здесь не спешит быть увиденным."),
+    ("dream-shadow-12", "Rain Falling in the Forest", "https://cdn.coverr.co/videos/coverr-rain-falling-in-the-forest-9275/1080p.mp4", "shadow", "rain-05", False, False, 0, "Rain touches every leaf at once and the forest answers with one low sound. You can let the weather do the talking.", "Дождь касается каждого листа сразу, и лес отвечает одним низким звуком. Позволь погоде говорить вместо тебя."),
+    ("dream-shadow-13", "Mountains Covered with Fog", "https://cdn.coverr.co/videos/coverr-mountains-covered-with-fog-1363/1080p.mp4", "shadow", "fog-07", False, False, 0, "Fog takes the ridges one by one until only the nearest slope is left. Distance becomes a kindness.", "Туман забирает хребет за хребтом, пока не остаётся только ближний склон. Даль становится милостью."),
+    ("dream-shadow-14", "Tree in the Mist", "https://cdn.coverr.co/videos/coverr-tree-in-the-mist-4598/1080p.mp4", "shadow", "fog-08", False, False, 0, "A single tree stands in the mist and does not try to look like anything else. It is enough exactly as it is.", "Одно дерево стоит в тумане и не пытается быть чем-то другим. Его достаточно ровно таким, какое есть."),
+    ("dream-trickster-09", "Foamy Ocean Waves at Night", "https://cdn.coverr.co/videos/coverr-foamy-ocean-waves-at-night-2122/1080p.mp4", "trickster_abyss", "water-05", True, False, 0, "Pale foam keeps arriving out of the dark and the sea never explains where it goes. Something in you moves the same way.", "Бледная пена приходит из темноты снова и снова, и море не объясняет, куда уходит. Что-то в тебе движется так же."),
+    ("dream-trickster-10", "Sumatra at Night", "https://cdn.coverr.co/videos/coverr-sumatra-at-night-6603/1080p.mp4", "trickster_abyss", "water-06", False, False, 0, "Night settles on the water and the far shapes lose their names. What is left is only weight and breath.", "Ночь ложится на воду, и дальние силуэты теряют имена. Остаются только вес и дыхание."),
+    ("dream-trickster-11", "Slow Waves at Dusk", "https://cdn.coverr.co/videos/coverr-slow-waves-9578/1080p.mp4", "trickster_abyss", "water-07", False, False, 0, "The water lifts and puts itself back down without a sound. Rest can look exactly like this.", "Вода поднимается и опускается обратно беззвучно. Покой может выглядеть ровно так."),
+    ("dream-calm-06", "The Ocean in the Evening", "https://cdn.coverr.co/videos/coverr-the-ocean-in-the-evening-3606/1080p.mp4", "calm", "fog-09", False, False, 0, "Evening colour drains into the sea and the horizon stops asking for attention. You can breathe out here.", "Вечерний цвет стекает в море, и горизонт перестаёт требовать внимания. Здесь можно выдохнуть."),
+    ("dream-calm-07", "Slow Motion Rippling Water", "https://cdn.coverr.co/videos/coverr-slow-motion-rippling-water-1418/1080p.mp4", "calm", "water-08", False, False, 0, "Rings widen across still water and vanish before they reach the edge. Thoughts do the same when you stop pushing them.", "Круги расходятся по тихой воде и исчезают, не дойдя до края. Мысли делают так же, когда их не подгоняешь."),
+    ("dream-calm-08", "Rain on a Puddle", "https://cdn.coverr.co/videos/coverr-rain-on-a-puddle-4247/1080p.mp4", "calm", "rain-06", False, False, 0, "Rain writes small circles on a puddle and erases them at once. Nothing has to stay to have mattered.", "Дождь пишет маленькие круги на луже и сразу стирает их. Необязательно оставаться, чтобы иметь значение."),
+    ("dream-path-06", "Road in the Mountains", "https://cdn.coverr.co/videos/coverr-road-in-the-mountains-7132/1080p.mp4", "path", "road-05", False, True, 0, "The road bends out of sight and the mountains keep their patience. You do not need to see the whole way.", "Дорога уходит за поворот, и горы сохраняют терпение. Не нужно видеть весь путь целиком."),
+    ("dream-path-07", "A Road That Leads to the Sea", "https://cdn.coverr.co/videos/coverr-a-road-that-leads-to-the-sea-7953/1080p.mp4", "path", "road-06", False, True, 0, "The road drops toward water and ends where the light begins. Somewhere ahead the evening is already waiting.", "Дорога спускается к воде и заканчивается там, где начинается свет. Где-то впереди вечер уже ждёт."),
+    ("dream-path-08", "Clouds Above a Road", "https://cdn.coverr.co/videos/coverr-clouds-above-a-road-8760/1080p.mp4", "path", "space-04", False, True, 0, "Cloud sits low over the empty road and the way ahead turns soft. Go slowly; the evening is not going anywhere.", "Облако лежит низко над пустой дорогой, и путь впереди становится мягким. Иди медленно: вечер никуда не денется."),
+    ("dream-path-09", "Palm Trees at Twilight", "https://cdn.coverr.co/videos/coverr-palm-trees-at-twilight-8442/1080p.mp4", "path", "space-05", False, False, 0, "Palm silhouettes hold the last of the light and let the rest go. The day closes without a single word.", "Силуэты пальм держат последний свет и отпускают остальное. День закрывается без единого слова."),
+]
 
-def caption_id(index):
-    return SCENES[index][0]
+CAPTIONS = [(scene[8], scene[9]) for scene in SCENES]
+
+def validate_scene_table():
+    """Fail before a single byte is downloaded if the catalog is unsound."""
+    if len(SCENES) != 30:
+        raise RuntimeError("scene count " + str(len(SCENES)) + " != 30")
+    ids = [scene[0] for scene in SCENES]
+    if len(set(ids)) != len(ids):
+        raise RuntimeError("duplicate scene id in SCENES")
+    titles = [scene[1] for scene in SCENES]
+    if len(set(titles)) != len(titles):
+        raise RuntimeError("duplicate scene title in SCENES")
+    for rejected in REJECTED_IDS:
+        if rejected in ids:
+            raise RuntimeError("rejected scene still in the table: " + rejected)
+    counts = {}
+    for scene in SCENES:
+        counts[scene[3]] = counts.get(scene[3], 0) + 1
+    if counts != STAGE_COUNTS:
+        raise RuntimeError("stage distribution " + str(counts) + " != " + str(STAGE_COUNTS))
+    surreal = [scene[0] for scene in SCENES if scene[5]]
+    finale = [scene[0] for scene in SCENES if scene[6]]
+    if len(surreal) != 4:
+        raise RuntimeError("expected 4 surreal scenes, got " + str(len(surreal)))
+    if len(finale) != 4:
+        raise RuntimeError("expected 4 finale scenes, got " + str(len(finale)))
+    for scene in SCENES:
+        if scene[5] and scene[3] != "trickster_abyss":
+            raise RuntimeError("surreal flag outside trickster_abyss: " + scene[0])
+        if scene[6] and scene[3] != "path":
+            raise RuntimeError("finale flag outside path: " + scene[0])
+        source = scene[2]
+        if not source:
+            continue
+        if not source.startswith("https://"):
+            raise RuntimeError("source is not https: " + source)
+        low = source.lower()
+        for token in FORBIDDEN_URL_TOKENS:
+            if token in low:
+                raise RuntimeError("forbidden source token " + token + " in " + source)
+    validate_captions()
 
 
 def validate_captions():
     if len(CAPTIONS) != len(SCENES):
-        raise RuntimeError(f"caption count {len(CAPTIONS)} != scene count {len(SCENES)}")
+        raise RuntimeError("caption count " + str(len(CAPTIONS)) + " != scene count")
     seen_en = set()
     seen_ru = set()
     for en, ru in CAPTIONS:
         if len(en) < 60 or len(ru) < 60:
-            raise RuntimeError(f"caption too short: {en} | {ru}")
+            raise RuntimeError("caption too short: " + en + " | " + ru)
         if "In the quiet" in en or "В тишине" in ru:
-            raise RuntimeError(f"template caption leaked: {en} | {ru}")
+            raise RuntimeError("template caption leaked: " + en + " | " + ru)
         if en in seen_en or ru in seen_ru:
-            raise RuntimeError(f"duplicate caption: {en} | {ru}")
+            raise RuntimeError("duplicate caption: " + en + " | " + ru)
         seen_en.add(en)
         seen_ru.add(ru)
 
@@ -146,98 +177,130 @@ def run(cmd, **kw):
 
 
 def ffprobe(path):
-    r = subprocess.run([
+    result = subprocess.run([
         "ffprobe", "-v", "error",
         "-show_entries", "stream=codec_type,width,height,r_frame_rate:format=duration",
         "-of", "json", str(path),
     ], capture_output=True, text=True, check=True)
-    data = json.loads(r.stdout)
-    video = next((s for s in data["streams"] if s.get("codec_type") == "video"), None)
-    audio = [s for s in data["streams"] if s.get("codec_type") == "audio"]
+    payload = json.loads(result.stdout)
+    video = next((s for s in payload["streams"] if s.get("codec_type") == "video"), None)
+    audio = [s for s in payload["streams"] if s.get("codec_type") == "audio"]
     if not video:
-        raise RuntimeError(f"no video stream: {path}")
-    fr = str(video.get("r_frame_rate", "30/1")).split("/")
-    fps = float(fr[0]) / float(fr[1] or 1)
+        raise RuntimeError("no video stream: " + str(path))
+    rate = str(video.get("r_frame_rate", "30/1")).split("/")
+    fps = float(rate[0]) / float(rate[1] or 1)
     return {
         "width": int(video["width"]),
         "height": int(video["height"]),
-        "duration": float(data["format"]["duration"]),
+        "duration": float(payload["format"]["duration"]),
         "fps": fps,
         "audio": len(audio),
+        "bytes": Path(path).stat().st_size,
     }
 
 
-def download(url, path):
-    run(["curl", "-L", "-sS", "-A", "Mozilla/5.0", "-e", "https://coverr.co/",
-         "--max-time", "240", "--retry", "3", "-o", str(path), url])
+def download(url, path, referer="https://coverr.co/"):
+    run(["curl", "-L", "-sS", "-A", "Mozilla/5.0", "-e", referer,
+         "--max-time", "300", "--retry", "3", "--retry-delay", "2",
+         "-o", str(path), url])
+    if not path.exists() or path.stat().st_size < 100_000:
+        raise RuntimeError("download failed or truncated: " + url)
 
 
-def encode_mp4(source, out, crf=16, maxrate=None):
-    """Studio 1080p pass: CRF 16, slow preset, optional VBV ceiling.
-
-    The first pass deliberately has no -maxrate / -bufsize: CRF 16 spends
-    7.0-9.5 Mbps wherever the frame needs it, which is what keeps water, fog
-    and foliage sharp. The ceiling exists only as the v119 safety re-encode
-    for a file that still lands above the hard 12 MB limit.
-    """
-    extra = []
-    if maxrate:
-        extra = ["-maxrate", maxrate, "-bufsize", BUFSIZE]
+def encode(source, out, width, height, crf, maxrate, bufsize, level):
     run([
         "ffmpeg", "-y", "-v", "error", "-i", str(source),
         "-t", str(DURATION), "-an",
-        "-vf", f"scale={WIDTH}:{HEIGHT}:force_original_aspect_ratio=increase,crop={WIDTH}:{HEIGHT},fps={FPS},setsar=1",
+        "-vf", "scale=" + str(width) + ":" + str(height)
+        + ":force_original_aspect_ratio=increase,crop=" + str(width) + ":" + str(height)
+        + ",fps=" + str(FPS) + ",setsar=1",
         "-r", str(FPS),
-        "-c:v", "libx264", "-profile:v", "high", "-level:v", "4.2", "-preset", "slow",
-        "-crf", str(crf),
+        "-c:v", "libx264", "-profile:v", "high", "-level:v", level, "-preset", "slow",
+        "-crf", str(crf), "-maxrate", maxrate, "-bufsize", bufsize,
         "-pix_fmt", "yuv420p", "-g", "60", "-keyint_min", "30", "-sc_threshold", "0",
-        *extra,
         "-movflags", "+faststart", "-map_metadata", "-1", str(out),
     ])
 
 
-def verify_mp4(path):
-    size = path.stat().st_size
-    if size > MAX_FILE_BYTES:
-        raise RuntimeError(f"{path.name}: {size} bytes exceeds hard {MAX_FILE_BYTES} byte limit")
+def verify_mp4(path, width, height):
     info = ffprobe(path)
-    if (info["width"], info["height"]) != (WIDTH, HEIGHT):
-        raise RuntimeError(f"{path.name}: wrong size {info['width']}x{info['height']}")
+    if (info["width"], info["height"]) != (width, height):
+        raise RuntimeError(path.name + ": wrong size " + str(info["width"]) + "x" + str(info["height"]))
     if abs(info["duration"] - DURATION) > 0.25:
-        raise RuntimeError(f"{path.name}: wrong duration {info['duration']}")
+        raise RuntimeError(path.name + ": wrong duration " + str(info["duration"]))
     if info["audio"]:
-        raise RuntimeError(f"{path.name}: audio stream present")
+        raise RuntimeError(path.name + ": audio stream present")
     if abs(info["fps"] - FPS) > 1.0:
-        raise RuntimeError(f"{path.name}: wrong fps {info['fps']}")
+        raise RuntimeError(path.name + ": wrong fps " + str(info["fps"]))
     return info
 
 
-def build_clip_mp4(source, out):
-    """One studio CRF 16 pass plus the v119 hard 12 MB guarantee.
-
-    A 10-second 1080x1920 CRF 16 slow file usually lands around 4-12 MB.
-    If it comes out heavier than MAX_FILE_BYTES the clip is re-encoded once
-    with -maxrate 8500k -bufsize 17000k; if it still does not fit it is
-    refused here, before any upload, so S3 can never receive a heavy scene.
-    """
-    encode_mp4(source, out, 16)
+def build_1080(source, out):
+    """One CRF 18 pass capped at 7500k, with one cheaper retry under 11.5 MB."""
+    encode(source, out, W1080, H1080, 18, "7500k", "15000k", "4.2")
     size = out.stat().st_size
-    if size > MAX_FILE_BYTES:
-        print(f"  {out.name} is {size} bytes > {MAX_FILE_BYTES}; "
-              f"re-encoding with -maxrate {FALLBACK_MAXRATE} -bufsize {BUFSIZE}", flush=True)
-        encode_mp4(source, out, 16, maxrate=FALLBACK_MAXRATE)
+    if size > MAX_1080_BYTES:
+        print("  " + out.name + " is " + str(size) + " bytes, re-encoding under the 11.5 MB ceiling", flush=True)
+        encode(source, out, W1080, H1080, 20, "6000k", "12000k", "4.2")
         size = out.stat().st_size
-        if size > MAX_FILE_BYTES:
-            raise RuntimeError(
-                f"{out.name}: {size} bytes still exceeds the hard "
-                f"{MAX_FILE_BYTES} byte limit; refusing to publish")
-    if not SIZE_MIN <= size <= SIZE_MAX:
-        print(f"  WARNING: {out.name} is {size} bytes, outside {SIZE_MIN}-{SIZE_MAX}", flush=True)
-    verify_mp4(out)
+        if size > MAX_1080_BYTES:
+            raise RuntimeError(out.name + ": " + str(size) + " bytes exceeds 11.5 MB")
+    verify_mp4(out, W1080, H1080)
     return size
 
 
+def build_720(source, out):
+    """CRF 22 / 1700k first; the neighbours only exist to hit the 1.4-2.3 MB band."""
+    attempts = [
+        (22, "1700k", "3400k"),
+        (20, "2000k", "4000k"),
+        (24, "1400k", "2800k"),
+        (26, "1200k", "2400k"),
+    ]
+    closest = None
+    for crf, maxrate, bufsize in attempts:
+        encode(source, out, W720, H720, crf, maxrate, bufsize, "3.1")
+        size = out.stat().st_size
+        if SIZE_720_MIN <= size <= SIZE_720_MAX:
+            verify_mp4(out, W720, H720)
+            return size
+        distance = min(abs(size - SIZE_720_MIN), abs(size - SIZE_720_MAX))
+        if closest is None or distance < closest[0]:
+            closest = (distance, size)
+        print("  " + out.name + " landed at " + str(size) + " bytes with CRF " + str(crf), flush=True)
+    raise RuntimeError(
+        out.name + ": could not reach the " + str(SIZE_720_MIN) + "-" + str(SIZE_720_MAX)
+        + " byte band, closest " + str(closest[1] if closest else 0) + " bytes")
+
+
+def build_poster(source, out):
+    """A 480x854 WebP still from 0.2 s, tuned into the 20-35 KB band."""
+    qualities = [POSTER_QUALITY, 78, 88, 60, 52]
+    closest = None
+    for quality in qualities:
+        run([
+            "ffmpeg", "-y", "-v", "error", "-ss", "0.2", "-i", str(source),
+            "-frames:v", "1", "-an",
+            "-vf", "scale=" + str(WPOSTER) + ":" + str(HPOSTER)
+            + ":force_original_aspect_ratio=increase,crop=" + str(WPOSTER) + ":" + str(HPOSTER)
+            + ",setsar=1",
+            "-c:v", "libwebp", "-quality", str(quality), "-compression_level", "6",
+            "-map_metadata", "-1", str(out),
+        ])
+        size = out.stat().st_size
+        if POSTER_MIN <= size <= POSTER_MAX:
+            return size
+        distance = min(abs(size - POSTER_MIN), abs(size - POSTER_MAX))
+        if closest is None or distance < closest[0]:
+            closest = (distance, size)
+    raise RuntimeError(
+        out.name + ": could not reach the " + str(POSTER_MIN) + "-" + str(POSTER_MAX)
+        + " byte band, closest " + str(closest[1] if closest else 0) + " bytes")
+
+
 def s3_client():
+    import boto3
+    from botocore.config import Config
     return boto3.client(
         "s3", endpoint_url=S3_ENDPOINT, region_name=os.environ.get("AWS_DEFAULT_REGION", "ru-1"),
         aws_access_key_id=os.environ["S3_ACCESS_KEY"],
@@ -251,12 +314,12 @@ def list_keys(s3, prefix=""):
     keys = []
     token = None
     while True:
-        kw = {"Bucket": S3_BUCKET}
+        kwargs = {"Bucket": S3_BUCKET}
         if prefix:
-            kw["Prefix"] = prefix
+            kwargs["Prefix"] = prefix
         if token:
-            kw["ContinuationToken"] = token
-        page = s3.list_objects_v2(**kw)
+            kwargs["ContinuationToken"] = token
+        page = s3.list_objects_v2(**kwargs)
         for obj in page.get("Contents", []):
             keys.append({"Key": obj["Key"], "Size": int(obj.get("Size", 0))})
         if not page.get("IsTruncated"):
@@ -266,98 +329,151 @@ def list_keys(s3, prefix=""):
 
 
 def delete_keys(s3, keys):
-    for i in range(0, len(keys), 500):
-        batch = [{"Key": k["Key"]} for k in keys[i:i + 500]]
+    for start in range(0, len(keys), 500):
+        batch = [{"Key": key["Key"]} for key in keys[start:start + 500]]
         s3.delete_objects(Bucket=S3_BUCKET, Delete={"Objects": batch, "Quiet": True})
 
 
-def clean_old_hls(s3, keep_ids):
-    hls_keys = [k for k in list_keys(s3, "hls/")]
-    delete_keys(s3, hls_keys)
-    print(f"deleted legacy HLS objects: {len(hls_keys)}", flush=True)
-    stale = [k for k in list_keys(s3, MP4_PREFIX + "/")
-             if k["Key"].rsplit("/", 1)[-1].removesuffix(".mp4") not in keep_ids]
-    delete_keys(s3, stale)
-    if stale:
-        print(f"deleted stale mp4 objects: {len(stale)}", flush=True)
-    audio_keys = list_keys(s3, "audio/")
-    print(f"audio objects preserved: {len(audio_keys)}", flush=True)
+def object_id(key):
+    return key.rsplit("/", 1)[-1].rsplit(".", 1)[0]
 
 
-def upload_mp4(s3, path, key):
+def purge_removed(s3, keep_ids):
+    """Delete the four rejected scenes and anything else outside the 30 ids."""
+    legacy = list_keys(s3, "hls/")
+    if legacy:
+        delete_keys(s3, legacy)
+        print("deleted legacy HLS objects: " + str(len(legacy)), flush=True)
+    for prefix in (PREFIX_1080, PREFIX_720, PREFIX_POSTER):
+        keys = list_keys(s3, prefix + "/")
+        stale = [key for key in keys if object_id(key["Key"]) not in keep_ids]
+        if stale:
+            delete_keys(s3, stale)
+            print("deleted stale " + prefix + " objects: " + str(len(stale)), flush=True)
+    for rejected in REJECTED_IDS:
+        if rejected not in keep_ids:
+            print("removed rejected scene from S3: " + rejected, flush=True)
+    print("audio objects preserved: " + str(len(list_keys(s3, "audio/"))), flush=True)
+
+
+def upload(s3, path, key, content_type):
     s3.upload_file(str(path), S3_BUCKET, key, ExtraArgs={
         "ACL": "public-read",
-        "ContentType": "video/mp4",
+        "ContentType": content_type,
         "CacheControl": "public, max-age=31536000, immutable",
         "ContentEncoding": "identity",
     })
 
 
-def main():
-    validate_captions()
+def prepare_workdir():
     if WORK.exists():
         shutil.rmtree(WORK)
-    OUT.mkdir(parents=True)
+    for folder in (SOURCE_DIR, OUT_1080, OUT_720, OUT_POSTER):
+        folder.mkdir(parents=True, exist_ok=True)
+
+
+def main():
+    validate_scene_table()
+    prepare_workdir()
     s3 = s3_client()
     built = []
-    total_bytes = 0
-    for idx, (clip_id, title, url, stage, track_id, surreal, finale) in enumerate(SCENES):
-        if clip_id != caption_id(idx):
-            raise RuntimeError(f"scene order mismatch at {idx}")
-        src = OUT / f"{clip_id}.source.mp4"
-        download(url, src)
-        source_duration = ffprobe(src)["duration"]
-        if source_duration < DURATION:
-            raise RuntimeError(f"source shorter than {DURATION}s: {clip_id} {source_duration}")
-        out = OUT / f"{clip_id}.mp4"
-        size = build_clip_mp4(src, out)
-        total_bytes += size
-        caption_en, caption_ru = CAPTIONS[idx]
-        track_cat = TRACK_CATEGORY[track_id.split("-")[0]]
+    total_1080 = 0
+    total_720 = 0
+    for index, scene in enumerate(SCENES):
+        (clip_id, title, source_url, stage, track_id, surreal, finale,
+         published_size, caption_en, caption_ru) = scene
+        fresh = bool(source_url)
+        source_path = SOURCE_DIR / (clip_id + ".source.mp4")
+        if fresh:
+            download(source_url, source_path)
+        else:
+            download(S3_PREFIX + "/" + PREFIX_1080 + "/" + clip_id + ".mp4", source_path)
+        probe = ffprobe(source_path)
+        if probe["duration"] < DURATION:
+            raise RuntimeError("source shorter than " + str(DURATION) + "s: " + clip_id)
+        if fresh:
+            master = OUT_1080 / (clip_id + ".mp4")
+            size_1080 = build_1080(source_path, master)
+        else:
+            master = source_path
+            size_1080 = published_size or probe["bytes"]
+        size_720 = build_720(master, OUT_720 / (clip_id + ".mp4"))
+        poster_size = build_poster(master, OUT_POSTER / (clip_id + ".webp"))
+        total_1080 += size_1080
+        total_720 += size_720
+        source_path.unlink(missing_ok=True)
         built.append({
             "id": clip_id,
             "title": title,
             "description": title,
-            "title_ru": f"Сон {idx + 1:02d}",
-            "url": f"{S3_PREFIX}/{MP4_PREFIX}/{clip_id}.mp4",
+            "title_ru": "Сон " + format(index + 1, "02d"),
+            "url": S3_PREFIX + "/" + PREFIX_1080 + "/" + clip_id + ".mp4",
+            "url1080": S3_PREFIX + "/" + PREFIX_1080 + "/" + clip_id + ".mp4",
+            "url720": S3_PREFIX + "/" + PREFIX_720 + "/" + clip_id + ".mp4",
+            "poster": S3_PREFIX + "/" + PREFIX_POSTER + "/" + clip_id + ".webp",
+            "size": size_1080,
+            "size720": size_720,
+            "posterSize": poster_size,
             "stage": stage,
             "archetype": STAGE_ARCH[stage],
             "is_finale": bool(finale),
             "is_surreal": bool(surreal),
             "source": "coverr",
             "vertical": True,
-            "width": WIDTH,
-            "height": HEIGHT,
+            "width": W1080,
+            "height": H1080,
             "duration": float(DURATION),
-            "size": size,
             "tier": "1080",
             "caption_en": caption_en,
             "caption_ru": caption_ru,
-            "soundCategory": track_cat,
+            "soundCategory": TRACK_CATEGORY[track_id.split("-")[0]],
             "trackId": track_id,
             "fileHash": clip_id,
+            "rebuilt1080": fresh,
         })
-        src.unlink(missing_ok=True)
-        print(f"built {clip_id}: {size} bytes ({size / 1e6:.2f} MB), source {source_duration:.1f}s", flush=True)
-    # Every file is verified locally. Only now replace the old S3 video set.
-    clean_old_hls(s3, {item["id"] for item in built})
+        print("built " + clip_id + ": 1080 " + str(size_1080) + " B, 720 " + str(size_720)
+              + " B, poster " + str(poster_size) + " B", flush=True)
+
+    keep_ids = {item["id"] for item in built}
+    purge_removed(s3, keep_ids)
+
     for item in built:
-        upload_mp4(s3, OUT / f"{item['id']}.mp4", f"{MP4_PREFIX}/{item['id']}.mp4")
-        print(f"uploaded {MP4_PREFIX}/{item['id']}.mp4", flush=True)
+        clip_id = item["id"]
+        if item["rebuilt1080"]:
+            upload(s3, OUT_1080 / (clip_id + ".mp4"),
+                   PREFIX_1080 + "/" + clip_id + ".mp4", "video/mp4")
+            print("uploaded " + PREFIX_1080 + "/" + clip_id + ".mp4", flush=True)
+        upload(s3, OUT_720 / (clip_id + ".mp4"),
+               PREFIX_720 + "/" + clip_id + ".mp4", "video/mp4")
+        upload(s3, OUT_POSTER / (clip_id + ".webp"),
+               PREFIX_POSTER + "/" + clip_id + ".webp", "image/webp")
+        print("uploaded " + PREFIX_720 + "/" + clip_id + ".mp4 and "
+              + PREFIX_POSTER + "/" + clip_id + ".webp", flush=True)
+
+    for item in built:
+        item.pop("rebuilt1080", None)
+        item.pop("posterSize", None)
+
     (ROOT / "videos.json").write_text(
         json.dumps(built, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     (ROOT / "videos-data.js").write_text(
         "window.VIDEOS_DATA=" + json.dumps(built, ensure_ascii=False, separators=(",", ":")) + ";\n",
         encoding="utf-8",
     )
-    bucket_bytes = sum(k["Size"] for k in list_keys(s3))
-    smallest = min(i["size"] for i in built)
-    largest = max(i["size"] for i in built)
-    if largest > MAX_FILE_BYTES:
-        raise RuntimeError(f"published clip exceeds {MAX_FILE_BYTES} bytes")
-    print(f"built {len(built)} clips, mp4 bytes {total_bytes}, bucket bytes {bucket_bytes} "
-          f"({bucket_bytes / 1e9:.3f} GB), clip size {smallest}-{largest} "
-          f"(hard max {MAX_FILE_BYTES})", flush=True)
+
+    bucket_bytes = sum(key["Size"] for key in list_keys(s3))
+    smallest_1080 = min(item["size"] for item in built)
+    largest_1080 = max(item["size"] for item in built)
+    smallest_720 = min(item["size720"] for item in built)
+    largest_720 = max(item["size720"] for item in built)
+    if largest_1080 > MAX_1080_BYTES:
+        raise RuntimeError("published 1080 clip exceeds 11.5 MB")
+    if largest_720 > SIZE_720_MAX or smallest_720 < SIZE_720_MIN:
+        raise RuntimeError("published 720 clip outside the 1.4-2.3 MB band")
+    print("built " + str(len(built)) + " scenes, 1080 bytes " + str(total_1080)
+          + " (" + str(smallest_1080) + "-" + str(largest_1080) + "), 720 bytes "
+          + str(total_720) + " (" + str(smallest_720) + "-" + str(largest_720) + ")", flush=True)
+    print("bucket bytes " + str(bucket_bytes) + " (" + format(bucket_bytes / 1e9, ".3f") + " GB)", flush=True)
     if bucket_bytes > 1_500_000_000:
         raise RuntimeError("bucket exceeds 1.5 GB")
 

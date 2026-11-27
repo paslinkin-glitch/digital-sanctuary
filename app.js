@@ -524,10 +524,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   const ALL_MUSIC_TRACKS = Object.values(MUSIC_CATALOG).flat();
   const stage = document.querySelector('.stage');
-  const videoSlotA = document.getElementById('slotA');
-  const videoSlotB = document.getElementById('slotB');
-  const videoSlotC = document.getElementById('slotC');
-  const videoSlots = [videoSlotA, videoSlotB, videoSlotC].filter(Boolean);
+  // v124: the video layer lives entirely in player.js (window.SanctuaryPlayer).
+  // app.js never touches a <video> element for the streamed scenes any more.
   const thresholdEl = document.getElementById('threshold-webgl');
   let thresholdCanvas = document.getElementById('threshold-canvas');
   const thresholdKickerEl = document.getElementById('threshold-kicker');
@@ -1619,9 +1617,11 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (!currentCaption || !currentCaption.text || !currentCaption.revealed) return;
     if (currentCaption.recorded) return;
     const held = currentCaption.held || (gesture && gesture.holding);
-    const video = currentCaption.clip && currentCaption.clip.el;
-    const durationMs = video && Number.isFinite(video.duration) && video.duration > 0
-      ? video.duration * 1000
+    const playerDuration = window.SanctuaryPlayer && typeof window.SanctuaryPlayer.duration === 'function'
+      ? window.SanctuaryPlayer.duration()
+      : 0;
+    const durationMs = playerDuration > 0
+      ? playerDuration * 1000
       : (currentCaption.clip.duration || 10) * 1000;
     const looped = state.loopsInView > 0
       || (now() - state.viewStart) > durationMs * 1.2;
@@ -2567,15 +2567,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     sound.ctx.resume().catch(() => {});
     if (sound.activeTrack) switchSoundtrack(sound.activeTrack, SLOW_FADE_MS);
   }
-  // Native streaming pipeline (v119). Each slot plays its clip straight from the
-  // public +faststart MP4 URL: no background fetch(), no Blob cache and no second
-  // multi-megabyte download competing with the <video> element for bandwidth.
-  // The browser owns buffering, and slotA / slotB only swap which stream is
-  // visible, so the top loading bar is no longer kept alive by a hidden fetch.
-  function playbackUrlFor(clip) {
-    return (clip && clip.url) || '';
-  }
-
+  // Native streaming pipeline (v124). Every scene plays straight from the public
+  // +faststart MP4 URL through player.js: no background fetch(), no Blob cache
+  // and no hidden download competing with the <video> element for bandwidth.
   function nextClipIndex(category) {
     const clips = category.clips;
     if (!clips.length) return null;
@@ -2606,7 +2600,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (!category || category.index !== state.index || !category.clips.length) return null;
     const index = nextClipIndex(category);
     if (index === null) return null;
-    playClip(category, index);
+    showClip(category, index);
     return index;
   }
   function contextAllowsClip(clip) {
@@ -2619,6 +2613,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   function pickStageClips(stage, count, picked, allowSeen = false, options = {}) {
     const reuse = Boolean(options && options.reuse);
     const preferUnused = options && options.preferUnused instanceof Set ? options.preferUnused : null;
+    // v124: the second half of a 30-frame session is built from the scenes the
+    // first half did not touch, so no frame ever repeats inside one session.
+    const exclude = options && options.exclude instanceof Set ? options.exclude : null;
     // v122: the opening frame of the session is the lightest clip of its stage,
     // so on 4G the first MP4 starts about twice as fast as a 10-11 MB scene.
     const lightestFirst = Boolean(options && options.lightestFirst);
@@ -2632,6 +2629,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         && (allowSurreal || !clip.is_surreal)
         && (reuse || !pathPicked.has(clip.id))
         && !picked.has(clip.id)
+        && (!exclude || !exclude.has(clip.id))
         && (allowSeen || !isVideoSeen(clip.id))
       );
       let filtered = category.clips.filter((clip) => matches(clip, false));
@@ -2647,8 +2645,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         (lightestFirst
           ? (Number(a.size) || Number.MAX_SAFE_INTEGER) - (Number(b.size) || Number.MAX_SAFE_INTEGER)
           : 0)
-        // On the second cycle prefer the five scenes the first cycle left
-        // unused, so all 20 light clips appear inside one 30-step session.
+        // On the second half prefer the scenes the first half left unused.
         || (Number(preferUnused && preferUnused.has(a.id)) - Number(preferUnused && preferUnused.has(b.id)))
         || (Number(contextAllowsClip(b)) - Number(contextAllowsClip(a)))
         || (b.envScore || 0) - (a.envScore || 0)
@@ -2757,28 +2754,24 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       .replace(/[^\p{L}\p{N}]+/gu, ' ')
       .trim();
   }
+  // v124: the catalog is exactly 30 scenes, so the whole 30-frame session is
+  // repeat-free — no scene, URL or title may appear twice in one sitting.
   function sessionPlanIsUnique(entries) {
     if (!Array.isArray(entries) || entries.length !== SESSION_LENGTH) return false;
-    // v119: only a single 15-frame cycle must be repeat-free. With 20 scenes a
-    // 30-frame session repeats some of them on the second cycle by design.
-    for (let start = 0; start < entries.length; start += CYCLE_LENGTH) {
-      const ids = new Set();
-      const urls = new Set();
-      const titles = new Set();
-      const stop = Math.min(start + CYCLE_LENGTH, entries.length);
-      for (let index = start; index < stop; index += 1) {
-        const entry = entries[index];
-        const clip = entry && entry.clip;
-        if (!clip) return false;
-        const id = String(clip.id || '');
-        const url = String(clip.url || '');
-        const title = normalizeSessionKey(clip.title);
-        if (!id || !url || !title) return false;
-        if (ids.has(id) || urls.has(url) || titles.has(title)) return false;
-        ids.add(id);
-        urls.add(url);
-        titles.add(title);
-      }
+    const ids = new Set();
+    const urls = new Set();
+    const titles = new Set();
+    for (const entry of entries) {
+      const clip = entry && entry.clip;
+      if (!clip) return false;
+      const id = String(clip.id || '');
+      const url = String(clip.url || '');
+      const title = normalizeSessionKey(clip.title);
+      if (!id || !url || !title) return false;
+      if (ids.has(id) || urls.has(url) || titles.has(title)) return false;
+      ids.add(id);
+      urls.add(url);
+      titles.add(title);
     }
     return true;
   }
@@ -2792,10 +2785,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       const entries = [];
       const usedBefore = new Set();
       for (let cycle = 0; cycle < 2; cycle += 1) {
-        // v119: the catalog is 20 light scenes, so a 30-frame session can hold
-        // only 15 unique frames per cycle. Uniqueness is enforced inside each
-        // cycle; the second cycle repeats some scenes and prefers the ones the
-        // first cycle left out, so all 20 scenes still appear.
+        // v124: the catalog holds exactly 30 scenes and a session is 30 frames,
+        // so the second half is drawn from the scenes the first half left alone
+        // (see the exclude option) and nothing repeats inside one session.
         const picked = new Set();
         const cycleEntries = [];
         for (const spec of CYCLE_STAGES) {
@@ -2803,6 +2795,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
           const picks = pickStageClips(stage, spec.count, picked, allowSeen, {
             reuse: cycle > 0,
             preferUnused: usedBefore,
+            exclude: cycle > 0 ? usedBefore : null,
             // v122: cycle 0, stage 1 (Shadow) opens on the lightest available
             // clip instead of a random 10-11 MB scene.
             lightestFirst: cycle === 0 && spec.id === 1,
@@ -2824,6 +2817,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
               && !clip.invalid
               && !used.has(clip.id)
               && !picked.has(clip.id)
+              && !usedBefore.has(clip.id)
               && (allowSeen || !isVideoSeen(clip.id))
             ));
           if (final) {
@@ -3351,11 +3345,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     stopHoldPulse();
     if (gesture) stopHold();
 
-    const category = activeCategory();
-    if (category) pauseCategory(category);
-    for (const slot of videoSlots) releaseSlotVideo(slot);
-    activeSlot = null;
-    previousSlot = null;
+    pauseSlots();
     pauseSound();
     stage.classList.add('is-finalizing');
     releaseWakeLock();
@@ -3429,6 +3419,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   function startNewSessionAfterUnlock() {
     clearSessionLock();
+    // v124: completedBefore is read here, not borrowed from an outer scope that
+    // never declared it (the old reference threw a ReferenceError on unlock).
+    let completedBefore = false;
+    try { completedBefore = localStorage.getItem(COMPLETED_KEY) === '1'; } catch (_) {}
     if (returnAfterLock || completedBefore) returnWhisperFrames = 2;
     if (returnAfterLock) {
       trackEvent('session_return');
@@ -3598,10 +3592,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     resetViewClock();
     if (isVideoSeen(entry.clip.id)) sessionUsedVideoIds.delete(entry.clip.id);
     category.freshIndex = index;
-    // v121: playClip() owns the single src assignment + load() + play() for the
-    // entry frame. Staging it here as well issued a second load() in the same
-    // tick, and mobile browsers hung the first HTTP Range request on the
-    // superseded one. The entry screen still stages pathPlan[0] once.
+    // v124: the first frame and its warm-up frame are handed to player.js in
+    // one call, so the entry frame issues exactly one load().
     const clipIndex = playCategory(category);
     if (clipIndex === null) return false;
     pathPos = 0;
@@ -3615,312 +3607,45 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     switchSoundtrack(null, SLOW_FADE_MS);
     return true;
   }
-  function restartVideo(video, clip) {
-    if (!video || !clip || clip._restarting) return;
-    clip._restarting = true;
-    state.loopsInView += 1;
-    state.totalLoops += 1;
-    clip.lastTime = 0.04;
-    try { video.currentTime = 0.04; } catch (_) {}
-    const promise = video.play();
-    if (promise && typeof promise.catch === 'function') promise.catch(() => {});
-    window.setTimeout(() => { clip._restarting = false; }, 120);
+  // v124: every streamed scene is owned by the isolated player module. app.js
+  // only decides which frame is on screen and which frame warms up behind it.
+  function nextPlannedClip() {
+    if (pathPos < 0 || !pathPlan.length) return null;
+    const entry = pathPlan[pathPos + 1];
+    return entry && entry.clip ? entry.clip : null;
   }
-  function startVideoWatchdog() {
-    if (window.__sanctuaryWatchdog) return;
-    window.__sanctuaryWatchdog = window.setInterval(() => {
-      if (!gateOpen || sessionComplete) return;
-      const video = activeSlot;
-      if (!video || video.paused || video.readyState < 2) return;
-      const clip = activeClip();
-      if (!clip || clip.el !== video) return;
-      const nowMs = performance.now();
-      const last = video._watchState;
-      if (!last || Math.abs(video.currentTime - last.time) > 0.02) {
-        video._watchState = { time: video.currentTime, stamp: nowMs };
-        return;
-      }
-      if (nowMs - last.stamp < 2000) return;
-      const recoveries = Number(video._stallRecoveries || 0);
-      video._watchState = { time: video.currentTime, stamp: nowMs };
-      if (recoveries >= 2) return;
-      video._stallRecoveries = recoveries + 1;
-      try { video.currentTime = 0.05; } catch (_) {}
-      const promise = video.play();
-      if (promise && typeof promise.catch === 'function') promise.catch(() => {});
-    }, 300);
+  function preloadPoster(clip) {
+    const src = clip && clip.poster;
+    if (!src) return;
+    const image = new window.Image();
+    image.decoding = 'async';
+    image.src = src;
   }
-  function bindSlot(slot) {
-    if (!slot || slot._bound) return;
-    slot._bound = true;
-    slot.addEventListener('loadeddata', () => markSlotReady(slot));
-    slot.addEventListener('playing', () => markSlotPlaying(slot));
-    slot.addEventListener('canplay', () => markSlotReady(slot));
-    slot.addEventListener('timeupdate', () => {
-      if (slot._clip && slot._category) handleLoop(slot._category, slot._index, slot);
-      // v121: warm the next frame once the active stream has really started and
-      // moved past 0.4 s of playback (no full-buffer wait on 4G).
-      if (slot === activeSlot && slot.currentTime > 0.4) warmNextFrame();
-    });
-    slot.addEventListener('ended', () => {
-      if (slot._clip) restartVideo(slot, slot._clip);
-    });
-    slot.addEventListener('error', () => {
-      const clip = slot._clip;
-      if (!clip || !clip.url || slot === previousSlot) return;
-      const attempts = Number(clip._slotRetry || 0) + 1;
-      clip._slotRetry = attempts;
-      if (attempts > 2) return;
-      window.setTimeout(() => {
-        if (slot._clip !== clip) return;
-        slot._srcKey = '';
-        loadSlotSource(slot, clip, slot === activeSlot);
-      }, 900);
-    });
-  }
-  for (const slot of videoSlots) bindSlot(slot);
-  // v123: three permanent <video> slots and no destructive resets. A swipe keeps
-  // the outgoing stream alive under the incoming layer; load() is only called
-  // when a slot does not already hold the needed source.
-  const SLOT_FADE_MS = 280;
-  const SLOT_FADE_HOLD_MS = SLOT_FADE_MS + 40;
-  let activeSlot = null;
-  let previousSlot = null;
-  let slotHandoffTimer = 0;
-
-  function idleSlot() {
-    return videoSlots.find((slot) => slot !== activeSlot && slot !== previousSlot) || null;
-  }
-  // v123: warm-up starts once the current clip is genuinely playing; there is no
-  // full-buffer gate and no timer that restarts the network request.
-  function activeStreamPlayable() {
-    return Boolean(activeSlot)
-      && activeSlot.readyState >= 2
-      && !activeSlot.paused
-      && activeSlot.currentTime > 0.4;
-  }
-  function releaseSlotVideo(slot) {
-    if (!slot) return;
-    const clip = slot._clip;
-    slot._clip = null;
-    slot._category = null;
-    slot._index = -1;
-    slot._srcKey = '';
-    slot.dataset.clipId = '';
-    slot.classList.remove('is-current', 'is-previous', 'is-ready', 'is-entry-frame', 'is-warm');
-    if (clip && clip.el === slot) clip.el = null;
-    try { slot.pause(); } catch (_) {}
-    try { slot.removeAttribute('src'); } catch (_) {}
-    slot.preload = 'none';
-    try { slot.load(); } catch (_) {}
-    if (activeSlot === slot) activeSlot = null;
-    if (previousSlot === slot) previousSlot = null;
-  }
-  function bindClipToSlot(slot, category, clip, index) {
-    if (!slot || !clip) return null;
-    if (slot._clip && slot._clip !== clip && slot._clip.el === slot) slot._clip.el = null;
-    slot._clip = clip;
-    slot._category = category || slot._category;
-    slot._index = typeof index === 'number' ? index : -1;
-    slot.dataset.clipId = clip.id || '';
-    clip.el = slot;
-    return slot;
-  }
-  function loadSlotSource(slot, clip, autoplay) {
-    if (!slot || !clip) return false;
-    const source = playbackUrlFor(clip);
-    if (!source) return false;
-    const key = (clip.id || '') + '|' + source;
-    slot.muted = true;
-    slot.defaultMuted = true;
-    slot.playsInline = true;
-    // v123: never call load() on a slot that is already loading the needed src.
-    // load() aborts the Range request, and on high-ping 4G the browser then starts
-    // the MP4 headers from zero (the old 2.5 s watchdog did this over and over).
-    const sameSource = slot.getAttribute('src') === source && slot.networkState !== 3;
-    if (!sameSource) {
-      slot._srcKey = key;
-      slot.classList.remove('is-ready');
-      slot.preload = 'auto';
-      if (slot.getAttribute('src') !== source) slot.setAttribute('src', source);
-      try { slot.load(); } catch (_) {}
-    } else if (slot.preload !== 'auto' || slot._srcKey !== key) {
-      slot._srcKey = key;
-      slot.preload = 'auto';
-    }
-    if (autoplay) {
-      const promise = slot.play();
-      if (promise && typeof promise.catch === 'function') promise.catch(() => {});
-    }
+  function presentClip(clip) {
+    if (!clip || !clip.url) return false;
+    if (clip.id) markVideoViewed(clip.id);
+    const player = window.SanctuaryPlayer;
+    if (!player || typeof player.show !== 'function') return false;
+    player.show(clip, nextPlannedClip());
     return true;
   }
-  function stageEntry(entry) {
-    if (!entry || !entry.clip) return null;
-    let slot = entry.clip.el && videoSlots.includes(entry.clip.el) ? entry.clip.el : null;
-    // The layer still showing the outgoing frame is never reused for staging.
-    if (slot === previousSlot) slot = null;
-    if (!slot) slot = idleSlot();
-    if (!slot) return null;
-    const index = entry.category
-      ? entry.category.clips.findIndex((item) => item.id === entry.clip.id)
-      : -1;
-    if (slot._clip !== entry.clip) bindClipToSlot(slot, entry.category, entry.clip, index);
-    // v123: no currentTime / seek before loadeddata; the browser owns the buffer.
-    loadSlotSource(slot, entry.clip, false);
-    return slot;
-  }
-  function slotHasFrame(slot) {
-    return Boolean(slot)
-      && slot === activeSlot
-      && slot.readyState >= 2
-      && slot.classList.contains('is-ready');
-  }
-  function markSlotReady(slot) {
-    if (!slot || !slot._clip) return;
-    // v122: the active layer reveals on the first decoded frame, not on playing.
-    if (slot.readyState < 2) return;
-    slot.classList.add('is-ready');
-    if (slot === activeSlot) scheduleSlotHandoff();
-  }
-  function markSlotPlaying(slot) {
-    if (!slot || !slot._clip || slot !== activeSlot) return;
-    if (slot.readyState < 2 || slot.paused) return;
-    slot.classList.add('is-ready');
-    noteClipStarted(slot._clip);
-    scheduleSlotHandoff();
-    window.setTimeout(warmNextFrame, 260);
-  }
-  // v123: the outgoing slot keeps its live picture until the incoming frame has
-  // decoded (readyState >= 2) and the 280 ms crossfade is over. Then it is only
-  // paused: its buffer stays in the slot for a backward swipe, and no HTTP
-  // connection is aborted.
-  function scheduleSlotHandoff() {
-    const leaving = previousSlot;
-    if (!leaving || leaving === activeSlot) return;
-    if (!slotHasFrame(activeSlot)) return;
-    window.clearTimeout(slotHandoffTimer);
-    slotHandoffTimer = window.setTimeout(() => {
-      if (previousSlot !== leaving || leaving === activeSlot) return;
-      if (!slotHasFrame(activeSlot)) return;
-      previousSlot = null;
-      try { leaving.pause(); } catch (_) {}
-      leaving.classList.remove('is-previous');
-      warmNextFrame();
-    }, SLOT_FADE_HOLD_MS);
-  }
-  function warmFrameAt(entry) {
-    if (!entry || !entry.clip) return false;
-    if (entry.clip.el && videoSlots.includes(entry.clip.el)) return false;
-    const slot = idleSlot();
-    if (!slot) return false;
-    const staged = stageEntry(entry);
-    if (staged) staged.classList.add('is-warm');
-    return Boolean(staged);
-  }
-  function warmNextFrame() {
-    if (pathPos < 0 || !pathPlan.length) return;
-    if (!activeStreamPlayable()) return;
-    warmFrameAt(pathPlan[pathPos + 1]);
-    // v123: the third slot warms pathPos + 2 once the outgoing frame is gone.
-    if (!previousSlot) warmFrameAt(pathPlan[pathPos + 2]);
-  }
-  function playClip(category, index) {
-    if (!category || category.index !== state.index) return;
-    if (!gateOpen) return;
-    const selected = category.clips[index];
-    if (!selected) return;
-    if (selected.id) markVideoViewed(selected.id);
+  function showClip(category, index) {
+    if (!category || category.index !== state.index) return false;
+    if (!gateOpen) return false;
+    const clip = category.clips[index];
+    if (!clip) return false;
     category.activeIndex = index;
-    let slot = selected.el && videoSlots.includes(selected.el) ? selected.el : null;
-    // Never take the underlay that is still showing the outgoing live frame.
-    if (slot === previousSlot) slot = null;
-    if (!slot) slot = idleSlot();
-    if (!slot) slot = videoSlots.find((item) => item !== activeSlot) || videoSlots[0] || null;
-    if (!slot) return;
-    const outgoing = activeSlot && activeSlot !== slot ? activeSlot : null;
-    const sameClip = slot === activeSlot && slot._clip === selected;
-    // A second swipe inside one crossfade must not stack a third picture: the
-    // older underlay is dropped immediately, the current one becomes previous.
-    if (previousSlot && previousSlot !== outgoing) {
-      window.clearTimeout(slotHandoffTimer);
-      try { previousSlot.pause(); } catch (_) {}
-      previousSlot.classList.remove('is-previous');
-      previousSlot = null;
-    }
-    window.clearTimeout(slotHandoffTimer);
-    if (outgoing) {
-      // v123: the outgoing clip stays visible and playing under the new layer.
-      // Its HTTP stream is never aborted; it is paused after the crossfade.
-      outgoing.classList.remove('is-current');
-      outgoing.classList.add('is-previous');
-      previousSlot = outgoing;
-    }
-    bindClipToSlot(slot, category, selected, index);
-    slot.classList.remove('is-previous', 'is-warm');
-    if (!sameClip) slot.classList.remove('is-ready');
-    slot.classList.add('is-current');
-    if (pathStarted) {
-      slot.classList.remove('is-entry-frame');
-    } else {
-      slot.classList.add('is-entry-frame');
-    }
-    slot.playbackRate = stage.classList.contains('is-held') ? SLOW_RATE : 1;
-    activeSlot = slot;
-    selected._startNoted = false;
-    selected._startRequestedAt = performance.now();
-    // v123: only reveal immediately when this slot already held the needed source
-    // (a warm frame). A cold slot must wait for its own loadeddata event, so the
-    // old picture is never flashed for one frame.
-    const activeSource = playbackUrlFor(selected);
-    const hadSource = Boolean(activeSource)
-      && slot.getAttribute('src') === activeSource
-      && slot.networkState !== 3;
-    loadSlotSource(slot, selected, true);
-    if (hadSource && slot.readyState >= 2) {
-      slot.classList.add('is-ready');
-      scheduleSlotHandoff();
-    }
+    clip._startRequestedAt = performance.now();
+    return presentClip(clip);
   }
   function mountClips(category) {
     const media = category.el.querySelector('.media');
     if (!media) return;
-    category.clips.forEach((clip) => {
-      if (clip.el) releaseClipVideo(clip);
-      clip.el = null;
-    });
     media.textContent = '';
   }
-  function disposeVideoElement(video) {
-    if (!video) return;
-    if (videoSlots.includes(video)) {
-      releaseSlotVideo(video);
-      return;
-    }
-    try { video.pause(); } catch (_) {}
-    try { video.removeAttribute('src'); } catch (_) {}
-    try { video.remove(); } catch (_) {}
-  }
-  function releaseClipVideo(clip) {
-    if (!clip || !clip.el) return;
-    const slot = clip.el;
-    clip.el = null;
-    clip.lastTime = 0;
-    if (clip._preloadTimer) {
-      window.clearTimeout(clip._preloadTimer);
-      clip._preloadTimer = 0;
-    }
-    if (slot !== activeSlot && slot !== previousSlot) releaseSlotVideo(slot);
-  }
-  function handlePageHide(event) {
-    if (event && event.persisted) return;
-    thresholdStopGl();
-    releaseAllPlaybackVideos();
-  }
   function releaseAllPlaybackVideos() {
-    window.clearTimeout(slotHandoffTimer);
-    for (const slot of videoSlots) releaseSlotVideo(slot);
-    activeSlot = null;
-    previousSlot = null;
+    const player = window.SanctuaryPlayer;
+    if (player && typeof player.pause === 'function') player.pause();
     if (finaleSessionVideo) {
       try {
         finaleSessionVideo.pause();
@@ -3931,15 +3656,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       }
     }
   }
-  function preparePlaybackWindow(currentEntry) {
-    const current = currentEntry && currentEntry.clip ? currentEntry : (pathPlan[pathPos] || null);
-    if (!current || !current.clip) return;
-    if (activeSlot && activeSlot._clip === current.clip) return;
-    if (current.clip.el && videoSlots.includes(current.clip.el)) return;
-    // v121: only the entry screen calls this, once, to stage pathPlan[0] before
-    // the gate opens. Swipes are staged by playClip() alone so no slot is loaded
-    // twice in the same tick.
-    stageEntry(current);
+  function handlePageHide(event) {
+    if (event && event.persisted) return;
+    thresholdStopGl();
+    releaseAllPlaybackVideos();
   }
 
   const CATALOG_STAGE_CATEGORIES = {
@@ -4000,6 +3720,11 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         title,
         title_ru: String(item.title_ru || ''),
         url: item.url,
+        // v124: the player picks the stream per device and paints the still first.
+        url1080: String(item.url1080 || item.url || ''),
+        url720: String(item.url720 || ''),
+        poster: String(item.poster || ''),
+        size720: Number(item.size720) || 0,
         duration: Number.isFinite(Number(item.duration)) ? Number(item.duration) : 10,
         description: archetype,
         tags: [stageKey, archetype],
@@ -4043,54 +3768,32 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     resetViewedCycleIfComplete();
     return loaded;
   }
-  function handleLoop(category, clipIndex, video) {
-    if (category.index !== state.index || category.activeIndex !== clipIndex) return;
-    const clip = category.clips[clipIndex];
+  // v124: player.js loops the MP4 seam itself and reports every wrap here, so
+  // the resonance statistics survive the rewrite without a timeupdate listener.
+  function handlePlayerLoop(clip) {
     if (!clip) return;
-    const current = video.currentTime;
-    if (Number.isFinite(video.duration) && video.duration > 1 && current >= video.duration - 0.18) {
-      restartVideo(video, clip);
-      return;
-    }
-    if (clip.lastTime > 0.5 && current + 0.35 < clip.lastTime) {
-      state.loopsInView += 1;
-      state.totalLoops += 1;
-    }
-    clip.lastTime = current;
-    if (state.loopsInView >= 2) {
-      rewardCategory(category, 'loops');
-    }
-  }
-  function noteClipStarted(clip) {
-    if (!clip || clip._startNoted) return;
-    clip._startNoted = true;
-    clip._slotRetry = 0;
-    warmNextFrame();
-  }
-  function pauseCategory(category) {
-    if (!category) return;
-    category.clips.forEach((clip) => {
-      if (!clip.el) return;
-      if (clip.el === activeSlot || clip.el === previousSlot) return;
-      clip.el.pause();
-    });
+    state.loopsInView += 1;
+    state.totalLoops += 1;
+    const category = activeCategory();
+    if (category && clip.id && category.clips[category.activeIndex] !== clip) return;
+    if (state.loopsInView >= 2) rewardCategory(category, 'loops');
   }
   function pauseSlots() {
-    for (const slot of videoSlots) {
-      try { slot.pause(); } catch (_) {}
-    }
+    const player = window.SanctuaryPlayer;
+    if (player && typeof player.pause === 'function') player.pause();
+  }
+  if (window.SanctuaryPlayer && typeof window.SanctuaryPlayer.init === 'function') {
+    window.SanctuaryPlayer.onLoop = handlePlayerLoop;
+    window.SanctuaryPlayer.init();
   }
   function setActivePlaybackRate(rate) {
-    const clip = activeClip();
-    if (clip && clip.el) clip.el.playbackRate = rate;
+    const player = window.SanctuaryPlayer;
+    if (player && typeof player.setRate === 'function') player.setRate(rate);
   }
   function wakePlayback() {
     if (!gateOpen) return;
-    const category = activeCategory();
-    const clip = category && category.clips[category.activeIndex];
-    if (!clip || !clip.el || !clip.el.paused) return;
-    const promise = clip.el.play();
-    if (promise && typeof promise.catch === 'function') promise.catch(() => {});
+    const player = window.SanctuaryPlayer;
+    if (player && typeof player.resume === 'function') player.resume();
   }
   function rewardCategory(category, reason) {
     if (!category || engine.phase !== 'flow' || state.resonanceAwarded) return;
@@ -4115,7 +3818,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const fromIndex = state.index;
     const from = slides[fromIndex];
     const to = slides[targetIndex];
-    const fromVideo = from.querySelector('video.is-current') || from.querySelector('video');
     const duration = fadeMs || SLOW_FADE_MS;
     const category = categories[targetIndex];
     if (forcedClipId) {
@@ -4137,7 +3839,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     stopHoldPulse();
     setActivePlaybackRate(1);
     setSoundDepth(false);
-    pauseCategory(categories[fromIndex]);
     from.classList.remove('is-active');
     to.classList.add('is-active');
     state.index = targetIndex;
@@ -4159,9 +3860,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     updateStageLabel(sceneStage);
     updateSessionProgress();
 
-    // v121: no pre-staging here. playClip() assigns src, calls load() once and
-    // starts playing in one pass; a second load() a millisecond later made the
-    // mobile browser drop the real request and hang on 4G.
+    // v124: showClip() hands one frame plus the warm-up frame to player.js.
+    // Nothing is staged twice, so a mobile browser never drops the request.
     playCategory(category);
     activateCaption(category, activeClip(), behavior, allowed, sceneStage, sceneContext || {});
     switchSoundtrack(null, duration);
@@ -4344,12 +4044,12 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       pathPos -= 1;
       const previous = pathPlan[pathPos];
       if (!previous) return;
-      // v123: no frame hold and no stream abort; playClip() keeps the outgoing
-      // frame live under the incoming one.
+      // v124: the player keeps the outgoing frame live until the incoming one
+      // is decoded, so a backward swipe never flashes black.
       sceneContext.stage = previous.stage;
       updateStageLabel(previous.stage);
       trackStageReached(previous.stage);
-      // v121: playClip() stages the backward target itself, one load() only.
+      // v124: the player swaps in the backward frame from its warm slot.
       navigateTo(
         previous.category.index,
         'down',
@@ -4695,8 +4395,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       markInteraction();
       setBreath(0);
       setSceneElement(activeClip());
-      const category = activeCategory();
-      if (category.clips.length) playClip(category, category.activeIndex);
       if (gateOpen) requestWakeLock();
       wakePlayback();
       if (finaleEl && !finaleEl.hidden) syncFinaleSessionVideo();
@@ -4705,15 +4403,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   });
   window.addEventListener('online', () => {
     if (!gateOpen || document.hidden) return;
-    const clip = activeClip();
-    const video = clip && clip.el;
-    if (!video) return;
-    if (video.error) {
-      try { video.load(); } catch (_) {}
-    }
-    if (!video.paused) return;
     if (gesture && gesture.holding) return;
-    video.play().catch(() => {});
+    wakePlayback();
   });
   stuporMonitor = window.setInterval(checkStupor, 1000);
   const entryGate = document.querySelector('.entry');
@@ -5096,8 +4787,7 @@ void main(){
     for (let index = 0; index < Math.min(3, pathPlan.length); index += 1) {
       const entry = pathPlan[index];
       if (!entry || !entry.clip) continue;
-      if (entry.clip.el && videoSlots.includes(entry.clip.el)) continue;
-      stageEntry(entry);
+      preloadPoster(entry.clip);
     }
   }
   function openThreshold(options) {
@@ -5340,7 +5030,6 @@ void main(){
   returnAfterLock = Boolean(sessionLockAt && sessionLockAt <= Date.now());
   startSessionLockTicker();
   applyLanguage();
-  startVideoWatchdog();
   window.addEventListener('pagehide', handlePageHide, { passive: true });
   startPresenceCounter();
   initEntryAbstract();
@@ -5411,9 +5100,9 @@ void main(){
         return;
       }
       try {
-        // v119: stage the first two +faststart streams while the entry screen
-        // is still up, so the first swipe starts from a warm native buffer.
-        preparePlaybackWindow(pathPlan[0]);
+        // v124: warm the first WebP poster while the entry screen is still up,
+        // so the entrance frame paints before its MP4 has decoded a single byte.
+        preloadPoster(pathPlan[0] && pathPlan[0].clip);
         const first = pathPlan[0];
         prefetchCaption(first.clip, first.category, behaviorContext(), first.stage);
         // v123: if the visitor already opened the threshold before the catalog
@@ -5438,25 +5127,10 @@ void main(){
       get pathPos() { return pathPos; },
       get pathStarted() { return pathStarted; },
       get plan() { return pathPlan.map((entry) => entry && entry.clip && entry.clip.id); },
-      get slots() {
-        return videoSlots.map((slot) => ({
-          id: slot.id,
-          clip: (slot._clip && slot._clip.id) || null,
-          current: slot.classList.contains('is-current'),
-          previous: slot.classList.contains('is-previous'),
-          ready: slot.classList.contains('is-ready'),
-          paused: slot.paused,
-          readyState: slot.readyState,
-          width: slot.videoWidth,
-          height: slot.videoHeight,
-          src: String(slot.getAttribute('src') || '').slice(0, 24),
-          hasSrc: Boolean(slot.getAttribute('src')),
-          networkState: slot.networkState,
-          time: Math.round(slot.currentTime * 100) / 100,
-          opacity: getComputedStyle(slot).opacity,
-          cls: slot.className,
-          key: String(slot._srcKey || '').slice(0, 46),
-        }));
+      get player() {
+        return window.SanctuaryPlayer && typeof window.SanctuaryPlayer.snapshot === 'function'
+          ? window.SanctuaryPlayer.snapshot()
+          : null;
       },
       get threshold() {
         return {

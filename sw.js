@@ -1,4 +1,4 @@
-/* Yoursanctuary — PWA shell cache (v123).
+/* Yoursanctuary — PWA shell cache (v124).
  * install() precaches only the critical shell: the app, styles, catalog and
  * manifest. Fonts and icons are cached on first use but served cache-first
  * afterwards, so they return from disk instantly instead of holding the
@@ -6,11 +6,12 @@
  * network-first, so a fresh deployment wins online. Cross-origin video CDN
  * requests and the umami beacon deliberately pass through untouched.
  */
-const CACHE = 'sanctuary-shell-v123';
+const CACHE = 'sanctuary-shell-v124';
 const SHELL = [
   './',
   './index.html',
   './style.css',
+  './player.js',
   './app.js',
   './videos-data.js',
   './manifest.json',
@@ -82,6 +83,10 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url);
   if (url.hostname === 'cloud.umami.is' || url.hostname.endsWith('.umami.is')) return;
+  // Video, posters and the audio library live on the Timeweb S3 host. Those
+  // multi-megabyte GETs (and their 206 range responses) never touch this
+  // worker: the browser streams them straight from the network.
+  if (url.hostname === 's3.twcstorage.ru') return;
   if (url.origin !== self.location.origin) return;
 
   event.respondWith(isCacheFirst(url) ? cacheFirst(request) : networkFirst(request));
