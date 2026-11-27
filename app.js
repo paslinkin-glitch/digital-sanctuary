@@ -2533,12 +2533,15 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     sound.ctx.resume().catch(() => {});
     if (sound.activeTrack) switchSoundtrack(sound.activeTrack, SLOW_FADE_MS);
   }
-  // Blob prefetch pipeline (v117). At most the current and the next frame are
+  // Blob prefetch pipeline (v118). At most the current and the next frame are
   // held in memory, every other blob: URL is revoked the moment it is dropped.
+  // The first frame is allowed to start as a plain +faststart stream when the
+  // visitor enters before its Blob has finished downloading.
   const BLOB_CACHE_LIMIT = 2;
   const blobCache = new Map();
   const blobPending = new Map();
-  const blobStats = { fetched: 0, bytes: 0, revoked: 0, failed: 0 };
+  const blobStats = { fetched: 0, bytes: 0, revoked: 0, failed: 0, streamed: 0 };
+  let firstFrameStreamed = false;
   function clipSourceId(clip) {
     return (clip && clip.id) || '';
   }
@@ -2611,7 +2614,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         blobStats.bytes += blob.size;
         return objectUrl;
       } catch (error) {
-        blobStats.failed += 1;
+        // An abort requested by streamFirstFrameFromUrl() is not a failure.
+        if (!controller.signal.aborted) blobStats.failed += 1;
         return '';
       } finally {
         if (blobPending.get(id) === record) blobPending.delete(id);
@@ -2620,6 +2624,50 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     record.promise = promise;
     blobPending.set(id, record);
     return promise;
+  }
+  // v118: the entry screen starts prefetching the first frame of pathPlan into
+  // Blob memory. A visitor may still swipe up before those ~9 MB land — waiting
+  // for the whole file is what left the very first scene black. In that case the
+  // scene plays straight from its +faststart URL (the moov atom sits at the
+  // front, so the picture starts after ~500 KB) and the Blob pipeline switches
+  // to the second frame, which keeps the first swipe instant too.
+  function prewarmEntryFrame() {
+    const first = pathPlan[0];
+    if (!first || !first.clip) return null;
+    return prefetchClipBlob(first.clip);
+  }
+  function streamFirstFrameFromUrl(entry) {
+    if (!entry || !entry.clip || !entry.clip.url) return false;
+    // Drop the full-file fetch so it stops competing with the <video> element
+    // for bandwidth; the element streams its own byte ranges from the CDN.
+    abortPendingBlob(clipSourceId(entry.clip));
+    const slot = (entry.clip.el && videoSlots.includes(entry.clip.el))
+      ? entry.clip.el
+      : (videoSlots[0] || idleSlot());
+    if (!slot) return false;
+    const index = entry.category
+      ? entry.category.clips.findIndex((item) => item.id === entry.clip.id)
+      : -1;
+    if (slot._clip !== entry.clip) bindClipToSlot(slot, entry.category, entry.clip, index);
+    const source = entry.clip.url;
+    if (slot.getAttribute('src') !== source) {
+      slot.classList.remove('is-ready');
+      slot.preload = 'auto';
+      slot.muted = true;
+      slot.defaultMuted = true;
+      slot.playsInline = true;
+      slot.setAttribute('src', source);
+      try { slot.load(); } catch (_) {}
+      seekSlot(slot, SLOT_START_AT);
+    }
+    // Match the key loadSlotSource() would build, so playClip() reuses this
+    // exact stream instead of reloading and throwing the buffered bytes away.
+    slot._srcKey = (entry.clip.id || '') + '|' + source;
+    firstFrameStreamed = true;
+    blobStats.streamed += 1;
+    const promise = slot.play();
+    if (promise && typeof promise.catch === 'function') promise.catch(() => {});
+    return true;
   }
   window.__sanctuaryBlobs = { cache: blobCache, stats: blobStats, pending: blobPending };
 
@@ -3607,7 +3655,11 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     resetViewClock();
     if (isVideoSeen(entry.clip.id)) sessionUsedVideoIds.delete(entry.clip.id);
     category.freshIndex = index;
-    preparePlaybackWindow(entry, pathPlan[1]);
+    // v118: never block the first scene on a Blob download. When the first
+    // frame is not in memory yet, the +faststart URL starts instantly and the
+    // pipeline goes straight to the second frame.
+    const streamFirst = !blobUrlFor(entry.clip);
+    preparePlaybackWindow(entry, pathPlan[1], { streamCurrent: streamFirst });
 
     const clipIndex = playCategory(category);
     if (clipIndex === null) return false;
@@ -3743,7 +3795,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const source = playbackUrlFor(clip);
     if (!source) return false;
     const key = (clip.id || '') + '|' + source;
-    if (slot._srcKey !== key || slot.readyState === 0) {
+    const alreadyLoading = slot.readyState === 0 && slot.getAttribute('src') === source;
+    if (slot._srcKey !== key || (slot.readyState === 0 && !alreadyLoading)) {
       slot._srcKey = key;
       slot.classList.remove('is-ready');
       slot.preload = 'auto';
@@ -3897,7 +3950,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       }
     }
   }
-  function preparePlaybackWindow(currentEntry, nextEntry) {
+  function preparePlaybackWindow(currentEntry, nextEntry, options) {
+    const streamCurrent = Boolean(options && options.streamCurrent);
     const current = currentEntry && currentEntry.clip ? currentEntry : (pathPlan[pathPos] || null);
     const next = nextEntry && nextEntry.clip ? nextEntry : (pathPlan[pathPos + 1] || null);
     const keep = new Set();
@@ -3907,12 +3961,18 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     let currentSlot = current && current.clip ? current.clip.el : null;
     if (current && !(activeSlot && activeSlot._clip === current.clip)) {
       currentSlot = stageEntry(current);
-      prefetchClipBlob(current.clip).then((url) => {
-        if (!url || !currentSlot || currentSlot._clip !== current.clip) return;
-        if (currentSlot === activeSlot || currentSlot.getAttribute('src') === url) return;
-        loadSlotSource(currentSlot, current.clip, false);
-        seekSlot(currentSlot, SLOT_START_AT);
-      });
+      if (streamCurrent) {
+        // Early entry (v118): play the direct +faststart stream and leave the
+        // Blob download cancelled instead of restarting the whole file.
+        streamFirstFrameFromUrl(current);
+      } else {
+        prefetchClipBlob(current.clip).then((url) => {
+          if (!url || !currentSlot || currentSlot._clip !== current.clip) return;
+          if (currentSlot === activeSlot || currentSlot.getAttribute('src') === url) return;
+          loadSlotSource(currentSlot, current.clip, false);
+          seekSlot(currentSlot, SLOT_START_AT);
+        });
+      }
     }
     if (!next) return;
     prefetchClipBlob(next.clip);
@@ -4939,6 +4999,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       }
       try {
         preparePlaybackWindow(pathPlan[0], pathPlan[1]);
+        // v118: warm the first frame into Blob memory while the entry screen is
+        // still up, so a later swipe usually finds it ready.
+        prewarmEntryFrame();
         const first = pathPlan[0];
         prefetchCaption(first.clip, first.category, behaviorContext(), first.stage);
       } catch (error) {
@@ -4984,6 +5047,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
           pending: blobPending.size,
           ids: [...blobCache.keys()],
           stats: Object.assign({}, blobStats),
+          firstFrameStreamed,
         };
       },
       get audio() {
