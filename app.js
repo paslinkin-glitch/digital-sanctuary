@@ -3589,6 +3589,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (isVideoSeen(entry.clip.id)) sessionUsedVideoIds.delete(entry.clip.id);
     category.freshIndex = index;
     preparePlaybackWindow(entry, pathPlan[1]);
+    showFramePlaceholder(null, category, entry.clip);
     const clipIndex = playCategory(category);
     if (clipIndex === null) return false;
     pathPos = 0;
@@ -3811,7 +3812,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       ensureClipVideo(current.category, current.clip);
       if (current.clip.el) {
         current.clip.el.preload = 'auto';
-        if (current.clip.el.readyState === 0) current.clip.el.load();
+        preloadPoster(current.clip);
       }
     }
     if (next && next.clip) {
@@ -4675,7 +4676,11 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (!gateOpen || document.hidden) return;
     const clip = activeClip();
     const video = clip && clip.el;
-    if (!video || !video.paused) return;
+    if (!video) return;
+    if (video.error) {
+      try { video.load(); } catch (_) {}
+    }
+    if (!video.paused) return;
     if (gesture && gesture.holding) return;
     video.play().catch(() => {});
   });
