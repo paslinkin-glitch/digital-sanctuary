@@ -297,24 +297,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     timeOfDay: timeOfDayFor(new Date().getHours()),
     weatherType: 'clear',
   };
-  function applyNightPupil() {
-    const hour = new Date().getHours();
-    setNightPupil(hour >= 22 || hour < 6);
-  }
   async function loadEnvironment() {
-    applyNightPupil();
-    if ('AmbientLightSensor' in window) {
-      try {
-        const sensor = new window.AmbientLightSensor({ frequency: 1 });
-        sensor.addEventListener('reading', () => {
-          if (sensor.illuminance !== null && sensor.illuminance < 18) {
-            setNightPupil(true);
-          }
-        });
-        sensor.start();
-      } catch (_) {
-      }
-    }
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), 1500);
     try {
@@ -342,7 +325,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     } catch (_) {
     } finally {
       window.clearTimeout(timer);
-      setElementalNoise(currentOpticElement);
+      setElementalNoise(currentElement);
     }
   }
   function environmentScoreFor(title, stage) {
@@ -525,19 +508,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   const captionLines = captionBodyEl ? [captionBodyEl] : [];
   const likeButton = document.getElementById('likeBtn');
   const doubleTapHeart = document.getElementById('doubleTapHeart');
-  const touchTrailEl = document.getElementById('touchTrail');
   let lastCaptionQuestion = -1;
   if (!stage || !slides.length || slides.some((slide) => !slide.querySelector('.media'))) {
     console.error('[sanctuary] stage markup is missing or incomplete');
     return;
-  }
-  const nightVeil = document.createElement('div');
-  nightVeil.className = 'night-veil';
-  nightVeil.setAttribute('aria-hidden', 'true');
-  stage.appendChild(nightVeil);
-  function setNightPupil(active) {
-    document.documentElement.dataset.nightPupil = active ? 'true' : 'false';
-    nightVeil.classList.toggle('is-active', active);
   }
   const likedIds = new Set();
   try {
@@ -594,41 +568,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   let lastSceneTapAt = 0;
   let lastSceneTapX = 0;
   let lastSceneTapY = 0;
-  const trailPoints = [];
-  if (touchTrailEl) {
-    for (let i = 0; i < 4; i += 1) {
-      const point = document.createElement('i');
-      touchTrailEl.appendChild(point);
-      trailPoints.push({ el: point, x: 0, y: 0 });
-    }
-  }
-  let trailRaf = 0;
-  const trailTarget = { x: 0, y: 0, lastAt: 0 };
-  function paintTouchTrail(now) {
-    trailRaf = 0;
-    const age = Math.max(0, now - trailTarget.lastAt);
-    const strength = Math.max(0, 1 - age / 650);
-    let alive = false;
-    trailPoints.forEach((point, index) => {
-      const targetX = trailTarget.x - index * 5;
-      const targetY = trailTarget.y - index * 5;
-      const inertia = 0.2 - index * 0.03;
-      point.x += (targetX - point.x) * inertia;
-      point.y += (targetY - point.y) * inertia;
-      const opacity = Math.max(0, strength * (0.38 - index * 0.07));
-      point.el.style.transform = `translate3d(${point.x.toFixed(1)}px,${point.y.toFixed(1)}px,0) scale(${(1 - index * 0.08).toFixed(2)})`;
-      point.el.style.opacity = opacity.toFixed(3);
-      if (opacity > 0.008) alive = true;
-    });
-    if (alive) trailRaf = window.requestAnimationFrame(paintTouchTrail);
-  }
-  function queueTouchTrail(x, y) {
-    if (!trailPoints.length) return;
-    trailTarget.x = x;
-    trailTarget.y = y;
-    trailTarget.lastAt = performance.now();
-    if (!trailRaf) trailRaf = window.requestAnimationFrame(paintTouchTrail);
-  }
   const progressFill = document.getElementById('session-progress-fill');
   const entryInstallButton = document.getElementById('install-btn');
   const entryLock = document.getElementById('entry-lock');
@@ -1161,7 +1100,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   let anchorWatchToken = 0;
   let stuporMonitor = 0;
   let stuporPulseTimer = 0;
-  let currentOpticElement = 'fog';
+  let currentElement = 'fog';
   let breathValue = 0;
   let captionSceneToken = 0;
   let captionTimer = 0;
@@ -1191,7 +1130,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   let lastSurrealIndex = -99;
   let surrealResonanceHolds = 0;
   let fastSurrealStreak = 0;
-  let auraRaf = 0;
   let pathPos = -1;
   let pathPicked = new Set();
   let pathStarted = false;
@@ -1293,7 +1231,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
   }
   function hapticPatternForCurrent() {
-    return HAPTIC_PATTERNS[currentOpticElement] || HAPTIC_PATTERNS.fog;
+    return HAPTIC_PATTERNS[currentElement] || HAPTIC_PATTERNS.fog;
   }
   function startHoldPulse() {
     stopHoldPulse();
@@ -1314,61 +1252,13 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     holdPulseTimer = 0;
     if (wasHolding) stopHaptics();
   }
-  function pointForEvent(event) {
-    const rect = stage.getBoundingClientRect();
-    return { x: event.clientX - rect.left, y: event.clientY - rect.top };
-  }
   function setSceneElement(clip) {
     const category = activeCategory();
     const element = (clip && clip.element)
       || (category && ELEMENT_DEFAULT[category.tag])
       || 'fog';
-    currentOpticElement = element;
+    currentElement = element;
     currentSoundClip = clip || currentSoundClip;
-    stage.dataset.element = element;
-    stage.classList.remove('is-touching');
-    stage.style.removeProperty('--optic-zoom');
-    stage.style.setProperty('--optic-x', '50%');
-    stage.style.setProperty('--optic-y', '50%');
-  }
-  function queueTouchAura(x, y) {
-    if (auraRaf) return;
-    auraRaf = window.requestAnimationFrame(() => {
-      auraRaf = 0;
-      stage.style.setProperty('--touch-x', `${x}px`);
-      stage.style.setProperty('--touch-y', `${y}px`);
-    });
-  }
-  function startOptics(event) {
-    if (!gateOpen) return;
-    const point = pointForEvent(event);
-    stage.classList.add('is-touching');
-    revealCaptionNow();
-    stage.style.setProperty('--optic-x', `${point.x}px`);
-    queueTouchAura(point.x, point.y);
-    queueTouchTrail(point.x, point.y);
-    stage.style.setProperty('--optic-y', `${point.y}px`);
-    if (currentOpticElement === 'space') {
-      stage.style.setProperty('--optic-zoom', '1.04');
-    }
-  }
-  function updateOptics(event) {
-    if (!gateOpen || !gesture) return;
-    const point = pointForEvent(event);
-    stage.style.setProperty('--optic-x', `${point.x}px`);
-    stage.style.setProperty('--optic-y', `${point.y}px`);
-    queueTouchAura(point.x, point.y);
-    queueTouchTrail(point.x, point.y);
-    if (currentOpticElement === 'space') {
-      const dy = event.clientY - gesture.y0;
-      const amount = clamp(-dy / 160, -1, 1);
-      const zoom = 1 + ((amount + 1) / 2) * 0.08;
-      stage.style.setProperty('--optic-zoom', zoom.toFixed(3));
-    }
-  }
-  function stopOptics() {
-    stage.classList.remove('is-touching');
-    stage.style.removeProperty('--optic-zoom');
   }
   function setBreath(amount) {
     breathValue = clamp(amount, -1, 1);
@@ -2330,8 +2220,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       }
     }
   }
-  function setElementalNoise(element = currentOpticElement) {
-    if (element) currentOpticElement = element;
+  function setElementalNoise(element = currentElement) {
+    if (element) currentElement = element;
     if (!sound) return;
     if (!sound.currentClip) applySoundForClip(null, false);
   }
@@ -4298,9 +4188,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     showFrameAfterglow();
     maybeRecordResonance();
     markInteraction();
-    setBreath(0);
-    stopOptics();
-    window.clearTimeout(captionRevealTimer);
+    setBreath(0);    window.clearTimeout(captionRevealTimer);
     const fromIndex = state.index;
     const from = slides[fromIndex];
     const to = slides[targetIndex];
@@ -4673,9 +4561,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
     stopHoldPulse();
     setActivePlaybackRate(1);
-    setBreath(0);
-    stopOptics();
-    stage.classList.remove('is-held');
+    setBreath(0);    stage.classList.remove('is-held');
   }
   function isInterfaceTarget(target) {
     return Boolean(target && target.closest('button, a, .install-card, .install-card--ios, .lang-switch, .finale'));
@@ -4683,8 +4569,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   document.addEventListener('touchstart', (event) => {
     if (!gateOpen || sessionComplete) return;
     if (event.touches.length !== 1 || isInterfaceTarget(event.target)) return;
-    stage.classList.add('is-touching');
     wakeCaption();
+    revealCaptionNow();
     const touch = event.touches[0];
     if (gesture) abortGesture();
     enableSoundscape();
@@ -4698,7 +4584,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     touchOrigin = { x: touch.clientX, y: touch.clientY, lastY: touch.clientY, t: now(), lastT: now() };
     markInteraction();
     setSceneElement(activeClip());
-    startOptics(touch);
     setActivePlaybackRate(SLOW_RATE);
     setBreath(0);
     rememberAnchor('touch');
@@ -4722,9 +4607,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const touch = event.touches[0];
     const dx = touch.clientX - touchOrigin.x;
     const dy = touch.clientY - touchOrigin.y;
-    if (event.cancelable) event.preventDefault();
-    updateOptics(touch);
-    if (Math.abs(dy) > Math.abs(dx)) {
+    if (event.cancelable) event.preventDefault();    if (Math.abs(dy) > Math.abs(dx)) {
       setBreath(clamp(-dy / 140, -1, 1));
     }
     if (Math.hypot(dx, dy) > 22 && !gesture.moved) {
@@ -4751,9 +4634,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const dx = changed.clientX - origin.x;
     const dy = changed.clientY - origin.y;
     const velocity = Math.abs(dy) / Math.max(1, now() - origin.t);
-    if (gesture && gesture.holding) stopHold();
-    stage.classList.remove('is-touching');
-    setActivePlaybackRate(1);
+    if (gesture && gesture.holding) stopHold();    setActivePlaybackRate(1);
     setBreath(0);
     abortGesture();
     scheduleCaptionZero();
@@ -4762,9 +4643,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
   }, { passive: false });
   document.addEventListener('touchcancel', () => {
-    if (gesture && gesture.holding) stopHold();
-    stage.classList.remove('is-touching');
-    scheduleCaptionZero();
+    if (gesture && gesture.holding) stopHold();    scheduleCaptionZero();
     touchOrigin = null;
     setActivePlaybackRate(1);
     setBreath(0);
@@ -4882,9 +4761,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       state.viewStart += now() - state.hiddenAt;
       state.hiddenAt = null;
       markInteraction();
-      setBreath(0);
-      stopOptics();
-      setSceneElement(activeClip());
+      setBreath(0);      setSceneElement(activeClip());
       const category = activeCategory();
       if (category.clips.length) playClip(category, category.activeIndex);
       if (gateOpen) requestWakeLock();
@@ -4906,9 +4783,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (gesture && gesture.holding) return;
     video.play().catch(() => {});
   });
-  stage.dataset.element = 'fog';
-  stage.style.setProperty('--optic-x', '50%');
-  stage.style.setProperty('--optic-y', '50%');
   stuporMonitor = window.setInterval(checkStupor, 1000);
   const entryGate = document.querySelector('.entry');
   function isStandaloneMode() {
