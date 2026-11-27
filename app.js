@@ -5158,8 +5158,12 @@ void main(){
   }
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).catch((error) => {
-      });
+      // Register only after the tab spinner has finished: shell precaching
+      // must never compete with the page for the browser progress bar.
+      setTimeout(() => {
+        navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).catch((error) => {
+        });
+      }, 2000);
     });
   }
 })();
