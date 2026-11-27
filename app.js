@@ -52,6 +52,8 @@
   const SESSION_LOCK_MS = 2 * 60 * 60 * 1000;
   const SESSION_LOCK_KEY = 'sanctuary-unlock-at';
   const BLOCKED_VIDEO_IDS = new Set(['vecteezy-23002431', 'vecteezy-28326594']);
+  // Hard ceiling for every published scene (v119): no MP4 may exceed 12 MB.
+  const MAX_CLIP_BYTES = 12_000_000;
   const HAPTIC_COOLDOWN_MS = 180;
   const SWIPE_HAPTIC_COOLDOWN_MS = 600;
   const HOLD_HEARTBEAT_MS = 1800;
@@ -2533,143 +2535,14 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     sound.ctx.resume().catch(() => {});
     if (sound.activeTrack) switchSoundtrack(sound.activeTrack, SLOW_FADE_MS);
   }
-  // Blob prefetch pipeline (v118). At most the current and the next frame are
-  // held in memory, every other blob: URL is revoked the moment it is dropped.
-  // The first frame is allowed to start as a plain +faststart stream when the
-  // visitor enters before its Blob has finished downloading.
-  const BLOB_CACHE_LIMIT = 2;
-  const blobCache = new Map();
-  const blobPending = new Map();
-  const blobStats = { fetched: 0, bytes: 0, revoked: 0, failed: 0, streamed: 0 };
-  let firstFrameStreamed = false;
-  function clipSourceId(clip) {
-    return (clip && clip.id) || '';
-  }
-  function revokeBlobUrl(url) {
-    if (!url || String(url).slice(0, 5) !== 'blob:') return;
-    try { URL.revokeObjectURL(url); } catch (_) {}
-    blobStats.revoked += 1;
-  }
-  function dropBlob(id) {
-    const entry = blobCache.get(id);
-    if (!entry) return;
-    blobCache.delete(id);
-    revokeBlobUrl(entry.url);
-  }
-  function abortPendingBlob(id) {
-    const pending = blobPending.get(id);
-    if (!pending) return;
-    blobPending.delete(id);
-    try { pending.controller.abort(); } catch (_) {}
-  }
-  function cancelBlobPrefetch() {
-    for (const id of [...blobPending.keys()]) abortPendingBlob(id);
-  }
-  function cancelStalePrefetch(keepIds) {
-    for (const id of [...blobPending.keys()]) {
-      if (keepIds.has(id)) continue;
-      abortPendingBlob(id);
-    }
-  }
-  function pruneBlobCache(keepIds) {
-    const keep = keepIds instanceof Set ? keepIds : new Set(keepIds || []);
-    for (const id of [...blobCache.keys()]) {
-      if (!keep.has(id)) dropBlob(id);
-    }
-    cancelStalePrefetch(keep);
-    while (blobCache.size > BLOB_CACHE_LIMIT) dropBlob(blobCache.keys().next().value);
-  }
-  function blobUrlFor(clip) {
-    const entry = blobCache.get(clipSourceId(clip));
-    return entry ? entry.url : '';
-  }
+  // Native streaming pipeline (v119). Each slot plays its clip straight from the
+  // public +faststart MP4 URL: no background fetch(), no Blob cache and no second
+  // multi-megabyte download competing with the <video> element for bandwidth.
+  // The browser owns buffering, and slotA / slotB only swap which stream is
+  // visible, so the top loading bar is no longer kept alive by a hidden fetch.
   function playbackUrlFor(clip) {
-    if (!clip) return '';
-    return blobUrlFor(clip) || clip.url || '';
+    return (clip && clip.url) || '';
   }
-  function prefetchClipBlob(clip) {
-    const id = clipSourceId(clip);
-    const url = clip && clip.url;
-    if (!id || !url) return Promise.resolve('');
-    const cached = blobCache.get(id);
-    if (cached) return Promise.resolve(cached.url);
-    const pending = blobPending.get(id);
-    if (pending) return pending.promise;
-    const controller = new AbortController();
-    const record = { controller, promise: null };
-    const promise = (async () => {
-      try {
-        const response = await fetch(url, {
-          signal: controller.signal,
-          credentials: 'omit',
-          cache: 'force-cache',
-        });
-        if (!response.ok) throw new Error('HTTP ' + response.status);
-        const blob = await response.blob();
-        if (controller.signal.aborted) return '';
-        if (!blob.size) throw new Error('empty blob');
-        const objectUrl = URL.createObjectURL(blob);
-        blobCache.set(id, { url: objectUrl, size: blob.size });
-        blobStats.fetched += 1;
-        blobStats.bytes += blob.size;
-        return objectUrl;
-      } catch (error) {
-        // An abort requested by streamFirstFrameFromUrl() is not a failure.
-        if (!controller.signal.aborted) blobStats.failed += 1;
-        return '';
-      } finally {
-        if (blobPending.get(id) === record) blobPending.delete(id);
-      }
-    })();
-    record.promise = promise;
-    blobPending.set(id, record);
-    return promise;
-  }
-  // v118: the entry screen starts prefetching the first frame of pathPlan into
-  // Blob memory. A visitor may still swipe up before those ~9 MB land — waiting
-  // for the whole file is what left the very first scene black. In that case the
-  // scene plays straight from its +faststart URL (the moov atom sits at the
-  // front, so the picture starts after ~500 KB) and the Blob pipeline switches
-  // to the second frame, which keeps the first swipe instant too.
-  function prewarmEntryFrame() {
-    const first = pathPlan[0];
-    if (!first || !first.clip) return null;
-    return prefetchClipBlob(first.clip);
-  }
-  function streamFirstFrameFromUrl(entry) {
-    if (!entry || !entry.clip || !entry.clip.url) return false;
-    // Drop the full-file fetch so it stops competing with the <video> element
-    // for bandwidth; the element streams its own byte ranges from the CDN.
-    abortPendingBlob(clipSourceId(entry.clip));
-    const slot = (entry.clip.el && videoSlots.includes(entry.clip.el))
-      ? entry.clip.el
-      : (videoSlots[0] || idleSlot());
-    if (!slot) return false;
-    const index = entry.category
-      ? entry.category.clips.findIndex((item) => item.id === entry.clip.id)
-      : -1;
-    if (slot._clip !== entry.clip) bindClipToSlot(slot, entry.category, entry.clip, index);
-    const source = entry.clip.url;
-    if (slot.getAttribute('src') !== source) {
-      slot.classList.remove('is-ready');
-      slot.preload = 'auto';
-      slot.muted = true;
-      slot.defaultMuted = true;
-      slot.playsInline = true;
-      slot.setAttribute('src', source);
-      try { slot.load(); } catch (_) {}
-      seekSlot(slot, SLOT_START_AT);
-    }
-    // Match the key loadSlotSource() would build, so playClip() reuses this
-    // exact stream instead of reloading and throwing the buffered bytes away.
-    slot._srcKey = (entry.clip.id || '') + '|' + source;
-    firstFrameStreamed = true;
-    blobStats.streamed += 1;
-    const promise = slot.play();
-    if (promise && typeof promise.catch === 'function') promise.catch(() => {});
-    return true;
-  }
-  window.__sanctuaryBlobs = { cache: blobCache, stats: blobStats, pending: blobPending };
 
   function nextClipIndex(category) {
     const clips = category.clips;
@@ -2711,7 +2584,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (darkContext && /\b(beach|tropical|palm|summer|flower|sunny|sunlight|golden)\b/.test(text)) return false;
     return true;
   }
-  function pickStageClips(stage, count, picked, allowSeen = false) {
+  function pickStageClips(stage, count, picked, allowSeen = false, options = {}) {
+    const reuse = Boolean(options && options.reuse);
+    const preferUnused = options && options.preferUnused instanceof Set ? options.preferUnused : null;
     const stageCategories = categories.filter((category) => stage.categories.includes(category.tag));
     const pools = stageCategories.map((category) => {
       const matches = (clip, allowSurreal) => (
@@ -2720,7 +2595,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         && Boolean(clip.url)
         && !clip.invalid
         && (allowSurreal || !clip.is_surreal)
-        && !pathPicked.has(clip.id)
+        && (reuse || !pathPicked.has(clip.id))
         && !picked.has(clip.id)
         && (allowSeen || !isVideoSeen(clip.id))
       );
@@ -2733,7 +2608,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       // taste is a preference here, never an exclusion: dropping a frame would
       // break the 30-frame queue.
       const ordered = shuffleArray(filtered).sort((a, b) => (
-        (Number(contextAllowsClip(b)) - Number(contextAllowsClip(a)))
+        // On the second cycle prefer the five scenes the first cycle left
+        // unused, so all 20 light clips appear inside one 30-step session.
+        (Number(preferUnused && preferUnused.has(a.id)) - Number(preferUnused && preferUnused.has(b.id)))
+        || (Number(contextAllowsClip(b)) - Number(contextAllowsClip(a)))
         || (b.envScore || 0) - (a.envScore || 0)
       ));
       return { category, clips: ordered };
@@ -2841,20 +2719,27 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       .trim();
   }
   function sessionPlanIsUnique(entries) {
-    const ids = new Set();
-    const urls = new Set();
-    const titles = new Set();
-    for (const entry of entries) {
-      const clip = entry && entry.clip;
-      if (!clip) return false;
-      const id = String(clip.id || '');
-      const url = String(clip.url || '');
-      const title = normalizeSessionKey(clip.title);
-      if (!id || !url || !title) return false;
-      if (ids.has(id) || urls.has(url) || titles.has(title)) return false;
-      ids.add(id);
-      urls.add(url);
-      titles.add(title);
+    if (!Array.isArray(entries) || entries.length !== SESSION_LENGTH) return false;
+    // v119: only a single 15-frame cycle must be repeat-free. With 20 scenes a
+    // 30-frame session repeats some of them on the second cycle by design.
+    for (let start = 0; start < entries.length; start += CYCLE_LENGTH) {
+      const ids = new Set();
+      const urls = new Set();
+      const titles = new Set();
+      const stop = Math.min(start + CYCLE_LENGTH, entries.length);
+      for (let index = start; index < stop; index += 1) {
+        const entry = entries[index];
+        const clip = entry && entry.clip;
+        if (!clip) return false;
+        const id = String(clip.id || '');
+        const url = String(clip.url || '');
+        const title = normalizeSessionKey(clip.title);
+        if (!id || !url || !title) return false;
+        if (ids.has(id) || urls.has(url) || titles.has(title)) return false;
+        ids.add(id);
+        urls.add(url);
+        titles.add(title);
+      }
     }
     return true;
   }
@@ -2865,13 +2750,21 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     resetViewedCycleIfComplete();
     pathPicked = new Set();
     const attempt = (allowSeen) => {
-      const picked = new Set();
       const entries = [];
+      const usedBefore = new Set();
       for (let cycle = 0; cycle < 2; cycle += 1) {
+        // v119: the catalog is 20 light scenes, so a 30-frame session can hold
+        // only 15 unique frames per cycle. Uniqueness is enforced inside each
+        // cycle; the second cycle repeats some scenes and prefers the ones the
+        // first cycle left out, so all 20 scenes still appear.
+        const picked = new Set();
         const cycleEntries = [];
         for (const spec of CYCLE_STAGES) {
           const stage = stageFor(spec.id);
-          const picks = pickStageClips(stage, spec.count, picked, allowSeen);
+          const picks = pickStageClips(stage, spec.count, picked, allowSeen, {
+            reuse: cycle > 0,
+            preferUnused: usedBefore,
+          });
           if (picks.length < spec.count) return null;
           cycleEntries.push(...picks);
         }
@@ -2896,7 +2789,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
             last.category = final.category;
           }
         }
-        for (const entry of cycleEntries) picked.add(entry.clip.id);
+        for (const entry of cycleEntries) usedBefore.add(entry.clip.id);
         entries.push(...cycleEntries);
       }
       return entries;
@@ -3443,7 +3336,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     returnNotificationTimer = window.setTimeout(() => {
       if (!('Notification' in window) || Notification.permission !== 'granted') return;
       try {
-        new Notification('Digital Sanctuary', {
+        new Notification('Yoursanctuary', {
           body,
           icon: './icon-192.png',
           tag: 'sanctuary-return',
@@ -3458,7 +3351,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         worker.postMessage({
           type: 'schedule-return',
           deliverAt: unlockAt,
-          title: 'Digital Sanctuary',
+          title: 'Yoursanctuary',
           body,
         });
       }
@@ -3582,11 +3475,14 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     });
   }
   function makeCycleEntries(allowSeen) {
-    const picked = new Set(pathPicked);
+    const picked = new Set();
     const entries = [];
     for (const spec of CYCLE_STAGES) {
       const stage = stageFor(spec.id);
-      const picks = pickStageClips(stage, spec.count, picked, allowSeen);
+      const picks = pickStageClips(stage, spec.count, picked, allowSeen, {
+        reuse: true,
+        preferUnused: new Set(pathPicked),
+      });
       if (picks.length < spec.count) return null;
       entries.push(...picks);
     }
@@ -3655,11 +3551,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     resetViewClock();
     if (isVideoSeen(entry.clip.id)) sessionUsedVideoIds.delete(entry.clip.id);
     category.freshIndex = index;
-    // v118: never block the first scene on a Blob download. When the first
-    // frame is not in memory yet, the +faststart URL starts instantly and the
-    // pipeline goes straight to the second frame.
-    const streamFirst = !blobUrlFor(entry.clip);
-    preparePlaybackWindow(entry, pathPlan[1], { streamCurrent: streamFirst });
+    // v119: the first +faststart stream is already staged by
+    // preparePlaybackWindow() on the entry screen, so entering plays the native
+    // stream instead of waiting for any background download.
+    preparePlaybackWindow(entry, pathPlan[1]);
 
     const clipIndex = playCategory(category);
     if (clipIndex === null) return false;
@@ -3815,7 +3710,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   function stageEntry(entry) {
     if (!entry || !entry.clip) return null;
     let slot = entry.clip.el && videoSlots.includes(entry.clip.el) ? entry.clip.el : null;
-    if (!slot) slot = idleSlot() || otherSlot(activeSlot) || videoSlots[0] || null;
+    // v119: the underlay that still shows the last painted frame is off limits
+    // for staging. Reusing it blanked the only visible layer during a swipe.
+    if (slot === previousSlot) slot = null;
+    if (!slot) slot = idleSlot();
     if (!slot) return null;
     const index = entry.category
       ? entry.category.clips.findIndex((item) => item.id === entry.clip.id)
@@ -3824,6 +3722,12 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     loadSlotSource(slot, entry.clip, false);
     seekSlot(slot, SLOT_START_AT);
     return slot;
+  }
+  function slotHasFrame(slot) {
+    return Boolean(slot)
+      && slot === activeSlot
+      && slot.readyState >= 2
+      && slot.classList.contains('is-ready');
   }
   function markSlotReady(slot) {
     if (!slot || !slot._clip) return;
@@ -3839,9 +3743,14 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   function finishSlotHandoff() {
     const leaving = previousSlot;
     if (!leaving || leaving === activeSlot) return;
+    // v119: the last painted frame may only leave once the new active slot has
+    // decoded its first frame (readyState >= 2 / loadeddata). A blind timer
+    // during a burst of swipes used to reveal the empty layer underneath.
+    if (!slotHasFrame(activeSlot)) return;
     window.clearTimeout(slotHandoffTimer);
     slotHandoffTimer = window.setTimeout(() => {
       if (leaving === activeSlot || previousSlot !== leaving) return;
+      if (!slotHasFrame(activeSlot)) return;
       previousSlot = null;
       try { leaving.pause(); } catch (_) {}
       leaving.classList.remove('is-previous');
@@ -3851,25 +3760,12 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   function warmNextFrame() {
     if (pathPos < 0 || !pathPlan.length) return;
-    const token = ++nextFrameToken;
-    const current = pathPlan[pathPos] && pathPlan[pathPos].clip;
+    nextFrameToken += 1;
     const nextEntry = pathPlan[pathPos + 1];
-    const next = nextEntry && nextEntry.clip;
-    const keep = new Set();
-    if (current) keep.add(clipSourceId(current));
-    if (next) keep.add(clipSourceId(next));
-    pruneBlobCache(keep);
-    if (!next) return;
+    if (!nextEntry || !nextEntry.clip) return;
     const slot = idleSlot();
-    if (slot && slot._clip !== next) stageEntry(nextEntry);
-    prefetchClipBlob(next).then((url) => {
-      if (!url || token !== nextFrameToken) return;
-      const idle = idleSlot();
-      if (!idle || idle._clip !== next) return;
-      if (idle.getAttribute('src') === url) return;
-      loadSlotSource(idle, next, false);
-      seekSlot(idle, SLOT_START_AT);
-    });
+    if (!slot || slot._clip === nextEntry.clip) return;
+    stageEntry(nextEntry);
   }
   function playClip(category, index) {
     if (!category || category.index !== state.index) return;
@@ -3879,16 +3775,43 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (selected.id) markVideoViewed(selected.id);
     category.activeIndex = index;
     let slot = selected.el && videoSlots.includes(selected.el) ? selected.el : null;
-    if (!slot) slot = idleSlot() || otherSlot(activeSlot) || videoSlots[0] || null;
+    if (!slot) slot = idleSlot();
+    if (!slot && activeSlot && !slotHasFrame(activeSlot)) {
+      // Rapid swipe: the active slot has not painted anything yet, so reload it
+      // instead of stealing the visible underlay and showing a black frame.
+      slot = activeSlot;
+    }
+    if (!slot) slot = otherSlot(activeSlot) || videoSlots[0] || null;
     if (!slot) return;
-    if (previousSlot === slot) previousSlot = null;
+    if (slot === previousSlot) {
+      if (!slotHasFrame(activeSlot)) {
+        // The underlay is the only painted layer: reload the hidden active slot
+        // and leave the retained frame untouched underneath.
+        slot = activeSlot;
+        if (!slot) return;
+      } else {
+        previousSlot.classList.remove('is-previous');
+        previousSlot = null;
+      }
+    }
     const outgoing = activeSlot && activeSlot !== slot ? activeSlot : null;
     bindClipToSlot(slot, category, selected, index);
     window.clearTimeout(slotHandoffTimer);
+    slot.classList.remove('is-previous');
     if (outgoing) {
       outgoing.classList.remove('is-current');
-      outgoing.classList.add('is-previous');
-      previousSlot = outgoing;
+      if (slotHasFrame(outgoing)) {
+        // The outgoing slot really held a frame: keep it visible underneath
+        // until the new current slot has decoded its first frame.
+        if (previousSlot && previousSlot !== outgoing && previousSlot !== slot) {
+          previousSlot.classList.remove('is-previous');
+        }
+        outgoing.classList.add('is-previous');
+        previousSlot = outgoing;
+      } else {
+        // It never painted: never let an empty layer cover the retained frame.
+        outgoing.classList.remove('is-ready');
+      }
     }
     slot.classList.add('is-current');
     slot.playbackRate = stage.classList.contains('is-held') ? SLOW_RATE : 1;
@@ -3935,11 +3858,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   function releaseAllPlaybackVideos() {
     window.clearTimeout(slotHandoffTimer);
     nextFrameToken += 1;
-    cancelBlobPrefetch();
     for (const slot of videoSlots) releaseSlotVideo(slot);
     activeSlot = null;
     previousSlot = null;
-    for (const id of [...blobCache.keys()]) dropBlob(id);
     if (finaleSessionVideo) {
       try {
         finaleSessionVideo.pause();
@@ -3950,32 +3871,14 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       }
     }
   }
-  function preparePlaybackWindow(currentEntry, nextEntry, options) {
-    const streamCurrent = Boolean(options && options.streamCurrent);
+  function preparePlaybackWindow(currentEntry, nextEntry) {
     const current = currentEntry && currentEntry.clip ? currentEntry : (pathPlan[pathPos] || null);
     const next = nextEntry && nextEntry.clip ? nextEntry : (pathPlan[pathPos + 1] || null);
-    const keep = new Set();
-    if (current) keep.add(clipSourceId(current.clip));
-    if (next) keep.add(clipSourceId(next.clip));
-    pruneBlobCache(keep);
     let currentSlot = current && current.clip ? current.clip.el : null;
     if (current && !(activeSlot && activeSlot._clip === current.clip)) {
       currentSlot = stageEntry(current);
-      if (streamCurrent) {
-        // Early entry (v118): play the direct +faststart stream and leave the
-        // Blob download cancelled instead of restarting the whole file.
-        streamFirstFrameFromUrl(current);
-      } else {
-        prefetchClipBlob(current.clip).then((url) => {
-          if (!url || !currentSlot || currentSlot._clip !== current.clip) return;
-          if (currentSlot === activeSlot || currentSlot.getAttribute('src') === url) return;
-          loadSlotSource(currentSlot, current.clip, false);
-          seekSlot(currentSlot, SLOT_START_AT);
-        });
-      }
     }
     if (!next) return;
-    prefetchClipBlob(next.clip);
     const spare = videoSlots.find((slot) => slot !== activeSlot
       && slot !== previousSlot
       && slot !== currentSlot);
@@ -4022,6 +3925,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     for (const item of catalog) {
       if (!item || typeof item.url !== 'string' || !/^https:\/\//i.test(item.url)) continue;
       if (usedUrls.has(item.url)) continue;
+      // v119 hard rule: a scene above 12 MB is never mounted.
+      if (Number(item.size) > MAX_CLIP_BYTES) continue;
       if (BLOCKED_VIDEO_IDS.has(String(item.id || ''))) continue;
       const rawStage = String(item.stage || '').toLowerCase().replace(/\s+/g, '_');
       const stageKey = rawStage === 'trickster' || rawStage === 'abyss' ? 'trickster_abyss' : rawStage;
@@ -4202,11 +4107,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     updateStageLabel(sceneStage);
     updateSessionProgress();
 
-    const keepBlobs = new Set();
-    if (planned && planned.clip) keepBlobs.add(planned.clip.id);
-    const following = pathPlan[pathPos + 1];
-    if (following && following.clip) keepBlobs.add(following.clip.id);
-    cancelStalePrefetch(keepBlobs);
     preparePlaybackWindow(planned, pathPlan[pathPos + 1]);
     playCategory(category);
     activateCaption(category, activeClip(), behavior, allowed, sceneStage, sceneContext || {});
@@ -4429,6 +4329,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     trackFrameMilestone();
     sceneContext.stage = entry.stage;
     if (isCycleBoundary) {
+      // v119: a 15-frame cycle is repeat-free, the 20-scene catalog forces the
+      // second cycle to reuse scenes. Clear the per-cycle seen set so the next
+      // cycle can play the repeated planned frames instead of returning null.
+      sessionUsedVideoIds.clear();
       const completedCycle = cycleNumber;
       cycleNumber += 1;
       sessionAccounted = 2;
@@ -4998,10 +4902,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         return;
       }
       try {
+        // v119: stage the first two +faststart streams while the entry screen
+        // is still up, so the first swipe starts from a warm native buffer.
         preparePlaybackWindow(pathPlan[0], pathPlan[1]);
-        // v118: warm the first frame into Blob memory while the entry screen is
-        // still up, so a later swipe usually finds it ready.
-        prewarmEntryFrame();
         const first = pathPlan[0];
         prefetchCaption(first.clip, first.category, behaviorContext(), first.stage);
       } catch (error) {
@@ -5040,15 +4943,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
           cls: slot.className,
           key: String(slot._srcKey || '').slice(0, 46),
         }));
-      },
-      get blobs() {
-        return {
-          size: blobCache.size,
-          pending: blobPending.size,
-          ids: [...blobCache.keys()],
-          stats: Object.assign({}, blobStats),
-          firstFrameStreamed,
-        };
       },
       get audio() {
         return sound && sound.ctx
