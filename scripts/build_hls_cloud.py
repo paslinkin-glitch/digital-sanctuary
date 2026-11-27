@@ -59,6 +59,10 @@ SIZE_720_MIN = 1_400_000
 SIZE_720_MAX = 2_300_000
 POSTER_MIN = 20_000
 POSTER_MAX = 35_000
+# A very detailed still (foliage, rain on leaves) plateaus just above the
+# target even at the lowest quality; anything up to this is still a light
+# poster and must never block a 30-scene build.
+POSTER_HARD_MAX = 48_000
 POSTER_QUALITY = 68
 
 # v124: these four frames are gone for good — one carries the coverr+ watermark,
@@ -339,16 +343,19 @@ def build_poster(source, out):
     """A 480x854 WebP still from 0.2 s, tuned towards the 20-35 KB band.
 
     Quality 68 is the target. A frame that comes out heavier is re-rendered
-    downward until it fits under 35 KB. A very smooth frame (a blurred sunset,
-    a flat fog bank) simply cannot pass 20 KB at this size — WebP wins there —
-    so the lightest still is kept instead of being padded up: a 13 KB poster
-    is a better poster, and the band is a ceiling we never want to cross.
+    downward until it fits under 35 KB, and a detailed still that plateaus
+    just above it is accepted under POSTER_HARD_MAX rather than crushed into
+    blocks. A very smooth frame (a blurred sunset, a flat fog bank) simply
+    cannot pass 20 KB at this size — WebP wins there — so the lightest still
+    is kept instead of being padded up: a 13 KB poster is a better poster.
     """
     size = render_poster(source, out, POSTER_QUALITY)
     if POSTER_MIN <= size <= POSTER_MAX:
         return size
     if size > POSTER_MAX:
-        for quality in (56, 48, 40, 32):
+        # Stop at quality 40: a 39 KB still that looks like the scene beats a
+        # blocky 22 KB one. POSTER_HARD_MAX is the only real limit.
+        for quality in (56, 48, 40):
             size = render_poster(source, out, quality)
             if POSTER_MIN <= size <= POSTER_MAX:
                 return size
@@ -356,14 +363,18 @@ def build_poster(source, out):
                 print("  " + out.name + ": " + str(size) + " bytes after quality "
                       + str(quality) + ", keeping it lighter", flush=True)
                 return size
-        raise RuntimeError(out.name + ": " + str(size) + " bytes is still above "
-                           + str(POSTER_MAX) + " bytes")
+        if size <= POSTER_HARD_MAX:
+            print("  " + out.name + ": " + str(size) + " bytes is the floor for this "
+                  "detailed still, above the " + str(POSTER_MAX) + " byte target", flush=True)
+            return size
+        raise RuntimeError(out.name + ": " + str(size) + " bytes is still above the "
+                           + str(POSTER_HARD_MAX) + " byte hard ceiling")
     best = size
     for quality in (82, 94, 100):
         size = render_poster(source, out, quality)
         if POSTER_MIN <= size <= POSTER_MAX:
             return size
-        if size > POSTER_MAX:
+        if size > POSTER_HARD_MAX:
             render_poster(source, out, POSTER_QUALITY)
             return best
         best = size
