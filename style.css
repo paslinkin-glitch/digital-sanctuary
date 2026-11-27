@@ -2,8 +2,10 @@
 @keyframes likePop{0%{transform:scale(.86)}55%{transform:scale(1.12)}100%{transform:scale(1)}}.double-tap-heart{position:fixed;left:0;top:0;z-index:32;width:82px;height:82px;margin:-41px 0 0 -41px;color:#E6B88A;pointer-events:none;opacity:0;transform:translate3d(-100px,-100px,0) scale(.4);filter:drop-shadow(0 0 14px rgba(230,184,138,.45))}.double-tap-heart svg{width:100%;height:100%;fill:currentColor}.double-tap-heart.is-active{animation:doubleHeart .9s cubic-bezier(.22,1,.36,1) both}
 @keyframes doubleHeart{0%{opacity:0;transform:translate3d(var(--heart-x,-100px),var(--heart-y,-100px),0) scale(.4)}18%{opacity:1;transform:translate3d(var(--heart-x,-100px),var(--heart-y,-100px),0) scale(1.12)}55%{opacity:.95;transform:translate3d(var(--heart-x,-100px),var(--heart-y,-100px),0) scale(.98)}100%{opacity:0;transform:translate3d(var(--heart-x,-100px),var(--heart-y,-100px),0) scale(1.05)}}
 
-/* v116: two permanent HLS slots and one light atmosphere layer */
+/* v117: two permanent Blob slots, 320ms crossfade, no black frame. No filter, backdrop-filter or blend mode touches the video tag, .media or this layer. */
 .video-slots{position:absolute;inset:0;z-index:3;pointer-events:none;overflow:hidden}
-.video-slot{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;background:#070709;transition:opacity 420ms ease;pointer-events:none}
-.video-slot.is-current.is-ready{opacity:1}
-.dream-atmosphere{position:absolute;inset:0;z-index:4;pointer-events:none;opacity:.8;background:radial-gradient(ellipse 90% 70% at 50% 42%,rgba(236,234,230,.035) 0%,transparent 62%),linear-gradient(180deg,rgba(6,6,7,.12) 0%,transparent 28%,transparent 72%,rgba(6,6,7,.24) 100%);mix-blend-mode:screen}
+.video-slot{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;z-index:0;background:#070709;transition:opacity 320ms ease;pointer-events:none}
+.video-slot.is-previous{opacity:1;z-index:1}
+.video-slot.is-current{z-index:2}
+.video-slot.is-current.is-ready{opacity:1;z-index:2}
+.dream-atmosphere{position:absolute;inset:0;z-index:4;pointer-events:none;opacity:.55;background:radial-gradient(ellipse 90% 70% at 50% 42%,rgba(236,234,230,.03) 0%,transparent 62%),linear-gradient(180deg,rgba(6,6,7,.10) 0%,transparent 28%,transparent 72%,rgba(6,6,7,.20) 100%)}

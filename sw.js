@@ -8,7 +8,6 @@ const ASSETS = [
   './',
   './index.html',
   './style.css',
-  './hls.min.js',
   './app.js',
   './videos-data.js',
   './manifest.json',

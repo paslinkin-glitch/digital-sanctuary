@@ -2533,109 +2533,95 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     sound.ctx.resume().catch(() => {});
     if (sound.activeTrack) switchSoundtrack(sound.activeTrack, SLOW_FADE_MS);
   }
-  let qualityFallbackLocked = false;
-  let activeQuality = chooseQuality();
-  let slowStartStreak = 0;
-  let fastStartStreak = 0;
-  const START_FALLBACK_MS = 5000;
-  const QUICK_START_MS = 1500;
-  document.documentElement.dataset.quality = activeQuality;
-  function connectionSnapshot() {
-    const c = navigator.connection || navigator.mozConnection || navigator.webkitConnection || null;
-    const type = String((c && c.type) || '').toLowerCase();
-    const effectiveType = String((c && c.effectiveType) || '').toLowerCase();
-    const downlink = Number((c && c.downlink) || 0);
-    const saveData = Boolean(c && c.saveData);
-    const cellular = type === 'cellular' || (!type && /2g|3g|4g|5g/.test(effectiveType));
-    const wifi = type === 'wifi' || type === 'ethernet';
-    return { type, effectiveType, downlink, saveData, cellular, wifi };
+  // Blob prefetch pipeline (v117). At most the current and the next frame are
+  // held in memory, every other blob: URL is revoked the moment it is dropped.
+  const BLOB_CACHE_LIMIT = 2;
+  const blobCache = new Map();
+  const blobPending = new Map();
+  const blobStats = { fetched: 0, bytes: 0, revoked: 0, failed: 0 };
+  function clipSourceId(clip) {
+    return (clip && clip.id) || '';
   }
-  function chooseQuality() {
-    if (qualityFallbackLocked) return '480';
-    const n = connectionSnapshot();
-    const mobile = isMobileDevice();
-    const slowNetwork = n.saveData || n.effectiveType === 'slow-2g'
-      || n.effectiveType === '2g' || n.effectiveType === '3g';
-    if (slowNetwork) return '480';
-    if (!mobile) return '1080';
-    // iOS Safari often exposes no Network Information API. Treat that as
-    // mobile cellular and start at the sharp 720p pool instead of guessing
-    // Wi-Fi/1080p.
-    if (n.wifi === true) return '1080';
-    return '720';
+  function revokeBlobUrl(url) {
+    if (!url || String(url).slice(0, 5) !== 'blob:') return;
+    try { URL.revokeObjectURL(url); } catch (_) {}
+    blobStats.revoked += 1;
   }
-  function sourceForClip(clip) {
+  function dropBlob(id) {
+    const entry = blobCache.get(id);
+    if (!entry) return;
+    blobCache.delete(id);
+    revokeBlobUrl(entry.url);
+  }
+  function abortPendingBlob(id) {
+    const pending = blobPending.get(id);
+    if (!pending) return;
+    blobPending.delete(id);
+    try { pending.controller.abort(); } catch (_) {}
+  }
+  function cancelBlobPrefetch() {
+    for (const id of [...blobPending.keys()]) abortPendingBlob(id);
+  }
+  function cancelStalePrefetch(keepIds) {
+    for (const id of [...blobPending.keys()]) {
+      if (keepIds.has(id)) continue;
+      abortPendingBlob(id);
+    }
+  }
+  function pruneBlobCache(keepIds) {
+    const keep = keepIds instanceof Set ? keepIds : new Set(keepIds || []);
+    for (const id of [...blobCache.keys()]) {
+      if (!keep.has(id)) dropBlob(id);
+    }
+    cancelStalePrefetch(keep);
+    while (blobCache.size > BLOB_CACHE_LIMIT) dropBlob(blobCache.keys().next().value);
+  }
+  function blobUrlFor(clip) {
+    const entry = blobCache.get(clipSourceId(clip));
+    return entry ? entry.url : '';
+  }
+  function playbackUrlFor(clip) {
     if (!clip) return '';
-    const quality = clip._qualityOverride || activeQuality;
-    if (quality === '480') return clip.url480 || clip.url720 || clip.url;
-    if (quality === '720') return clip.url720 || clip.url480 || clip.url;
-    return clip.url;
+    return blobUrlFor(clip) || clip.url || '';
   }
-  let qualitySyncTimer = 0;
-  function fallbackTo480() {
-    if (activeQuality === '480') return;
-    qualityFallbackLocked = true;
-    activeQuality = '480';
-    slowStartStreak = 0;
-    fastStartStreak = 0;
-    document.documentElement.dataset.quality = activeQuality;
-    rebuildRemainingPath('480');
-  }
-  function armNextPreload(clip) {
-    if (!clip) return;
-    if (clip._preloadTimer) window.clearTimeout(clip._preloadTimer);
-    clip._preloadTimer = window.setTimeout(() => {
-      clip._preloadTimer = 0;
-      const current = activeClip();
-      const video = current && current.el;
-      if (!current || current.id !== clip.id || !video || video.paused || video.readyState < 2) return;
-      const next = pathPlan[pathPos + 1];
-      if (!next || !next.clip) return;
-      ensureClipVideo(next.category, next.clip);
-      if (next.clip.el) {
-        if (next.clip.urlHls) startHlsForClip(next.clip, false);
-        else next.clip.el.preload = 'auto';
+  function prefetchClipBlob(clip) {
+    const id = clipSourceId(clip);
+    const url = clip && clip.url;
+    if (!id || !url) return Promise.resolve('');
+    const cached = blobCache.get(id);
+    if (cached) return Promise.resolve(cached.url);
+    const pending = blobPending.get(id);
+    if (pending) return pending.promise;
+    const controller = new AbortController();
+    const record = { controller, promise: null };
+    const promise = (async () => {
+      try {
+        const response = await fetch(url, {
+          signal: controller.signal,
+          credentials: 'omit',
+          cache: 'force-cache',
+        });
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        const blob = await response.blob();
+        if (controller.signal.aborted) return '';
+        if (!blob.size) throw new Error('empty blob');
+        const objectUrl = URL.createObjectURL(blob);
+        blobCache.set(id, { url: objectUrl, size: blob.size });
+        blobStats.fetched += 1;
+        blobStats.bytes += blob.size;
+        return objectUrl;
+      } catch (error) {
+        blobStats.failed += 1;
+        return '';
+      } finally {
+        if (blobPending.get(id) === record) blobPending.delete(id);
       }
-    }, 0);
+    })();
+    record.promise = promise;
+    blobPending.set(id, record);
+    return promise;
   }
-  function noteClipStarted(clip) {
-    if (!clip || clip._startNoted) return;
-    clip._startNoted = true;
-    const elapsed = clip._startRequestedAt ? performance.now() - clip._startRequestedAt : 0;
-    slowStartStreak = 0;
-    if (qualityFallbackLocked && activeQuality === '480' && elapsed > 0 && elapsed < QUICK_START_MS) {
-      fastStartStreak += 1;
-      if (fastStartStreak >= 2) {
-        qualityFallbackLocked = false;
-        fastStartStreak = 0;
-        activeQuality = '720';
-        document.documentElement.dataset.quality = activeQuality;
-        rebuildRemainingPath('720');
-      }
-    } else {
-      fastStartStreak = 0;
-    }
-    armNextPreload(clip);
-  }
-  function setQuality(force) {
-    if (document.hidden && !force) return;
-    const next = chooseQuality();
-    if (!force && next === activeQuality) return;
-    activeQuality = next;
-    slowStartStreak = 0;
-    fastStartStreak = 0;
-    document.documentElement.dataset.quality = activeQuality;
-    if (pathStarted && pathPos >= 0 && pathPlan.length) {
-      rebuildRemainingPath(activeQuality);
-    }
-  }
-  function scheduleQualitySync() {
-    window.clearTimeout(qualitySyncTimer);
-    qualitySyncTimer = window.setTimeout(() => setQuality(false), 250);
-  }
-  function playbackUrl(url, clip) {
-    return clip ? sourceForClip(clip) : url;
-  }
+  window.__sanctuaryBlobs = { cache: blobCache, stats: blobStats, pending: blobPending };
 
   function nextClipIndex(category) {
     const clips = category.clips;
@@ -2677,14 +2663,14 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (darkContext && /\b(beach|tropical|palm|summer|flower|sunny|sunlight|golden)\b/.test(text)) return false;
     return true;
   }
-  function pickStageClips(stage, count, picked, allowSeen = false, tier = activeQuality) {
+  function pickStageClips(stage, count, picked, allowSeen = false) {
     const stageCategories = categories.filter((category) => stage.categories.includes(category.tag));
     const pools = stageCategories.map((category) => {
       const filtered = category.clips.filter((clip) => (
         Boolean(clip)
         && Boolean(clip.id)
+        && Boolean(clip.url)
         && !clip.invalid
-        && (clip.urlHls || clip.tier === tier)
         && !clip.is_surreal
         && !pathPicked.has(clip.id)
         && !picked.has(clip.id)
@@ -2711,7 +2697,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
     return picks;
   }
-  function appendFallbackPath(allowSeen = false, tier = activeQuality) {
+  function appendFallbackPath(allowSeen = false) {
     const entries = [];
     for (const stage of STAGES) {
       for (const tag of stage.categories) {
@@ -2719,7 +2705,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         if (!category) continue;
         const clip = category.clips.find((item) => (
           item.id
-          && (item.urlHls || item.tier === tier)
+          && Boolean(item.url)
           && !item.is_surreal
           && !pathPicked.has(item.id)
           && (allowSeen || !isVideoSeen(item.id))
@@ -2733,13 +2719,13 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     pathPlan.push(...entries);
     return true;
   }
-  function buildOrFillSessionPlan(tier = activeQuality) {
-    if (buildPathPlan(tier)) return pathPlan.length === SESSION_LENGTH;
+  function buildOrFillSessionPlan() {
+    if (buildPathPlan()) return pathPlan.length === SESSION_LENGTH;
     pathPlan = [];
     pathPicked = new Set();
     let guard = 0;
     while (pathPlan.length < SESSION_LENGTH && guard < 12) {
-      if (!appendFallbackPath(true, tier)) break;
+      if (!appendFallbackPath(true)) break;
       guard += 1;
     }
     if (pathPlan.length > SESSION_LENGTH) pathPlan = pathPlan.slice(0, SESSION_LENGTH);
@@ -2770,11 +2756,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       .filter((category) => category !== current)
       .concat(playable.includes(current) ? [current] : []);
     for (const category of ordered) {
-      const tierPool = category.clips.filter((item) => item.tier === activeQuality && !item.invalid);
-      const clip = tierPool.find((item) => !isVideoSeen(item.id))
-        || tierPool[0]
-        || category.clips.find((item) => !item.invalid && !isVideoSeen(item.id))
-        || category.clips.find((item) => !item.invalid);
+      const pool = category.clips.filter((item) => item && item.url && !item.invalid);
+      const clip = pool.find((item) => !isVideoSeen(item.id)) || pool[0];
       if (!clip) continue;
       navigateTo(
         category.index,
@@ -2814,10 +2797,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
     return true;
   }
-  function buildPathPlan(tier = activeQuality) {
-    return buildSessionPlan(tier);
+  function buildPathPlan() {
+    return buildSessionPlan();
   }
-  function buildSessionPlan(tier = activeQuality) {
+  function buildSessionPlan() {
     resetViewedCycleIfComplete();
     pathPicked = new Set();
     const attempt = (allowSeen) => {
@@ -2827,7 +2810,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         const cycleEntries = [];
         for (const spec of CYCLE_STAGES) {
           const stage = stageFor(spec.id);
-          const picks = pickStageClips(stage, spec.count, picked, allowSeen, tier);
+          const picks = pickStageClips(stage, spec.count, picked, allowSeen);
           if (picks.length < spec.count) return null;
           cycleEntries.push(...picks);
         }
@@ -2841,7 +2824,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
             .flatMap((category) => category.clips.map((clip) => ({ category, clip })))
             .find(({ category, clip }) => (
               clip.is_finale
-              && (clip.urlHls || clip.tier === tier)
+              && Boolean(clip.url)
               && !clip.invalid
               && !used.has(clip.id)
               && !picked.has(clip.id)
@@ -2901,11 +2884,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   function syncFinaleSessionVideo() {
     if (!finaleSessionVideo) return;
-    const anchorVideo = anchorClip && anchorClip.el;
-    const activeVideo = document.querySelector('.slide.is-active video');
-    const source = (anchorVideo && (anchorVideo.currentSrc || anchorVideo.getAttribute('src') || anchorVideo.src))
-      || (anchorClip && anchorClip.url)
-      || (activeVideo && (activeVideo.currentSrc || activeVideo.getAttribute('src') || activeVideo.src));
+    const clip = anchorClip || activeClip();
+    const source = (clip && clip.url) || '';
     if (!source) return;
     if (finaleSessionVideo.getAttribute('src') !== source) {
       finaleSessionVideo.src = source;
@@ -3540,12 +3520,12 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       start = null;
     });
   }
-  function makeCycleEntries(allowSeen, tier = activeQuality) {
+  function makeCycleEntries(allowSeen) {
     const picked = new Set(pathPicked);
     const entries = [];
     for (const spec of CYCLE_STAGES) {
       const stage = stageFor(spec.id);
-      const picks = pickStageClips(stage, spec.count, picked, allowSeen, tier);
+      const picks = pickStageClips(stage, spec.count, picked, allowSeen);
       if (picks.length < spec.count) return null;
       entries.push(...picks);
     }
@@ -3559,7 +3539,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         .flatMap((category) => category.clips.map((clip) => ({ category, clip })))
         .find(({ category, clip }) => (
           clip.is_finale
-          && (clip.urlHls || clip.tier === tier)
+          && Boolean(clip.url)
           && !clip.invalid
           && !used.has(clip.id)
           && !pathPicked.has(clip.id)
@@ -3572,73 +3552,20 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
     return entries;
   }
-  function extendPathPlan(tier = activeQuality) {
+  function extendPathPlan() {
     if (pathPlan.length >= SESSION_LENGTH) return false;
     for (const allowSeen of [false, true]) {
-      const entries = makeCycleEntries(allowSeen, tier);
+      const entries = makeCycleEntries(allowSeen);
       if (!entries) continue;
       for (const entry of entries) pathPicked.add(entry.clip.id);
       pathPlan.push(...entries);
       return true;
     }
     pathPicked.clear();
-    const entries = makeCycleEntries(true, tier);
+    const entries = makeCycleEntries(true);
     if (!entries) return false;
     for (const entry of entries) pathPicked.add(entry.clip.id);
     pathPlan.push(...entries);
-    return true;
-  }
-  function tierStageEntries(tier, stageId) {
-    const stage = stageFor(stageId);
-    const out = [];
-    for (const category of categories) {
-      if (!stage.categories.includes(category.tag)) continue;
-      for (const clip of category.clips) {
-        if (clip && (clip.urlHls || clip.tier === tier) && !clip.invalid) {
-          out.push({ category, clip });
-        }
-      }
-    }
-    return out;
-  }
-  function rebuildRemainingPath(tier) {
-    if (!pathStarted || pathPos < 0 || !pathPlan.length) return false;
-    const keepCount = Math.min(pathPos + 1, pathPlan.length);
-    const excluded = new Set(sessionUsedVideoIds);
-    for (let i = 0; i < keepCount; i += 1) {
-      const keep = pathPlan[i] && pathPlan[i].clip;
-      if (keep && keep.id) excluded.add(keep.id);
-    }
-    const nextPlan = pathPlan.slice(0, keepCount);
-    for (let i = keepCount; i < pathPlan.length; i += 1) {
-      const oldEntry = pathPlan[i] || {};
-      const stageId = oldEntry.stage
-        || STAGE_BY_CATEGORY[oldEntry.category && oldEntry.category.tag]
-        || 1;
-      let entries = tierStageEntries(tier, stageId)
-        .filter((entry) => !excluded.has(entry.clip.id) && !entry.clip.is_surreal);
-      if (oldEntry.clip && oldEntry.clip.is_finale) {
-        const finals = entries.filter((entry) => entry.clip.is_finale);
-        if (finals.length) entries = finals;
-      }
-      if (!entries.length) {
-        entries = tierStageEntries(tier, stageId).filter((entry) => !excluded.has(entry.clip.id));
-      }
-      if (!entries.length) entries = tierStageEntries(tier, stageId);
-      if (!entries.length) return false;
-      entries = shuffleArray(entries).sort((a, b) => (b.clip.envScore || 0) - (a.clip.envScore || 0));
-      const pick = entries[0];
-      excluded.add(pick.clip.id);
-      nextPlan.push({ stage: stageId, category: pick.category, clip: pick.clip });
-    }
-    if (nextPlan.length !== pathPlan.length) return false;
-    pathPlan = nextPlan;
-    pathPicked = new Set(pathPlan.map((entry) => entry.clip && entry.clip.id).filter(Boolean));
-    if (pathPos + 1 < pathPlan.length) {
-      preparePlaybackWindow(pathPlan[pathPos], pathPlan[pathPos + 1]);
-    } else {
-      preparePlaybackWindow(pathPlan[pathPos], null);
-    }
     return true;
   }
   function startPathFirst() {
@@ -3697,7 +3624,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (window.__sanctuaryWatchdog) return;
     window.__sanctuaryWatchdog = window.setInterval(() => {
       if (!gateOpen || sessionComplete) return;
-      const video = document.querySelector('.slide.is-active video.is-current');
+      const video = activeSlot;
       if (!video || video.paused || video.readyState < 2) return;
       const clip = activeClip();
       if (!clip || clip.el !== video) return;
@@ -3717,92 +3644,12 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       if (promise && typeof promise.catch === 'function') promise.catch(() => {});
     }, 300);
   }
-  function destroyHls(video) {
-    if (!video) return;
-    if (video._hls) {
-      try { video._hls.destroy(); } catch (_) {}
-      video._hls = null;
-    }
-    video._hlsUrl = '';
-  }
-  function startHlsForClip(clip, autoplay = true) {
-    const video = clip && clip.el;
-    const url = clip && (clip.urlHls || clip.url);
-    if (!video || !url) return;
-    const previous = video._hlsUrl;
-    if (previous === url) {
-      if (autoplay && video.paused) {
-        const p = video.play();
-        if (p && p.catch) p.catch(() => {});
-      }
-      return;
-    }
-    destroyHls(video);
-    video._hlsUrl = url;
-    video.preload = 'auto';
-    video.classList.remove('is-ready');
-    if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = url;
-      video.load();
-      if (autoplay) {
-        const p = video.play();
-        if (p && p.catch) p.catch(() => {});
-      }
-      return;
-    }
-    if (window.Hls && window.Hls.isSupported()) {
-      const hls = new window.Hls({
-        maxBufferLength: 6,
-        maxMaxBufferLength: 10,
-        startLevel: -1,
-        capLevelToPlayerSize: true,
-      });
-      video._hls = hls;
-      hls.loadSource(url);
-      hls.attachMedia(video);
-      hls.on(window.Hls.Events.MANIFEST_PARSED, () => {
-        if (autoplay && video._hls === hls) {
-          const p = video.play();
-          if (p && p.catch) p.catch(() => {});
-        }
-      });
-      hls.on(window.Hls.Events.ERROR, (_event, data) => {
-        if (data && data.fatal) {
-          try { hls.destroy(); } catch (_) {}
-          if (video._hls === hls) video._hls = null;
-        }
-      });
-      return;
-    }
-    video.src = url;
-    video.load();
-    if (autoplay) {
-      const p = video.play();
-      if (p && p.catch) p.catch(() => {});
-    }
-  }
   function bindSlot(slot) {
     if (!slot || slot._bound) return;
     slot._bound = true;
-    const active = () => slot._clip && slot._category
-      && slot._category.index === state.index
-      && slot._category.activeIndex === slot._index;
-    slot.addEventListener('loadeddata', () => {
-      if (!slot._clip) return;
-      slot.classList.add('is-ready');
-      if (active()) {
-
-        noteClipStarted(slot._clip);
-      }
-    });
-    slot.addEventListener('playing', () => {
-      if (!slot._clip) return;
-      if (slot.readyState >= 2) slot.classList.add('is-ready');
-      if (active()) {
-
-        noteClipStarted(slot._clip);
-      }
-    });
+    slot.addEventListener('loadeddata', () => markSlotReady(slot));
+    slot.addEventListener('playing', () => markSlotReady(slot));
+    slot.addEventListener('canplay', () => markSlotReady(slot));
     slot.addEventListener('timeupdate', () => {
       if (slot._clip && slot._category) handleLoop(slot._category, slot._index, slot);
     });
@@ -3811,43 +3658,178 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     });
     slot.addEventListener('error', () => {
       const clip = slot._clip;
-      if (!clip || !clip.urlHls) return;
-      const retry = () => {
+      if (!clip || !clip.url || slot === previousSlot) return;
+      const attempts = Number(clip._slotRetry || 0) + 1;
+      clip._slotRetry = attempts;
+      if (attempts > 2) return;
+      window.setTimeout(() => {
         if (slot._clip !== clip) return;
-        clip._hlsRetry = Number(clip._hlsRetry || 0) + 1;
-        if (clip._hlsRetry <= 2) startHlsForClip(clip, !slot.paused);
-      };
-      window.setTimeout(retry, 800);
+        slot._srcKey = '';
+        loadSlotSource(slot, clip, slot === activeSlot);
+      }, 900);
     });
   }
-  function attachVideo(category, clip, index) {
-    if (!clip) return null;
-    if (clip.el && videoSlots.includes(clip.el)) return clip.el;
-    let slot = videoSlots.find((item) => !item._clip);
-    if (!slot) {
-      const active = activeClip();
-      const activeEl = active && active.el;
-      slot = videoSlots.find((item) => item !== activeEl && !item.classList.contains('is-current')) || videoSlots[0];
-    }
-    if (!slot) slot = document.createElement('video');
-    if (slot._clip && slot._clip !== clip) {
-      slot._clip.el = null;
-      destroyHls(slot);
-    }
-    bindSlot(slot);
-    slot._clip = clip;
-    slot._category = category;
-    slot._index = index;
-    slot.dataset.clipId = clip.id || '';
+  // Two permanent slots (v117). One slot is always live, the other already
+  // holds the next frame, so a swipe is a 320 ms crossfade between two living
+  // videos instead of a black screen.
+  const SLOT_START_AT = 0.04;
+  const SLOT_FADE_MS = 320;
+  let activeSlot = null;
+  let previousSlot = null;
+  let slotHandoffTimer = 0;
+  let nextFrameToken = 0;
 
-    slot.className = 'clip video-slot';
-    slot.preload = 'none';
-    slot.muted = true;
+  function otherSlot(slot) {
+    return videoSlots.find((item) => item !== slot) || null;
+  }
+  function idleSlot() {
+    return videoSlots.find((slot) => slot !== activeSlot && slot !== previousSlot) || null;
+  }
+  function seekSlot(slot, time) {
+    if (!slot) return;
+    const apply = () => {
+      try { slot.currentTime = time; } catch (_) {}
+    };
+    if (slot.readyState >= 1) {
+      apply();
+      return;
+    }
+    slot.addEventListener('loadedmetadata', apply, { once: true });
+    apply();
+  }
+  function releaseSlotVideo(slot) {
+    if (!slot) return;
+    const clip = slot._clip;
+    slot._clip = null;
+    slot._category = null;
+    slot._index = -1;
+    slot._srcKey = '';
+    slot.dataset.clipId = '';
+    slot.classList.remove('is-current', 'is-previous', 'is-ready');
+    if (clip && clip.el === slot) clip.el = null;
+    try { slot.pause(); } catch (_) {}
     try { slot.removeAttribute('src'); } catch (_) {}
+    slot.preload = 'none';
     try { slot.load(); } catch (_) {}
+    if (activeSlot === slot) activeSlot = null;
+    if (previousSlot === slot) previousSlot = null;
+  }
+  function bindClipToSlot(slot, category, clip, index) {
+    if (!slot || !clip) return null;
+    if (slot._clip && slot._clip !== clip && slot._clip.el === slot) slot._clip.el = null;
+    slot._clip = clip;
+    slot._category = category || slot._category;
+    slot._index = typeof index === 'number' ? index : -1;
+    slot.dataset.clipId = clip.id || '';
     clip.el = slot;
-    clip.playUrl = clip.urlHls || clip.url;
     return slot;
+  }
+  function loadSlotSource(slot, clip, autoplay) {
+    if (!slot || !clip) return false;
+    const source = playbackUrlFor(clip);
+    if (!source) return false;
+    const key = (clip.id || '') + '|' + source;
+    if (slot._srcKey !== key || slot.readyState === 0) {
+      slot._srcKey = key;
+      slot.classList.remove('is-ready');
+      slot.preload = 'auto';
+      slot.muted = true;
+      slot.defaultMuted = true;
+      slot.playsInline = true;
+      if (slot.getAttribute('src') !== source) slot.setAttribute('src', source);
+      try { slot.load(); } catch (_) {}
+    }
+    if (autoplay) {
+      const promise = slot.play();
+      if (promise && typeof promise.catch === 'function') promise.catch(() => {});
+    }
+    return true;
+  }
+  function stageEntry(entry) {
+    if (!entry || !entry.clip) return null;
+    let slot = entry.clip.el && videoSlots.includes(entry.clip.el) ? entry.clip.el : null;
+    if (!slot) slot = idleSlot() || otherSlot(activeSlot) || videoSlots[0] || null;
+    if (!slot) return null;
+    const index = entry.category
+      ? entry.category.clips.findIndex((item) => item.id === entry.clip.id)
+      : -1;
+    if (slot._clip !== entry.clip) bindClipToSlot(slot, entry.category, entry.clip, index);
+    loadSlotSource(slot, entry.clip, false);
+    seekSlot(slot, SLOT_START_AT);
+    return slot;
+  }
+  function markSlotReady(slot) {
+    if (!slot || !slot._clip) return;
+    if (slot !== activeSlot) {
+      if (slot.readyState >= 2) slot.classList.add('is-ready');
+      return;
+    }
+    if (slot.readyState < 2) return;
+    slot.classList.add('is-ready');
+    noteClipStarted(slot._clip);
+    finishSlotHandoff();
+  }
+  function finishSlotHandoff() {
+    const leaving = previousSlot;
+    if (!leaving || leaving === activeSlot) return;
+    window.clearTimeout(slotHandoffTimer);
+    slotHandoffTimer = window.setTimeout(() => {
+      if (leaving === activeSlot || previousSlot !== leaving) return;
+      previousSlot = null;
+      try { leaving.pause(); } catch (_) {}
+      leaving.classList.remove('is-previous');
+      releaseSlotVideo(leaving);
+      warmNextFrame();
+    }, SLOT_FADE_MS + 20);
+  }
+  function warmNextFrame() {
+    if (pathPos < 0 || !pathPlan.length) return;
+    const token = ++nextFrameToken;
+    const current = pathPlan[pathPos] && pathPlan[pathPos].clip;
+    const nextEntry = pathPlan[pathPos + 1];
+    const next = nextEntry && nextEntry.clip;
+    const keep = new Set();
+    if (current) keep.add(clipSourceId(current));
+    if (next) keep.add(clipSourceId(next));
+    pruneBlobCache(keep);
+    if (!next) return;
+    const slot = idleSlot();
+    if (slot && slot._clip !== next) stageEntry(nextEntry);
+    prefetchClipBlob(next).then((url) => {
+      if (!url || token !== nextFrameToken) return;
+      const idle = idleSlot();
+      if (!idle || idle._clip !== next) return;
+      if (idle.getAttribute('src') === url) return;
+      loadSlotSource(idle, next, false);
+      seekSlot(idle, SLOT_START_AT);
+    });
+  }
+  function playClip(category, index) {
+    if (!category || category.index !== state.index) return;
+    if (!gateOpen) return;
+    const selected = category.clips[index];
+    if (!selected) return;
+    if (selected.id) markVideoViewed(selected.id);
+    category.activeIndex = index;
+    let slot = selected.el && videoSlots.includes(selected.el) ? selected.el : null;
+    if (!slot) slot = idleSlot() || otherSlot(activeSlot) || videoSlots[0] || null;
+    if (!slot) return;
+    if (previousSlot === slot) previousSlot = null;
+    const outgoing = activeSlot && activeSlot !== slot ? activeSlot : null;
+    bindClipToSlot(slot, category, selected, index);
+    window.clearTimeout(slotHandoffTimer);
+    if (outgoing) {
+      outgoing.classList.remove('is-current');
+      outgoing.classList.add('is-previous');
+      previousSlot = outgoing;
+    }
+    slot.classList.add('is-current');
+    slot.playbackRate = stage.classList.contains('is-held') ? SLOW_RATE : 1;
+    activeSlot = slot;
+    selected._startNoted = false;
+    selected._startRequestedAt = performance.now();
+    loadSlotSource(slot, selected, true);
+    if (slot.readyState >= 2) markSlotReady(slot);
   }
   function mountClips(category) {
     const media = category.el.querySelector('.media');
@@ -3860,82 +3842,37 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   function disposeVideoElement(video) {
     if (!video) return;
-    if (video.id === 'slotA' || video.id === 'slotB') {
-      destroyHls(video);
-      try {
-        video.pause();
-        video.removeAttribute('src');
-        video.preload = 'none';
-        video.load();
-      } catch (_) {
-      }
-      video.className = 'clip video-slot';
-      video._clip = null;
-      video._category = null;
-      video._index = -1;
-      video._hlsUrl = '';
+    if (videoSlots.includes(video)) {
+      releaseSlotVideo(video);
       return;
     }
-    try {
-      video.pause();
-      video.removeAttribute('src');
-
-      video.preload = 'none';
-      video.load();
-    } catch (_) {
-    }
-    try {
-      video.remove();
-    } catch (_) {
-    }
+    try { video.pause(); } catch (_) {}
+    try { video.removeAttribute('src'); } catch (_) {}
+    try { video.remove(); } catch (_) {}
   }
   function releaseClipVideo(clip) {
     if (!clip || !clip.el) return;
-    const video = clip.el;
-    if (clip._slowFrameTimer) {
-      window.clearTimeout(clip._slowFrameTimer);
-      clip._slowFrameTimer = 0;
-    }
+    const slot = clip.el;
+    clip.el = null;
+    clip.lastTime = 0;
     if (clip._preloadTimer) {
       window.clearTimeout(clip._preloadTimer);
       clip._preloadTimer = 0;
     }
-    clip.el = null;
-    clip.lastTime = 0;
-    disposeVideoElement(video);
-  }
-  function ensureClipVideo(category, clip) {
-    if (!category || !clip) return null;
-    if (clip.el) return clip.el;
-    const index = category.clips.findIndex((item) => item.id === clip.id);
-    if (index < 0) return null;
-    return attachVideo(category, clip, index);
-  }
-  function prunePlaybackVideos(keepIds) {
-    for (const category of categories) {
-      for (const clip of category.clips) {
-        if (clip.el && !keepIds.has(clip.id)) releaseClipVideo(clip);
-      }
-      const media = category.el.querySelector('.media');
-      if (!media) continue;
-      media.querySelectorAll('video').forEach((video) => {
-
-        if (!keepIds.has(video.dataset.clipId)) {
-          disposeVideoElement(video);
-        }
-      });
-    }
+    if (slot !== activeSlot && slot !== previousSlot) releaseSlotVideo(slot);
   }
   function handlePageHide(event) {
     if (event && event.persisted) return;
     releaseAllPlaybackVideos();
   }
   function releaseAllPlaybackVideos() {
-    for (const category of categories) {
-      for (const clip of category.clips) {
-        if (clip.el) releaseClipVideo(clip);
-      }
-    }
+    window.clearTimeout(slotHandoffTimer);
+    nextFrameToken += 1;
+    cancelBlobPrefetch();
+    for (const slot of videoSlots) releaseSlotVideo(slot);
+    activeSlot = null;
+    previousSlot = null;
+    for (const id of [...blobCache.keys()]) dropBlob(id);
     if (finaleSessionVideo) {
       try {
         finaleSessionVideo.pause();
@@ -3945,33 +3882,36 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       } catch (_) {
       }
     }
-
   }
   function preparePlaybackWindow(currentEntry, nextEntry) {
-    const base = pathPos < 0 ? 0 : pathPos;
-    const current = currentEntry || pathPlan[base];
-    const next = nextEntry || pathPlan[base + 1];
+    const current = currentEntry && currentEntry.clip ? currentEntry : (pathPlan[pathPos] || null);
+    const next = nextEntry && nextEntry.clip ? nextEntry : (pathPlan[pathPos + 1] || null);
     const keep = new Set();
-    if (current && current.clip) {
-      keep.add(current.clip.id);
+    if (current) keep.add(clipSourceId(current.clip));
+    if (next) keep.add(clipSourceId(next.clip));
+    pruneBlobCache(keep);
+    let currentSlot = current && current.clip ? current.clip.el : null;
+    if (current && !(activeSlot && activeSlot._clip === current.clip)) {
+      currentSlot = stageEntry(current);
+      prefetchClipBlob(current.clip).then((url) => {
+        if (!url || !currentSlot || currentSlot._clip !== current.clip) return;
+        if (currentSlot === activeSlot || currentSlot.getAttribute('src') === url) return;
+        loadSlotSource(currentSlot, current.clip, false);
+        seekSlot(currentSlot, SLOT_START_AT);
+      });
     }
-    if (next && next.clip) {
-      keep.add(next.clip.id);
-    }
-    // Release the old pair before assigning the two permanent slots.
-    prunePlaybackVideos(keep);
-    if (current && current.clip) {
-      ensureClipVideo(current.category, current.clip);
-      if (current.clip.el) {
-        current.clip.el.preload = 'auto';
-
-      }
-    }
-    if (next && next.clip) {
-      ensureClipVideo(next.category, next.clip);
-      if (next.clip.el) next.clip.el.preload = 'none';
-
-    }
+    if (!next) return;
+    prefetchClipBlob(next.clip);
+    const spare = videoSlots.find((slot) => slot !== activeSlot
+      && slot !== previousSlot
+      && slot !== currentSlot);
+    if (!spare || spare._clip === next.clip) return;
+    const index = next.category
+      ? next.category.clips.findIndex((item) => item.id === next.clip.id)
+      : -1;
+    bindClipToSlot(spare, next.category, next.clip, index);
+    loadSlotSource(spare, next.clip, false);
+    seekSlot(spare, SLOT_START_AT);
   }
 
   const CATALOG_STAGE_CATEGORIES = {
@@ -3993,130 +3933,27 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     for (const word of dark) if (text.includes(word)) score -= 0.7;
     return score;
   }
-  function loadHlsVideoCatalog(catalog) {
-    const pools = { Shadow: [], Trickster: [], Abyss: [], Calm: [], Path: [] };
-    let tricksterFlip = 0;
-    for (const item of catalog) {
-      if (!item || !item.urlHls || !/^https:\/\//i.test(item.urlHls)) continue;
-      const rawStage = String(item.stage || '').toLowerCase().replace(/\s+/g, '_');
-      const stageKey = rawStage === 'trickster' || rawStage === 'abyss' ? 'trickster_abyss' : rawStage;
-      const tags = CATALOG_STAGE_CATEGORIES[stageKey];
-      if (!tags) continue;
-      const tag = tags.length > 1 ? tags[tricksterFlip++ % tags.length] : tags[0];
-      const category = categories.find((entry) => entry.tag === tag);
-      if (!category) continue;
-      const title = String(item.title || 'Без названия').trim();
-      const archetype = String(item.archetype || category.tag);
-      const clip = {
-        id: String(item.id || item.urlHls),
-        fileHash: String(item.fileHash || item.id || ''),
-        caption_ru: String(item.caption_ru || ''),
-        caption_en: String(item.caption_en || ''),
-        title,
-        title_ru: String(item.title_ru || ''),
-        url: item.urlHls,
-        urlHls: item.urlHls,
-        tier: 'hls',
-        duration: Number(item.duration) || 12,
-        description: String(item.description || archetype),
-        tags: [stageKey, archetype],
-        vertical: true,
-        is_finale: Boolean(item.is_finale),
-        is_surreal: Boolean(item.is_surreal),
-        element: elementForClip(title, [stageKey, archetype], tag, archetype),
-        archetype,
-        stage: stageKey,
-        soundCategory: String(item.soundCategory || ''),
-        trackId: String(item.trackId || ''),
-        source: item.source || 'coverr',
-        width: 1080,
-        height: 1920,
-        size: Number(item.size) || 0,
-        bitrate: 0,
-        lightPriority: lightPriorityFor(title),
-        envScore: environmentScoreFor(title, stageKey),
-      };
-      pools[tag].push(clip);
-    }
-    const loaded = Object.values(pools).reduce((sum, list) => sum + list.length, 0);
-    if (!loaded) throw new Error('HLS catalog contains no playable entries');
-    for (const category of categories) {
-      category.clips = shuffleArray(pools[category.tag] || []).slice(0, CLIPS_PER_CATEGORY);
-      category.activeIndex = 0;
-      category.lastPlayed = null;
-      category.freshIndex = null;
-      mountClips(category);
-    }
-    surrealClips = categories.flatMap((category) => category.clips
-      .filter((clip) => clip && clip.is_surreal)
-      .map((clip) => ({ category, clip, stage: 2 })));
-    catalogVideoIds = new Set();
-    for (const category of categories) {
-      for (const clip of category.clips) if (clip && clip.id) catalogVideoIds.add(clip.id);
-    }
-    resetViewedCycleIfComplete();
-    return loaded;
-  }
   async function loadVideoCatalog() {
-    const embedded = Array.isArray(window.VIDEOS_DATA) && window.VIDEOS_DATA.length
+    const catalog = Array.isArray(window.VIDEOS_DATA) && window.VIDEOS_DATA.length
       ? window.VIDEOS_DATA
       : null;
-    const catalog = embedded;
     if (!Array.isArray(catalog) || !catalog.length) {
       throw new Error('videos-data.js is empty or malformed');
     }
-    if (catalog.some((item) => item && item.urlHls)) {
-      return loadHlsVideoCatalog(catalog);
-    }
-    const pools = {
-      Shadow: [],
-      Trickster: [],
-      Abyss: [],
-      Calm: [],
-      Path: [],
-    };
+    const pools = { Shadow: [], Trickster: [], Abyss: [], Calm: [], Path: [] };
     const usedIds = new Set();
     const usedUrls = new Set();
-    const usedBaseKeys = new Set();
-    const baseVideoKey = (value) => String(value || '').split('/').pop().split('?')[0]
-      .replace(/^(shadow|trickster_abyss|calm|path)_\d+_/, '')
-      .replace(/\.mp4$/, '');
     let tricksterFlip = 0;
     let loaded = 0;
     for (const item of catalog) {
       if (!item || typeof item.url !== 'string' || !/^https:\/\//i.test(item.url)) continue;
       if (usedUrls.has(item.url)) continue;
-      if (BLOCKED_VIDEO_IDS.has(String(item.id || '')) || BLOCKED_VIDEO_IDS.has(String(item.fileHash || '')) || BLOCKED_VIDEO_IDS.has(String(item.url || ''))) continue;
-      const baseKey = baseVideoKey(item.url);
-      if (usedBaseKeys.has(baseKey)) continue;
-      usedBaseKeys.add(baseKey);
-      const itemSize = Number(item.size) || 0;
-      const itemWidth = Number(item.width) || 0;
-      const itemHeight = Number(item.height) || 0;
-      const itemDuration = Number(item.duration) || 0;
-      const itemBitrate = itemSize * 8 / Math.max(1, itemDuration);
-      const rawTier = String(item.tier || '').toLowerCase();
-      const tier = rawTier === '720' || rawTier === '480' ? rawTier : '1080';
-      const dimensionsOk = (tier === '1080' && itemWidth === 1080 && itemHeight === 1920)
-        || (tier === '720' && itemWidth === 720 && itemHeight === 1280)
-        || (tier === '480' && itemWidth === 480 && itemHeight === 854);
-      const sizeOk = tier === '1080'
-        ? itemSize >= 3_500_000 && itemSize <= 10_500_000
-        : (tier === '720'
-          ? itemSize >= 2_000_000 && itemSize <= 3_500_000
-          : itemSize >= 900_000 && itemSize <= 1_800_000);
-      const durationOk = tier === '1080' || (itemDuration >= 8 && itemDuration <= 18);
-      const bitrateOk = tier !== '1080' || itemBitrate >= 2_500_000;
-      if (!itemSize || !itemWidth || !itemHeight || !dimensionsOk || !sizeOk || !durationOk || !bitrateOk) continue;
+      if (BLOCKED_VIDEO_IDS.has(String(item.id || ''))) continue;
       const rawStage = String(item.stage || '').toLowerCase().replace(/\s+/g, '_');
-      const stageKey = rawStage === 'trickster' || rawStage === 'abyss'
-        ? 'trickster_abyss'
-        : rawStage;
+      const stageKey = rawStage === 'trickster' || rawStage === 'abyss' ? 'trickster_abyss' : rawStage;
       const tags = CATALOG_STAGE_CATEGORIES[stageKey];
       if (!tags) continue;
-      const tag = tags.length > 1
-        ? tags[tricksterFlip++ % tags.length]
-        : tags[0];
+      const tag = tags.length > 1 ? tags[tricksterFlip++ % tags.length] : tags[0];
       const category = categories.find((entry) => entry.tag === tag);
       if (!category) continue;
       const id = String(item.id || item.url);
@@ -4133,9 +3970,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         title,
         title_ru: String(item.title_ru || ''),
         url: item.url,
-        url720: String(item.url720 || ''),
-        url480: String(item.url480 || ''),
-        tier,
         duration: Number.isFinite(Number(item.duration)) ? Number(item.duration) : 10,
         description: archetype,
         tags: [stageKey, archetype],
@@ -4148,10 +3982,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         soundCategory: String(item.soundCategory || ''),
         trackId: String(item.trackId || ''),
         source: item.source || 'catalog',
-        width: itemWidth,
-        height: itemHeight,
-        size: itemSize,
-        bitrate: itemBitrate,
+        width: Number(item.width) || 1080,
+        height: Number(item.height) || 1920,
+        size: Number(item.size) || 0,
         lightPriority: lightPriorityFor(title),
         envScore: environmentScoreFor(title, stageKey),
       };
@@ -4198,76 +4031,24 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       rewardCategory(category, 'loops');
     }
   }
-  function syncClipSourceQuality(clip, video) {
-    if (!clip || !video || clip.urlHls) return false;
-    const desiredUrl = playbackUrl(clip.url, clip);
-    if (!desiredUrl || video.src === desiredUrl) return false;
-    clip.playUrl = desiredUrl;
-    video.src = desiredUrl;
-    return true;
-  }
-  function playClip(category, index) {
-    if (!category || category.index !== state.index) return;
-    if (!gateOpen) return;
-    const selected = category.clips[index];
-    if (!selected) return;
-    ensureClipVideo(category, selected);
-    if (!selected.el) return;
-    if (selected.id) markVideoViewed(selected.id);
-    category.activeIndex = index;
-    category.clips.forEach((clip, clipIndex) => {
-      const video = clip.el;
-      if (!video) return;
-      if (clipIndex === index) {
-        const startCurrent = () => {
-          if (selected.el !== video) return;
-          if (clip.urlHls) {
-            startHlsForClip(clip, true);
-          } else {
-            const sourceChanged = syncClipSourceQuality(clip, video);
-            video.preload = 'auto';
-            if (sourceChanged || video.readyState === 0) video.load();
-          }
-
-          video.playbackRate = stage.classList.contains('is-held') ? SLOW_RATE : 1;
-          clip.lastTime = video.currentTime;
-          const promise = video.play();
-          if (promise && typeof promise.catch === 'function') {
-            promise.catch(() => {
-            });
-          }
-          if (video.readyState >= 2) noteClipStarted(clip);
-        };
-        video.classList.add('is-current');
-        video.playbackRate = stage.classList.contains('is-held') ? SLOW_RATE : 1;
-        clip._startNoted = false;
-        clip._startRequestedAt = performance.now();
-        if (clip._preloadTimer) {
-          window.clearTimeout(clip._preloadTimer);
-          clip._preloadTimer = 0;
-        }
-
-        startCurrent();
-        if (clip._slowFrameTimer) window.clearTimeout(clip._slowFrameTimer);
-        clip._slowFrameTimer = window.setTimeout(() => {
-          clip._slowFrameTimer = 0;
-          if (!clip.el || selected.el !== video || video.readyState >= 2) return;
-          if (activeQuality !== '1080' && activeQuality !== '720') return;
-          slowStartStreak += 1;
-          if (slowStartStreak >= 2) fallbackTo480();
-        }, START_FALLBACK_MS);
-      } else {
-        video.classList.remove('is-current');
-        video.preload = 'none';
-        video.pause();
-      }
-    });
+  function noteClipStarted(clip) {
+    if (!clip || clip._startNoted) return;
+    clip._startNoted = true;
+    clip._slotRetry = 0;
+    warmNextFrame();
   }
   function pauseCategory(category) {
     if (!category) return;
     category.clips.forEach((clip) => {
-      if (clip.el) clip.el.pause();
+      if (!clip.el) return;
+      if (clip.el === activeSlot || clip.el === previousSlot) return;
+      clip.el.pause();
     });
+  }
+  function pauseSlots() {
+    for (const slot of videoSlots) {
+      try { slot.pause(); } catch (_) {}
+    }
   }
   function setActivePlaybackRate(rate) {
     const clip = activeClip();
@@ -4347,6 +4128,11 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     updateStageLabel(sceneStage);
     updateSessionProgress();
 
+    const keepBlobs = new Set();
+    if (planned && planned.clip) keepBlobs.add(planned.clip.id);
+    const following = pathPlan[pathPos + 1];
+    if (following && following.clip) keepBlobs.add(following.clip.id);
+    cancelStalePrefetch(keepBlobs);
     preparePlaybackWindow(planned, pathPlan[pathPos + 1]);
     playCategory(category);
     activateCaption(category, activeClip(), behavior, allowed, sceneStage, sceneContext || {});
@@ -4389,8 +4175,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (!current) return;
     const resonance = record.heldMs >= 1000 || record.loopCount >= 1;
     if (resonance) {
-      const same = unusedEntries((clip, category) => clip.tier === activeQuality
-        && clip.element === current.element
+      const same = unusedEntries((clip, category) => clip.element === current.element
         && category !== (activeCategory() || {}));
       if (same.length) {
         const pick = same[Math.floor(Math.random() * same.length)];
@@ -4408,8 +4193,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       const next = pathPlan[nextIndex];
       if (next && next.stage === 'shadow') {
         const calm = unusedEntries((clip, category) => (
-          clip.tier === activeQuality
-          && category.tag === 'Calm'
+          category.tag === 'Calm'
           && (clip.element === 'water' || clip.element === 'fog')
         ));
         if (calm.length) {
@@ -4428,9 +4212,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       && nextIndex - lastSurrealIndex >= 7
       && surrealClips.length
     ) {
-      const pool = surrealClips.filter((entry) => entry.clip
-        && entry.clip.tier === activeQuality
-        && !pathPicked.has(entry.clip.id));
+      const pool = surrealClips.filter((entry) => entry.clip && !pathPicked.has(entry.clip.id));
       if (pool.length) {
         const pick = pool[Math.floor(Math.random() * pool.length)];
         const old = pathPlan[nextIndex];
@@ -4865,7 +4647,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       state.hiddenAt = now();
       releaseWakeLock();
       abortGesture();
-      pauseCategory(activeCategory());
+      pauseSlots();
       if (finaleSessionVideo) finaleSessionVideo.pause();
       pauseSound();
     } else if (state.hiddenAt !== null) {
@@ -4878,7 +4660,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       if (gateOpen) requestWakeLock();
       wakePlayback();
       if (finaleEl && !finaleEl.hidden) syncFinaleSessionVideo();
-      scheduleQualitySync();
       resumeSound();
     }
   });
@@ -5072,13 +4853,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   returnAfterLock = Boolean(sessionLockAt && sessionLockAt <= Date.now());
   startSessionLockTicker();
   applyLanguage();
-  activeQuality = chooseQuality();
-  document.documentElement.dataset.quality = activeQuality;
   startVideoWatchdog();
-  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-  if (connection && typeof connection.addEventListener === 'function') connection.addEventListener('change', () => setQuality(false));
-  window.addEventListener('resize', scheduleQualitySync, { passive: true });
-  window.addEventListener('orientationchange', scheduleQualitySync, { passive: true });
   window.addEventListener('pagehide', handlePageHide, { passive: true });
   startPresenceCounter();
   initEntryAbstract();
@@ -5166,6 +4941,51 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       console.error('[sanctuary] startup failed:', error);
     }
   });
+  if (new URLSearchParams(location.search).has('debug')) {
+    window.__sanctuaryDebug = {
+      get gate() { return gateOpen; },
+      get pathPos() { return pathPos; },
+      get pathStarted() { return pathStarted; },
+      get plan() { return pathPlan.map((entry) => entry && entry.clip && entry.clip.id); },
+      get slots() {
+        return videoSlots.map((slot) => ({
+          id: slot.id,
+          clip: (slot._clip && slot._clip.id) || null,
+          current: slot.classList.contains('is-current'),
+          previous: slot.classList.contains('is-previous'),
+          ready: slot.classList.contains('is-ready'),
+          paused: slot.paused,
+          readyState: slot.readyState,
+          width: slot.videoWidth,
+          height: slot.videoHeight,
+          src: String(slot.getAttribute('src') || '').slice(0, 24),
+          time: Math.round(slot.currentTime * 100) / 100,
+          opacity: getComputedStyle(slot).opacity,
+        }));
+      },
+      get blobs() {
+        return {
+          size: blobCache.size,
+          pending: blobPending.size,
+          ids: [...blobCache.keys()],
+          stats: Object.assign({}, blobStats),
+        };
+      },
+      get audio() {
+        return sound && sound.ctx
+          ? { state: sound.ctx.state, track: (sound.activeTrack && sound.activeTrack.id) || null }
+          : null;
+      },
+      get caption() {
+        return {
+          text: (currentCaption && currentCaption.text) || '',
+          visible: Boolean(captionEl && captionEl.classList.contains('is-visible')),
+          body: (captionBodyEl && captionBodyEl.textContent) || '',
+        };
+      },
+      get liked() { return likeButton ? likeButton.classList.contains('is-liked') : false; },
+    };
+  }
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).catch((error) => {

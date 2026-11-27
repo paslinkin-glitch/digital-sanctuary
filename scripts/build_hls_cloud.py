@@ -1,23 +1,35 @@
 #!/usr/bin/env python3
-"""Build 30 new dream scenes into adaptive HLS and publish catalog."""
+"""Build 30 studio-quality vertical dream scenes and publish the catalog.
+
+v117: adaptive HLS is gone. Every scene becomes one clean 10-second
+1080x1920 H.264 High MP4 (CRF 19, maxrate 4800k, +faststart). The files are
+published to digital-sanctuary/mp4-1080/<clip_id>.mp4 so the player can
+fetch() them straight into Blob memory and swap slotA / slotB without a
+single black frame. Old digital-sanctuary/hls/ objects are removed; the
+digital-sanctuary/audio/ library is never touched.
+"""
 import json
 import os
-import re
 import shutil
 import subprocess
-import sys
-import urllib.request
 from pathlib import Path
 
 import boto3
 from botocore.config import Config
 
 ROOT = Path(__file__).resolve().parents[1]
-WORK = ROOT / "hls-work"
+WORK = ROOT / "mp4-work"
 OUT = WORK / "clips"
 S3_BUCKET = os.environ.get("S3_BUCKET", "digital-sanctuary")
 S3_ENDPOINT = os.environ.get("S3_ENDPOINT", "https://s3.twcstorage.ru").rstrip("/")
 S3_PREFIX = S3_ENDPOINT + "/" + S3_BUCKET
+MP4_PREFIX = "mp4-1080"
+DURATION = 10
+WIDTH = 1080
+HEIGHT = 1920
+FPS = 30
+SIZE_MIN = 4_200_000
+SIZE_MAX = 5_800_000
 
 # Curated from the Coverr sitemap: only unused dreamlike nature/water/sky/fog
 # sources, no people, crowds, streets, vehicles, buildings, logos or animals
@@ -54,39 +66,71 @@ SCENES = [
     ("dream-path-05", "A Pier in the Ocean", "https://cdn.coverr.co/videos/coverr-a-pier-in-the-ocean-5436/1080p.mp4", "path", "space-03", False, False),
     ("dream-path-06", "Meadow at Sunset", "https://cdn.coverr.co/videos/coverr-meadow-at-sunset-2723/1080p.mp4", "path", "people-03", False, False),
 ]
-SUBJECTS = [
-    ("mountain", "гора"), ("fog", "туман"), ("glade", "поляна"), ("ridge", "хребет"),
-    ("river", "река"), ("forest", "лес"), ("lake", "озеро"), ("clouds", "облака"),
-    ("field", "поле"), ("peak", "вершина"), ("sunset", "закат"), ("rock", "скала"),
-    ("water", "вода"), ("shore", "берег"), ("waves", "волны"), ("tide", "прилив"),
-    ("blue light", "синий свет"), ("evening", "вечер"), ("sun", "солнце"), ("beach", "пляж"),
-    ("still lake", "тихое озеро"), ("far lake", "дальнее озеро"), ("cold lake", "холодное озеро"),
-    ("sea", "море"), ("horizon", "горизонт"), ("northern ridge", "северный хребет"),
-    ("open sea", "открытое море"), ("island", "остров"), ("pier", "причал"), ("meadow", "луг"),
+
+# Hand-written live captions, one pair per scene, in SCENES order. Each line
+# describes what actually happens in that shot, in plain human language.
+CAPTIONS = [
+    ("Cloud slides down the green ridges and stops above the valley. Nothing in this weather asks you to decide.",
+     "Облако сползает по зелёным хребтам и замирает над долиной. В такую погоду решать нечего."),
+    ("Fog fills the valley until only the peaks remain. What is hidden has not gone anywhere.",
+     "Туман заполняет долину, и остаются только вершины. Скрытое никуда не ушло."),
+    ("Laurel trees close around a small clearing and the moss holds the damp air. Some places in a person are this old and this green.",
+     "Лавры смыкаются вокруг маленькой поляны, мох держит влажный воздух. Есть в человеке места такие же древние и зелёные."),
+    ("A ridge appears and disappears while the cloud keeps moving. You do not have to hold on to its shape.",
+     "Хребет появляется и пропадает, облако продолжает идти. Не обязательно удерживать его очертания."),
+    ("Cold water runs over the stones without pausing to explain itself. It only moves.",
+     "Холодная вода бежит по камням и не пытается ничего объяснить. Она просто движется."),
+    ("Trunks stand close together and the path between them narrows. The forest does not ask you to be quick.",
+     "Стволы стоят близко, тропа между ними сужается. Лес не просит тебя торопиться."),
+    ("Still water holds a second forest, darker than the first. The reflection knows more than it says.",
+     "Тихая вода держит второй лес, темнее первого. Отражение знает больше, чем говорит."),
+    ("Low cloud drifts between the trees and softens every edge. Even the sharp things breathe here.",
+     "Низкое облако идёт между деревьями и смягчает все края. Даже острое здесь дышит."),
+    ("Wind crosses the grass in long slow waves and then leaves. It breaks nothing on the way.",
+     "Ветер идёт по траве длинными медленными волнами и уходит. По дороге он ничего не сломал."),
+    ("Peaks stand above the cloud layer in the early light. From this height the worry looks small.",
+     "Вершины стоят над облаками в раннем свете. С этой высоты тревога кажется маленькой."),
+    ("The sun blurs into the horizon and the whole frame forgets its edges. Let the day dissolve a little too.",
+     "Солнце расплывается у горизонта, и весь кадр забывает свои края. Дай и дню немного раствориться."),
+    ("A dark stone stands in the surf while the water keeps changing shape around it. Some things survive by staying still.",
+     "Тёмный камень стоит в прибое, вода снова и снова меняет форму вокруг него. Иное выживает, оставаясь на месте."),
+    ("Sunlight reaches the sand through clear green water and the surface never stops rippling. You see the bottom and still cannot touch it.",
+     "Солнце доходит до песка сквозь прозрачную зелёную воду, и поверхность не перестаёт дрожать. Дно видно, а достать нельзя."),
+    ("Waves break against the rocks and throw white spray into the air. The collision is loud, and then it is gone.",
+     "Волны бьются о камни и поднимают в воздух белую взвесь. Удар громкий, а потом его нет."),
+    ("Small waves arrive one after another and each one is slightly different. Stillness keeps moving.",
+     "Небольшие волны приходят одна за другой, и каждая чуть другая. Покой продолжает двигаться."),
+    ("Foam slides up the shore and the sea takes it back almost at once. Everything here is brief.",
+     "Пена поднимается по берегу, и море почти сразу забирает её назад. Всё здесь ненадолго."),
+    ("Blue light burns along the breaking waves in the dark and vanishes behind them. Something glows only where it breaks.",
+     "Синий свет горит по гребням волн в темноте и гаснет за ними. Иное светится только там, где сломалось."),
+    ("The sky turns copper and the whole ocean carries the colour for a moment. Then the light gives itself to the water.",
+     "Небо становится медным, и весь океан на миг удерживает этот цвет. Потом свет отдаёт себя воде."),
+    ("Warm light settles on the water and the day stops asking for anything. You can put the weight down here.",
+     "Тёплый свет ложится на воду, и день перестаёт чего-то требовать. Здесь можно опустить груз."),
+    ("The sea comes in at an even pace and the sand keeps a clean line. Rest does not have to be earned.",
+     "Море наступает ровно, и песок держит чистую линию. Отдых не нужно заслуживать."),
+    ("The water is so still that the far shore doubles itself. Nothing needs to be added to this.",
+     "Вода так тиха, что дальний берег удваивается. К этому ничего не нужно добавлять."),
+    ("Clouds and mountains share the surface of the lake without arguing. Both of them are held.",
+     "Облака и горы делят поверхность озера без спора. Оба удержаны."),
+    ("Wooden boats rest on green water and the peaks lean into it exactly. Mountains look gentler when they mirror.",
+     "Деревянные лодки стоят на зелёной воде, вершины наклоняются в неё точно так же. Горы выглядят мягче, когда отражаются."),
+    ("The last warm band sits on the horizon and the sea goes quiet underneath. Nothing more will happen tonight.",
+     "Последняя тёплая полоса лежит на горизонте, море тихо под ней. Сегодня больше ничего не случится."),
+    ("A long line of light opens all the way to the edge of sight. You do not need a map for this.",
+     "Длинная полоса света открывается до самого края зрения. Карта здесь не нужна."),
+    ("Cold peaks rise straight out of the water and stand in perfect silence. Something in you straightens up too.",
+     "Холодные вершины поднимаются прямо из воды и стоят в полной тишине. Что-то в тебе тоже выпрямляется."),
+    ("The sun goes down into the water and leaves a road of gold across it. The way forward is visible again.",
+     "Солнце уходит в воду и оставляет по ней золотую дорогу. Дорога вперёд снова видна."),
+    ("A small island holds its ground while the whole ocean moves past. You do not have to follow every wave.",
+     "Маленький остров держится, пока мимо идёт целый океан. Не обязательно идти за каждой волной."),
+    ("The pier reaches into open water and ends there, still pointing forward. Not every road has to arrive.",
+     "Причал уходит в открытую воду и заканчивается там, всё ещё указывая вперёд. Не каждая дорога должна привести к цели."),
+    ("The grass turns gold and the meadow goes quiet under a wide evening sky. The day lets you go.",
+     "Трава становится золотой, луг затихает под широким вечерним небом. День отпускает тебя."),
 ]
-OPEN_EN = ["In the quiet, the {S} — a quiet dream", "In the quiet, the {S} — a soft dream",
-           "In the quiet, the {S} — a sleeping dream", "In the quiet, the {S} — a gentle dream",
-           "In the quiet, the {S} — a still dream", "In the quiet, the {S} — a deep dream"]
-OPEN_RU = ["В тишине {S} — тихий сон", "В тишине {S} — мягкий сон", "В тишине {S} — спящий сон",
-           "В тишине {S} — нежный сон", "В тишине {S} — неподвижный сон", "В тишине {S} — глубокий сон"]
-CLOSE_EN = ["and you can breathe a little slower.", "and nothing needs an answer.",
-            "and you can stay here a while.", "and your shoulders come down.",
-            "and the dream grows quiet.", "and you can let the day go."]
-CLOSE_RU = ["и ты можешь дышать чуть медленнее.", "и ничего не нужно отвечать.",
-            "и ты можешь побыть здесь.", "и плечи опускаются.",
-            "и сон становится тише.", "и ты можешь отпустить день."]
-CAPTIONS = []
-for i, (en_subject, ru_subject) in enumerate(SUBJECTS):
-    for k in range(6):
-        en = OPEN_EN[(i + k) % 6].format(S=en_subject) + ", " + CLOSE_EN[(i + k) % 6]
-        ru = OPEN_RU[(i + k) % 6].format(S=ru_subject) + ", " + CLOSE_RU[(i + k) % 6]
-        if 55 <= len(en) <= 95 and 55 <= len(ru) <= 95:
-            CAPTIONS.append((en, ru))
-            break
-    else:
-        raise RuntimeError(f"caption too short for {i}")
-if len(CAPTIONS) != 30 or len(set(CAPTIONS)) != 30:
-    raise RuntimeError("captions are not unique")
 
 TRACK_CATEGORY = {
     "fog": "fog", "rain": "rain", "water": "water", "fire": "fire",
@@ -95,147 +139,174 @@ TRACK_CATEGORY = {
 STAGE_ARCH = {"shadow": "Shadow", "trickster_abyss": "Trickster", "calm": "Calm", "path": "Path"}
 
 
+def caption_id(index):
+    return SCENES[index][0]
+
+
+def validate_captions():
+    if len(CAPTIONS) != len(SCENES):
+        raise RuntimeError(f"caption count {len(CAPTIONS)} != scene count {len(SCENES)}")
+    seen_en = set()
+    seen_ru = set()
+    for en, ru in CAPTIONS:
+        if len(en) < 60 or len(ru) < 60:
+            raise RuntimeError(f"caption too short: {en} | {ru}")
+        if "In the quiet" in en or "В тишине" in ru:
+            raise RuntimeError(f"template caption leaked: {en} | {ru}")
+        if en in seen_en or ru in seen_ru:
+            raise RuntimeError(f"duplicate caption: {en} | {ru}")
+        seen_en.add(en)
+        seen_ru.add(ru)
+
+
 def run(cmd, **kw):
     subprocess.run(cmd, check=True, **kw)
 
 
 def ffprobe(path):
     r = subprocess.run([
-        "ffprobe", "-v", "error", "-select_streams", "v:0",
-        "-show_entries", "stream=width,height,r_frame_rate:format=duration",
+        "ffprobe", "-v", "error",
+        "-show_entries", "stream=codec_type,width,height,r_frame_rate:format=duration",
         "-of", "json", str(path),
     ], capture_output=True, text=True, check=True)
     data = json.loads(r.stdout)
-    stream = data["streams"][0]
-    fr = stream.get("r_frame_rate", "30/1").split("/")
-    return int(stream["width"]), int(stream["height"]), float(data["format"]["duration"]), float(fr[0]) / float(fr[1] or 1)
+    video = next((s for s in data["streams"] if s.get("codec_type") == "video"), None)
+    audio = [s for s in data["streams"] if s.get("codec_type") == "audio"]
+    if not video:
+        raise RuntimeError(f"no video stream: {path}")
+    fr = str(video.get("r_frame_rate", "30/1")).split("/")
+    fps = float(fr[0]) / float(fr[1] or 1)
+    return {
+        "width": int(video["width"]),
+        "height": int(video["height"]),
+        "duration": float(data["format"]["duration"]),
+        "fps": fps,
+        "audio": len(audio),
+    }
 
 
 def download(url, path):
-    run(["curl", "-L", "-sS", "-A", "Mozilla/5.0", "-e", "https://coverr.co/", "--max-time", "180", "-o", str(path), url])
+    run(["curl", "-L", "-sS", "-A", "Mozilla/5.0", "-e", "https://coverr.co/",
+         "--max-time", "240", "--retry", "3", "-o", str(path), url])
 
 
-def encode_hls(source, clip_dir, variant, height, bitrate):
-    playlist = clip_dir / variant / "index.m3u8"
-    seg_dir = clip_dir / variant
-    seg_dir.mkdir(parents=True, exist_ok=True)
-    width = 1080 if height == 1920 else 720
-    out_h = 1920 if height == 1920 else 1280
+def encode_mp4(source, out, crf=19):
     run([
-        "ffmpeg", "-y", "-v", "error", "-i", str(source), "-t", "12",
-        "-vf", f"scale={width}:{out_h}:force_original_aspect_ratio=increase,crop={width}:{out_h},fps=30",
-        "-an", "-c:v", "libx264", "-preset", "veryfast", "-profile:v", "main", "-bf", "0",
-        "-g", "60", "-keyint_min", "60", "-sc_threshold", "0",
-        "-b:v", f"{bitrate}k", "-maxrate", f"{bitrate}k", "-bufsize", f"{bitrate * 2}k",
-        "-pix_fmt", "yuv420p", "-hls_time", "2", "-hls_playlist_type", "vod",
-        "-hls_flags", "independent_segments", "-hls_segment_type", "mpegts",
-        "-hls_segment_filename", str(seg_dir / "seg_%03d.ts"), str(playlist),
+        "ffmpeg", "-y", "-v", "error", "-i", str(source),
+        "-t", str(DURATION), "-an",
+        "-vf", f"scale={WIDTH}:{HEIGHT}:force_original_aspect_ratio=increase,crop={WIDTH}:{HEIGHT},fps={FPS},setsar=1",
+        "-c:v", "libx264", "-profile:v", "high", "-level:v", "4.2", "-preset", "medium",
+        "-crf", str(crf), "-maxrate", "4800k", "-bufsize", "9600k",
+        "-pix_fmt", "yuv420p", "-g", "60", "-keyint_min", "30", "-sc_threshold", "0",
+        "-movflags", "+faststart", "-map_metadata", "-1", str(out),
     ])
 
 
-def build_poster(source, out):
-    png = out.with_suffix(".png")
-    run([
-        "ffmpeg", "-y", "-v", "error", "-ss", "0.8", "-i", str(source), "-frames:v", "1",
-        "-vf", "scale=540:960:flags=lanczos", str(png),
-    ])
-    try:
-        run(["cwebp", "-quiet", "-size", "20000", str(png), "-o", str(out)])
-        if not (15000 <= out.stat().st_size <= 25000):
-            run(["cwebp", "-quiet", "-size", "18000", str(png), "-o", str(out)])
-        if not (15000 <= out.stat().st_size <= 25000):
-            raise RuntimeError(f"poster size out of range: {out.stat().st_size}")
-    finally:
-        try:
-            png.unlink()
-        except Exception:
-            pass
+def verify_mp4(path):
+    info = ffprobe(path)
+    if (info["width"], info["height"]) != (WIDTH, HEIGHT):
+        raise RuntimeError(f"{path.name}: wrong size {info['width']}x{info['height']}")
+    if abs(info["duration"] - DURATION) > 0.25:
+        raise RuntimeError(f"{path.name}: wrong duration {info['duration']}")
+    if info["audio"]:
+        raise RuntimeError(f"{path.name}: audio stream present")
+    if abs(info["fps"] - FPS) > 1.0:
+        raise RuntimeError(f"{path.name}: wrong fps {info['fps']}")
+    return info
+
+
+def build_clip_mp4(source, out):
+    """CRF 19 first, then a small CRF ladder only if the file misses 4.2-5.8 MB."""
+    encode_mp4(source, out, 19)
+    size = out.stat().st_size
+    if not SIZE_MIN <= size <= SIZE_MAX:
+        for crf in (18, 20, 17, 21, 16, 22):
+            encode_mp4(source, out, crf)
+            size = out.stat().st_size
+            print(f"  retry crf {crf} -> {size} bytes", flush=True)
+            if SIZE_MIN <= size <= SIZE_MAX:
+                break
+    if not SIZE_MIN <= size <= SIZE_MAX:
+        print(f"  WARNING: {out.name} is {size} bytes, outside {SIZE_MIN}-{SIZE_MAX}", flush=True)
+    verify_mp4(out)
+    return size
 
 
 def s3_client():
     return boto3.client(
         "s3", endpoint_url=S3_ENDPOINT, region_name=os.environ.get("AWS_DEFAULT_REGION", "ru-1"),
-        aws_access_key_id=os.environ["S3_ACCESS_KEY"], aws_secret_access_key=os.environ["S3_SECRET_KEY"],
-        config=Config(signature_version="s3v4", s3={"addressing_style": "path"}, retries={"max_attempts": 8, "mode": "standard"}),
+        aws_access_key_id=os.environ["S3_ACCESS_KEY"],
+        aws_secret_access_key=os.environ["S3_SECRET_KEY"],
+        config=Config(signature_version="s3v4", s3={"addressing_style": "path"},
+                      retries={"max_attempts": 8, "mode": "standard"}),
     )
 
 
-def clean_old_videos(s3):
-    token = None
+def list_keys(s3, prefix=""):
     keys = []
+    token = None
     while True:
         kw = {"Bucket": S3_BUCKET}
+        if prefix:
+            kw["Prefix"] = prefix
         if token:
             kw["ContinuationToken"] = token
         page = s3.list_objects_v2(**kw)
         for obj in page.get("Contents", []):
-            if not obj["Key"].startswith("audio/"):
-                keys.append({"Key": obj["Key"]})
+            keys.append({"Key": obj["Key"], "Size": int(obj.get("Size", 0))})
         if not page.get("IsTruncated"):
             break
         token = page["NextContinuationToken"]
+    return keys
+
+
+def delete_keys(s3, keys):
     for i in range(0, len(keys), 500):
-        s3.delete_objects(Bucket=S3_BUCKET, Delete={"Objects": keys[i:i + 500], "Quiet": True})
-    print(f"deleted old non-audio objects: {len(keys)}", flush=True)
+        batch = [{"Key": k["Key"]} for k in keys[i:i + 500]]
+        s3.delete_objects(Bucket=S3_BUCKET, Delete={"Objects": batch, "Quiet": True})
 
 
-def upload_dir(s3, directory, prefix):
-    for path in sorted(directory.rglob("*")):
-        if not path.is_file():
-            continue
-        rel = path.relative_to(directory).as_posix()
-        key = f"{prefix}/{rel}"
-        if path.suffix == ".m3u8":
-            ctype = "application/vnd.apple.mpegurl"
-        elif path.suffix == ".ts":
-            ctype = "video/mp2t"
-        elif path.suffix == ".webp":
-            ctype = "image/webp"
-        else:
-            ctype = "application/octet-stream"
-        s3.upload_file(str(path), S3_BUCKET, key, ExtraArgs={
-            "ACL": "public-read", "ContentType": ctype,
-            "CacheControl": "public, max-age=31536000, immutable", "ContentEncoding": "identity",
-        })
+def clean_old_hls(s3, keep_ids):
+    hls_keys = [k for k in list_keys(s3, "hls/")]
+    delete_keys(s3, hls_keys)
+    print(f"deleted legacy HLS objects: {len(hls_keys)}", flush=True)
+    stale = [k for k in list_keys(s3, MP4_PREFIX + "/")
+             if k["Key"].rsplit("/", 1)[-1].removesuffix(".mp4") not in keep_ids]
+    delete_keys(s3, stale)
+    if stale:
+        print(f"deleted stale mp4 objects: {len(stale)}", flush=True)
+    audio_keys = list_keys(s3, "audio/")
+    print(f"audio objects preserved: {len(audio_keys)}", flush=True)
+
+
+def upload_mp4(s3, path, key):
+    s3.upload_file(str(path), S3_BUCKET, key, ExtraArgs={
+        "ACL": "public-read",
+        "ContentType": "video/mp4",
+        "CacheControl": "public, max-age=31536000, immutable",
+        "ContentEncoding": "identity",
+    })
 
 
 def main():
+    validate_captions()
     if WORK.exists():
         shutil.rmtree(WORK)
     OUT.mkdir(parents=True)
-    old = json.loads((ROOT / "videos.json").read_text(encoding="utf-8"))
-    old_urls = {x.get("url", "") for x in old}
-    old_titles = {str(x.get("title", "")).strip().lower() for x in old}
     s3 = s3_client()
     built = []
     total_bytes = 0
     for idx, (clip_id, title, url, stage, track_id, surreal, finale) in enumerate(SCENES):
-        if url in old_urls or title.strip().lower() in old_titles:
-            raise RuntimeError(f"source is not new: {title}")
+        if clip_id != caption_id(idx):
+            raise RuntimeError(f"scene order mismatch at {idx}")
         src = OUT / f"{clip_id}.source.mp4"
         download(url, src)
-        w, h, source_duration, fps = ffprobe(src)
-        if source_duration < 10:
-            raise RuntimeError(f"source shorter than 10s: {clip_id} {source_duration}")
-        clip_dir = OUT / clip_id
-        clip_dir.mkdir()
-        encode_hls(src, clip_dir, "1080", 1920, 5000)
-        encode_hls(src, clip_dir, "720", 1280, 2500)
-        master = clip_dir / "master.m3u8"
-        master.write_text(
-            "#EXTM3U\n"
-            "#EXT-X-VERSION:3\n"
-            "#EXT-X-STREAM-INF:BANDWIDTH=5200000,RESOLUTION=1080x1920,CODECS=\"avc1.4d401f\"\n"
-            "1080/index.m3u8\n"
-            "#EXT-X-STREAM-INF:BANDWIDTH=2700000,RESOLUTION=720x1280,CODECS=\"avc1.4d401f\"\n"
-            "720/index.m3u8\n",
-            encoding="utf-8",
-        )
-        poster = clip_dir / "poster.webp"
-        build_poster(src, poster)
-        size = sum(p.stat().st_size for p in clip_dir.rglob("*") if p.is_file())
+        source_duration = ffprobe(src)["duration"]
+        if source_duration < DURATION:
+            raise RuntimeError(f"source shorter than {DURATION}s: {clip_id} {source_duration}")
+        out = OUT / f"{clip_id}.mp4"
+        size = build_clip_mp4(src, out)
         total_bytes += size
-        duration = min(12.0, source_duration)
         caption_en, caption_ru = CAPTIONS[idx]
         track_cat = TRACK_CATEGORY[track_id.split("-")[0]]
         built.append({
@@ -243,51 +314,43 @@ def main():
             "title": title,
             "description": title,
             "title_ru": f"Сон {idx + 1:02d}",
-            "url": f"{S3_PREFIX}/hls/{clip_id}/master.m3u8",
-            "urlHls": f"{S3_PREFIX}/hls/{clip_id}/master.m3u8",
-            "urlPoster": f"{S3_PREFIX}/hls/{clip_id}/poster.webp",
+            "url": f"{S3_PREFIX}/{MP4_PREFIX}/{clip_id}.mp4",
             "stage": stage,
             "archetype": STAGE_ARCH[stage],
             "is_finale": bool(finale),
             "is_surreal": bool(surreal),
             "source": "coverr",
             "vertical": True,
-            "width": 1080,
-            "height": 1920,
-            "duration": round(duration, 3),
+            "width": WIDTH,
+            "height": HEIGHT,
+            "duration": float(DURATION),
             "size": size,
-            "tier": "hls",
-            "hls": True,
-            "posterSize": poster.stat().st_size,
+            "tier": "1080",
             "caption_en": caption_en,
             "caption_ru": caption_ru,
             "soundCategory": track_cat,
             "trackId": track_id,
             "fileHash": clip_id,
         })
-        print(f"built {clip_id} {source_duration:.1f}s -> {size} bytes, poster {poster.stat().st_size}", flush=True)
-    # All 30 prepared locally. Only now replace the old S3 video set.
-    clean_old_videos(s3)
+        src.unlink(missing_ok=True)
+        print(f"built {clip_id}: {size} bytes ({size / 1e6:.2f} MB), source {source_duration:.1f}s", flush=True)
+    # Every file is verified locally. Only now replace the old S3 video set.
+    clean_old_hls(s3, {item["id"] for item in built})
     for item in built:
-        upload_dir(s3, OUT / item["id"], f"hls/{item['id']}")
-    (ROOT / "videos.json").write_text(json.dumps(built, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+        upload_mp4(s3, OUT / f"{item['id']}.mp4", f"{MP4_PREFIX}/{item['id']}.mp4")
+        print(f"uploaded {MP4_PREFIX}/{item['id']}.mp4", flush=True)
+    (ROOT / "videos.json").write_text(
+        json.dumps(built, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     (ROOT / "videos-data.js").write_text(
         "window.VIDEOS_DATA=" + json.dumps(built, ensure_ascii=False, separators=(",", ":")) + ";\n",
         encoding="utf-8",
     )
-    counted = 0
-    token = None
-    while True:
-        kw = {"Bucket": S3_BUCKET}
-        if token:
-            kw["ContinuationToken"] = token
-        page = s3.list_objects_v2(**kw)
-        counted += sum(int(o["Size"]) for o in page.get("Contents", []))
-        if not page.get("IsTruncated"):
-            break
-        token = page["NextContinuationToken"]
-    print(f"built {len(built)} clips, HLS bytes {total_bytes}, bucket bytes {counted} ({counted / 1e9:.3f} GB)", flush=True)
-    if counted > 1_500_000_000:
+    bucket_bytes = sum(k["Size"] for k in list_keys(s3))
+    smallest = min(i["size"] for i in built)
+    largest = max(i["size"] for i in built)
+    print(f"built {len(built)} clips, mp4 bytes {total_bytes}, bucket bytes {bucket_bytes} "
+          f"({bucket_bytes / 1e9:.3f} GB), clip size {smallest}-{largest}", flush=True)
+    if bucket_bytes > 1_500_000_000:
         raise RuntimeError("bucket exceeds 1.5 GB")
 
 

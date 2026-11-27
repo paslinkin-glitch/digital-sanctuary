@@ -1,4 +1,4 @@
-name: Build HLS dream catalog
+name: Build dream MP4 catalog
 
 on:
   workflow_dispatch:
@@ -7,13 +7,13 @@ permissions:
   contents: write
 
 concurrency:
-  group: build-hls-dream-catalog
+  group: build-mp4-dream-catalog
   cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,12 +28,12 @@ jobs:
       - name: Install ffmpeg
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg curl webp
+          sudo apt-get install -y ffmpeg curl
 
       - name: Install Python dependencies
         run: pip install boto3
 
-      - name: Build 30 HLS scenes in cloud
+      - name: Build 30 studio 1080p MP4 scenes in cloud
         env:
           S3_ACCESS_KEY: ${{ secrets.S3_ACCESS_KEY }}
           S3_SECRET_KEY: ${{ secrets.S3_SECRET_KEY }}
@@ -50,6 +50,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "Catalog already up to date"
           else
-            git commit -m "feat: build 30 new dream scenes and adaptive HLS catalog, v116"
+            git commit -m "chore: build 30 studio 1080p dream MP4s, v117"
             git push origin main
           fi
