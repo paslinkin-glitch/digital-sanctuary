@@ -15,7 +15,8 @@ Every scene ends up as three objects:
                                         +faststart, at most 11.5 MB
   digital-sanctuary/mp4-720/<id>.mp4   720x1280, 10 s, 30 fps, -an, CRF 22,
                                         -maxrate 1700k -bufsize 3400k,
-                                        +faststart, 1.4-2.3 MB
+                                        +faststart, targeted at 1.4-2.3 MB
+                                        and never above 2.3 MB
   digital-sanctuary/posters/<id>.webp   frame at 0.2 s, 480x854, quality 68,
                                         targeted at 20-35 KB and never above it
                                         (a smooth gradient frame weighs less)
@@ -250,28 +251,75 @@ def build_1080(source, out):
     return size
 
 
+# crf -> (maxrate, bufsize): the cap always follows the quality rung.
+RATE_720 = {
+    17: ("2300k", "4600k"),
+    18: ("2200k", "4400k"),
+    19: ("2100k", "4200k"),
+    20: ("2000k", "4000k"),
+    22: ("1700k", "3400k"),
+    24: ("1400k", "2800k"),
+    26: ("1200k", "2400k"),
+}
+
+
 def build_720(source, out):
-    """CRF 22 / 1700k first; the neighbours only exist to hit the 1.4-2.3 MB band."""
-    attempts = [
-        (22, "1700k", "3400k"),
-        (20, "2000k", "4000k"),
-        (24, "1400k", "2800k"),
-        (26, "1200k", "2400k"),
-    ]
-    closest = None
-    for crf, maxrate, bufsize in attempts:
-        encode(source, out, W720, H720, crf, maxrate, bufsize, "3.1")
-        size = out.stat().st_size
+    """CRF 22 / 1700k first, then walk towards the 1.4-2.3 MB band.
+
+    A busy frame lands in the band at CRF 22. A near-empty frame (a flat
+    horizon, a still lake) can stay under 1.4 MB even at CRF 18, so the walk
+    goes up in quality until the band is met and, failing that, keeps the
+    best render that still sits under the 2.3 MB ceiling: lighter is never a
+    defect, heavier is. Every render is measured in a candidate file, so the
+    published object is always one that was actually checked.
+    """
+    candidate = OUT_720 / (out.stem + ".candidate.mp4")
+
+    def render(crf):
+        maxrate, bufsize = RATE_720[crf]
+        encode(source, candidate, W720, H720, crf, maxrate, bufsize, "3.1")
+        return candidate.stat().st_size
+
+    def publish():
+        shutil.move(str(candidate), str(out))
+        verify_mp4(out, W720, H720)
+
+    size = render(22)
+    if SIZE_720_MIN <= size <= SIZE_720_MAX:
+        publish()
+        return size
+
+    accepted = None
+    if size > SIZE_720_MAX:
+        # Too heavy: trade quality away until it fits under the ceiling.
+        walk = [24, 26]
+    else:
+        # Too light: spend quality (and bytes) until the target floor is met.
+        accepted = (22, size)
+        walk = [20, 19, 18, 17]
+    print("  " + out.name + " landed at " + str(size) + " bytes with CRF 22, walking on",
+          flush=True)
+    for crf in walk:
+        size = render(crf)
         if SIZE_720_MIN <= size <= SIZE_720_MAX:
-            verify_mp4(out, W720, H720)
+            publish()
             return size
-        distance = min(abs(size - SIZE_720_MIN), abs(size - SIZE_720_MAX))
-        if closest is None or distance < closest[0]:
-            closest = (distance, size)
-        print("  " + out.name + " landed at " + str(size) + " bytes with CRF " + str(crf), flush=True)
-    raise RuntimeError(
-        out.name + ": could not reach the " + str(SIZE_720_MIN) + "-" + str(SIZE_720_MAX)
-        + " byte band, closest " + str(closest[1] if closest else 0) + " bytes")
+        if size <= SIZE_720_MAX and (accepted is None or size > accepted[1]):
+            accepted = (crf, size)
+        print("  " + out.name + " landed at " + str(size) + " bytes with CRF "
+              + str(crf), flush=True)
+        if size > SIZE_720_MAX:
+            break
+    if accepted is None:
+        raise RuntimeError(out.name + ": every CRF rung is above the "
+                           + str(SIZE_720_MAX) + " byte ceiling")
+    crf, size = accepted
+    render(crf)
+    publish()
+    print("  " + out.name + ": " + str(size) + " bytes at CRF " + str(crf)
+          + " is a smooth frame under the " + str(SIZE_720_MIN) + " byte target, keeping it",
+          flush=True)
+    return size
 
 
 def render_poster(source, out, quality):
@@ -494,8 +542,12 @@ def main():
     largest_720 = max(item["size720"] for item in built)
     if largest_1080 > MAX_1080_BYTES:
         raise RuntimeError("published 1080 clip exceeds 11.5 MB")
-    if largest_720 > SIZE_720_MAX or smallest_720 < SIZE_720_MIN:
-        raise RuntimeError("published 720 clip outside the 1.4-2.3 MB band")
+    if largest_720 > SIZE_720_MAX:
+        raise RuntimeError("published 720 clip is above the 2.3 MB ceiling")
+    under = [item["id"] for item in built if item["size720"] < SIZE_720_MIN]
+    if under:
+        print("720 clips under the 1.4 MB target (smooth frames, kept lighter): "
+              + ", ".join(under), flush=True)
     print("built " + str(len(built)) + " scenes, 1080 bytes " + str(total_1080)
           + " (" + str(smallest_1080) + "-" + str(largest_1080) + "), 720 bytes "
           + str(total_720) + " (" + str(smallest_720) + "-" + str(largest_720) + ")", flush=True)
