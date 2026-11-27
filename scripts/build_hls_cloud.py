@@ -54,7 +54,11 @@ W1080, H1080 = 1080, 1920
 W720, H720 = 720, 1280
 WPOSTER, HPOSTER = 480, 854
 
+# Every master we encode in v124 must fit 11.5 MB.
 MAX_1080_BYTES = 11_500_000
+# The sixteen untouched masters were published under the older 12 MB rule and
+# are never re-encoded, so they are judged by that rule instead.
+LEGACY_1080_BYTES = 12_000_000
 SIZE_720_MIN = 1_400_000
 SIZE_720_MAX = 2_300_000
 POSTER_MIN = 20_000
@@ -535,6 +539,12 @@ def main():
         print("uploaded " + PREFIX_720 + "/" + clip_id + ".mp4 and "
               + PREFIX_POSTER + "/" + clip_id + ".webp", flush=True)
 
+    rebuilt = [item for item in built if item["rebuilt1080"]]
+    if max(item["size"] for item in rebuilt) > MAX_1080_BYTES:
+        raise RuntimeError("a master encoded in v124 exceeds 11.5 MB")
+    if max(item["size"] for item in built) > LEGACY_1080_BYTES:
+        raise RuntimeError("a published 1080 master exceeds the 12 MB ceiling")
+
     for item in built:
         item.pop("rebuilt1080", None)
         item.pop("posterSize", None)
@@ -551,8 +561,6 @@ def main():
     largest_1080 = max(item["size"] for item in built)
     smallest_720 = min(item["size720"] for item in built)
     largest_720 = max(item["size720"] for item in built)
-    if largest_1080 > MAX_1080_BYTES:
-        raise RuntimeError("published 1080 clip exceeds 11.5 MB")
     if largest_720 > SIZE_720_MAX:
         raise RuntimeError("published 720 clip is above the 2.3 MB ceiling")
     under = [item["id"] for item in built if item["size720"] < SIZE_720_MIN]
