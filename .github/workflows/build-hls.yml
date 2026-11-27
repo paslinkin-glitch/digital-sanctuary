@@ -50,6 +50,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "Catalog already up to date"
           else
-            git commit -m "chore: build 30 studio 1080p dream MP4s, v117"
+            git commit -m "chore: build 30 studio CRF 16 dream MP4s, v118"
             git push origin main
           fi

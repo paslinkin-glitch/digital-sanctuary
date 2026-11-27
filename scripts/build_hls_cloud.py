@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
 """Build 30 studio-quality vertical dream scenes and publish the catalog.
 
-v117: adaptive HLS is gone. Every scene becomes one clean 10-second
-1080x1920 H.264 High MP4 (CRF 19, maxrate 4800k, +faststart). The files are
+v118: adaptive HLS is gone. Every scene becomes one clean 10-second
+1080x1920 H.264 High MP4 at studio quality (CRF 16, preset slow, +faststart,
+no VBV / maxrate ceiling). The ceiling is what used to smear water, fog and
+foliage during the second compression pass, so it is gone for good: the
+encoder spends 7.0-9.5 Mbps where the picture needs it. The files are
 published to digital-sanctuary/mp4-1080/<clip_id>.mp4 so the player can
 fetch() them straight into Blob memory and swap slotA / slotB without a
-single black frame. Old digital-sanctuary/hls/ objects are removed; the
-digital-sanctuary/audio/ library is never touched.
+single black frame; +faststart also lets the very first frame start
+streaming from its plain URL after ~500 KB. Old digital-sanctuary/hls/
+objects are removed; the digital-sanctuary/audio/ library is never touched.
 """
 import json
 import os
@@ -28,8 +32,8 @@ DURATION = 10
 WIDTH = 1080
 HEIGHT = 1920
 FPS = 30
-SIZE_MIN = 4_200_000
-SIZE_MAX = 5_800_000
+SIZE_MIN = 8_000_000
+SIZE_MAX = 11_000_000
 
 # Curated from the Coverr sitemap: only unused dreamlike nature/water/sky/fog
 # sources, no people, crowds, streets, vehicles, buildings, logos or animals
@@ -190,13 +194,20 @@ def download(url, path):
          "--max-time", "240", "--retry", "3", "-o", str(path), url])
 
 
-def encode_mp4(source, out, crf=19, maxrate_kbps=4800):
+def encode_mp4(source, out, crf=16):
+    """Studio 1080p pass: CRF 16, slow preset, no bitrate ceiling.
+
+    There is deliberately no -maxrate / -bufsize here. A VBV ceiling was the
+    reason the second compression pass turned water, fog and foliage into
+    mush; CRF 16 spends 7.0-9.5 Mbps wherever the frame needs it.
+    """
     run([
         "ffmpeg", "-y", "-v", "error", "-i", str(source),
         "-t", str(DURATION), "-an",
         "-vf", f"scale={WIDTH}:{HEIGHT}:force_original_aspect_ratio=increase,crop={WIDTH}:{HEIGHT},fps={FPS},setsar=1",
-        "-c:v", "libx264", "-profile:v", "high", "-level:v", "4.2", "-preset", "medium",
-        "-crf", str(crf), "-maxrate", f"{maxrate_kbps}k", "-bufsize", f"{maxrate_kbps * 2}k",
+        "-r", str(FPS),
+        "-c:v", "libx264", "-profile:v", "high", "-level:v", "4.2", "-preset", "slow",
+        "-crf", str(crf),
         "-pix_fmt", "yuv420p", "-g", "60", "-keyint_min", "30", "-sc_threshold", "0",
         "-movflags", "+faststart", "-map_metadata", "-1", str(out),
     ])
@@ -216,31 +227,16 @@ def verify_mp4(path):
 
 
 def build_clip_mp4(source, out):
-    """CRF 19 master pass, then keep the file inside 4.2-5.8 MB.
+    """One studio CRF 16 pass, no VBV ceiling, no size-driven re-encode.
 
-    Above the window the CRF stays at 19 and only the VBV ceiling is tightened:
-    resolution, fps and CRF (the things that decide sharpness) are never traded
-    for size. Below the window the CRF is lowered so the bits are actually used.
+    Sharpness is never traded for bytes: the old retry loop shrank -maxrate
+    until every file fit inside a 5 MB box, and that is exactly what made the
+    picture soft. A 10-second 1080x1920 CRF 16 slow file lands around 8-11 MB
+    (7.0-9.5 Mbps), so 30 scenes take ~300 MB of the 1.5 GB bucket. If a scene
+    leaves the window we only report it.
     """
-    crf = 19
-    maxrate = 4800
-    encode_mp4(source, out, crf, maxrate)
+    encode_mp4(source, out, 16)
     size = out.stat().st_size
-    for attempt in range(1, 5):
-        if SIZE_MIN <= size <= SIZE_MAX:
-            break
-        if size > SIZE_MAX:
-            target = 5_250_000
-            maxrate = max(2600, int(maxrate * (target / size) * 0.97))
-        else:
-            crf = max(14, crf - 2)
-        encode_mp4(source, out, crf, maxrate)
-        new_size = out.stat().st_size
-        print(f"  retry #{attempt} crf={crf} maxrate={maxrate}k -> {new_size} bytes", flush=True)
-        if new_size == size:
-            size = new_size
-            break
-        size = new_size
     if not SIZE_MIN <= size <= SIZE_MAX:
         print(f"  WARNING: {out.name} is {size} bytes, outside {SIZE_MIN}-{SIZE_MAX}", flush=True)
     verify_mp4(out)
