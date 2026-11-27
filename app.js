@@ -2666,18 +2666,28 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   function pickStageClips(stage, count, picked, allowSeen = false) {
     const stageCategories = categories.filter((category) => stage.categories.includes(category.tag));
     const pools = stageCategories.map((category) => {
-      const filtered = category.clips.filter((clip) => (
+      const matches = (clip, allowSurreal) => (
         Boolean(clip)
         && Boolean(clip.id)
         && Boolean(clip.url)
         && !clip.invalid
-        && !clip.is_surreal
+        && (allowSurreal || !clip.is_surreal)
         && !pathPicked.has(clip.id)
         && !picked.has(clip.id)
         && (allowSeen || !isVideoSeen(clip.id))
-        && contextAllowsClip(clip)
+      );
+      let filtered = category.clips.filter((clip) => matches(clip, false));
+      // The catalog is exactly one 30-frame session, so when the frames
+      // reserved for surreal inserts are all that is left, use them instead of
+      // leaving a hole in the queue.
+      if (filtered.length < count) filtered = category.clips.filter((clip) => matches(clip, true));
+      // The 30-scene catalog is exactly one full session, so daytime and weather
+      // taste is a preference here, never an exclusion: dropping a frame would
+      // break the 30-frame queue.
+      const ordered = shuffleArray(filtered).sort((a, b) => (
+        (Number(contextAllowsClip(b)) - Number(contextAllowsClip(a)))
+        || (b.envScore || 0) - (a.envScore || 0)
       ));
-      const ordered = shuffleArray(filtered).sort((a, b) => (b.envScore || 0) - (a.envScore || 0));
       return { category, clips: ordered };
     });
     const picks = [];
@@ -2699,17 +2709,20 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   function appendFallbackPath(allowSeen = false) {
     const entries = [];
+    const available = (item, allowSurreal) => (
+      Boolean(item)
+      && Boolean(item.id)
+      && Boolean(item.url)
+      && (allowSurreal || !item.is_surreal)
+      && !pathPicked.has(item.id)
+      && (allowSeen || !isVideoSeen(item.id))
+    );
     for (const stage of STAGES) {
       for (const tag of stage.categories) {
         const category = categories.find((item) => item.tag === tag);
         if (!category) continue;
-        const clip = category.clips.find((item) => (
-          item.id
-          && Boolean(item.url)
-          && !item.is_surreal
-          && !pathPicked.has(item.id)
-          && (allowSeen || !isVideoSeen(item.id))
-        ));
+        const clip = category.clips.find((item) => available(item, false))
+          || category.clips.find((item) => available(item, true));
         if (!clip) continue;
         pathPicked.add(clip.id);
         entries.push({ stage: stage.id, category, clip });
@@ -3669,6 +3682,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       }, 900);
     });
   }
+  for (const slot of videoSlots) bindSlot(slot);
   // Two permanent slots (v117). One slot is always live, the other already
   // holds the next frame, so a swipe is a 320 ms crossfade between two living
   // videos instead of a black screen.
@@ -4281,7 +4295,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   function go(direction, speed) {
     if (!gateOpen || sessionComplete) return;
-    if (sound && speed > 1.1) setSoundTransparency(true);
     hideCycleWhisper();
     const previousSwipeAt = lastSwipeAt;
     const swipeAt = now();
@@ -4961,6 +4974,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
           src: String(slot.getAttribute('src') || '').slice(0, 24),
           time: Math.round(slot.currentTime * 100) / 100,
           opacity: getComputedStyle(slot).opacity,
+          cls: slot.className,
+          key: String(slot._srcKey || '').slice(0, 46),
         }));
       },
       get blobs() {

@@ -190,13 +190,13 @@ def download(url, path):
          "--max-time", "240", "--retry", "3", "-o", str(path), url])
 
 
-def encode_mp4(source, out, crf=19):
+def encode_mp4(source, out, crf=19, maxrate_kbps=4800):
     run([
         "ffmpeg", "-y", "-v", "error", "-i", str(source),
         "-t", str(DURATION), "-an",
         "-vf", f"scale={WIDTH}:{HEIGHT}:force_original_aspect_ratio=increase,crop={WIDTH}:{HEIGHT},fps={FPS},setsar=1",
         "-c:v", "libx264", "-profile:v", "high", "-level:v", "4.2", "-preset", "medium",
-        "-crf", str(crf), "-maxrate", "4800k", "-bufsize", "9600k",
+        "-crf", str(crf), "-maxrate", f"{maxrate_kbps}k", "-bufsize", f"{maxrate_kbps * 2}k",
         "-pix_fmt", "yuv420p", "-g", "60", "-keyint_min", "30", "-sc_threshold", "0",
         "-movflags", "+faststart", "-map_metadata", "-1", str(out),
     ])
@@ -216,16 +216,31 @@ def verify_mp4(path):
 
 
 def build_clip_mp4(source, out):
-    """CRF 19 first, then a small CRF ladder only if the file misses 4.2-5.8 MB."""
-    encode_mp4(source, out, 19)
+    """CRF 19 master pass, then keep the file inside 4.2-5.8 MB.
+
+    Above the window the CRF stays at 19 and only the VBV ceiling is tightened:
+    resolution, fps and CRF (the things that decide sharpness) are never traded
+    for size. Below the window the CRF is lowered so the bits are actually used.
+    """
+    crf = 19
+    maxrate = 4800
+    encode_mp4(source, out, crf, maxrate)
     size = out.stat().st_size
-    if not SIZE_MIN <= size <= SIZE_MAX:
-        for crf in (18, 20, 17, 21, 16, 22):
-            encode_mp4(source, out, crf)
-            size = out.stat().st_size
-            print(f"  retry crf {crf} -> {size} bytes", flush=True)
-            if SIZE_MIN <= size <= SIZE_MAX:
-                break
+    for attempt in range(1, 5):
+        if SIZE_MIN <= size <= SIZE_MAX:
+            break
+        if size > SIZE_MAX:
+            target = 5_250_000
+            maxrate = max(2600, int(maxrate * (target / size) * 0.97))
+        else:
+            crf = max(14, crf - 2)
+        encode_mp4(source, out, crf, maxrate)
+        new_size = out.stat().st_size
+        print(f"  retry #{attempt} crf={crf} maxrate={maxrate}k -> {new_size} bytes", flush=True)
+        if new_size == size:
+            size = new_size
+            break
+        size = new_size
     if not SIZE_MIN <= size <= SIZE_MAX:
         print(f"  WARNING: {out.name} is {size} bytes, outside {SIZE_MIN}-{SIZE_MAX}", flush=True)
     verify_mp4(out)
