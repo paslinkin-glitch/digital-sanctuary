@@ -2546,18 +2546,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (!force && next === activeQuality) return;
     activeQuality = next;
     document.documentElement.dataset.quality = activeQuality;
-    const category = typeof activeCategory === 'function' ? activeCategory() : null;
-    const clip = category && category.clips[category.activeIndex];
-    if (!clip || !clip.el) return;
-    const url = sourceForClip(clip);
-    if (!url || clip.el.src === url) return;
-    const time = clip.el.currentTime || 0;
-    clip.playUrl = url;
-    clip.el.src = url;
-    if (clip.el.readyState === 0) clip.el.load();
-    try { clip.el.currentTime = time; } catch (_) {}
-    const promise = clip.el.play();
-    if (promise && typeof promise.catch === 'function') promise.catch(() => {});
+    if (pathStarted && pathPos >= 0 && pathPlan.length) {
+      rebuildRemainingPath(activeQuality);
+    }
   }
   function scheduleQualitySync() {
     window.clearTimeout(qualitySyncTimer);
@@ -2607,13 +2598,14 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (darkContext && /\b(beach|tropical|palm|summer|flower|sunny|sunlight|golden)\b/.test(text)) return false;
     return true;
   }
-  function pickStageClips(stage, count, picked, allowSeen = false) {
+  function pickStageClips(stage, count, picked, allowSeen = false, tier = activeQuality) {
     const stageCategories = categories.filter((category) => stage.categories.includes(category.tag));
     const pools = stageCategories.map((category) => {
       const filtered = category.clips.filter((clip) => (
         Boolean(clip)
         && Boolean(clip.id)
         && !clip.invalid
+        && clip.tier === tier
         && !clip.is_surreal
         && !pathPicked.has(clip.id)
         && !picked.has(clip.id)
@@ -2640,7 +2632,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
     return picks;
   }
-  function appendFallbackPath(allowSeen = false) {
+  function appendFallbackPath(allowSeen = false, tier = activeQuality) {
     const entries = [];
     for (const stage of STAGES) {
       for (const tag of stage.categories) {
@@ -2648,6 +2640,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         if (!category) continue;
         const clip = category.clips.find((item) => (
           item.id
+          && item.tier === tier
           && !item.is_surreal
           && !pathPicked.has(item.id)
           && (allowSeen || !isVideoSeen(item.id))
@@ -2661,13 +2654,13 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     pathPlan.push(...entries);
     return true;
   }
-  function buildOrFillSessionPlan() {
-    if (buildSessionPlan()) return pathPlan.length === SESSION_LENGTH;
+  function buildOrFillSessionPlan(tier = activeQuality) {
+    if (buildPathPlan(tier)) return pathPlan.length === SESSION_LENGTH;
     pathPlan = [];
     pathPicked = new Set();
     let guard = 0;
     while (pathPlan.length < SESSION_LENGTH && guard < 12) {
-      if (!appendFallbackPath(true)) break;
+      if (!appendFallbackPath(true, tier)) break;
       guard += 1;
     }
     if (pathPlan.length > SESSION_LENGTH) pathPlan = pathPlan.slice(0, SESSION_LENGTH);
@@ -2698,7 +2691,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       .filter((category) => category !== current)
       .concat(playable.includes(current) ? [current] : []);
     for (const category of ordered) {
-      const clip = category.clips.find((item) => !item.invalid && !isVideoSeen(item.id))
+      const tierPool = category.clips.filter((item) => item.tier === activeQuality && !item.invalid);
+      const clip = tierPool.find((item) => !isVideoSeen(item.id))
+        || tierPool[0]
+        || category.clips.find((item) => !item.invalid && !isVideoSeen(item.id))
         || category.clips.find((item) => !item.invalid);
       if (!clip) continue;
       navigateTo(
@@ -2739,7 +2735,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
     return true;
   }
-  function buildSessionPlan() {
+  function buildPathPlan(tier = activeQuality) {
+    return buildSessionPlan(tier);
+  }
+  function buildSessionPlan(tier = activeQuality) {
     resetViewedCycleIfComplete();
     pathPicked = new Set();
     const attempt = (allowSeen) => {
@@ -2749,7 +2748,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         const cycleEntries = [];
         for (const spec of CYCLE_STAGES) {
           const stage = stageFor(spec.id);
-          const picks = pickStageClips(stage, spec.count, picked, allowSeen);
+          const picks = pickStageClips(stage, spec.count, picked, allowSeen, tier);
           if (picks.length < spec.count) return null;
           cycleEntries.push(...picks);
         }
@@ -2763,6 +2762,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
             .flatMap((category) => category.clips.map((clip) => ({ category, clip })))
             .find(({ category, clip }) => (
               clip.is_finale
+              && clip.tier === tier
               && !clip.invalid
               && !used.has(clip.id)
               && !picked.has(clip.id)
@@ -3461,12 +3461,12 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       start = null;
     });
   }
-  function makeCycleEntries(allowSeen) {
+  function makeCycleEntries(allowSeen, tier = activeQuality) {
     const picked = new Set(pathPicked);
     const entries = [];
     for (const spec of CYCLE_STAGES) {
       const stage = stageFor(spec.id);
-      const picks = pickStageClips(stage, spec.count, picked, allowSeen);
+      const picks = pickStageClips(stage, spec.count, picked, allowSeen, tier);
       if (picks.length < spec.count) return null;
       entries.push(...picks);
     }
@@ -3480,6 +3480,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         .flatMap((category) => category.clips.map((clip) => ({ category, clip })))
         .find(({ category, clip }) => (
           clip.is_finale
+          && clip.tier === tier
           && !clip.invalid
           && !used.has(clip.id)
           && !pathPicked.has(clip.id)
@@ -3492,20 +3493,73 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
     return entries;
   }
-  function extendPathPlan() {
+  function extendPathPlan(tier = activeQuality) {
     if (pathPlan.length >= SESSION_LENGTH) return false;
     for (const allowSeen of [false, true]) {
-      const entries = makeCycleEntries(allowSeen);
+      const entries = makeCycleEntries(allowSeen, tier);
       if (!entries) continue;
       for (const entry of entries) pathPicked.add(entry.clip.id);
       pathPlan.push(...entries);
       return true;
     }
     pathPicked.clear();
-    const entries = makeCycleEntries(true);
+    const entries = makeCycleEntries(true, tier);
     if (!entries) return false;
     for (const entry of entries) pathPicked.add(entry.clip.id);
     pathPlan.push(...entries);
+    return true;
+  }
+  function tierStageEntries(tier, stageId) {
+    const stage = stageFor(stageId);
+    const out = [];
+    for (const category of categories) {
+      if (!stage.categories.includes(category.tag)) continue;
+      for (const clip of category.clips) {
+        if (clip && clip.tier === tier && !clip.invalid) {
+          out.push({ category, clip });
+        }
+      }
+    }
+    return out;
+  }
+  function rebuildRemainingPath(tier) {
+    if (!pathStarted || pathPos < 0 || !pathPlan.length) return false;
+    const keepCount = Math.min(pathPos + 1, pathPlan.length);
+    const excluded = new Set(sessionUsedVideoIds);
+    for (let i = 0; i < keepCount; i += 1) {
+      const keep = pathPlan[i] && pathPlan[i].clip;
+      if (keep && keep.id) excluded.add(keep.id);
+    }
+    const nextPlan = pathPlan.slice(0, keepCount);
+    for (let i = keepCount; i < pathPlan.length; i += 1) {
+      const oldEntry = pathPlan[i] || {};
+      const stageId = oldEntry.stage
+        || STAGE_BY_CATEGORY[oldEntry.category && oldEntry.category.tag]
+        || 1;
+      let entries = tierStageEntries(tier, stageId)
+        .filter((entry) => !excluded.has(entry.clip.id) && !entry.clip.is_surreal);
+      if (oldEntry.clip && oldEntry.clip.is_finale) {
+        const finals = entries.filter((entry) => entry.clip.is_finale);
+        if (finals.length) entries = finals;
+      }
+      if (!entries.length) {
+        entries = tierStageEntries(tier, stageId).filter((entry) => !excluded.has(entry.clip.id));
+      }
+      if (!entries.length) entries = tierStageEntries(tier, stageId);
+      if (!entries.length) return false;
+      entries = shuffleArray(entries).sort((a, b) => (b.clip.envScore || 0) - (a.clip.envScore || 0));
+      const pick = entries[0];
+      excluded.add(pick.clip.id);
+      nextPlan.push({ stage: stageId, category: pick.category, clip: pick.clip });
+    }
+    if (nextPlan.length !== pathPlan.length) return false;
+    pathPlan = nextPlan;
+    pathPicked = new Set(pathPlan.map((entry) => entry.clip && entry.clip.id).filter(Boolean));
+    if (pathPos + 1 < pathPlan.length) {
+      preparePlaybackWindow(pathPlan[pathPos], pathPlan[pathPos + 1]);
+    } else {
+      preparePlaybackWindow(pathPlan[pathPos], null);
+    }
     return true;
   }
   function startPathFirst() {
@@ -3643,7 +3697,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         return;
       }
       const alternatives = category.clips.filter((candidate) => (
-        candidate !== clip && candidate.url && !candidate.invalid
+        candidate !== clip
+        && candidate.tier === clip.tier
+        && candidate.url
+        && !candidate.invalid
       ));
       if (!alternatives.length) return;
       const replacement = alternatives[fallbackCursor % alternatives.length];
@@ -3825,14 +3882,19 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       const itemHeight = Number(item.height) || 0;
       const itemDuration = Number(item.duration) || 0;
       const itemBitrate = itemSize * 8 / Math.max(1, itemDuration);
-      if (
-        !itemSize || !itemWidth || !itemHeight
-        || itemSize < 3_500_000
-        || itemSize > 10_500_000
-        || itemWidth !== 1080
-        || itemHeight !== 1920
-        || itemBitrate < 2_500_000
-      ) continue;
+      const rawTier = String(item.tier || '').toLowerCase();
+      const tier = rawTier === '720' || rawTier === '480' ? rawTier : '1080';
+      const dimensionsOk = (tier === '1080' && itemWidth === 1080 && itemHeight === 1920)
+        || (tier === '720' && itemWidth === 720 && itemHeight === 1280)
+        || (tier === '480' && itemWidth === 480 && itemHeight === 854);
+      const sizeOk = tier === '1080'
+        ? itemSize >= 3_500_000 && itemSize <= 10_500_000
+        : (tier === '720'
+          ? itemSize >= 2_000_000 && itemSize <= 3_500_000
+          : itemSize >= 900_000 && itemSize <= 1_800_000);
+      const durationOk = tier === '1080' || (itemDuration >= 8 && itemDuration <= 18);
+      const bitrateOk = tier !== '1080' || itemBitrate >= 2_500_000;
+      if (!itemSize || !itemWidth || !itemHeight || !dimensionsOk || !sizeOk || !durationOk || !bitrateOk) continue;
       const rawStage = String(item.stage || '').toLowerCase().replace(/\s+/g, '_');
       const stageKey = rawStage === 'trickster' || rawStage === 'abyss'
         ? 'trickster_abyss'
@@ -3861,6 +3923,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         url720: String(item.url720 || ''),
         url480: String(item.url480 || ''),
         urlPoster: String(item.urlPoster || ''),
+        tier,
         duration: Number.isFinite(Number(item.duration)) ? Number(item.duration) : 10,
         description: archetype,
         tags: [stageKey, archetype],
@@ -3959,6 +4022,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
           qualityFallbackLocked = true;
           activeQuality = '480';
           document.documentElement.dataset.quality = activeQuality;
+          rebuildRemainingPath('480');
         }, 2200);
         const promise = video.play();
         if (promise && typeof promise.catch === 'function') {
@@ -4144,7 +4208,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (!current) return;
     const resonance = record.heldMs >= 1000 || record.loopCount >= 1;
     if (resonance) {
-      const same = unusedEntries((clip, category) => clip.element === current.element && category !== (activeCategory() || {}));
+      const same = unusedEntries((clip, category) => clip.tier === activeQuality
+        && clip.element === current.element
+        && category !== (activeCategory() || {}));
       if (same.length) {
         const pick = same[Math.floor(Math.random() * same.length)];
         replaceFutureEntry(nextIndex, pick.category, pick.clip, pick.stage);
@@ -4161,7 +4227,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       const next = pathPlan[nextIndex];
       if (next && next.stage === 'shadow') {
         const calm = unusedEntries((clip, category) => (
-          category.tag === 'Calm' && (clip.element === 'water' || clip.element === 'fog')
+          clip.tier === activeQuality
+          && category.tag === 'Calm'
+          && (clip.element === 'water' || clip.element === 'fog')
         ));
         if (calm.length) {
           const pick = calm[Math.floor(Math.random() * calm.length)];
@@ -4179,7 +4247,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       && nextIndex - lastSurrealIndex >= 7
       && surrealClips.length
     ) {
-      const pool = surrealClips.filter((entry) => entry.clip && !pathPicked.has(entry.clip.id));
+      const pool = surrealClips.filter((entry) => entry.clip
+        && entry.clip.tier === activeQuality
+        && !pathPicked.has(entry.clip.id));
       if (pool.length) {
         const pick = pool[Math.floor(Math.random() * pool.length)];
         const old = pathPlan[nextIndex];
