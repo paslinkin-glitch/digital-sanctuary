@@ -708,27 +708,33 @@
   }
 
   // ==========================================================================
-  // v141 — second interactive scene: «Бухта и порог» / the Dali threshold
+  // v142 — second interactive scene: «Бухта и порог» / the Dali threshold
   // ==========================================================================
   //
-  // A living bay in the palette of «Port Lligat, seen with an approaching
-  // storm»: slate-cobalt water (#1B3E64 -> #29517A) with a slow living ripple
-  // and small sun glints, muted ochre-ash headlands (#6E685F / #4E4C49), leaden
-  // smoke clouds (#50555E) torn open by a low pearl-sand sun (#DEC79A) casting
-  // soft oblique god rays through FogExp2 haze (#7B7D7D / #3E4852).
+  // A real bay, not a drawing of one. The whole environment is a 2048×1024
+  // equirectangular photograph from Poly Haven («Cape Hill»: a low sun over the
+  // ocean, a rocky headland, wispy clouds). It is assigned to scene.background
+  // for the sharp photographic horizon and pushed through PMREMGenerator into
+  // scene.environment, so the water, the stone and every reflection are lit by
+  // the actual sky of the photograph.
   //
-  // In the middle of the composition stands one tall, slender stone doorway
-  // with no walls, textured by the Poly Haven normal/roughness maps, throwing
-  // one long graphic shadow over sand and water. A translucent curtain of mist
-  // breathes inside the opening, linking the cloud to the water.
+  // The water is a physical standard material (#183452, roughness 0.14,
+  // metalness 0.85, envMapIntensity 1.35) with two opposing layers of a
+  // seamless 512 px ripple normal map generated on the runner. It reflects the
+  // real clouds, the low sun and the stone portal in real time.
+  //
+  // The portal is a strict post-and-lintel doorway: two chamfered carved piers
+  // on a three-step plinth, a massive lintel with a double cornice, a keystone
+  // and cut grooves. Its full PBR set — diffuse colour, GL normal and roughness
+  // from one Poly Haven limestone material — is bound to every stone block.
   //
   // The visitor's finger writes the hidden Jungian movement — separation and
   // the crossing to the horizon. Pulling up or simply holding the screen grows
-  // progress from 0 to 100: the veil dissolves, the rays open wider, and the
-  // camera glides over water and shore, through the doorway, toward the ochre
-  // mountains and the bright horizon. At 100 % the scene reports onCleared(),
-  // dissolves for 850 ms, disposes every geometry, material, texture and the
-  // WebGL context, and hands the GPU relay back to the video.
+  // progress from 0 to 100: the veil dissolves, the camera glides over water and
+  // through the doorway toward the real horizon. At 100 % the scene reports
+  // onCleared(), dissolves for 850 ms, disposes every geometry, material,
+  // texture, render target and the WebGL context, and hands the GPU relay back
+  // to the video.
   //
   // A light 2D fallback paints the same composition when WebGL is unavailable.
   // The scene is deliberately self-contained: app.js owns the player pause and
@@ -737,8 +743,8 @@
   var threshold = (function () {
     'use strict';
 
-    var VERSION = '141';
-    var ASSET_QUERY = '?v=141';
+    var VERSION = '142';
+    var ASSET_QUERY = '?v=142';
     var FADE_MS = 850;
     var MAX_PROGRESS = 100;
     var REPORT_STEP = 5;
@@ -749,190 +755,27 @@
     var DRAG_BACK = 0.045;
     var DECAY_RATE = 3.4;
     var DPR_CAP = 1.5;
-    var FOG_DENSITY = 0.009;
+    var FOG_DENSITY = 0.0036;
     var PASS_AT = 0.58;
     var FRAME_MIN_DT = 1 / 240;
 
     var PALETTE = {
-      deep: 0x1b3e64,
+      deep: 0x183452,
       shallow: 0x29517a,
       mountainLow: 0x4e4c49,
       mountainHigh: 0x6e685f,
-      stone: 0x6e685f,
-      stoneDark: 0x4e4c49,
+      stone: 0xd9cbb4,
+      stoneDark: 0x8e8272,
       sand: 0x8a7c64,
-      fog: 0x7b7d7d,
+      fog: 0x9a958c,
       fogBlue: 0x3e4852,
       skyTop: 0x50555e,
       skyMid: 0x7b7d7d,
-      glow: 0xdec79a,
+      glow: 0xf2d6a2,
       veilCool: 0xb7b3a9,
       veilWarm: 0xded0ae,
       shadow: 0x0a141c
     };
-
-    var SUN_DIRECTION = [0.15, 0.15, -0.977];
-
-    var SKY_VERT = [
-      'varying vec3 vDir;',
-      'void main() {',
-      '  vDir = position;',
-      '  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
-      '}'
-    ].join('\n');
-
-    var SKY_FRAG = [
-      'varying vec3 vDir;',
-      'uniform vec3 uTop;',
-      'uniform vec3 uMid;',
-      'uniform vec3 uGlow;',
-      'uniform vec3 uSunDir;',
-      'uniform float uTime;',
-      'uniform float uOpen;',
-      '',
-      'float hash21(vec2 p) {',
-      '  p = fract(p * vec2(123.34, 456.21));',
-      '  p += dot(p, p + 45.32);',
-      '  return fract(p.x * p.y);',
-      '}',
-      'float noise2(vec2 p) {',
-      '  vec2 i = floor(p);',
-      '  vec2 f = fract(p);',
-      '  vec2 u = f * f * (3.0 - 2.0 * f);',
-      '  return mix(',
-      '    mix(hash21(i), hash21(i + vec2(1.0, 0.0)), u.x),',
-      '    mix(hash21(i + vec2(0.0, 1.0)), hash21(i + vec2(1.0, 1.0)), u.x),',
-      '    u.y',
-      '  );',
-      '}',
-      'float fbm2(vec2 p) {',
-      '  float value = 0.0;',
-      '  float amplitude = 0.5;',
-      '  for (int i = 0; i < 5; i++) {',
-      '    value += amplitude * noise2(p);',
-      '    p *= 2.03;',
-      '    amplitude *= 0.5;',
-      '  }',
-      '  return value;',
-      '}',
-      '',
-      'void main() {',
-      '  vec3 dir = normalize(vDir);',
-      '  float height = clamp(dir.y, -0.2, 1.0);',
-      '',
-      '  vec3 color = mix(uGlow, uMid, smoothstep(0.0, 0.2, height));',
-      '  color = mix(color, uTop, smoothstep(0.18, 0.72, height));',
-      '  color = mix(color, uGlow * 1.05, exp(-abs(height - 0.035) * 20.0) * 0.5);',
-      '',
-      '  vec3 sunDir = normalize(uSunDir);',
-      '  float sun = max(dot(dir, sunDir), 0.0);',
-      '  float horizonGate = 1.0 - smoothstep(0.0, 0.5, height);',
-      '  color += uGlow * (pow(sun, 5.0) * (0.2 + 0.22 * uOpen) + pow(sun, 42.0) * 0.5) * horizonGate;',
-      '',
-      '  vec2 cloudUv = dir.xz / max(dir.y + 0.32, 0.16);',
-      '  float drift = uTime * 0.0055;',
-      '  float cloudA = fbm2(cloudUv * 1.1 + vec2(drift, drift * 0.3));',
-      '  float cloudB = fbm2(cloudUv * 2.35 + vec2(-drift * 0.7, drift * 0.45) + 7.3);',
-      '  float cloud = smoothstep(0.42, 0.8, cloudA * 0.64 + cloudB * 0.36);',
-      '  cloud *= smoothstep(0.0, 0.22, height);',
-      '  cloud *= 1.0 - 0.35 * uOpen * smoothstep(0.05, 0.4, height);',
-      '',
-      '  vec3 cloudColor = mix(uMid * 0.8, uTop * 1.08, smoothstep(0.08, 0.82, height));',
-      '  cloudColor = mix(cloudColor, uGlow * 0.92, pow(sun, 3.0) * 0.38);',
-      '  color = mix(color, cloudColor, cloud * 0.72);',
-      '',
-      '  color += (hash21(gl_FragCoord.xy * 0.7) - 0.5) * 0.008;',
-      '',
-      '  gl_FragColor = vec4(color, 1.0);',
-      '  #include <tonemapping_fragment>',
-      '  #include <colorspace_fragment>',
-      '}'
-    ].join('\n');
-
-    var WATER_VERT = [
-      'varying vec3 vWorld;',
-      'void main() {',
-      '  vec4 world = modelMatrix * vec4(position, 1.0);',
-      '  vWorld = world.xyz;',
-      '  gl_Position = projectionMatrix * viewMatrix * world;',
-      '}'
-    ].join('\n');
-
-    var WATER_FRAG = [
-      'varying vec3 vWorld;',
-      'uniform float uTime;',
-      'uniform float uOpen;',
-      'uniform float uFogDensity;',
-      'uniform vec3 uDeep;',
-      'uniform vec3 uShallow;',
-      'uniform vec3 uSky;',
-      'uniform vec3 uSun;',
-      'uniform vec3 uSunDir;',
-      'uniform vec3 uFogColor;',
-      '',
-      'float hash21(vec2 p) {',
-      '  p = fract(p * vec2(123.34, 456.21));',
-      '  p += dot(p, p + 45.32);',
-      '  return fract(p.x * p.y);',
-      '}',
-      'float noise2(vec2 p) {',
-      '  vec2 i = floor(p);',
-      '  vec2 f = fract(p);',
-      '  vec2 u = f * f * (3.0 - 2.0 * f);',
-      '  return mix(',
-      '    mix(hash21(i), hash21(i + vec2(1.0, 0.0)), u.x),',
-      '    mix(hash21(i + vec2(0.0, 1.0)), hash21(i + vec2(1.0, 1.0)), u.x),',
-      '    u.y',
-      '  );',
-      '}',
-      'float waveHeight(vec2 p, float t) {',
-      '  float h = 0.0;',
-      '  h += sin(p.x * 0.52 + t * 0.72) * 0.50;',
-      '  h += sin(p.y * 0.74 - t * 0.58) * 0.34;',
-      '  h += sin((p.x + p.y) * 0.34 + t * 0.9) * 0.22;',
-      '  h += sin((p.x - p.y) * 0.92 - t * 1.2) * 0.10;',
-      '  return h;',
-      '}',
-      '',
-      'void main() {',
-      '  vec2 p = vWorld.xz;',
-      '  float t = uTime;',
-      '  float e = 0.35;',
-      '  float h0 = waveHeight(p, t);',
-      '  float hx = waveHeight(p + vec2(e, 0.0), t) - h0;',
-      '  float hz = waveHeight(p + vec2(0.0, e), t) - h0;',
-      '  vec3 normal = normalize(vec3(-hx * 2.6, e, -hz * 2.6));',
-      '',
-      '  vec2 q = p * 1.7 + vec2(t * 0.035, -t * 0.028);',
-      '  float n0 = noise2(q);',
-      '  float nx = noise2(q + vec2(0.18, 0.0)) - n0;',
-      '  float nz = noise2(q + vec2(0.0, 0.18)) - n0;',
-      '  normal = normalize(normal + vec3(-nx, 0.0, -nz) * 0.22);',
-      '',
-      '  vec3 viewDir = normalize(cameraPosition - vWorld);',
-      '  float fresnel = pow(1.0 - clamp(dot(normal, viewDir), 0.0, 1.0), 3.0);',
-      '',
-      '  float distanceInBay = length(cameraPosition.xz - p);',
-      '  vec3 color = mix(uDeep, uShallow, smoothstep(0.0, 150.0, distanceInBay));',
-      '  color = mix(color, uSky, fresnel * 0.52);',
-      '',
-      '  vec3 sunDir = normalize(uSunDir);',
-      '  vec3 reflection = reflect(-sunDir, normal);',
-      '  float glint = pow(max(dot(reflection, viewDir), 0.0), 160.0);',
-      '  float sheen = pow(max(dot(reflection, viewDir), 0.0), 14.0);',
-      '  float sparkle = smoothstep(0.72, 0.94, noise2(p * 0.9 + vec2(t * 0.04, -t * 0.05)));',
-      '  color += uSun * (glint * 1.5 + sheen * 0.05 + sparkle * 0.055);',
-      '  color += uSun * 0.022 * uOpen * (0.4 + fresnel);',
-      '',
-      '  float distanceToCamera = length(cameraPosition - vWorld);',
-      '  float fogFactor = 1.0 - exp(-uFogDensity * uFogDensity * distanceToCamera * distanceToCamera);',
-      '  color = mix(color, uFogColor, clamp(fogFactor, 0.0, 0.96));',
-      '',
-      '  gl_FragColor = vec4(color, 1.0);',
-      '  #include <tonemapping_fragment>',
-      '  #include <colorspace_fragment>',
-      '}'
-    ].join('\n');
 
     var VEIL_VERT = [
       'varying vec2 vUv;',
@@ -1020,20 +863,21 @@
     var scene = null;
     var camera = null;
     var THREE = null;
-    var sunDir = null;
 
-    var skyMesh = null;
-    var skyUniforms = null;
-    var waterUniforms = null;
     var rayUniforms = null;
     var veilUniforms = [];
-    var sunSprite = null;
 
+    var environmentTexture = null;
+    var envRenderTarget = null;
+    var stoneColor = null;
     var stoneNormal = null;
     var stoneRough = null;
     var stoneMaterials = [];
     var textureCache = {};
     var textures = [];
+    var waterNormalTexture = null;
+    var waterLayers = [];
+    var waterMaterials = [];
     var disposed = true;
     var fallback2d = false;
 
@@ -1075,6 +919,22 @@
       return texture;
     }
 
+    function untrack(texture) {
+      var index = textures.indexOf(texture);
+      if (index >= 0) textures.splice(index, 1);
+      return texture;
+    }
+
+    function textureAnisotropy() {
+      var maximum = 1;
+      try {
+        maximum = renderer && renderer.capabilities
+          ? (renderer.capabilities.getMaxAnisotropy() || 1)
+          : 1;
+      } catch (_) {}
+      return Math.max(1, Math.min(8, maximum));
+    }
+
     // ---------------------------------------------------------------- geometry
 
     function measure() {
@@ -1087,22 +947,6 @@
       height = Math.max(1, Math.round(h));
       dpr = Math.min(DPR_CAP, Math.max(1, window.devicePixelRatio || 1));
       return true;
-    }
-
-    function makeNoise1(seed) {
-      var state = (seed >>> 0) || 1;
-      var table = [];
-      for (var i = 0; i < 256; i += 1) {
-        state = (state * 1664525 + 1013904223) >>> 0;
-        table.push(state / 4294967296);
-      }
-      return function (x) {
-        var floor = Math.floor(x);
-        var fraction = x - floor;
-        var at = floor & 255;
-        var fade = fraction * fraction * (3 - 2 * fraction);
-        return table[at] * (1 - fade) + table[(at + 1) & 255] * fade;
-      };
     }
 
     function hash2(x, y) {
@@ -1125,6 +969,36 @@
     }
 
     // ----------------------------------------------------------- stone textures
+
+    function makeFallbackColor() {
+      var size = 128;
+      var board = document.createElement('canvas');
+      board.width = size;
+      board.height = size;
+      var context = board.getContext('2d');
+      if (!context) return null;
+      var image = context.createImageData(size, size);
+      var data = image.data;
+      for (var y = 0; y < size; y += 1) {
+        for (var x = 0; x < size; x += 1) {
+          var grain = valueNoise(x * 0.09, y * 0.09) * 0.56
+            + valueNoise(x * 0.24, y * 0.24) * 0.3
+            + valueNoise(x * 0.61, y * 0.61) * 0.14;
+          var shade = 0.72 + grain * 0.36;
+          var index = (y * size + x) * 4;
+          data[index] = Math.round(205 * shade);
+          data[index + 1] = Math.round(190 * shade);
+          data[index + 2] = Math.round(165 * shade);
+          data[index + 3] = 255;
+        }
+      }
+      context.putImageData(image, 0, 0);
+      var texture = new THREE.CanvasTexture(board);
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.colorSpace = THREE.SRGBColorSpace;
+      return texture;
+    }
 
     function makeFallbackNormal() {
       var size = 128;
@@ -1189,15 +1063,43 @@
       return texture;
     }
 
+    function makeFallbackWaterNormal() {
+      var size = 128;
+      var board = document.createElement('canvas');
+      board.width = size;
+      board.height = size;
+      var context = board.getContext('2d');
+      if (!context) return null;
+      var image = context.createImageData(size, size);
+      var data = image.data;
+      for (var y = 0; y < size; y += 1) {
+        for (var x = 0; x < size; x += 1) {
+          var nx = Math.sin((x + y) * 0.16) * 0.10;
+          var ny = Math.cos((x - y) * 0.13) * 0.10;
+          var nz = Math.sqrt(Math.max(0.01, 1 - nx * nx - ny * ny));
+          var index = (y * size + x) * 4;
+          data[index] = Math.round((nx * 0.5 + 0.5) * 255);
+          data[index + 1] = Math.round((ny * 0.5 + 0.5) * 255);
+          data[index + 2] = Math.round((nz * 0.5 + 0.5) * 255);
+          data[index + 3] = 255;
+        }
+      }
+      context.putImageData(image, 0, 0);
+      var texture = new THREE.CanvasTexture(board);
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.colorSpace = THREE.NoColorSpace;
+      return texture;
+    }
+
     function loadStoneTextures() {
+      stoneColor = track(makeFallbackColor());
       stoneNormal = track(makeFallbackNormal());
       stoneRough = track(makeFallbackRoughness());
+      if (!stoneColor) stoneColor = new THREE.Texture();
       if (!stoneNormal) stoneNormal = new THREE.Texture();
       if (!stoneRough) stoneRough = new THREE.Texture();
-      var anisotropy = 1;
-      try {
-        anisotropy = Math.max(1, Math.min(4, renderer.capabilities.getMaxAnisotropy() || 1));
-      } catch (_) {}
+      var anisotropy = textureAnisotropy();
       var loader = new THREE.TextureLoader();
       function adopt(kind, texture) {
         // A late loader callback from a 3D build that fell back to 2D must
@@ -1208,14 +1110,18 @@
         }
         texture.wrapS = THREE.RepeatWrapping;
         texture.wrapT = THREE.RepeatWrapping;
-        texture.colorSpace = THREE.NoColorSpace;
+        texture.colorSpace = kind === 'color' ? THREE.SRGBColorSpace : THREE.NoColorSpace;
         texture.anisotropy = anisotropy;
         texture.needsUpdate = true;
-        if (kind === 'normal') stoneNormal = texture;
+        if (kind === 'color') stoneColor = texture;
+        else if (kind === 'normal') stoneNormal = texture;
         else stoneRough = texture;
         track(texture);
         rebindStone();
       }
+      loader.load('./assets/stone-color.jpg' + ASSET_QUERY, function (texture) {
+        adopt('color', texture);
+      }, undefined, function () {});
       loader.load('./assets/stone-normal.jpg' + ASSET_QUERY, function (texture) {
         adopt('normal', texture);
       }, undefined, function () {});
@@ -1227,6 +1133,12 @@
     function stonePair(rx, ry) {
       var key = rx + 'x' + ry;
       if (textureCache[key]) return textureCache[key];
+      var color = stoneColor.clone();
+      color.wrapS = THREE.RepeatWrapping;
+      color.wrapT = THREE.RepeatWrapping;
+      color.repeat.set(rx, ry);
+      color.colorSpace = THREE.SRGBColorSpace;
+      color.needsUpdate = true;
       var normal = stoneNormal.clone();
       normal.wrapS = THREE.RepeatWrapping;
       normal.wrapT = THREE.RepeatWrapping;
@@ -1239,14 +1151,16 @@
       rough.repeat.set(rx, ry);
       rough.colorSpace = THREE.NoColorSpace;
       rough.needsUpdate = true;
+      track(color);
       track(normal);
       track(rough);
-      textureCache[key] = { normal: normal, rough: rough };
+      textureCache[key] = { color: color, normal: normal, rough: rough };
       return textureCache[key];
     }
 
     function bindStone(entry) {
       var pair = stonePair(entry.rx, entry.ry);
+      entry.material.map = pair.color;
       entry.material.normalMap = pair.normal;
       entry.material.roughnessMap = pair.rough;
       entry.material.needsUpdate = true;
@@ -1263,6 +1177,7 @@
       var keys = Object.keys(textureCache);
       for (var i = 0; i < keys.length; i += 1) {
         var pair = textureCache[keys[i]];
+        if (pair.color) pair.color.dispose();
         if (pair.normal) pair.normal.dispose();
         if (pair.rough) pair.rough.dispose();
       }
@@ -1270,6 +1185,181 @@
       for (var j = 0; j < stoneMaterials.length; j += 1) {
         bindStone(stoneMaterials[j]);
       }
+    }
+
+    // ------------------------------------------------------- photographic sky
+
+    function applyFogFromImage(image) {
+      if (!scene || !scene.fog || !image) return;
+      try {
+        var board = document.createElement('canvas');
+        board.width = 32;
+        board.height = 16;
+        var context = board.getContext('2d');
+        if (!context) return;
+        context.drawImage(image, 0, 0, 32, 16);
+        // The equirectangular horizon lives on the middle row: sample a narrow
+        // band around it so the water fades into the real haze of the photo.
+        var data = context.getImageData(0, 7, 32, 3).data;
+        var red = 0;
+        var green = 0;
+        var blue = 0;
+        var count = 0;
+        for (var i = 0; i < data.length; i += 4) {
+          red += data[i];
+          green += data[i + 1];
+          blue += data[i + 2];
+          count += 1;
+        }
+        if (!count) return;
+        var color = new THREE.Color().setStyle(
+          'rgb(' + Math.round(red / count) + ',' + Math.round(green / count) + ','
+          + Math.round(blue / count) + ')'
+        );
+        color.lerp(new THREE.Color(0xb9b0a2), 0.16);
+        scene.fog.color.copy(color);
+      } catch (_) {}
+    }
+
+    function applyEnvironment(texture) {
+      if (!texture) return;
+      if (disposed || !THREE || !renderer || !scene || fallback2d) {
+        try { texture.dispose(); } catch (_) {}
+        return;
+      }
+      if (environmentTexture && environmentTexture !== texture) {
+        try { environmentTexture.dispose(); } catch (_) {}
+        untrack(environmentTexture);
+      }
+      environmentTexture = texture;
+      texture.mapping = THREE.EquirectangularReflectionMapping;
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.wrapS = THREE.ClampToEdgeWrapping;
+      texture.wrapT = THREE.ClampToEdgeWrapping;
+      texture.minFilter = THREE.LinearFilter;
+      texture.magFilter = THREE.LinearFilter;
+      texture.generateMipmaps = false;
+      texture.needsUpdate = true;
+      scene.background = texture;
+      scene.backgroundIntensity = 1.0;
+      if (envRenderTarget) {
+        try { envRenderTarget.dispose(); } catch (_) {}
+        envRenderTarget = null;
+      }
+      try {
+        var pmrem = new THREE.PMREMGenerator(renderer);
+        pmrem.compileEquirectangularShader();
+        envRenderTarget = pmrem.fromEquirectangular(texture);
+        scene.environment = envRenderTarget.texture;
+        pmrem.dispose();
+      } catch (_) {
+        scene.environment = null;
+      }
+      applyFogFromImage(texture.image);
+      if (textures.indexOf(texture) < 0) track(texture);
+    }
+
+    function buildFallbackSky() {
+      var board = document.createElement('canvas');
+      board.width = 1024;
+      board.height = 512;
+      var context = board.getContext('2d');
+      if (!context) return;
+      var sky = context.createLinearGradient(0, 0, 0, 512);
+      sky.addColorStop(0, '#2d3b49');
+      sky.addColorStop(0.42, '#7f8d98');
+      sky.addColorStop(0.5, '#d8c5a5');
+      sky.addColorStop(0.56, '#a68f74');
+      sky.addColorStop(1, '#3f474d');
+      context.fillStyle = sky;
+      context.fillRect(0, 0, 1024, 512);
+      var glow = context.createRadialGradient(742, 242, 0, 742, 242, 250);
+      glow.addColorStop(0, 'rgba(255, 238, 202, 0.95)');
+      glow.addColorStop(0.28, 'rgba(242, 214, 162, 0.46)');
+      glow.addColorStop(0.7, 'rgba(242, 214, 162, 0.1)');
+      glow.addColorStop(1, 'rgba(242, 214, 162, 0)');
+      context.fillStyle = glow;
+      context.fillRect(0, 0, 1024, 430);
+      for (var i = 0; i < 11; i += 1) {
+        var cx = 80 + Math.random() * 880;
+        var cy = 70 + Math.random() * 190;
+        var radius = 90 + Math.random() * 150;
+        var cloud = context.createRadialGradient(cx, cy, 0, cx, cy, radius);
+        cloud.addColorStop(0, 'rgba(62, 68, 76, ' + (0.28 + Math.random() * 0.18) + ')');
+        cloud.addColorStop(0.55, 'rgba(78, 84, 92, 0.14)');
+        cloud.addColorStop(1, 'rgba(78, 84, 92, 0)');
+        context.save();
+        context.translate(cx, cy);
+        context.scale(1.7, 0.48);
+        context.translate(-cx, -cy);
+        context.fillStyle = cloud;
+        context.beginPath();
+        context.arc(cx, cy, radius, 0, Math.PI * 2);
+        context.fill();
+        context.restore();
+      }
+      var texture = new THREE.CanvasTexture(board);
+      applyEnvironment(texture);
+    }
+
+    function loadEnvironment() {
+      var loader = new THREE.TextureLoader();
+      loader.load('./assets/bay-env.jpg' + ASSET_QUERY, function (texture) {
+        applyEnvironment(texture);
+      }, undefined, function () {});
+    }
+
+    // ------------------------------------------------------------ water normal
+
+    function makeWaterNormalClone(repeatCount) {
+      var texture = waterNormalTexture.clone();
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set(repeatCount, repeatCount);
+      texture.colorSpace = THREE.NoColorSpace;
+      texture.anisotropy = textureAnisotropy();
+      texture.needsUpdate = true;
+      return track(texture);
+    }
+
+    function loadWaterNormal() {
+      var loader = new THREE.TextureLoader();
+      loader.load('./assets/water-normal.jpg' + ASSET_QUERY, function (texture) {
+        if (disposed || !THREE || !renderer || fallback2d) {
+          texture.dispose();
+          return;
+        }
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+        texture.colorSpace = THREE.NoColorSpace;
+        texture.anisotropy = textureAnisotropy();
+        texture.needsUpdate = true;
+        var previous = waterNormalTexture;
+        waterNormalTexture = texture;
+        track(texture);
+        for (var i = 0; i < waterLayers.length; i += 1) {
+          var layer = waterLayers[i];
+          var clone = texture.clone();
+          clone.wrapS = THREE.RepeatWrapping;
+          clone.wrapT = THREE.RepeatWrapping;
+          clone.repeat.copy(layer.repeat);
+          clone.colorSpace = THREE.NoColorSpace;
+          clone.anisotropy = texture.anisotropy;
+          clone.needsUpdate = true;
+          if (layer.texture) {
+            layer.texture.dispose();
+            untrack(layer.texture);
+          }
+          layer.texture = clone;
+          layer.material.normalMap = clone;
+          layer.material.needsUpdate = true;
+          track(clone);
+        }
+        if (previous) {
+          previous.dispose();
+          untrack(previous);
+        }
+      }, undefined, function () {});
     }
 
     // --------------------------------------------------------------- 3D build
@@ -1286,348 +1376,233 @@
       renderer.setSize(width, height, false);
       renderer.outputColorSpace = THREE.SRGBColorSpace;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.12;
+      renderer.toneMappingExposure = 1.04;
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-      renderer.setClearColor(PALETTE.fogBlue, 1);
+      renderer.setClearColor(0x8d8c88, 1);
       canvas = renderer.domElement;
       canvas.setAttribute('aria-hidden', 'true');
       host.appendChild(canvas);
 
       scene = new THREE.Scene();
       scene.fog = new THREE.FogExp2(PALETTE.fog, FOG_DENSITY);
-      camera = new THREE.PerspectiveCamera(54, width / height, 0.08, 900);
+      camera = new THREE.PerspectiveCamera(52, width / height, 0.08, 900);
       camera.position.set(0, 3.0, 10);
 
-      sunDir = new THREE.Vector3(
-        SUN_DIRECTION[0], SUN_DIRECTION[1], SUN_DIRECTION[2]
-      ).normalize();
-
       loadStoneTextures();
+      waterNormalTexture = track(makeFallbackWaterNormal());
+      if (!waterNormalTexture) waterNormalTexture = new THREE.Texture();
 
-      var hemisphere = new THREE.HemisphereLight(0xa9aeb4, 0x4a443b, 0.9);
+      // The panorama is the main light source. A low warm sun adds the long
+      // graphic shadow of the doorway; a cool hemisphere only keeps the shadow
+      // side of the stone from going black.
+      var hemisphere = new THREE.HemisphereLight(0xb9c6d0, 0x3d352b, 0.55);
       scene.add(hemisphere);
 
-      var sun = new THREE.DirectionalLight(PALETTE.glow, 2.4);
-      sun.position.set(34, 30, -120);
-      sun.target.position.set(0, 1.8, -9);
+      var sun = new THREE.DirectionalLight(0xffd7a1, 2.7);
+      sun.position.set(58, 16, -62);
+      sun.target.position.set(0, 2.2, -9);
       sun.castShadow = true;
       sun.shadow.mapSize.set(1024, 1024);
-      sun.shadow.camera.near = 40;
-      sun.shadow.camera.far = 230;
-      sun.shadow.camera.left = -34;
-      sun.shadow.camera.right = 34;
-      sun.shadow.camera.top = 36;
-      sun.shadow.camera.bottom = -36;
-      sun.shadow.bias = -0.0006;
-      sun.shadow.normalBias = 0.03;
+      sun.shadow.camera.near = 8;
+      sun.shadow.camera.far = 220;
+      sun.shadow.camera.left = -28;
+      sun.shadow.camera.right = 28;
+      sun.shadow.camera.top = 28;
+      sun.shadow.camera.bottom = -28;
+      sun.shadow.bias = -0.0007;
+      sun.shadow.normalBias = 0.04;
+      sun.shadow.camera.updateProjectionMatrix();
       scene.add(sun);
       scene.add(sun.target);
 
-      buildSky();
-      buildSun();
+      // The photograph is backlit: a soft cool bounce from the water keeps the
+      // camera-facing stone readable instead of letting it fall into a black
+      // silhouette. It casts no shadow, so the one graphic shadow stays clean.
+      var bounce = new THREE.DirectionalLight(0xa9c6d8, 0.8);
+      bounce.position.set(-30, 12, 38);
+      bounce.target.position.set(0, 2.4, -9);
+      scene.add(bounce);
+      scene.add(bounce.target);
+
+      buildFallbackSky();
+      loadEnvironment();
       buildWater();
-      buildShore();
-      buildRanges();
       buildPortal();
       buildVeil();
       buildRays();
-      buildShadowDecal();
+      loadWaterNormal();
 
       // The light and every caster are static for the whole scene: render the
       // shadow map once and never spend a second GPU pass on it.
       renderer.shadowMap.autoUpdate = false;
       renderer.shadowMap.needsUpdate = true;
 
-      camera.lookAt(0.6, 3.0, -30);
+      camera.lookAt(0.6, 2.9, -30);
       update3D(0, 0);
     }
 
-    function buildSky() {
-      skyUniforms = {
-        uTop: { value: new THREE.Color(PALETTE.skyTop) },
-        uMid: { value: new THREE.Color(PALETTE.skyMid) },
-        uGlow: { value: new THREE.Color(PALETTE.glow) },
-        uSunDir: { value: sunDir.clone() },
-        uTime: { value: 0 },
-        uOpen: { value: 0 }
-      };
-      var material = new THREE.ShaderMaterial({
-        uniforms: skyUniforms,
-        vertexShader: SKY_VERT,
-        fragmentShader: SKY_FRAG,
-        side: THREE.BackSide,
-        depthWrite: false,
-        depthTest: false,
-        fog: false
-      });
-      var geometry = new THREE.SphereGeometry(420, 32, 20);
-      skyMesh = new THREE.Mesh(geometry, material);
-      skyMesh.renderOrder = -100;
-      skyMesh.frustumCulled = false;
-      scene.add(skyMesh);
-    }
-
-    function buildSun() {
-      var board = document.createElement('canvas');
-      board.width = 256;
-      board.height = 256;
-      var context = board.getContext('2d');
-      if (!context) return;
-      var gradient = context.createRadialGradient(128, 128, 0, 128, 128, 128);
-      gradient.addColorStop(0, 'rgba(255, 241, 212, 1)');
-      gradient.addColorStop(0.16, 'rgba(222, 199, 154, 0.82)');
-      gradient.addColorStop(0.42, 'rgba(222, 199, 154, 0.24)');
-      gradient.addColorStop(0.72, 'rgba(222, 199, 154, 0.06)');
-      gradient.addColorStop(1, 'rgba(222, 199, 154, 0)');
-      context.fillStyle = gradient;
-      context.fillRect(0, 0, 256, 256);
-      var texture = track(new THREE.CanvasTexture(board));
-      texture.colorSpace = THREE.SRGBColorSpace;
-      var material = new THREE.SpriteMaterial({
-        map: texture,
-        transparent: true,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-        fog: false,
-        toneMapped: false
-      });
-      sunSprite = new THREE.Sprite(material);
-      sunSprite.scale.set(46, 46, 1);
-      sunSprite.renderOrder = 5;
-      scene.add(sunSprite);
-    }
-
     function buildWater() {
-      waterUniforms = {
-        uTime: { value: 0 },
-        uOpen: { value: 0 },
-        uFogDensity: { value: FOG_DENSITY },
-        uDeep: { value: new THREE.Color(PALETTE.deep) },
-        uShallow: { value: new THREE.Color(PALETTE.shallow) },
-        uSky: { value: new THREE.Color(PALETTE.fog) },
-        uSun: { value: new THREE.Color(PALETTE.glow) },
-        uSunDir: { value: sunDir.clone() },
-        uFogColor: { value: new THREE.Color(PALETTE.fog) }
-      };
-      var material = new THREE.ShaderMaterial({
-        uniforms: waterUniforms,
-        vertexShader: WATER_VERT,
-        fragmentShader: WATER_FRAG,
-        fog: false
-      });
-      var geometry = new THREE.PlaneGeometry(620, 620, 1, 1);
+      var geometry = new THREE.PlaneGeometry(900, 900, 1, 1);
       geometry.rotateX(-Math.PI / 2);
-      var water = new THREE.Mesh(geometry, material);
-      water.position.set(0, 0, -180);
-      scene.add(water);
-    }
 
-    function buildShore() {
-      var shape = new THREE.Shape();
-      shape.moveTo(-17, 0);
-      shape.bezierCurveTo(-13, 5.4, 4, 6.6, 15, 4.2);
-      shape.bezierCurveTo(19, 2.6, 17, -3.4, 9, -5.2);
-      shape.bezierCurveTo(-1, -6.6, -14, -5.8, -17, 0);
-      var geometry = new THREE.ShapeGeometry(shape, 28);
-      geometry.rotateX(-Math.PI / 2);
-      var material = new THREE.MeshStandardMaterial({
-        color: PALETTE.sand,
-        roughness: 1.0,
-        metalness: 0.0
+      // Cobalt-slate physical water: the real panorama is the reflection map,
+      // the 512 px ripple normal is the only procedural surface detail.
+      var baseMaterial = new THREE.MeshStandardMaterial({
+        color: PALETTE.deep,
+        roughness: 0.14,
+        metalness: 0.85,
+        envMapIntensity: 1.35
       });
-      registerStone(material, 0.3, 0.3);
-      var sand = new THREE.Mesh(geometry, material);
-      sand.position.set(0, 0.05, -9);
-      sand.receiveShadow = true;
-      scene.add(sand);
+      var baseNormal = makeWaterNormalClone(22);
+      baseMaterial.normalMap = baseNormal;
+      baseMaterial.normalScale = new THREE.Vector2(0.72, 0.72);
+      var base = new THREE.Mesh(geometry, baseMaterial);
+      base.position.set(0, -0.03, -170);
+      base.receiveShadow = true;
+      scene.add(base);
 
-      // A darker wet rim, just under the dry sand: the sea touching stone.
-      var rimShape = new THREE.Shape();
-      rimShape.moveTo(-19, 0);
-      rimShape.bezierCurveTo(-15, 6.6, 6, 7.8, 17, 4.8);
-      rimShape.bezierCurveTo(21, 2.8, 18.5, -4.2, 10, -6.2);
-      rimShape.bezierCurveTo(-2, -7.8, -16, -6.8, -19, 0);
-      var rimGeometry = new THREE.ShapeGeometry(rimShape, 28);
-      rimGeometry.rotateX(-Math.PI / 2);
-      var rimMaterial = new THREE.MeshStandardMaterial({
-        color: 0x5f5a4f,
-        roughness: 0.62,
-        metalness: 0.0
+      // The second, counter-drifting layer breaks the mirror into living chop
+      // without hiding the clouds reflected underneath.
+      var sheenMaterial = new THREE.MeshStandardMaterial({
+        color: PALETTE.shallow,
+        roughness: 0.11,
+        metalness: 0.92,
+        envMapIntensity: 1.5,
+        transparent: true,
+        opacity: 0.26,
+        depthWrite: false
       });
-      registerStone(rimMaterial, 0.4, 0.4);
-      var rim = new THREE.Mesh(rimGeometry, rimMaterial);
-      rim.position.set(0, 0.035, -9);
-      rim.receiveShadow = true;
-      scene.add(rim);
+      var sheenNormal = makeWaterNormalClone(31);
+      sheenMaterial.normalMap = sheenNormal;
+      sheenMaterial.normalScale = new THREE.Vector2(0.48, 0.48);
+      var sheen = new THREE.Mesh(geometry, sheenMaterial);
+      sheen.position.set(0, 0.008, -170);
+      sheen.renderOrder = 2;
+      scene.add(sheen);
 
-      var rockGeometry = new THREE.DodecahedronGeometry(1, 0);
-      var rockMaterial = new THREE.MeshStandardMaterial({
-        color: 0x655f56,
-        roughness: 1.0,
-        metalness: 0.0
-      });
-      registerStone(rockMaterial, 0.7, 0.7);
-      var spots = [
-        [-6.5, -12.2, 0.44, 0.8],
-        [-4.4, -14.1, 0.28, 2.1],
-        [5.8, -10.4, 0.5, 1.2],
-        [7.6, -12.6, 0.33, 2.9],
-        [-8.2, -8.6, 0.25, 0.4],
-        [3.1, -14.8, 0.21, 1.7],
-        [-1.8, -6.4, 0.17, 2.5],
-        [9.4, -7.8, 0.3, 3.3]
+      waterMaterials = [baseMaterial, sheenMaterial];
+      waterLayers = [
+        {
+          material: baseMaterial,
+          texture: baseNormal,
+          repeat: new THREE.Vector2(22, 22),
+          speedX: 0.012,
+          speedY: 0.006
+        },
+        {
+          material: sheenMaterial,
+          texture: sheenNormal,
+          repeat: new THREE.Vector2(31, 31),
+          speedX: -0.018,
+          speedY: 0.009
+        }
       ];
-      for (var i = 0; i < spots.length; i += 1) {
-        var spot = spots[i];
-        var rock = new THREE.Mesh(rockGeometry, rockMaterial);
-        rock.position.set(spot[0], spot[2] * 0.46, spot[1]);
-        rock.scale.set(spot[2], spot[2] * 0.7, spot[2] * 0.86);
-        rock.rotation.set(spot[3] * 0.2, spot[3], spot[3] * 0.12);
-        rock.castShadow = true;
-        rock.receiveShadow = true;
-        scene.add(rock);
-      }
     }
 
-    function buildRanges() {
-      addRange({
-        cx: -24,
-        cz: -48,
-        width: 34,
-        depth: 48,
-        peak: 27,
-        seed: 11,
-        low: PALETTE.mountainLow,
-        high: PALETTE.mountainHigh,
-        repeatX: 6,
-        repeatY: 2.4
+    function makeChamferedBox(width, height, depth, chamfer) {
+      var halfW = width / 2;
+      var halfH = height / 2;
+      var cut = Math.min(chamfer, Math.min(halfW, halfH) * 0.8);
+      var shape = new THREE.Shape();
+      shape.moveTo(-halfW + cut, -halfH);
+      shape.lineTo(halfW - cut, -halfH);
+      shape.lineTo(halfW, -halfH + cut);
+      shape.lineTo(halfW, halfH - cut);
+      shape.lineTo(halfW - cut, halfH);
+      shape.lineTo(-halfW + cut, halfH);
+      shape.lineTo(-halfW, halfH - cut);
+      shape.lineTo(-halfW, -halfH + cut);
+      shape.closePath();
+      var geometry = new THREE.ExtrudeGeometry(shape, {
+        depth: depth,
+        bevelEnabled: false,
+        steps: 1,
+        curveSegments: 1
       });
-      addRange({
-        cx: 26,
-        cz: -62,
-        width: 36,
-        depth: 52,
-        peak: 24,
-        seed: 29,
-        low: 0x474643,
-        high: 0x686158,
-        repeatX: 6,
-        repeatY: 2.4
-      });
-      addRange({
-        cx: 0,
-        cz: -152,
-        width: 340,
-        depth: 74,
-        peak: 20,
-        seed: 47,
-        low: 0x4c4a47,
-        high: 0x6a6359,
-        repeatX: 6,
-        repeatY: 2.4
-      });
+      geometry.translate(0, 0, -depth / 2);
+      return geometry;
     }
 
-    function addRange(config) {
-      var geometry = new THREE.PlaneGeometry(config.width, config.depth, 64, 10);
-      geometry.rotateX(-Math.PI / 2);
-      var position = geometry.attributes.position;
-      var noise = makeNoise1(config.seed);
-      var low = new THREE.Color(config.low);
-      var high = new THREE.Color(config.high);
-      var colors = [];
-      for (var i = 0; i < position.count; i += 1) {
-        var lx = position.getX(i);
-        var lz = position.getZ(i);
-        var u = lx / (config.width / 2);
-        var v = lz / (config.depth / 2);
-        var profile = Math.pow(Math.max(0, 1 - u * u), 1.6);
-        var ridge = 0.58 + 0.42 * noise(u * 7 + config.seed * 0.1);
-        var relief = 0.84 + 0.16 * Math.sin(u * 19 + config.seed);
-        var falloff = Math.pow(Math.max(0, Math.cos(v * Math.PI * 0.5)), 1.35);
-        var h = config.peak * profile * falloff * ridge * relief - 0.7;
-        position.setY(i, h);
-        var level = clamp((h + 0.7) / Math.max(1, config.peak), 0, 1);
-        var tint = low.clone().lerp(high, Math.pow(level, 0.8) * 0.86 + noise(u * 3 + 7) * 0.14);
-        colors.push(tint.r, tint.g, tint.b);
-      }
-      geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-      geometry.computeVertexNormals();
-      var material = new THREE.MeshStandardMaterial({
-        color: 0xffffff,
-        vertexColors: true,
-        roughness: 1.0,
-        metalness: 0.0
-      });
-      registerStone(material, config.repeatX, config.repeatY);
-      var range = new THREE.Mesh(geometry, material);
-      range.position.set(config.cx, 0, config.cz);
-      scene.add(range);
+    function addStoneBlock(parent, material, w, h, d, x, y, z) {
+      var block = new THREE.Mesh(
+        makeChamferedBox(w, h, d, Math.min(w, h, d) * 0.07),
+        material
+      );
+      block.position.set(x, y, z);
+      block.castShadow = true;
+      block.receiveShadow = true;
+      parent.add(block);
+      return block;
     }
 
     function buildPortal() {
-      var outerHalf = 1.36;
-      var outerTop = 4.85;
-      var innerHalf = 0.88;
-      var innerTop = 4.37;
-
-      var shape = new THREE.Shape();
-      shape.moveTo(-outerHalf, 0);
-      shape.lineTo(-outerHalf, outerTop);
-      shape.absarc(0, outerTop, outerHalf, Math.PI, 0, true);
-      shape.lineTo(outerHalf, 0);
-      shape.lineTo(-outerHalf, 0);
-
-      var hole = new THREE.Path();
-      hole.moveTo(innerHalf, 0.02);
-      hole.lineTo(innerHalf, innerTop);
-      hole.absarc(0, innerTop, innerHalf, 0, Math.PI, false);
-      hole.lineTo(-innerHalf, 0.02);
-      hole.lineTo(innerHalf, 0.02);
-      shape.holes.push(hole);
-
-      var geometry = new THREE.ExtrudeGeometry(shape, {
-        depth: 0.52,
-        bevelEnabled: true,
-        bevelThickness: 0.035,
-        bevelSize: 0.035,
-        bevelSegments: 2,
-        curveSegments: 28,
-        steps: 1
-      });
-      geometry.translate(0, 0, -0.26);
+      // Diffuse colour, GL normal and roughness all come from one Poly Haven
+      // weathered limestone material, so every block shares the same grain.
       var stone = new THREE.MeshStandardMaterial({
-        color: PALETTE.stone,
-        roughness: 1.0,
-        metalness: 0.0
+        color: 0xffffff,
+        roughness: 0.93,
+        metalness: 0.0,
+        envMapIntensity: 0.8
       });
-      registerStone(stone, 0.55, 0.55);
-      var portal = new THREE.Mesh(geometry, stone);
+      registerStone(stone, 0.62, 0.9);
+      var darkStone = new THREE.MeshStandardMaterial({
+        color: 0xc4b49b,
+        roughness: 0.99,
+        metalness: 0.0,
+        envMapIntensity: 0.42
+      });
+      registerStone(darkStone, 0.55, 0.8);
+
+      var portal = new THREE.Group();
       portal.position.set(0, 0, -9);
-      portal.castShadow = true;
-      portal.receiveShadow = true;
       scene.add(portal);
 
-      var darkStone = new THREE.MeshStandardMaterial({
-        color: PALETTE.stoneDark,
-        roughness: 1.0,
-        metalness: 0.0
-      });
-      registerStone(darkStone, 0.55, 0.55);
+      // Three-step island plinth: the doorway stands in the water, not on sand.
+      addStoneBlock(portal, darkStone, 6.4, 0.22, 4.2, 0, 0.11, 0);
+      addStoneBlock(portal, stone, 5.7, 0.18, 3.7, 0, 0.31, 0);
+      addStoneBlock(portal, stone, 5.0, 0.16, 3.2, 0, 0.48, 0);
 
-      var plinth = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.32, 1.25), darkStone);
-      plinth.position.set(0, 0.16, -9);
-      plinth.castShadow = true;
-      plinth.receiveShadow = true;
-      scene.add(plinth);
+      var plinthTop = 0.56;
+      var pierX = 1.46;
+      var pierH = 3.85;
+      var shaftBottom = plinthTop + 0.3;
+      for (var side = -1; side <= 1; side += 2) {
+        var x = side * pierX;
+        // Stepped base under each pier.
+        addStoneBlock(portal, darkStone, 1.22, 0.18, 1.34, x, plinthTop + 0.09, 0);
+        addStoneBlock(portal, stone, 1.08, 0.14, 1.2, x, plinthTop + 0.25, 0);
+        // Chamfered carved shaft.
+        var shaft = new THREE.Mesh(makeChamferedBox(0.8, pierH, 0.98, 0.06), stone);
+        shaft.position.set(x, shaftBottom + pierH / 2, 0);
+        shaft.castShadow = true;
+        shaft.receiveShadow = true;
+        portal.add(shaft);
+        // Capital and its cornice.
+        addStoneBlock(portal, stone, 1.04, 0.2, 1.1, x, shaftBottom + pierH + 0.1, 0);
+        addStoneBlock(portal, darkStone, 1.18, 0.14, 1.24, x, shaftBottom + pierH + 0.27, 0);
+        // Three shallow carved grooves on the front face of the shaft.
+        for (var groove = -1; groove <= 1; groove += 1) {
+          addStoneBlock(
+            portal, darkStone, 0.055, 2.65, 0.035,
+            x + groove * 0.16, shaftBottom + 1.55, 0.505
+          );
+        }
+        // A worn band near the foot.
+        addStoneBlock(portal, darkStone, 0.72, 0.07, 0.035, x, shaftBottom + 0.42, 0.505);
+      }
 
-      // The threshold the camera crosses: one worn slab at the water's edge.
-      var step = new THREE.Mesh(new THREE.BoxGeometry(2.45, 0.14, 0.82), darkStone);
-      step.position.set(0, 0.07, -8.28);
-      step.castShadow = true;
-      step.receiveShadow = true;
-      scene.add(step);
+      var lintelBottom = shaftBottom + pierH + 0.34;
+      // Massive lintel, double cornice and keystone.
+      addStoneBlock(portal, stone, 4.5, 0.64, 1.18, 0, lintelBottom + 0.32, 0);
+      addStoneBlock(portal, darkStone, 4.78, 0.14, 1.3, 0, lintelBottom + 0.71, 0);
+      addStoneBlock(portal, stone, 5.02, 0.12, 1.42, 0, lintelBottom + 0.84, 0);
+      addStoneBlock(portal, darkStone, 0.52, 0.7, 1.24, 0, lintelBottom + 0.35, 0.08);
+      // A shallow recess cut into the lintel face.
+      addStoneBlock(portal, darkStone, 3.7, 0.08, 0.03, 0, lintelBottom + 0.2, 0.6);
+
+      // The threshold slab the camera crosses.
+      addStoneBlock(portal, darkStone, 2.7, 0.12, 0.9, 0, 0.62, 0.7);
     }
 
     function makeVeilMaterial(opacity) {
@@ -1651,19 +1626,19 @@
 
     function buildVeil() {
       var curtain = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.74, 5.2),
+        new THREE.PlaneGeometry(2.02, 4.85),
         makeVeilMaterial(1.0)
       );
-      curtain.position.set(0, 2.62, -9.02);
+      curtain.position.set(0, 2.56, -9.01);
       curtain.renderOrder = 30;
       scene.add(curtain);
 
       // The same mist climbs out of the doorway and links it to the clouds.
       var column = new THREE.Mesh(
-        new THREE.PlaneGeometry(3.6, 17),
+        new THREE.PlaneGeometry(3.8, 18),
         makeVeilMaterial(0.55)
       );
-      column.position.set(0, 10.8, -9.7);
+      column.position.set(0, 11.2, -9.8);
       column.renderOrder = 29;
       scene.add(column);
     }
@@ -1671,7 +1646,7 @@
     function buildRays() {
       rayUniforms = {
         uTime: { value: 0 },
-        uOpacity: { value: 0.36 },
+        uOpacity: { value: 0.2 },
         uColor: { value: new THREE.Color(PALETTE.glow) }
       };
       var material = new THREE.ShaderMaterial({
@@ -1702,57 +1677,12 @@
       }
     }
 
-    function buildShadowDecal() {
-      var board = document.createElement('canvas');
-      board.width = 128;
-      board.height = 32;
-      var context = board.getContext('2d');
-      if (!context) return;
-      var across = context.createLinearGradient(0, 0, 0, 32);
-      across.addColorStop(0, 'rgba(10, 20, 28, 0)');
-      across.addColorStop(0.34, 'rgba(10, 20, 28, 0.6)');
-      across.addColorStop(0.66, 'rgba(10, 20, 28, 0.6)');
-      across.addColorStop(1, 'rgba(10, 20, 28, 0)');
-      context.fillStyle = across;
-      context.fillRect(0, 0, 128, 32);
-      var along = context.createLinearGradient(0, 0, 128, 0);
-      along.addColorStop(0, 'rgba(0, 0, 0, 0.95)');
-      along.addColorStop(0.82, 'rgba(0, 0, 0, 0.4)');
-      along.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      context.globalCompositeOperation = 'destination-in';
-      context.fillStyle = along;
-      context.fillRect(0, 0, 128, 32);
-      var texture = track(new THREE.CanvasTexture(board));
-      texture.colorSpace = THREE.SRGBColorSpace;
-      var material = new THREE.MeshBasicMaterial({
-        map: texture,
-        transparent: true,
-        opacity: 0.62,
-        depthWrite: false,
-        color: PALETTE.shadow,
-        fog: false
-      });
-      var geometry = new THREE.PlaneGeometry(23, 4.6);
-      geometry.rotateX(-Math.PI / 2);
-      var decal = new THREE.Mesh(geometry, material);
-      decal.position.set(-3.4, 0.025, 2.0);
-      decal.rotation.y = Math.atan2(-0.956, -0.293);
-      decal.renderOrder = 2;
-      scene.add(decal);
-    }
-
     // -------------------------------------------------------------- 3D update
 
     function update3D(time, p) {
       if (!renderer || !scene || !camera || renderFailed) return;
       try {
         var eased = smooth(p);
-        if (skyMesh) skyMesh.position.copy(camera.position);
-        if (sunSprite) {
-          sunSprite.position.copy(camera.position).addScaledVector(sunDir, 320);
-          var sunSize = 44 + 10 * eased;
-          sunSprite.scale.set(sunSize, sunSize, 1);
-        }
 
         var z;
         if (p < PASS_AT) z = 10 - 19 * smooth(p / PASS_AT);
@@ -1763,19 +1693,23 @@
         var lookX = 0.8 + 6.5 * smooth((p - 0.6) / 0.4);
         var lookY = 2.9 + 2.4 * smooth((p - 0.35) / 0.65);
         camera.lookAt(lookX, lookY, z - 40);
-        camera.fov = 54 + 9 * p;
+        camera.fov = 52 + 9 * p;
         camera.updateProjectionMatrix();
 
-        if (skyUniforms) {
-          skyUniforms.uTime.value = time;
-          skyUniforms.uOpen.value = eased;
+        // Two opposing ripples: the base slides slowly towards the horizon,
+        // the thin sheen slides back across it.
+        for (var i = 0; i < waterLayers.length; i += 1) {
+          var layer = waterLayers[i];
+          if (layer.texture) {
+            layer.texture.offset.x = time * layer.speedX;
+            layer.texture.offset.y = time * layer.speedY;
+          }
         }
-        if (waterUniforms) {
-          waterUniforms.uTime.value = time;
-          waterUniforms.uOpen.value = eased;
-          var density = FOG_DENSITY * (1 - 0.32 * eased);
-          waterUniforms.uFogDensity.value = density;
-          if (scene.fog) scene.fog.density = density;
+        if (waterMaterials[1]) {
+          waterMaterials[1].opacity = 0.2 + 0.14 * eased;
+        }
+        if (scene.fog) {
+          scene.fog.density = FOG_DENSITY * (1 - 0.34 * eased);
         }
         if (veilUniforms.length) {
           veilUniforms[0].uTime.value = time;
@@ -1787,7 +1721,7 @@
         }
         if (rayUniforms) {
           rayUniforms.uTime.value = time;
-          rayUniforms.uOpacity.value = 0.34 + 0.85 * smooth((p - 0.08) / 0.9);
+          rayUniforms.uOpacity.value = 0.16 + 0.36 * smooth((p - 0.08) / 0.9);
         }
         renderer.render(scene, camera);
       } catch (error) {
@@ -2344,6 +2278,8 @@
 
     function dispose3D() {
       if (scene) {
+        scene.background = null;
+        scene.environment = null;
         var geometries = [];
         var materials = [];
         scene.traverse(function (object) {
@@ -2365,6 +2301,15 @@
         for (var m = 0; m < materials.length; m += 1) disposeMaterial(materials[m]);
         try { scene.clear(); } catch (_) {}
       }
+      if (envRenderTarget) {
+        try { envRenderTarget.dispose(); } catch (_) {}
+        envRenderTarget = null;
+      }
+      if (environmentTexture) {
+        try { environmentTexture.dispose(); } catch (_) {}
+        untrack(environmentTexture);
+        environmentTexture = null;
+      }
       for (var t = 0; t < textures.length; t += 1) {
         try { textures[t].dispose(); } catch (_) {}
       }
@@ -2373,12 +2318,12 @@
       stoneMaterials = [];
       veilUniforms = [];
       rayUniforms = null;
-      skyUniforms = null;
-      waterUniforms = null;
-      skyMesh = null;
-      sunSprite = null;
+      stoneColor = null;
       stoneNormal = null;
       stoneRough = null;
+      waterNormalTexture = null;
+      waterLayers = [];
+      waterMaterials = [];
       if (renderer) {
         var element = renderer.domElement;
         try { renderer.dispose(); } catch (_) {}
@@ -2390,7 +2335,6 @@
       camera = null;
       canvas = null;
       THREE = null;
-      sunDir = null;
     }
 
     function dispose2D() {
@@ -2425,7 +2369,7 @@
         return false;
       }
       THREE = window.THREE || null;
-      disposed = true;
+      disposed = false;
       var built = false;
       if (THREE && typeof THREE.WebGLRenderer === 'function') {
         try {
@@ -2433,6 +2377,7 @@
           built = true;
         } catch (error) {
           dispose3D();
+          disposed = true;
           built = false;
         }
       }
@@ -2506,6 +2451,6 @@
     is3DActive: threshold.isActive,
     snapshot: snapshot,
     snapshot3D: threshold.snapshot,
-    version: '141',
+    version: '142',
   };
 })();
