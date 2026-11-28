@@ -37,7 +37,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageOps
 
 ROOT = Path(__file__).resolve().parent.parent
 ASSETS = ROOT / "assets"
@@ -319,6 +319,26 @@ def fetch_panorama(force: bool) -> None:
     log(f"saved assets/bay-env.jpg ({len(encoded)} bytes, {PANORAMA_SIZE[0]}x{PANORAMA_SIZE[1]})")
 
 
+def grade_limestone(image: Image.Image) -> Image.Image:
+    """Turn the raw weathered rock diffuse into pale coastal limestone.
+
+    The Poly Haven material is deliberately mossy and brown; the Dali portal is
+    a sun-bleached limestone doorway. Desaturating most of the moss, lifting the
+    midtones and adding a faint cream warmth keeps every real crack and grain of
+    the photograph while moving the colour into the light stone range.
+    """
+    image = image.convert("RGB")
+    grey = ImageOps.grayscale(image).convert("RGB")
+    image = Image.blend(image, grey, 0.74)
+    red, green, blue = image.split()
+    red = red.point(lambda value: min(255, int(((value / 255.0) ** 0.74) * 255 * 1.16)))
+    green = green.point(lambda value: min(255, int(((value / 255.0) ** 0.76) * 255 * 1.12)))
+    blue = blue.point(lambda value: min(255, int(((value / 255.0) ** 0.8) * 255 * 1.04)))
+    image = Image.merge("RGB", (red, green, blue))
+    cream = Image.new("RGB", image.size, (214, 199, 173))
+    return Image.blend(image, cream, 0.14)
+
+
 def fetch_stone_map(kind: str, url: str, target: Path) -> None:
     log(f"downloading {kind} map ({url.rsplit('/', 1)[-1]})")
     payload = http_get(url)
@@ -327,6 +347,8 @@ def fetch_stone_map(kind: str, url: str, target: Path) -> None:
         # Keep three channels: the shader reads green, and the extra chroma keeps
         # the progressive JPEG inside the same weight window as the normal map.
         image = image.convert("RGB")
+    elif kind == "color":
+        image = grade_limestone(image)
     # The normal map is vector data, so keep full chroma; colour and roughness
     # tolerate 4:2:0.
     subsampling = 0 if kind == "normal" else 2
