@@ -96,14 +96,14 @@
   const CAPTION_YOU_LIMIT = 1;
   const CAPTION_TIMEOUT_MS = 1500;
   // v129: the mist story lives on the third frame. The scene itself is isolated
-  // in stories.js; v132 makes that frame a clean full-screen moment — no caption,
-  // no heart, a fog/rain bed that opens with the cleared area, and a two-phase
-  // cinematic bridge (veil in, full 10 s replay of the next frame, veil out).
+  // in stories.js; v133 makes that frame a clean full-screen moment — no caption,
+  // no heart, a fog/rain bed that opens with the cleared area, and a direct
+  // native player.js crossfade to the next live clip (no veil, no seek).
   const STORY_FRAME_INDEX = 2;
-  const STORY_WATCH_MS = 2200;
-  const STORY_VEIL_PEAK_MS = 1150;
-  const STORY_VIDEO_START_DELAY_MS = 350;
-  const STORY_VIDEO_START_TIME = 0.04;
+  // stories.js fades the remaining haze for 850 ms; after that the open forest
+  // is held for a calm 1800 ms before the native player.js crossfade begins.
+  const STORY_CLEAR_FADE_MS = 850;
+  const STORY_WATCH_MS = 1800;
   const STORY_SOUND_OPEN_PERCENT = 65;
   const STORY_AUTO_ADVANCE_SPEED = 0.35;
   const STORY_SOUND_CLIP = {
@@ -521,9 +521,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   const ALL_MUSIC_TRACKS = Object.values(MUSIC_CATALOG).flat();
   const stage = document.querySelector('.stage');
-  // v132: the dark bridge veil that hides the frame swap between the mist scene
-  // and the next full 10-second clip.
-  const storyBridgeVeil = document.getElementById('story-bridge-veil');
   // v124: the video layer lives entirely in player.js (window.SanctuaryPlayer).
   // app.js never touches a <video> element for the streamed scenes any more.
   const cycleWhisperEl = document.getElementById('cycle-whisper');
@@ -1165,8 +1162,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   let storyActive = false;
   let storyCleared = false;
   let storyAutoAdvanceTimer = 0;
-  let storyBridgeTimer = 0;
-  let storyBridgeRevealTimer = 0;
   let storyProgressPercent = 0;
   let storyTouching = false;
   let sessionEvents = [];
@@ -2635,10 +2630,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     // v124: the second half of a 30-frame session is built from the scenes the
     // first half did not touch, so no frame ever repeats inside one session.
     const exclude = options && options.exclude instanceof Set ? options.exclude : null;
-    // v122: the opening frame of the session is the lightest clip of its stage,
-    // so on 4G the first MP4 starts about twice as fast as a 10-11 MB scene.
-    const lightestFirst = Boolean(options && options.lightestFirst);
-    const stageCategories = categories.filter((category) => stage.categories.includes(category.tag));
+    const stageCategories = shuffleArray(
+      categories.filter((category) => stage.categories.includes(category.tag))
+    );
     const pools = stageCategories.map((category) => {
       const matches = (clip, allowSurreal) => (
         Boolean(clip)
@@ -2658,14 +2652,12 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       if (filtered.length < count) filtered = category.clips.filter((clip) => matches(clip, true));
       // The 30-scene catalog is exactly one full session, so daytime and weather
       // taste is a preference here, never an exclusion: dropping a frame would
-      // break the 30-frame queue.
+      // break the 30-frame queue. v133: the pool is shuffled first, so the only
+      // ordering that survives is the soft preference for unseen scenes and for
+      // the matching light/weather — the start order is genuinely random.
       const ordered = shuffleArray(filtered).sort((a, b) => (
-        // v122: ascending file size for the opening stage only.
-        (lightestFirst
-          ? (Number(a.size) || Number.MAX_SAFE_INTEGER) - (Number(b.size) || Number.MAX_SAFE_INTEGER)
-          : 0)
         // On the second half prefer the scenes the first half left unused.
-        || (Number(preferUnused && preferUnused.has(a.id)) - Number(preferUnused && preferUnused.has(b.id)))
+        (Number(preferUnused && preferUnused.has(a.id)) - Number(preferUnused && preferUnused.has(b.id)))
         || (Number(contextAllowsClip(b)) - Number(contextAllowsClip(a)))
         || (b.envScore || 0) - (a.envScore || 0)
       ));
@@ -2815,9 +2807,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
             reuse: cycle > 0,
             preferUnused: usedBefore,
             exclude: cycle > 0 ? usedBefore : null,
-            // v122: cycle 0, stage 1 (Shadow) opens on the lightest available
-            // clip instead of a random 10-11 MB scene.
-            lightestFirst: cycle === 0 && spec.id === 1,
           });
           if (picks.length < spec.count) return null;
           cycleEntries.push(...picks);
@@ -2968,7 +2957,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     stage.classList.remove('is-finalizing');
     stage.classList.remove('is-story-active');
     clearStoryAutoAdvance();
-    resetStoryBridge(true);
     storyProgressPercent = 0;
     storyTouching = false;
     updateStageLabel(1);
@@ -3464,7 +3452,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     pathStarted = false;
     storyCleared = false;
     clearStoryAutoAdvance();
-    resetStoryBridge(true);
     storyProgressPercent = 0;
     stage.classList.remove('is-story-active');
     storyTouching = false;
@@ -3892,34 +3879,13 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       engine.historyPos = engine.history.length - 1;
     }
   }
-  // v132: stories.js owns the volumetric mist over the live 1080p stream. app.js
+  // v133: stories.js owns the volumetric mist over the live 1080p stream. app.js
   // keeps the entry hook, the clean full-screen HUD handoff, the fog/rain bed
-  // whose level follows the cleared area, and the two-phase cinematic bridge
-  // (#story-bridge-veil) that hands the next clip over at full 10 s length.
+  // whose level follows the cleared area, and the direct native handoff that
+  // lets player.js crossfade the next live clip over the mist frame.
   function clearStoryAutoAdvance() {
     window.clearTimeout(storyAutoAdvanceTimer);
     storyAutoAdvanceTimer = 0;
-  }
-  function clearStoryBridgeTimers() {
-    window.clearTimeout(storyBridgeTimer);
-    window.clearTimeout(storyBridgeRevealTimer);
-    storyBridgeTimer = 0;
-    storyBridgeRevealTimer = 0;
-  }
-  // The veil is a pure CSS layer: `.is-visible` fades it in over 1100 ms,
-  // `.is-dissolving` fades it back out over 1200 ms. A reset must be instant,
-  // otherwise a re-entered session could inherit a half-dark screen.
-  function resetStoryBridge(instant) {
-    clearStoryBridgeTimers();
-    if (!storyBridgeVeil) return;
-    if (!instant) {
-      storyBridgeVeil.classList.remove('is-visible', 'is-dissolving');
-      return;
-    }
-    storyBridgeVeil.style.transition = 'none';
-    storyBridgeVeil.classList.remove('is-visible', 'is-dissolving');
-    void storyBridgeVeil.offsetWidth;
-    storyBridgeVeil.style.transition = '';
   }
   function clearCaptionForStory() {
     window.clearTimeout(captionTimer);
@@ -3953,90 +3919,34 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       && pathPos === STORY_FRAME_INDEX
     );
   }
-  // v132 — the cinematic bridge. After the 65 % clearing the haze dissolves for
-  // 850 ms (stories.js), the mix reaches 100 %, and the visitor watches the open
-  // forest for 2200 ms. Then the veil darkens the frame for 1100 ms, the feed
-  // advances at the darkest point (1150 ms) and the new clip is rewound to 0.04 s
-  // so it plays its full 10 seconds. 350 ms later the veil dissolves for 1200 ms.
+  // v133 — direct native handoff. After the 65 % clearing the haze dissolves for
+  // 850 ms (stories.js), the mix reaches 100 %, and the visitor then watches the
+  // open forest for 1800 ms. go() advances the feed straight away: player.js
+  // keeps the outgoing mist frame live at z-index 1 while the next 1080p clip
+  // fades in over it at z-index 2 — no dark veil, no currentTime seek, no black
+  // frame and no decoder stutter.
   function scheduleStoryAutoAdvance() {
     clearStoryAutoAdvance();
     storyAutoAdvanceTimer = window.setTimeout(() => {
       storyAutoAdvanceTimer = 0;
       if (!storyCleared || sessionComplete) return;
       if (pathPos !== STORY_FRAME_INDEX || !gateOpen) return;
-      if (!storyBridgeVeil) {
-        startStoryBridgePeak();
-        return;
-      }
-      storyBridgeVeil.classList.remove('is-dissolving');
-      void storyBridgeVeil.offsetWidth;
-      storyBridgeVeil.classList.add('is-visible');
-      window.clearTimeout(storyBridgeTimer);
-      storyBridgeTimer = window.setTimeout(startStoryBridgePeak, STORY_VEIL_PEAK_MS);
-    }, STORY_WATCH_MS);
-  }
-  // The next clip is already warm in the hidden slot; player.show() assigns it
-  // during go(), so the new element can be found by its source URL.
-  function restartStoryNextClip() {
-    const currentVideo = document.getElementById('playerCurrent');
-    const nextVideo = document.getElementById('playerNext');
-    const videos = [currentVideo, nextVideo].filter(Boolean);
-    if (!videos.length) return;
-    const nextEntry = pathPlan[STORY_FRAME_INDEX + 1];
-    const nextClip = nextEntry && nextEntry.clip;
-    const wanted = nextClip ? (nextClip.url1080 || nextClip.url || '') : '';
-    const previous = videos.find((video) => video.classList.contains('is-current')) || null;
-    const target = (wanted
-      ? videos.find((video) => (
-        String(video.currentSrc || '') + ' ' + String(video.src || '')
-      ).indexOf(wanted) !== -1)
-      : null)
-      || videos.find((video) => video !== previous)
-      || previous;
-    if (!target) return;
-    const seekToStart = () => {
-      try { target.currentTime = STORY_VIDEO_START_TIME; } catch (_) {}
-      try {
-        const promise = target.play();
-        if (promise && typeof promise.catch === 'function') promise.catch(() => {});
-      } catch (_) {}
-    };
-    // The new frame may still be decoding: rewind it the moment its metadata is
-    // known and again when it actually starts, so it never inherits an old time.
-    target.addEventListener('loadedmetadata', seekToStart, { once: true });
-    target.addEventListener('playing', seekToStart, { once: true });
-    seekToStart();
-  }
-  function startStoryBridgePeak() {
-    storyBridgeTimer = 0;
-    if (!storyCleared || sessionComplete || pathPos !== STORY_FRAME_INDEX) {
-      resetStoryBridge(false);
-      return;
-    }
-    // Release the feed lock only at the darkest point of the veil: no stray
-    // swipe can skip the carefully timed handoff, and go() is free to advance.
-    storyActive = false;
-    storyTouching = false;
-    setStorySoundProgress(100);
-    go('up', STORY_AUTO_ADVANCE_SPEED);
-    restartStoryNextClip();
-    window.clearTimeout(storyBridgeRevealTimer);
-    storyBridgeRevealTimer = window.setTimeout(() => {
-      storyBridgeRevealTimer = 0;
-      if (!storyBridgeVeil) return;
-      storyBridgeVeil.classList.remove('is-visible');
-      storyBridgeVeil.classList.add('is-dissolving');
-    }, STORY_VIDEO_START_DELAY_MS);
+      // Release the feed lock only when the handoff itself begins; no stray
+      // swipe can skip the clean mist frame before the timer fires.
+      storyActive = false;
+      storyTouching = false;
+      setStorySoundProgress(100);
+      go('up', STORY_AUTO_ADVANCE_SPEED);
+    }, STORY_CLEAR_FADE_MS + STORY_WATCH_MS);
   }
   function enterStoryScene() {
     if (!canEnterStory()) return false;
     storyActive = true;
     storyProgressPercent = 0;
-    resetStoryBridge(true);
     const entered = window.SanctuaryStories.enter({
       onCleared: () => {
-        // The mist is gone, but the frame stays locked through the clean 2200 ms
-        // and the veil; startStoryBridgePeak() releases it at the peak.
+        // v133: the frame stays locked through the clean 1800 ms; the scheduled
+        // handoff then releases the feed and lets player.js crossfade natively.
         storyCleared = true;
         storyTouching = false;
         setStorySoundProgress(100);
@@ -4081,8 +3991,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   function exitStoryScene() {
     clearStoryAutoAdvance();
-    clearStoryBridgeTimers();
-    resetStoryBridge(true);
     storyTouching = false;
     stage.classList.remove('is-story-active');
     setSoundDepth(false);
@@ -4234,9 +4142,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     shadowCompressed = true;
   }
   function go(direction, speed) {
-    // v132: while the mist story owns the 3rd frame, no swipe, wheel, key or
-    // inherited gesture may move the feed. The lock is released only at the peak
-    // of the #story-bridge-veil, where the automatic handoff calls go() itself.
+    // v133: while the mist story owns the 3rd frame, no swipe, wheel, key or
+    // inherited gesture may move the feed. The scheduled handoff releases the
+    // lock and calls go() itself, straight into the native player.js crossfade.
     if (storyActive) return;
     if (!gateOpen || sessionComplete) return;
     // v131: leaving the mist frame (automatically or by hand) restores the HUD

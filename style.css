@@ -192,36 +192,3 @@ body::-webkit-scrollbar,
   }
 }
 
-/* ==========================================================================
-   v132 — cinematic bridge from the mist story to the next full 10 s clip
-   A deep shadow veil sits above the video, the mist canvas and the HUD. app.js
-   fades it in over 1100 ms, advances the feed at the darkest point, rewinds the
-   new <video> to 0.04 s and only then dissolves the veil over 1200 ms, so the
-   frame swap is never visible and the next clip always plays from its first beat.
-   ========================================================================== */
-
-.story-bridge-veil {
-  position: absolute;
-  inset: 0;
-  z-index: 7;
-  pointer-events: none;
-  background: #060607;
-  opacity: 0;
-  transition: opacity 1100ms var(--organic);
-}
-
-.story-bridge-veil.is-visible {
-  opacity: 1;
-}
-
-.story-bridge-veil.is-dissolving {
-  opacity: 0;
-  transition-duration: 1200ms;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .story-bridge-veil {
-    transition: none;
-  }
-}
-
