@@ -1,4 +1,4 @@
-/* Yoursanctuary — SanctuaryPlayer (v127).
+/* Yoursanctuary — SanctuaryPlayer (v134).
  *
  * One small isolated video layer. It owns exactly two <video> elements and no
  * poster image: the stream itself is the picture, from the very first frame.
@@ -6,7 +6,7 @@
  *   #playerCurrent (or #playerNext)  the frame on screen, z-index 2
  *   the other slot                   the frame warming up, z-index 1
  *
- * One show(clip, nextClip) does:
+ * One show(clip, nextClip, opts) does:
  *   1. pick the source: 1080p by default on every device, including phones on
  *      Wi-Fi and iOS Safari; 720p only when the Network Information API says
  *      the link is slow, or after two mobile frames in a row took longer than
@@ -22,9 +22,11 @@
  * screen is still up, so the swipe up opens a live picture, not a buffer.
  *
  * Public surface (window.SanctuaryPlayer):
- *   show(clip, nextClip)  warm(clip)  setRate(rate)  pause()  resume()
+ *   show(clip, nextClip, opts)  warm(clip)  setRate(rate)  pause()  resume()
  *   duration()  snapshot()  destroy()  onLoop(clip)  init()
- * snapshot() reports the active stream level as '1080' or '720'.
+ * opts.fadeMs overrides the 240 ms crossfade for that one handoff (the mist
+ * story hands over with 950 ms); snapshot() reports the active stream level
+ * as '1080' or '720'.
  */
 (function () {
   'use strict';
@@ -47,6 +49,8 @@
   var nextClip = null;
   var pending = null;
   var pendingSrc = '';
+  var pendingFadeMs = FADE_MS;
+  var activeFadeMs = FADE_MS;
   var rate = 1;
   var ready = false;
   var destroyed = false;
@@ -170,8 +174,18 @@
 
   // Put `target` on screen: it fades in at z-index 2 while `outgoing` holds the
   // previous picture at z-index 1, and is paused only after the crossfade ends.
-  function handOver(target, outgoing) {
+  // v134: the fade length is per handoff via --player-fade-ms; ordinary swipes
+  // keep the instant 240 ms, while the mist story requests a 950 ms silk fade.
+  function handOver(target, outgoing, fadeMs) {
     if (!target) return;
+    var duration = Number(fadeMs);
+    if (!isFinite(duration) || duration <= 0) duration = FADE_MS;
+    activeFadeMs = duration;
+    var fade = duration + 'ms';
+    if (target.style) target.style.setProperty('--player-fade-ms', fade);
+    if (outgoing && outgoing !== target && outgoing.style) {
+      outgoing.style.setProperty('--player-fade-ms', fade);
+    }
     if (outgoing && outgoing !== target) {
       var wasVisible = outgoing.classList.contains('is-current');
       outgoing.classList.remove('is-current');
@@ -181,7 +195,7 @@
         if (destroyed || outgoing === target) return;
         outgoing.classList.remove('is-outgoing');
         try { outgoing.pause(); } catch (_) {}
-      }, HANDOFF_MS);
+      }, duration + 60);
     }
     target.classList.remove('is-outgoing');
     target.classList.add('is-current');
@@ -199,13 +213,15 @@
     if (!pending || pending.readyState < 2 || destroyed) return;
     var target = pending;
     var outgoing = current;
+    var fadeMs = pendingFadeMs;
     pending = null;
+    pendingFadeMs = FADE_MS;
     current = target;
     next = outgoing;
     currentSrc = pendingSrc;
     pendingSrc = '';
     nextSrc = '';
-    handOver(current, outgoing);
+    handOver(current, outgoing, fadeMs);
     playVideo(current);
     scheduleWarmFollowing();
   }
@@ -337,10 +353,12 @@
     return true;
   }
 
-  function show(clip, following) {
+  function show(clip, following, opts) {
     if (destroyed || !clip) return false;
     init();
     if (!current || !next) return false;
+    var fadeMs = opts && Number(opts.fadeMs);
+    if (!isFinite(fadeMs) || fadeMs <= 0) fadeMs = FADE_MS;
     var src = sourceFor(clip);
     if (!src) return false;
     nextClip = following && following !== clip ? following : null;
@@ -351,9 +369,10 @@
       if (pending && pending !== current) {
         pending = null;
         pendingSrc = '';
+        pendingFadeMs = FADE_MS;
       }
       if (current.readyState >= 2) {
-        handOver(current, next);
+        handOver(current, next, fadeMs);
         playVideo(current);
         scheduleWarmFollowing();
       }
@@ -370,7 +389,8 @@
       nextSrc = '';
       pending = null;
       pendingSrc = '';
-      handOver(current, outgoing);
+      pendingFadeMs = FADE_MS;
+      handOver(current, outgoing, fadeMs);
       playVideo(current);
       scheduleWarmFollowing();
       return true;
@@ -381,17 +401,20 @@
     if (!slot || slot === current) return false;
     pending = slot;
     pendingSrc = src;
+    pendingFadeMs = fadeMs;
     nextSrc = src;
     slot.classList.remove('is-current');
     if (slot.classList.contains('is-outgoing')) {
       // Still visible in the previous crossfade: never swap its src mid-fade.
+      // The wait follows the current fade length (240 ms or the 950 ms mist
+      // handoff), so a quick swipe during the slow fade cannot cut it short.
       window.clearTimeout(coldTimer);
       coldTimer = window.setTimeout(function () {
         if (destroyed || pending !== slot) return;
         slot.classList.remove('is-outgoing');
         prepare(slot, src);
         if (slot.readyState >= 2) promotePending();
-      }, HANDOFF_MS);
+      }, Math.max(HANDOFF_MS, activeFadeMs + 60));
       return true;
     }
     prepare(slot, src);
@@ -466,6 +489,8 @@
     nextSrc = '';
     pending = null;
     pendingSrc = '';
+    pendingFadeMs = FADE_MS;
+    activeFadeMs = FADE_MS;
     currentClip = null;
     nextClip = null;
   }

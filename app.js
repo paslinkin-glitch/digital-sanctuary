@@ -104,6 +104,7 @@
   // is held for a calm 1800 ms before the native player.js crossfade begins.
   const STORY_CLEAR_FADE_MS = 850;
   const STORY_WATCH_MS = 1800;
+  const STORY_HANDOFF_FADE_MS = 950;
   const STORY_SOUND_OPEN_PERCENT = 65;
   const STORY_AUTO_ADVANCE_SPEED = 0.35;
   const STORY_SOUND_CLIP = {
@@ -2610,11 +2611,11 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     return null;
   }
 
-  function playCategory(category) {
+  function playCategory(category, fadeMs) {
     if (!category || category.index !== state.index || !category.clips.length) return null;
     const index = nextClipIndex(category);
     if (index === null) return null;
-    showClip(category, index);
+    showClip(category, index, fadeMs);
     return index;
   }
   function contextAllowsClip(clip) {
@@ -2715,6 +2716,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       guard += 1;
     }
     if (pathPlan.length > SESSION_LENGTH) pathPlan = pathPlan.slice(0, SESSION_LENGTH);
+    if (pathPlan.length) pathPlan = pinInstantOpeningClip(pathPlan);
     return pathPlan.length === SESSION_LENGTH;
   }
   function ensureFallbackCategories() {
@@ -2789,6 +2791,48 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   function buildPathPlan() {
     return buildSessionPlan();
   }
+  // v134: the opening frame must be ready before the entry swipe ends. The 1080p
+  // Shadow scenes under 7.5 MB (5.1–6.9 MB in the current catalog) warm up on the
+  // entry screen in a fraction of the time a 10–11 MB clip needs. One of them is
+  // chosen at random on every plan, so even Incognito never sees a repeated
+  // opening, while the other 29 frames stay fully shuffled.
+  const OPENING_LIGHT_MAX_BYTES = 7_500_000;
+  const OPENING_LIGHT_MAX_COUNT = 5;
+  function instantOpeningPool() {
+    const shadowStage = stageFor(1);
+    const pool = [];
+    for (const category of categories) {
+      if (!shadowStage.categories.includes(category.tag)) continue;
+      for (const clip of category.clips) {
+        if (!clip || !clip.id || !clip.url || clip.invalid) continue;
+        const size = Number(clip.size);
+        if (!isFinite(size) || size <= 0 || size > OPENING_LIGHT_MAX_BYTES) continue;
+        pool.push({ stage: 1, category, clip });
+      }
+    }
+    pool.sort((a, b) => (Number(a.clip.size) || 0) - (Number(b.clip.size) || 0));
+    return pool.slice(0, OPENING_LIGHT_MAX_COUNT);
+  }
+  function pinInstantOpeningClip(entries) {
+    if (!Array.isArray(entries) || !entries.length) return entries;
+    const pool = instantOpeningPool();
+    if (!pool.length) return entries;
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    const opening = entries[0];
+    if (opening && opening.clip && opening.clip.id === pick.clip.id) return entries;
+    // If the light scene is already planned later in the stage, swap it forward
+    // so the 30 frames stay the same unique set.
+    const at = entries.findIndex((entry) => entry.clip && entry.clip.id === pick.clip.id);
+    if (at > 0) {
+      entries[0] = entries[at];
+      entries[at] = opening;
+      return entries;
+    }
+    // It is not in this plan: replace the opening frame and drop the old one,
+    // which keeps all 30 ids unique.
+    entries[0] = { stage: 1, category: pick.category, clip: pick.clip };
+    return entries;
+  }
   function buildSessionPlan() {
     resetViewedCycleIfComplete();
     pathPicked = new Set();
@@ -2839,11 +2883,13 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       return entries;
     };
     let entries = attempt(false);
+    if (entries) entries = pinInstantOpeningClip(entries);
     if (!entries || entries.length !== SESSION_LENGTH || !sessionPlanIsUnique(entries)) {
       allViewedVideoIds.clear();
       sessionUsedVideoIds.clear();
       persistAllViewedVideoIds();
       entries = attempt(false) || attempt(true);
+      if (entries) entries = pinInstantOpeningClip(entries);
     }
     if (!entries || entries.length !== SESSION_LENGTH || !sessionPlanIsUnique(entries)) return false;
     pathPlan = entries;
@@ -3629,22 +3675,22 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const entry = pathPlan[pathPos >= 0 ? pathPos + 1 : 1];
     return entry && entry.clip ? entry.clip : null;
   }
-  function presentClip(clip) {
+  function presentClip(clip, fadeMs) {
     if (!clip || !clip.url) return false;
     if (clip.id) markVideoViewed(clip.id);
     const player = window.SanctuaryPlayer;
     if (!player || typeof player.show !== 'function') return false;
-    player.show(clip, nextPlannedClip());
+    player.show(clip, nextPlannedClip(), fadeMs ? { fadeMs } : undefined);
     return true;
   }
-  function showClip(category, index) {
+  function showClip(category, index, fadeMs) {
     if (!category || category.index !== state.index) return false;
     if (!gateOpen) return false;
     const clip = category.clips[index];
     if (!clip) return false;
     category.activeIndex = index;
     clip._startRequestedAt = performance.now();
-    return presentClip(clip);
+    return presentClip(clip, fadeMs);
   }
   function mountClips(category) {
     const media = category.el.querySelector('.media');
@@ -3815,7 +3861,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const impulsive = speed >= IMPULSIVE_SPEED;
     return viewedMs < QUICK_VIEW_MS || impulsive ? QUICK_FADE_MS : SLOW_FADE_MS;
   }
-  function navigateTo(targetIndex, direction, fadeMs, forcedClipId, sceneContext) {
+  function navigateTo(targetIndex, direction, fadeMs, forcedClipId, sceneContext, clipFadeMs) {
     if (targetIndex === null || targetIndex === undefined) return;
     if (!slides[targetIndex]) return;
     if (storyActive) exitStoryScene();
@@ -3870,7 +3916,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
 
     // v124: showClip() hands one frame plus the warm-up frame to player.js.
     // Nothing is staged twice, so a mobile browser never drops the request.
-    playCategory(category);
+    // v134: clipFadeMs is 950 only for the automatic mist handoff; every normal
+    // swipe leaves it undefined and player.js keeps its instant 240 ms crossfade.
+    playCategory(category, clipFadeMs);
     activateCaption(category, activeClip(), behavior, allowed, sceneStage, sceneContext || {});
     switchSoundtrack(null, duration);
     if (direction === 'up') {
@@ -3936,7 +3984,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       storyActive = false;
       storyTouching = false;
       setStorySoundProgress(100);
-      go('up', STORY_AUTO_ADVANCE_SPEED);
+      // v134: a 950 ms silk crossfade instead of the instant 240 ms swipe.
+      go('up', STORY_AUTO_ADVANCE_SPEED, STORY_HANDOFF_FADE_MS);
     }, STORY_CLEAR_FADE_MS + STORY_WATCH_MS);
   }
   function enterStoryScene() {
@@ -4141,7 +4190,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     for (const entry of replacements) pathPicked.add(entry.clip.id);
     shadowCompressed = true;
   }
-  function go(direction, speed) {
+  function go(direction, speed, fadeDuration) {
     // v133: while the mist story owns the 3rd frame, no swipe, wheel, key or
     // inherited gesture may move the feed. The scheduled handoff releases the
     // lock and calls go() itself, straight into the native player.js crossfade.
@@ -4181,6 +4230,13 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       return;
     }
     recordSessionEvent(record);
+    // v134: the automatic mist handoff supplies its own 950 ms duration for both
+    // the slide fade and the player.js crossfade; ordinary swipes keep the
+    // existing quick/slow timing and the player's instant 240 ms fade.
+    const transitionMs = Number(fadeDuration) > 0
+      ? Number(fadeDuration)
+      : fadeDurationFor(record.viewedMs, speed);
+    const clipFadeMs = Number(fadeDuration) > 0 ? Number(fadeDuration) : 0;
     if (direction === 'down') {
       if (pathPos <= 0) return;
       pathPos -= 1;
@@ -4195,9 +4251,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       navigateTo(
         previous.category.index,
         'down',
-        fadeDurationFor(record.viewedMs, speed),
+        transitionMs,
         previous.clip.id,
-        sceneContext
+        sceneContext,
+        clipFadeMs
       );
       if (pathPos === STORY_FRAME_INDEX) enterStoryScene();
       return;
@@ -4249,9 +4306,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     navigateTo(
       entry.category.index,
       direction,
-      fadeDurationFor(record.viewedMs, speed),
+      transitionMs,
       entry.clip.id,
-      sceneContext
+      sceneContext,
+      clipFadeMs
     );
     if (pathPos === STORY_FRAME_INDEX) enterStoryScene();
   }
