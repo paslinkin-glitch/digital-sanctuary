@@ -3896,10 +3896,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         if (currentCaption) currentCaption.recorded = true;
         registerResonance(activeClip());
       },
-      onAdvance: (direction) => {
-        exitStoryScene();
-        if (gateOpen && !sessionComplete) go(direction === 'down' ? 'down' : 'up', 1);
-      },
     });
     if (!entered) {
       storyActive = false;
@@ -4058,6 +4054,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     shadowCompressed = true;
   }
   function go(direction, speed) {
+    // v130: while the mist story owns the 3rd frame, no swipe, wheel, key or
+    // inherited gesture may move the feed. Only the 65 % clearing releases it
+    // (onCleared sets storyActive = false), and then every swipe works again.
+    if (storyActive) return;
     if (!gateOpen || sessionComplete) return;
     hideCycleWhisper();
     const previousSwipeAt = lastSwipeAt;
@@ -4339,6 +4339,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   let wheelLastAt = 0;
   window.addEventListener('wheel', (event) => {
     event.preventDefault();
+    // v130: a wheel/trackpad nudge must never advance the frame under the mist.
+    if (storyActive) return;
     markInteraction();
     rememberAnchor('wheel');
     setBreath(0);
@@ -4380,6 +4382,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   });
   stage.addEventListener('click', (event) => {
     if (!gateOpen) return;
+    // v130: a double tap at the bottom is a swipe forward — locked under the mist.
+    if (storyActive) return;
     if (now() - lastSwipeAt < 450) return;
     if (event.clientY < window.innerHeight * 0.6) return;
     const t = now();

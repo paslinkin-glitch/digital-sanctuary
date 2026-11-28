@@ -1,19 +1,24 @@
-/* Yoursanctuary — volumetric mist stories (v129).
+/* Yoursanctuary — volumetric mist stories (v130).
  *
  * One isolated module, window.SanctuaryStories. It paints a deep natural mist
  * over the live 1080p frame: no video filters, no procedural trunks, no flat
  * matte fill — only 66 overlapping soft cloud puffs in cool morning haze and
  * shadowed forest moisture, slowly breathing above the stream.
  *
- *   window.SanctuaryStories.enter({ onCleared, onAdvance })
+ *   window.SanctuaryStories.enter({ onCleared })
  *   window.SanctuaryStories.exit()
  *   window.SanctuaryStories.isActive()
  *   window.SanctuaryStories.snapshot()
  *
- * The visitor sweeps a wide soft brush through the mist. A 16 × 28 grid counts
- * the cleared area; at 65 % the remaining haze fades out over 850 ms, the canvas
- * stops catching touches and hides itself. A sharp vertical swipe up always
- * passes the feed onward instead of trapping it.
+ * The visitor sweeps a wide soft brush through the mist, or simply rests a
+ * finger on one spot: every 180 ms of contact opens the haze a little wider, so
+ * even a slow, almost motionless touch always reaches the threshold. A 16 × 28
+ * grid counts the cleared area; at 65 % the remaining haze fades out over
+ * 850 ms, the canvas stops catching touches and hides itself.
+ *
+ * Until that threshold is crossed the surface owns every pointer and touch
+ * event: no up, down or sideways movement of the finger is allowed to advance
+ * the feed, and the swipe handlers in app.js stay locked out (storyActive).
  */
 (function () {
   'use strict';
@@ -26,8 +31,11 @@
   var BRUSH_MIN_PX = 80;
   var BRUSH_MAX_PX = 95;
   var BRUSH_ALPHA = 0.45;
-  var SWIPE_UP_PX = 75;
-  var SWIPE_RATIO = 1.6;
+  var HOLD_TICK_MS = 180;
+  var HOLD_STEP_RATIO = 0.045;
+  var HOLD_MAX_RATIO = 1.05;
+  var HOLD_ALPHA = 0.16;
+  var HOLD_DRIFT_PX = 16;
   var LAYER_PAD = 120;
   var FRAME_MIN_MS = 30;
 
@@ -60,6 +68,10 @@
   var fadeTimer = 0;
   var resizeTimer = 0;
   var gesture = null;
+  var holdTimer = 0;
+  var holdTicks = 0;
+  var holdX = 0;
+  var holdY = 0;
   var seed = 1;
 
   function clamp(value, min, max) {
@@ -251,9 +263,9 @@
   }
 
   // The light 16 × 28 grid counts how much of the frame the palm has opened.
-  function markCleared(x, y) {
+  function markCleared(x, y, reachRadius) {
     if (!clearedMask) return;
-    var reach = brushRadius * 0.7;
+    var reach = reachRadius || brushRadius * 0.7;
     var minCol = clamp(Math.floor((x - reach) / cellWidth), 0, GRID_COLS - 1);
     var maxCol = clamp(Math.floor((x + reach) / cellWidth), 0, GRID_COLS - 1);
     var minRow = clamp(Math.floor((y - reach) / cellHeight), 0, GRID_ROWS - 1);
@@ -281,6 +293,7 @@
     if (clearing || !canvas) return;
     clearing = true;
     gesture = null;
+    stopHoldDissolve();
     clearedPercent = Math.max(clearedPercent, CLEAR_TARGET);
     canvas.classList.add('is-clearing');
     canvas.classList.remove('is-active');
@@ -296,6 +309,8 @@
     cleared = true;
     active = false;
     clearing = false;
+    gesture = null;
+    stopHoldDissolve();
     stopLoop();
     detachEvents();
     releaseScene();
@@ -320,8 +335,57 @@
     return { x: clientX - rect.left, y: clientY - rect.top };
   }
 
-  function isSwipeUp(dx, dy) {
-    return dy < -SWIPE_UP_PX && Math.abs(dy) > Math.abs(dx) * SWIPE_RATIO;
+  function paintOpening(x, y, radius, alpha) {
+    if (!maskCtx || clearing) return;
+    maskCtx.globalCompositeOperation = 'source-over';
+    var gradient = maskCtx.createRadialGradient(x, y, 0, x, y, radius);
+    gradient.addColorStop(0, 'rgba(0, 0, 0, ' + alpha + ')');
+    gradient.addColorStop(0.55, 'rgba(0, 0, 0, ' + alpha * 0.72 + ')');
+    gradient.addColorStop(0.86, 'rgba(0, 0, 0, ' + alpha * 0.34 + ')');
+    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    maskCtx.fillStyle = gradient;
+    maskCtx.beginPath();
+    maskCtx.arc(x, y, radius, 0, Math.PI * 2);
+    maskCtx.fill();
+    markCleared(x, y, radius * 0.82);
+  }
+
+  function stopHoldDissolve() {
+    if (holdTimer) {
+      window.clearInterval(holdTimer);
+      holdTimer = 0;
+    }
+    holdTicks = 0;
+  }
+
+  // A resting finger still dissolves the haze: every 180 ms the opening around
+  // the touch point grows a little, so a slow, almost motionless touch reaches
+  // 65 % on its own instead of leaving the frame stuck under the mist.
+  function holdDissolve() {
+    if (!active || clearing || !gesture || !maskCtx) {
+      stopHoldDissolve();
+      return;
+    }
+    var x = gesture.x;
+    var y = gesture.y;
+    if (Math.abs(x - holdX) + Math.abs(y - holdY) > HOLD_DRIFT_PX) holdTicks = 0;
+    holdX = x;
+    holdY = y;
+    holdTicks += 1;
+    // The step scales with the viewport, so a resting finger reaches the
+    // threshold in ~1.5–3.5 s on any screen, wherever it touches down.
+    var span = Math.max(width, height);
+    var radius = Math.min(
+      brushRadius + holdTicks * span * HOLD_STEP_RATIO,
+      span * HOLD_MAX_RATIO
+    );
+    paintOpening(x, y, radius, HOLD_ALPHA);
+  }
+
+  function startHoldDissolve() {
+    stopHoldDissolve();
+    if (!active || clearing) return;
+    holdTimer = window.setInterval(holdDissolve, HOLD_TICK_MS);
   }
 
   function beginGesture(point) {
@@ -332,17 +396,18 @@
       y: point.y,
       t0: performance.now(),
     };
+    holdX = point.x;
+    holdY = point.y;
+    holdTicks = 0;
     paintStamp(point.x, point.y);
+    startHoldDissolve();
   }
 
+  // v130: no movement of the palm may advance the feed. Every up, down or
+  // sideways stroke only widens the clearing; the frame moves on solely after
+  // the 65 % threshold has switched this surface off.
   function moveGesture(point) {
     if (!gesture) return;
-    var dx = point.x - gesture.x0;
-    var dy = point.y - gesture.y0;
-    if (isSwipeUp(dx, dy)) {
-      finishWithSwipe('up');
-      return;
-    }
     paintLine(gesture.x, gesture.y, point.x, point.y);
     // The 65 % threshold can complete while this very stroke is being painted;
     // completeClear() drops the gesture, so never touch it again unguarded.
@@ -353,29 +418,9 @@
 
   function endGesture(point) {
     if (!gesture) return;
-    var dx = point.x - gesture.x0;
-    var dy = point.y - gesture.y0;
-    if (isSwipeUp(dx, dy)) {
-      finishWithSwipe('up');
-      return;
-    }
     paintLine(gesture.x, gesture.y, point.x, point.y);
     gesture = null;
-  }
-
-  function finishWithSwipe(direction) {
-    gesture = null;
-    active = false;
-    stopLoop();
-    detachEvents();
-    releaseScene();
-    if (canvas) {
-      canvas.classList.remove('is-active', 'is-clearing');
-      canvas.hidden = true;
-    }
-    if (typeof options.onAdvance === 'function') {
-      try { options.onAdvance(direction); } catch (_) {}
-    }
+    stopHoldDissolve();
   }
 
   // -------------------------------------------------------------------- events
@@ -387,14 +432,26 @@
     });
   }
 
+  function seal(event) {
+    if (!event) return;
+    event.stopPropagation();
+    if (event.cancelable) event.preventDefault();
+  }
+
   function attachEvents() {
     var surface = canvas;
     listen(surface, 'touchstart', function (event) {
-      if (!active || clearing) return;
-      event.stopPropagation();
-      if (event.cancelable) event.preventDefault();
+      if (!active && !clearing) return;
+      seal(event);
+      if (clearing) {
+        // The cleared haze is still fading: keep this touch away from the feed.
+        gesture = null;
+        stopHoldDissolve();
+        return;
+      }
       if (event.touches.length !== 1) {
         gesture = null;
+        stopHoldDissolve();
         return;
       }
       var touch = event.touches[0];
@@ -402,22 +459,22 @@
     }, { passive: false });
 
     listen(surface, 'touchmove', function (event) {
-      if (!active || clearing) return;
-      event.stopPropagation();
-      if (event.cancelable) event.preventDefault();
-      if (!gesture || event.touches.length !== 1) return;
+      if (!active && !clearing) return;
+      seal(event);
+      if (!active || clearing || !gesture || event.touches.length !== 1) return;
       var touch = event.touches[0];
       moveGesture(localPoint(touch.clientX, touch.clientY));
     }, { passive: false });
 
     listen(surface, 'touchend', function (event) {
+      if (!active && !clearing) return;
+      seal(event);
       if (!active || clearing) return;
-      event.stopPropagation();
-      if (event.cancelable) event.preventDefault();
       if (!gesture) return;
       var touch = event.changedTouches && event.changedTouches[0];
       if (!touch) {
         gesture = null;
+        stopHoldDissolve();
         return;
       }
       endGesture(localPoint(touch.clientX, touch.clientY));
@@ -425,13 +482,18 @@
 
     listen(surface, 'touchcancel', function () {
       gesture = null;
+      stopHoldDissolve();
     }, { passive: true });
 
     listen(surface, 'pointerdown', function (event) {
       if (event.pointerType === 'touch') return;
-      if (!active || clearing) return;
-      event.stopPropagation();
-      if (event.cancelable) event.preventDefault();
+      if (!active && !clearing) return;
+      seal(event);
+      if (clearing) {
+        gesture = null;
+        stopHoldDissolve();
+        return;
+      }
       var point = localPoint(event.clientX, event.clientY);
       beginGesture(point);
       if (surface.setPointerCapture) {
@@ -441,25 +503,28 @@
 
     listen(surface, 'pointermove', function (event) {
       if (event.pointerType === 'touch') return;
+      if (!active && !clearing) return;
+      seal(event);
       if (!active || clearing || !gesture) return;
-      event.stopPropagation();
       moveGesture(localPoint(event.clientX, event.clientY));
     });
 
     listen(surface, 'pointerup', function (event) {
       if (event.pointerType === 'touch') return;
+      if (!active && !clearing) return;
+      seal(event);
       if (!active || clearing || !gesture) return;
-      event.stopPropagation();
       endGesture(localPoint(event.clientX, event.clientY));
     });
 
     listen(surface, 'pointercancel', function (event) {
       if (event.pointerType === 'touch') return;
       gesture = null;
+      stopHoldDissolve();
     });
 
     listen(surface, 'click', function (event) {
-      if (!active) return;
+      if (!active && !clearing) return;
       event.stopPropagation();
     }, { passive: true });
 
@@ -472,9 +537,15 @@
       }, 240);
     }, { passive: true });
 
+    listen(window, 'blur', function () {
+      gesture = null;
+      stopHoldDissolve();
+    }, { passive: true });
+
     listen(document, 'visibilitychange', function () {
       if (document.hidden) {
         stopLoop();
+        stopHoldDissolve();
       } else if (active && !clearing) {
         lastDrawAt = 0;
         startLoop();
@@ -527,6 +598,7 @@
     clearing = false;
     active = true;
     gesture = null;
+    stopHoldDissolve();
     detachEvents();
     canvas.hidden = false;
     if (canvas.classList) canvas.classList.remove('is-clearing');
@@ -560,6 +632,7 @@
     active = false;
     clearing = false;
     gesture = null;
+    stopHoldDissolve();
     stopLoop();
     detachEvents();
     releaseScene();
@@ -593,6 +666,6 @@
     exit: exit,
     isActive: function () { return active; },
     snapshot: snapshot,
-    version: '129',
+    version: '130',
   };
 })();
