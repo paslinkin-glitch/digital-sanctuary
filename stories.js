@@ -1,11 +1,11 @@
-/* Yoursanctuary — volumetric mist stories (v130).
+/* Yoursanctuary — volumetric mist stories (v131).
  *
  * One isolated module, window.SanctuaryStories. It paints a deep natural mist
  * over the live 1080p frame: no video filters, no procedural trunks, no flat
  * matte fill — only 66 overlapping soft cloud puffs in cool morning haze and
  * shadowed forest moisture, slowly breathing above the stream.
  *
- *   window.SanctuaryStories.enter({ onCleared })
+ *   window.SanctuaryStories.enter({ onCleared, onInteract })
  *   window.SanctuaryStories.exit()
  *   window.SanctuaryStories.isActive()
  *   window.SanctuaryStories.snapshot()
@@ -358,6 +358,13 @@
     holdTicks = 0;
   }
 
+  // v131: the soundscape breathes with the palm — app.js hears the first touch
+  // (primeAudioGesture) and the release, while the 65 % clearing opens the mix.
+  function notifyInteract(touching) {
+    if (typeof options.onInteract !== 'function') return;
+    try { options.onInteract(touching === true); } catch (_) {}
+  }
+
   // A resting finger still dissolves the haze: every 180 ms the opening around
   // the touch point grows a little, so a slow, almost motionless touch reaches
   // 65 % on its own instead of leaving the frame stuck under the mist.
@@ -399,6 +406,7 @@
     holdX = point.x;
     holdY = point.y;
     holdTicks = 0;
+    notifyInteract(true);
     paintStamp(point.x, point.y);
     startHoldDissolve();
   }
@@ -421,6 +429,7 @@
     paintLine(gesture.x, gesture.y, point.x, point.y);
     gesture = null;
     stopHoldDissolve();
+    notifyInteract(false);
   }
 
   // -------------------------------------------------------------------- events
@@ -481,8 +490,10 @@
     }, { passive: false });
 
     listen(surface, 'touchcancel', function () {
+      var hadGesture = Boolean(gesture);
       gesture = null;
       stopHoldDissolve();
+      if (hadGesture) notifyInteract(false);
     }, { passive: true });
 
     listen(surface, 'pointerdown', function (event) {
@@ -519,8 +530,10 @@
 
     listen(surface, 'pointercancel', function (event) {
       if (event.pointerType === 'touch') return;
+      var hadGesture = Boolean(gesture);
       gesture = null;
       stopHoldDissolve();
+      if (hadGesture) notifyInteract(false);
     });
 
     listen(surface, 'click', function (event) {
@@ -538,8 +551,10 @@
     }, { passive: true });
 
     listen(window, 'blur', function () {
+      var hadGesture = Boolean(gesture);
       gesture = null;
       stopHoldDissolve();
+      if (hadGesture) notifyInteract(false);
     }, { passive: true });
 
     listen(document, 'visibilitychange', function () {
@@ -666,6 +681,6 @@
     exit: exit,
     isActive: function () { return active; },
     snapshot: snapshot,
-    version: '130',
+    version: '131',
   };
 })();

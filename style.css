@@ -167,3 +167,28 @@ body::-webkit-scrollbar,
   }
 }
 
+/* ==========================================================================
+   v131 — clean full-screen mist story
+   While the hand clears the haze the frame carries no interface at all: the
+   poetic line, the HUD vignette and the heart button leave the screen, so the
+   only things left are the live 1080p forest and the dissolving mist.
+   ========================================================================== */
+
+.stage.is-story-active .bottom-hud {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 320ms ease;
+}
+
+/* The heart keeps pointer-events:auto of its own, so it must be switched off
+   explicitly — otherwise an invisible button would still catch taps. */
+.stage.is-story-active #likeBtn {
+  pointer-events: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage.is-story-active .bottom-hud {
+    transition: none;
+  }
+}
+

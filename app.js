@@ -96,17 +96,18 @@
   const CAPTION_YOU_LIMIT = 1;
   const CAPTION_TIMEOUT_MS = 1500;
   // v129: the mist story lives on the third frame. The scene itself is isolated
-  // in stories.js; app.js only paints its two captions and records the response.
+  // in stories.js; v131 makes that frame a clean full-screen moment — no caption,
+  // no heart, a fog/rain bed and a slow cinematic crossfade to the next scene.
   const STORY_FRAME_INDEX = 2;
-  const STORY_CAPTIONS = {
-    invite: {
-      en: 'Sweep your hand to clear the mist',
-      ru: 'Проведи рукой, чтобы рассеять туман',
-    },
-    cleared: {
-      en: 'The mist has parted. Now you see the forest',
-      ru: 'Туман отступил. Теперь ты видишь лес',
-    },
+  const STORY_AUTO_ADVANCE_MS = 1600;
+  const STORY_AUTO_ADVANCE_SPEED = 0.45;
+  const STORY_SOUND_CLIP = {
+    id: 'story-mist',
+    title: 'Mist over the forest',
+    description: 'Volumetric mist over the living forest',
+    soundCategory: 'fog',
+    element: 'fog',
+    stage: 'shadow',
   };
   const CAPTION_SYSTEM_PROMPT_RU = `Ты — тихий голос сна, который звучит рядом с изображением. Пиши только по-русски.
 Верни одну короткую фразу строго из 5–8 слов, 1–2 короткие строки. Без поэтических загадок, терминов, оценок, советов и латиницы.
@@ -1155,6 +1156,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   let pathStartPending = false;
   let storyActive = false;
   let storyCleared = false;
+  let storyAutoAdvanceTimer = 0;
+  let storyTouching = false;
   let sessionEvents = [];
   let sessionStartedAt = 0;
   let sessionComplete = false;
@@ -2487,9 +2490,11 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (pathPos === 27) return 0.82;
     return 1;
   }
-  function switchSoundtrack(track, fadeMs) {
+  // v131: overrideClip lets the mist scene ask the same engine for its fog/rain
+  // bed without touching the graph — only the semantic source of the choice.
+  function switchSoundtrack(track, fadeMs, overrideClip) {
     if (!sound) return;
-    const clip = activeClip() || currentSoundClip;
+    const clip = overrideClip || activeClip() || currentSoundClip;
     const chosen = chooseLiveTrack(clip);
     if (!chosen) return;
     const engine = ensureAudioContext();
@@ -2933,6 +2938,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
     stopFinaleSessionVideo();
     stage.classList.remove('is-finalizing');
+    stage.classList.remove('is-story-active');
+    clearStoryAutoAdvance();
+    storyTouching = false;
     updateStageLabel(1);
     updateSessionProgress();
   }
@@ -3425,6 +3433,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     pathPos = -1;
     pathStarted = false;
     storyCleared = false;
+    clearStoryAutoAdvance();
+    stage.classList.remove('is-story-active');
+    storyTouching = false;
     if (storyActive) exitStoryScene();
     if (finaleEl) {
       finaleEl.hidden = true;
@@ -3849,29 +3860,33 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       engine.historyPos = engine.history.length - 1;
     }
   }
-  // v129: stories.js owns the volumetric mist over the live 1080p stream. app.js
-  // keeps only the entry hook, the two captions and the resonance response.
-  function storyCaptionClip(kind) {
-    const text = STORY_CAPTIONS[kind] || STORY_CAPTIONS.invite;
-    return {
-      id: kind === 'cleared' ? 'story-mist-cleared' : 'story-mist-invite',
-      title: 'Mist over the forest',
-      description: 'Volumetric mist over the living forest',
-      caption_en: text.en,
-      caption_ru: text.ru,
-      duration: 10,
-      soundCategory: 'fog',
-      element: 'fog',
-      vertical: true,
-    };
+  // v131: stories.js owns the volumetric mist over the live 1080p stream. app.js
+  // keeps the entry hook, the clean full-screen HUD handoff, the fog/rain bed and
+  // the slow automatic crossfade that follows a cleared screen.
+  function clearStoryAutoAdvance() {
+    window.clearTimeout(storyAutoAdvanceTimer);
+    storyAutoAdvanceTimer = 0;
   }
-  function showStoryCaption(kind) {
-    const category = activeCategory();
-    if (!category) return;
-    activateCaption(category, storyCaptionClip(kind), behaviorContext(), true, sessionStage, {
-      held: false,
-    });
-    revealCaptionNow();
+  function clearCaptionForStory() {
+    window.clearTimeout(captionTimer);
+    window.clearTimeout(captionRevealTimer);
+    window.clearTimeout(captionZeroTimer);
+    window.clearTimeout(captionWakeTimer);
+    window.clearTimeout(captionMemoryTimer);
+    captionTimer = 0;
+    captionRevealTimer = 0;
+    captionZeroTimer = 0;
+    captionWakeTimer = 0;
+    captionMemoryTimer = 0;
+    // Bumping the token invalidates any caption still being written in flight,
+    // so no line can slip back onto the clean mist frame.
+    captionSceneToken += 1;
+    captionHasText = false;
+    currentCaption = null;
+    stage.classList.remove('is-caption-active');
+    if (!captionEl) return;
+    captionEl.classList.remove('is-visible', 'is-zero', 'is-awake');
+    captionEl.setAttribute('aria-hidden', 'true');
   }
   function canEnterStory() {
     return Boolean(
@@ -3884,6 +3899,15 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       && pathPos === STORY_FRAME_INDEX
     );
   }
+  function scheduleStoryAutoAdvance() {
+    clearStoryAutoAdvance();
+    storyAutoAdvanceTimer = window.setTimeout(() => {
+      storyAutoAdvanceTimer = 0;
+      if (storyActive || !gateOpen || sessionComplete) return;
+      if (pathPos !== STORY_FRAME_INDEX) return;
+      go('up', STORY_AUTO_ADVANCE_SPEED);
+    }, STORY_AUTO_ADVANCE_MS);
+  }
   function enterStoryScene() {
     if (!canEnterStory()) return false;
     storyActive = true;
@@ -3891,21 +3915,36 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       onCleared: () => {
         storyActive = false;
         storyCleared = true;
+        storyTouching = false;
+        // The haze is gone: let the mix open up with the clear forest picture.
+        setSoundDepth(false);
         safeVibrate([5, 80, 5], 1000);
-        showStoryCaption('cleared');
-        if (currentCaption) currentCaption.recorded = true;
         registerResonance(activeClip());
+        scheduleStoryAutoAdvance();
+      },
+      onInteract: (touching) => {
+        if (touching === storyTouching) return;
+        storyTouching = touching;
+        if (touching) primeAudioGesture();
       },
     });
     if (!entered) {
       storyActive = false;
       return false;
     }
-    showStoryCaption('invite');
+    // A clean frame: no caption, no HUD vignette, no heart — only the forest.
+    stage.classList.add('is-story-active');
+    clearCaptionForStory();
+    enableSoundscape();
+    setSoundDepth(true);
+    switchSoundtrack(null, SLOW_FADE_MS, STORY_SOUND_CLIP);
     return true;
   }
   function exitStoryScene() {
-    if (!storyActive) return;
+    clearStoryAutoAdvance();
+    storyTouching = false;
+    stage.classList.remove('is-story-active');
+    setSoundDepth(false);
     storyActive = false;
     const api = window.SanctuaryStories;
     if (api && typeof api.exit === 'function') {
@@ -4059,6 +4098,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     // (onCleared sets storyActive = false), and then every swipe works again.
     if (storyActive) return;
     if (!gateOpen || sessionComplete) return;
+    // v131: leaving the mist frame (automatically or by hand) restores the HUD
+    // and cancels the pending cinematic auto-advance exactly once.
+    clearStoryAutoAdvance();
+    stage.classList.remove('is-story-active');
     hideCycleWhisper();
     const previousSwipeAt = lastSwipeAt;
     const swipeAt = now();
