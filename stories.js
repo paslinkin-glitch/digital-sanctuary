@@ -1,11 +1,11 @@
-/* Yoursanctuary — volumetric mist stories (v131).
+/* Yoursanctuary — volumetric mist stories (v132).
  *
  * One isolated module, window.SanctuaryStories. It paints a deep natural mist
  * over the live 1080p frame: no video filters, no procedural trunks, no flat
  * matte fill — only 66 overlapping soft cloud puffs in cool morning haze and
  * shadowed forest moisture, slowly breathing above the stream.
  *
- *   window.SanctuaryStories.enter({ onCleared, onInteract })
+ *   window.SanctuaryStories.enter({ onCleared, onInteract, onGesturePrime, onProgress })
  *   window.SanctuaryStories.exit()
  *   window.SanctuaryStories.isActive()
  *   window.SanctuaryStories.snapshot()
@@ -15,6 +15,11 @@
  * even a slow, almost motionless touch always reaches the threshold. A 16 × 28
  * grid counts the cleared area; at 65 % the remaining haze fades out over
  * 850 ms, the canvas stops catching touches and hides itself.
+ *
+ * v132: the touch handlers forward the raw gesture through onGesturePrime()
+ * before sealing the event, so app.js can unlock the AudioContext from a real
+ * mobile touch. Every 5 % of clearing is reported through onProgress(), which
+ * lets the soundtrack open from 45 % to 100 % together with the picture.
  *
  * Until that threshold is crossed the surface owns every pointer and touch
  * event: no up, down or sideways movement of the finger is allowed to advance
@@ -62,6 +67,7 @@
   var cellHeight = 1;
   var clearedCells = 0;
   var clearedPercent = 0;
+  var lastReportedPercent = 0;
   var clearedMask = null;
   var startAt = 0;
   var lastDrawAt = 0;
@@ -193,6 +199,7 @@
     clearedMask = new Uint8Array(GRID_COLS * GRID_ROWS);
     clearedCells = 0;
     clearedPercent = 0;
+    lastReportedPercent = 0;
     return true;
   }
 
@@ -284,7 +291,19 @@
       }
     }
     clearedPercent = Math.round((clearedCells / clearedMask.length) * 100);
+    reportProgress(false);
     if (clearedPercent >= CLEAR_TARGET && !clearing) completeClear();
+  }
+
+  // v132: app.js opens the mist soundtrack proportionally to the cleaned area.
+  // The hook fires at every >= 5 % step (and once with the final 65 %), never on
+  // every brush stamp, so the gain ramp stays smooth and cheap.
+  function reportProgress(force) {
+    if (typeof options.onProgress !== 'function') return;
+    if (clearedPercent <= lastReportedPercent) return;
+    if (!force && clearedPercent - lastReportedPercent < 5) return;
+    lastReportedPercent = clearedPercent;
+    try { options.onProgress({ clearedPercent: clearedPercent }); } catch (_) {}
   }
 
   // --------------------------------------------------------------- completion
@@ -295,6 +314,7 @@
     gesture = null;
     stopHoldDissolve();
     clearedPercent = Math.max(clearedPercent, CLEAR_TARGET);
+    reportProgress(true);
     canvas.classList.add('is-clearing');
     canvas.classList.remove('is-active');
     if (typeof options.onCleared === 'function') {
@@ -363,6 +383,14 @@
   function notifyInteract(touching) {
     if (typeof options.onInteract !== 'function') return;
     try { options.onInteract(touching === true); } catch (_) {}
+  }
+
+  // v132: the surface seals every event so the feed never swipes, but the raw
+  // gesture must still reach app.js first: iOS Safari only unlocks the
+  // AudioContext from inside the original touchend/pointerdown handler.
+  function notifyGesturePrime() {
+    if (typeof options.onGesturePrime !== 'function') return;
+    try { options.onGesturePrime(); } catch (_) {}
   }
 
   // A resting finger still dissolves the haze: every 180 ms the opening around
@@ -451,6 +479,7 @@
     var surface = canvas;
     listen(surface, 'touchstart', function (event) {
       if (!active && !clearing) return;
+      notifyGesturePrime();
       seal(event);
       if (clearing) {
         // The cleared haze is still fading: keep this touch away from the feed.
@@ -477,6 +506,7 @@
 
     listen(surface, 'touchend', function (event) {
       if (!active && !clearing) return;
+      notifyGesturePrime();
       seal(event);
       if (!active || clearing) return;
       if (!gesture) return;
@@ -499,6 +529,7 @@
     listen(surface, 'pointerdown', function (event) {
       if (event.pointerType === 'touch') return;
       if (!active && !clearing) return;
+      notifyGesturePrime();
       seal(event);
       if (clearing) {
         gesture = null;
@@ -681,6 +712,6 @@
     exit: exit,
     isActive: function () { return active; },
     snapshot: snapshot,
-    version: '131',
+    version: '132',
   };
 })();
