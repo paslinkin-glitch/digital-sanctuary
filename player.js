@@ -1,4 +1,4 @@
-/* Yoursanctuary — SanctuaryPlayer (v134).
+/* Yoursanctuary — SanctuaryPlayer (v136).
  *
  * One small isolated video layer. It owns exactly two <video> elements and no
  * poster image: the stream itself is the picture, from the very first frame.
@@ -7,13 +7,14 @@
  *   the other slot                   the frame warming up, z-index 1
  *
  * One show(clip, nextClip, opts) does:
- *   1. pick the source: 1080p by default on every device, including phones on
- *      Wi-Fi and iOS Safari; 720p only when the Network Information API says
- *      the link is slow, or after two mobile frames in a row took longer than
- *      1800 ms from src assignment to loadeddata; two fast 720p starts
- *      (< 450 ms) bring 1080p back;
+ *   1. pick the source by device class and never by the current link: every
+ *      phone / tablet gets the compact 720p twin (url720, 1.37–2.15 MB,
+ *      720×1280) so a 4G session never stalls, every desktop gets the full
+ *      1080p studio file (url1080). The level is decided once per device, so
+ *      it cannot jump in the middle of a session;
  *   2. if the hidden slot already holds that source, promote it — the outgoing
- *      frame stays visible underneath while the new one fades in over 240 ms;
+ *      frame stays visible underneath while the new one breathes in over
+ *      600 ms of pure opacity (no transform, filter or black curtain);
  *   3. otherwise load the source into the hidden slot, keep playing whatever is
  *      on screen, and swap the moment the new frame reports loadeddata/playing;
  *   4. once the visible clip really plays, fetch nextClip into the hidden slot.
@@ -24,7 +25,7 @@
  * Public surface (window.SanctuaryPlayer):
  *   show(clip, nextClip, opts)  warm(clip)  setRate(rate)  pause()  resume()
  *   duration()  snapshot()  destroy()  onLoop(clip)  init()
- * opts.fadeMs overrides the 240 ms crossfade for that one handoff (the mist
+ * opts.fadeMs overrides the 600 ms crossfade for that one handoff (the mist
  * story hands over with 950 ms); snapshot() reports the active stream level
  * as '1080' or '720'.
  */
@@ -34,12 +35,10 @@
   var LOOP_EDGE = 0.15;
   var LOOP_START = 0.04;
   var MOBILE_MAX_WIDTH = 900;
-  var FADE_MS = 240;
-  var HANDOFF_MS = FADE_MS + 40;
-  var SLOW_START_MS = 1800;
-  var FAST_START_MS = 450;
-  var SLOW_EFFECTIVE_TYPES = ['slow-2g', '2g', '3g'];
-  var FAST_DOWNLINK_MBPS = 5;
+  // v136: one calm cinematic breath between every two frames. 600 ms of pure
+  // opacity crossfade, then the outgoing slot is released at 660 ms.
+  var FADE_MS = 600;
+  var HANDOFF_MS = FADE_MS + 60;
 
   var current = null;
   var next = null;
@@ -60,10 +59,6 @@
   var handoffTimer = 0;
   var coldTimer = 0;
   var mobile = detectMobile();
-  var prefer720 = isSlowNetwork();
-  var slowStarts = 0;
-  var fastStarts = 0;
-  var connectionWatched = false;
 
   var api = {
     ready: false,
@@ -91,64 +86,17 @@
     }
   }
 
-  function connectionInfo() {
-    try {
-      return navigator.connection || navigator.mozConnection || navigator.webkitConnection || null;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  // The Network Information API is the only explicit slow-link hint. If the
-  // browser has no API (iOS Safari), the link is treated as fast and 1080p
-  // remains the default; the live measurement below can still lower it.
-  function isSlowNetwork() {
-    var connection = connectionInfo();
-    if (!connection) return false;
-    if (connection.saveData === true) return true;
-    if (SLOW_EFFECTIVE_TYPES.indexOf(connection.effectiveType) !== -1) return true;
-    var downlink = Number(connection.downlink);
-    return isFinite(downlink) && downlink > 0 && downlink < FAST_DOWNLINK_MBPS;
-  }
-
-  // v135: only a connection that explicitly says "cellular" (or reports a slow
-  // link) may open on the light 720p file. Wi-Fi and iOS Safari without
-  // connection.type keep the full 1080p first frame.
-  function isCellularOrSlow() {
-    var connection = connectionInfo();
-    if (!connection) return false;
-    if (connection.type === 'cellular') return true;
-    return isSlowNetwork();
-  }
-
-  // A link that turns slow mid-session (Wi-Fi -> 3G) lowers the level at once;
-  // the return to 1080p still needs two genuinely fast mobile starts.
-  function watchConnection() {
-    if (connectionWatched) return;
-    var connection = connectionInfo();
-    if (!connection || typeof connection.addEventListener !== 'function') return;
-    connectionWatched = true;
-    connection.addEventListener('change', function () {
-      if (destroyed || !isSlowNetwork() || prefer720) return;
-      prefer720 = true;
-      slowStarts = 0;
-      fastStarts = 0;
-    });
-  }
-
-  function nowMs() {
-    return (window.performance && typeof window.performance.now === 'function')
-      ? window.performance.now()
-      : Date.now();
-  }
-
   function levelOf(src) {
     return String(src || '').indexOf('/mp4-720/') !== -1 ? '720' : '1080';
   }
 
-  function sourceFor(clip, force720) {
+  // v136: the stream level follows the device, not the momentary link. Phones
+  // and tablets always stream the compact 720p twin (1.37–2.15 MB, 720×1280),
+  // so a 4G session never stutters and the quality cannot jump mid-session;
+  // desktops always stream the full 1080p studio file.
+  function sourceFor(clip) {
     if (!clip) return '';
-    if (force720 || prefer720) return clip.url720 || clip.url1080 || clip.url || '';
+    if (mobile === true) return clip.url720 || clip.url1080 || clip.url || '';
     return clip.url1080 || clip.url || '';
   }
 
@@ -168,8 +116,6 @@
     video.preload = 'auto';
     if (video.getAttribute('src') !== src) {
       video.setAttribute('src', src);
-      video._sanctuaryLoadAt = nowMs();
-      video._sanctuaryMeasured = false;
       try { video.load(); } catch (_) {}
     }
   }
@@ -186,8 +132,9 @@
 
   // Put `target` on screen: it fades in at z-index 2 while `outgoing` holds the
   // previous picture at z-index 1, and is paused only after the crossfade ends.
-  // v134: the fade length is per handoff via --player-fade-ms; ordinary swipes
-  // keep the instant 240 ms, while the mist story requests a 950 ms silk fade.
+  // v136: the fade is 600 ms by default (a calm cinematic breath between every
+  // two frames), still per handoff via --player-fade-ms; the mist story asks
+  // for 950 ms and keeps its silk handoff.
   function handOver(target, outgoing, fadeMs) {
     if (!target) return;
     var duration = Number(fadeMs);
@@ -238,41 +185,9 @@
     scheduleWarmFollowing();
   }
 
-  // Live channel measurement: from src assignment to the first decoded frame.
-  // Only a mobile link changes the level, and only two frames in a row.
-  function noteLoadTime(video) {
-    if (!video || video._sanctuaryMeasured) return;
-    var startedAt = video._sanctuaryLoadAt;
-    if (typeof startedAt !== 'number') return;
-    video._sanctuaryMeasured = true;
-    if (!mobile) return;
-
-    var elapsed = nowMs() - startedAt;
-    if (prefer720) {
-      if (elapsed < FAST_START_MS) {
-        fastStarts += 1;
-        slowStarts = 0;
-        if (fastStarts >= 2) {
-          prefer720 = false;
-          fastStarts = 0;
-        }
-      } else {
-        fastStarts = 0;
-      }
-      return;
-    }
-
-    if (elapsed > SLOW_START_MS) {
-      slowStarts += 1;
-      fastStarts = 0;
-      if (slowStarts >= 2) {
-        prefer720 = true;
-        slowStarts = 0;
-      }
-    } else {
-      slowStarts = 0;
-    }
-  }
+  // v136: the live channel measurement is gone on purpose. The stream level is
+  // a property of the device (720p phones, 1080p desktops), so nothing can
+  // downgrade or upgrade a session halfway through and force a fresh load().
 
   function bind(video) {
     if (!video || video.dataset.playerBound === '1') return;
@@ -285,7 +200,6 @@
     video.setAttribute('disablepictureinpicture', '');
     var onReady = function () {
       if (destroyed) return;
-      if (video.readyState >= 2) noteLoadTime(video);
       if (video === pending) {
         promotePending();
         return;
@@ -349,8 +263,6 @@
 
   function init() {
     if (ready) return api;
-    if (!prefer720 && isSlowNetwork()) prefer720 = true;
-    watchConnection();
     var first = document.getElementById('playerCurrent');
     var second = document.getElementById('playerNext');
     if (!first || !second) return api;
@@ -365,14 +277,13 @@
 
   // Entry warm-up: the first frame is buffered in #playerCurrent itself, before
   // the visitor swipes up. Nothing is shown yet, so replacing src is safe.
-  // v135: on cellular only, opts.force720 warms the light 720p file for this one
-  // frame; global prefer720 stays untouched, so frame 2 goes back to 1080p.
-  function warm(clip, opts) {
+  // v136: the warmed file is the same one the session will stream — the 720p
+  // twin on phones, the 1080p studio file on desktops.
+  function warm(clip) {
     if (destroyed || !clip) return false;
     init();
     if (!current || !next) return false;
-    var force720 = Boolean(opts && opts.force720 === true) && isCellularOrSlow();
-    var src = sourceFor(clip, force720);
+    var src = sourceFor(clip);
     if (!src) return false;
     if (currentSrc === src || nextSrc === src) return true;
     if (current.getAttribute('src') && current.readyState >= 2) return false;
@@ -389,8 +300,7 @@
     if (!current || !next) return false;
     var fadeMs = opts && Number(opts.fadeMs);
     if (!isFinite(fadeMs) || fadeMs <= 0) fadeMs = FADE_MS;
-    var force720 = Boolean(opts && opts.force720 === true) && isCellularOrSlow();
-    var src = sourceFor(clip, force720);
+    var src = sourceFor(clip);
     if (!src) return false;
     nextClip = following && following !== clip ? following : null;
     currentClip = clip;
@@ -441,8 +351,9 @@
     slot.classList.remove('is-current');
     if (slot.classList.contains('is-outgoing')) {
       // Still visible in the previous crossfade: never swap its src mid-fade.
-      // The wait follows the current fade length (240 ms or the 950 ms mist
-      // handoff), so a quick swipe during the slow fade cannot cut it short.
+      // The wait follows the current fade length (600 ms by default, the 950 ms
+      // mist handoff otherwise), so a quick swipe during the fade cannot cut it
+      // short.
       window.clearTimeout(coldTimer);
       coldTimer = window.setTimeout(function () {
         if (destroyed || pending !== slot) return;
@@ -498,7 +409,6 @@
     return {
       mobile: mobile,
       level: levelOf(currentSrc),
-      prefer720: prefer720,
       rate: rate,
       clip: (currentClip && currentClip.id) || null,
       warmed: (nextClip && nextClip.id) || null,

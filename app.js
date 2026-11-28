@@ -105,6 +105,11 @@
   const STORY_CLEAR_FADE_MS = 850;
   const STORY_WATCH_MS = 1800;
   const STORY_HANDOFF_FADE_MS = 950;
+  // v136: the 950 ms silk handoff must begin on a frame that is already
+  // decoded. If the 4th frame is still buffering on a 4G link, the automatic
+  // advance waits another 450 ms — at most twice — before it starts the fade.
+  const STORY_READY_RETRY_MS = 450;
+  const STORY_READY_RETRIES = 2;
   const STORY_SOUND_OPEN_PERCENT = 65;
   const STORY_AUTO_ADVANCE_SPEED = 0.35;
   const STORY_SOUND_CLIP = {
@@ -290,20 +295,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     return 'mid';
   }
   const SCREEN_TIER = detectScreenTier();
-  // v135: the light 720p opening is allowed only when the browser explicitly
-  // reports a cellular or slow link. Wi-Fi and iOS Safari without
-  // connection.type always keep the full 1080p first frame.
-  function isCellularOpening() {
-    try {
-      const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection || null;
-      if (!connection) return false;
-      if (connection.type === 'cellular') return true;
-      if (connection.saveData === true) return true;
-      return ['slow-2g', '2g', '3g'].includes(connection.effectiveType);
-    } catch (_) {
-      return false;
-    }
-  }
   const MOBILE_MAX_WIDTH = 900;
   function isMobileViewport() {
     const ua = navigator.userAgent || '';
@@ -503,7 +494,70 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       { id: 'open-sky', title: 'Open Sky', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/open-sky.mp3' },
     ],
   };
-  const LIVE_AUDIO_TRACKS = [{"id":"city-01","category":"city","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/city-01.mp3"},{"id":"city-02","category":"city","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/city-02.mp3"},{"id":"city-03","category":"city","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/city-03.mp3"},{"id":"city-04","category":"city","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/city-04.mp3"},{"id":"fire-01","category":"fire","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/fire-01.mp3"},{"id":"fire-02","category":"fire","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/fire-02.mp3"},{"id":"fire-03","category":"fire","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/fire-03.mp3"},{"id":"fog-01","category":"fog","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/fog-01.mp3"},{"id":"fog-02","category":"fog","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/fog-02.mp3"},{"id":"fog-03","category":"fog","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/fog-03.mp3"},{"id":"fog-04","category":"fog","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/fog-04.mp3"},{"id":"fog-05","category":"fog","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/fog-05.mp3"},{"id":"people-01","category":"people","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/people-01.mp3"},{"id":"people-02","category":"people","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/people-02.mp3"},{"id":"people-03","category":"people","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/people-03.mp3"},{"id":"rain-01","category":"rain","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/rain-01.mp3"},{"id":"rain-02","category":"rain","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/rain-02.mp3"},{"id":"rain-03","category":"rain","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/rain-03.mp3"},{"id":"rain-04","category":"rain","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/rain-04.mp3"},{"id":"road-01","category":"road","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/road-01.mp3"},{"id":"road-02","category":"road","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/road-02.mp3"},{"id":"road-03","category":"road","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/road-03.mp3"},{"id":"road-04","category":"road","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/road-04.mp3"},{"id":"space-01","category":"space","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/space-01.mp3"},{"id":"space-02","category":"space","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/space-02.mp3"},{"id":"space-03","category":"space","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/space-03.mp3"},{"id":"water-01","category":"water","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/water-01.mp3"},{"id":"water-02","category":"water","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/water-02.mp3"},{"id":"water-03","category":"water","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/water-03.mp3"},{"id":"water-04","category":"water","url":"https://s3.twcstorage.ru/digital-sanctuary/audio/water-04.mp3"}];
+  // v136: the live registry is the whole S3 audio catalog — 30 unique MP3 files
+  // in https://s3.twcstorage.ru/digital-sanctuary/audio/ (city 01-04, fire
+  // 01-03, fog 01-05, people 01-03, rain 01-04, road 01-04, space 01-03,
+  // water 01-04), checked one by one against the bucket. Every one of the 30
+  // scenes now resolves to one of them, so no frame can open in silence.
+  const LIVE_AUDIO_TRACKS = [
+    { id: 'city-01', category: 'city', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/city-01.mp3' },
+    { id: 'city-02', category: 'city', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/city-02.mp3' },
+    { id: 'city-03', category: 'city', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/city-03.mp3' },
+    { id: 'city-04', category: 'city', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/city-04.mp3' },
+    { id: 'fire-01', category: 'fire', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/fire-01.mp3' },
+    { id: 'fire-02', category: 'fire', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/fire-02.mp3' },
+    { id: 'fire-03', category: 'fire', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/fire-03.mp3' },
+    { id: 'fog-01', category: 'fog', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/fog-01.mp3' },
+    { id: 'fog-02', category: 'fog', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/fog-02.mp3' },
+    { id: 'fog-03', category: 'fog', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/fog-03.mp3' },
+    { id: 'fog-04', category: 'fog', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/fog-04.mp3' },
+    { id: 'fog-05', category: 'fog', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/fog-05.mp3' },
+    { id: 'people-01', category: 'people', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/people-01.mp3' },
+    { id: 'people-02', category: 'people', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/people-02.mp3' },
+    { id: 'people-03', category: 'people', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/people-03.mp3' },
+    { id: 'rain-01', category: 'rain', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/rain-01.mp3' },
+    { id: 'rain-02', category: 'rain', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/rain-02.mp3' },
+    { id: 'rain-03', category: 'rain', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/rain-03.mp3' },
+    { id: 'rain-04', category: 'rain', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/rain-04.mp3' },
+    { id: 'road-01', category: 'road', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/road-01.mp3' },
+    { id: 'road-02', category: 'road', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/road-02.mp3' },
+    { id: 'road-03', category: 'road', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/road-03.mp3' },
+    { id: 'road-04', category: 'road', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/road-04.mp3' },
+    { id: 'space-01', category: 'space', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/space-01.mp3' },
+    { id: 'space-02', category: 'space', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/space-02.mp3' },
+    { id: 'space-03', category: 'space', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/space-03.mp3' },
+    { id: 'water-01', category: 'water', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/water-01.mp3' },
+    { id: 'water-02', category: 'water', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/water-02.mp3' },
+    { id: 'water-03', category: 'water', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/water-03.mp3' },
+    { id: 'water-04', category: 'water', url: 'https://s3.twcstorage.ru/digital-sanctuary/audio/water-04.mp3' },
+  ];
+  // v136: fourteen trackIds that videos-data.js still asks for — fog-06..09,
+  // rain-05..06, road-05..06, space-04..05, water-05..08 — have no MP3 in the
+  // bucket: a HEAD on each answers 403 (only fog 01-05, rain 01-04, road 01-04,
+  // space 01-03 and water 01-04 were ever uploaded), and a missing file is
+  // exactly what kept those scenes mute. Each legacy id is folded onto a real
+  // file of its own family instead of a dead URL.
+  const TRACK_ALIASES = {
+    'fog-06': 'fog-01',
+    'fog-07': 'fog-02',
+    'fog-08': 'fog-03',
+    'fog-09': 'fog-04',
+    'rain-05': 'rain-01',
+    'rain-06': 'rain-02',
+    'road-05': 'road-01',
+    'road-06': 'road-02',
+    'space-04': 'space-01',
+    'space-05': 'space-02',
+    'water-05': 'water-01',
+    'water-06': 'water-02',
+    'water-07': 'water-03',
+    'water-08': 'water-04',
+  };
+  function liveTrackIdFor(trackId) {
+    const id = String(trackId || '');
+    if (!id) return '';
+    return TRACK_ALIASES[id] || id;
+  }
   const ELEMENT_DEFAULT = {
     Shadow: 'fog',
     Calm: 'water',
@@ -1968,7 +2022,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   function findLiveTrackForClip(clip) {
     if (!clip) return null;
-    return LIVE_AUDIO_TRACKS.find((track) => track.id === clip.trackId) || null;
+    const id = liveTrackIdFor(clip.trackId);
+    return LIVE_AUDIO_TRACKS.find((track) => track.id === id) || null;
   }
   function preloadBufferForClip(clip) {
     const track = findLiveTrackForClip(clip);
@@ -2479,19 +2534,29 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         if (!candidates.some((item) => item.id === track.id)) candidates.push(track);
       }
     }
-    if (!candidates.length) return null;
-    const preferred = candidates.find((track) => track.id === (clip && clip.trackId));
-    const fresh = candidates.filter((track) => !recentLiveTrackIds.includes(track.id) && !playedLiveTrackIds.has(track.id));
-    const notRecent = candidates.filter((track) => !recentLiveTrackIds.includes(track.id));
+    // v136: the track named by the clip wins whenever it is still fresh; the
+    // aliased legacy ids resolve to a real file, so `preferred` is a live URL.
+    const preferredId = liveTrackIdFor(clip && clip.trackId);
+    const preferred = LIVE_AUDIO_TRACKS.find((track) => track.id === preferredId) || null;
+    // The family pool is the first choice, the whole registry the last resort —
+    // a frame is never allowed to open in silence.
+    const pool = candidates.length ? candidates : LIVE_AUDIO_TRACKS;
+    const fresh = pool.filter((track) => !recentLiveTrackIds.includes(track.id) && !playedLiveTrackIds.has(track.id));
+    const notRecent = pool.filter((track) => !recentLiveTrackIds.includes(track.id));
+    // Guaranteed fallback: any real file except the one currently audible.
+    const lastId = recentLiveTrackIds[recentLiveTrackIds.length - 1];
+    const notLast = LIVE_AUDIO_TRACKS.filter((track) => track.id !== lastId);
     const chosen = (preferred && fresh.includes(preferred) ? preferred : null)
       || fresh[0]
       || notRecent[0]
+      || notLast[0]
       || preferred
-      || candidates.find((track) => track.id !== recentLiveTrackIds[recentLiveTrackIds.length - 1])
-      || candidates[0];
+      || LIVE_AUDIO_TRACKS[0];
     if (!chosen) return null;
     recentLiveTrackIds.push(chosen.id);
-    if (recentLiveTrackIds.length > 24) recentLiveTrackIds.shift();
+    // v136: a tighter anti-repeat window — 16 frames instead of 24 — while the
+    // guaranteed fallback above keeps every single frame scored.
+    if (recentLiveTrackIds.length > 16) recentLiveTrackIds.shift();
     playedLiveTrackIds.add(chosen.id);
     return chosen;
   }
@@ -3696,12 +3761,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (!player || typeof player.show !== 'function') return false;
     const playerOptions = {};
     if (fadeMs) playerOptions.fadeMs = fadeMs;
-    // v135: force720 is passed only for the very first frame and only when
-    // isCellularOpening() is true; on Wi-Fi it is explicitly false, so the
-    // opening frame streams its full 1080p file.
-    if (!pathStarted || pathPos === 0) {
-      playerOptions.force720 = isCellularOpening();
-    }
     player.show(clip, nextPlannedClip(), playerOptions);
     return true;
   }
@@ -3992,22 +4051,49 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   // v133 — direct native handoff. After the 65 % clearing the haze dissolves for
   // 850 ms (stories.js), the mix reaches 100 %, and the visitor then watches the
   // open forest for 1800 ms. go() advances the feed straight away: player.js
-  // keeps the outgoing mist frame live at z-index 1 while the next 1080p clip
+  // keeps the outgoing mist frame live at z-index 1 while the next live clip
   // fades in over it at z-index 2 — no dark veil, no currentTime seek, no black
   // frame and no decoder stutter.
+  // v136 — the 950 ms handoff starts only on a decoded frame. snapshot().next is
+  // the slot player.js already warmed for the 4th frame; while it is still
+  // buffering on 4G (readyState < 2) the automatic advance waits another
+  // 450 ms, at most twice, so the silk fade never reveals a half-loaded picture.
+  function storyNextFrameReady() {
+    try {
+      const player = window.SanctuaryPlayer;
+      if (!player || typeof player.snapshot !== 'function') return true;
+      const snap = player.snapshot();
+      const nextFrame = snap && snap.next;
+      // No warmed source yet means show() will load it itself: nothing to wait for.
+      if (!nextFrame || !nextFrame.src) return true;
+      return nextFrame.readyState >= 2;
+    } catch (_) {
+      return true;
+    }
+  }
+  function advanceAfterStory(retry) {
+    if (!storyCleared || sessionComplete) return;
+    if (pathPos !== STORY_FRAME_INDEX || !gateOpen) return;
+    if (retry < STORY_READY_RETRIES && !storyNextFrameReady()) {
+      storyAutoAdvanceTimer = window.setTimeout(() => {
+        storyAutoAdvanceTimer = 0;
+        advanceAfterStory(retry + 1);
+      }, STORY_READY_RETRY_MS);
+      return;
+    }
+    // Release the feed lock only when the handoff itself begins; no stray
+    // swipe can skip the clean mist frame before the timer fires.
+    storyActive = false;
+    storyTouching = false;
+    setStorySoundProgress(100);
+    // v134/v136: a 950 ms silk crossfade instead of the regular 600 ms swipe.
+    go('up', STORY_AUTO_ADVANCE_SPEED, STORY_HANDOFF_FADE_MS);
+  }
   function scheduleStoryAutoAdvance() {
     clearStoryAutoAdvance();
     storyAutoAdvanceTimer = window.setTimeout(() => {
       storyAutoAdvanceTimer = 0;
-      if (!storyCleared || sessionComplete) return;
-      if (pathPos !== STORY_FRAME_INDEX || !gateOpen) return;
-      // Release the feed lock only when the handoff itself begins; no stray
-      // swipe can skip the clean mist frame before the timer fires.
-      storyActive = false;
-      storyTouching = false;
-      setStorySoundProgress(100);
-      // v134: a 950 ms silk crossfade instead of the instant 240 ms swipe.
-      go('up', STORY_AUTO_ADVANCE_SPEED, STORY_HANDOFF_FADE_MS);
+      advanceAfterStory(0);
     }, STORY_CLEAR_FADE_MS + STORY_WATCH_MS);
   }
   function enterStoryScene() {
@@ -4905,9 +4991,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         // is still up, so the swipe up opens a live stream, not a buffer.
         const player = window.SanctuaryPlayer;
         if (player && typeof player.warm === 'function') {
-          // v135: cellular/slow links warm the light 720p file for frame 1 only;
-          // Wi-Fi warms the full 1080p file.
-          player.warm(pathPlan[0] && pathPlan[0].clip, { force720: isCellularOpening() });
+          // v136: the warm-up frame is the same stream the session will use —
+          // the 720p twin on phones, the 1080p studio file on desktops.
+          player.warm(pathPlan[0] && pathPlan[0].clip);
         }
         const first = pathPlan[0];
         prefetchCaption(first.clip, first.category, behaviorContext(), first.stage);
