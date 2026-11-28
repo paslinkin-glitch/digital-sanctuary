@@ -127,6 +127,24 @@
     element: 'fog',
     stage: 'shadow',
   };
+  // v141: the second interactive scene lives on the seventh frame of the
+  // ten-scene showcase (pathPos === 6, the Calm stage before the Path finale).
+  // stories.js owns the Three.js bay; app.js owns the GPU relay: the live video
+  // is paused for the whole scene, the HUD goes quiet, the soundtrack opens with
+  // the threshold, and the feed advances with the same 950 ms silk handoff.
+  const STORY3D_FRAME_INDEX = 6;
+  const STORY3D_FADE_MS = 850;
+  const STORY3D_HANDOFF_FADE_MS = 950;
+  const STORY3D_SOUND_OPEN_PERCENT = 65;
+  const STORY3D_GPU_RELAY_MS = 400;
+  const STORY3D_SOUND_CLIP = {
+    id: 'story-threshold',
+    title: 'Threshold over the bay',
+    description: 'A stone doorway between cloud and water',
+    soundCategory: 'water',
+    element: 'water',
+    stage: 'calm',
+  };
   const CAPTION_SYSTEM_PROMPT_RU = `Ты — тихий голос сна, который звучит рядом с изображением. Пиши только по-русски.
 Верни одну короткую фразу строго из 5–8 слов, 1–2 короткие строки. Без поэтических загадок, терминов, оценок, советов и латиницы.
 Говори образами и присутствием: дождь, тень, вода, свет, дыхание, дорога. Не называй поведение и не объясняй человеку, что он делает.
@@ -1237,6 +1255,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   let pathStartPending = false;
   let storyActive = false;
   let storyCleared = false;
+  let storyMode = '';
+  let story3DCleared = false;
+  let storyGpuRelayTimer = 0;
   let storyAutoAdvanceTimer = 0;
   let storyProgressPercent = 0;
   let storyTouching = false;
@@ -3555,6 +3576,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
 
   function finishSession() {
     if (sessionComplete) return;
+    if (storyActive) exitStoryScene();
     safeVibrate([5, 80, 5], 3000);
     window.clearTimeout(sessionFinalTimer);
     sessionFinalTimer = 0;
@@ -3659,6 +3681,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     pathPos = -1;
     pathStarted = false;
     storyCleared = false;
+    story3DCleared = false;
+    storyMode = '';
     clearStoryAutoAdvance();
     storyProgressPercent = 0;
     stage.classList.remove('is-story-active');
@@ -4195,6 +4219,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     // Release the feed lock only when the handoff itself begins; no stray
     // swipe can skip the clean mist frame before the timer fires.
     storyActive = false;
+    storyMode = '';
     storyTouching = false;
     setStorySoundProgress(100);
     // v134/v136: a 950 ms silk crossfade instead of the regular 600 ms swipe.
@@ -4210,6 +4235,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   function enterStoryScene() {
     if (!canEnterStory()) return false;
     storyActive = true;
+    storyMode = 'mist';
     storyProgressPercent = 0;
     const entered = window.SanctuaryStories.enter({
       onCleared: () => {
@@ -4262,11 +4288,142 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     storyTouching = false;
     stage.classList.remove('is-story-active');
     setSoundDepth(false);
+    const mode = storyMode;
+    storyMode = '';
     storyActive = false;
+    // A forced exit (session reset, page hide) must hand the GPU back too.
+    stopStoryGpuRelay(mode === '3d');
     const api = window.SanctuaryStories;
-    if (api && typeof api.exit === 'function') {
+    if (!api) return;
+    if (mode === '3d' && typeof api.exit3D === 'function') {
+      try { api.exit3D(); } catch (_) {}
+    } else if (typeof api.exit === 'function') {
       try { api.exit(); } catch (_) {}
     }
+  }
+  // ---------------------------------------------------------------- v141 relay
+  // On the seventh frame the live video must not keep a hardware decoder busy
+  // while Three.js renders. pause() is repeated for the short life of the scene,
+  // because player.js may still promote a pending handoff asynchronously.
+  function startStoryGpuRelay() {
+    const player = window.SanctuaryPlayer;
+    if (!player || typeof player.pause !== 'function') return;
+    try { player.pause(); } catch (_) {}
+    if (storyGpuRelayTimer) return;
+    storyGpuRelayTimer = window.setInterval(() => {
+      const live = window.SanctuaryPlayer;
+      if (live && typeof live.pause === 'function') {
+        try { live.pause(); } catch (_) {}
+      }
+    }, STORY3D_GPU_RELAY_MS);
+  }
+  function stopStoryGpuRelay(resume) {
+    if (storyGpuRelayTimer) {
+      window.clearInterval(storyGpuRelayTimer);
+      storyGpuRelayTimer = 0;
+    }
+    if (!resume) return;
+    const player = window.SanctuaryPlayer;
+    if (player && typeof player.resume === 'function') {
+      try { player.resume(); } catch (_) {}
+    }
+  }
+  function canEnterStory3D() {
+    return Boolean(
+      !story3DCleared
+      && !storyActive
+      && window.SanctuaryStories
+      && typeof window.SanctuaryStories.enter3D === 'function'
+      && gateOpen
+      && !sessionComplete
+      && pathStarted
+      && pathPos === STORY3D_FRAME_INDEX
+    );
+  }
+  // v141 — the Dali threshold. The scene owns separation: the finger pulls the
+  // mist out of the stone doorway and the camera crosses to the horizon. At
+  // 100 % the 3D canvas dissolves for 850 ms while the live frame resumes, then
+  // the feed moves to the eighth video with the same 950 ms silk crossfade.
+  function enterStory3DScene() {
+    if (!canEnterStory3D()) return false;
+    let entered = false;
+    try {
+      entered = window.SanctuaryStories.enter3D({
+        onCleared: () => {
+          story3DCleared = true;
+          storyTouching = false;
+          setStorySoundProgress(100);
+          // The GPU relay returns to the video before the 3D canvas is gone, so
+          // the 7th frame is already live behind the 850 ms dissolve. Schedule
+          // the handoff first: haptics or resonance must never trap the feed.
+          stopStoryGpuRelay(true);
+          clearStoryAutoAdvance();
+          storyAutoAdvanceTimer = window.setTimeout(() => {
+            storyAutoAdvanceTimer = 0;
+            advanceAfterStory3D(0);
+          }, STORY3D_FADE_MS);
+          safeVibrate([5, 80, 5], 1000);
+          registerResonance(activeClip());
+        },
+        onInteract: (touching) => {
+          if (touching === storyTouching) return;
+          storyTouching = touching;
+          if (touching) primeAudioGesture();
+        },
+        onGesturePrime: () => {
+          primeAudioGesture();
+          enableSoundscape();
+        },
+        onProgress: ({ progress }) => {
+          const value = Math.max(0, Math.min(100, Number(progress) || 0));
+          storyProgressPercent = value;
+          // 0 -> 65 % of the threshold already opens the bed from 45 % to 100 %.
+          setStorySoundProgress(value * (STORY3D_SOUND_OPEN_PERCENT / 100));
+        },
+      });
+    } catch (error) {
+      entered = false;
+    }
+    if (!entered) {
+      try { window.SanctuaryStories.exit3D(); } catch (_) {}
+      return false;
+    }
+    storyActive = true;
+    storyMode = '3d';
+    storyProgressPercent = 0;
+    startStoryGpuRelay();
+    // Clean frame: no caption, no HUD vignette, no heart — only the bay.
+    stage.classList.add('is-story-active');
+    clearCaptionForStory();
+    enableSoundscape();
+    setSoundDepth(true);
+    const liveTrackPlaying = Boolean(
+      sound && sound.activeSource && sound.ctx && sound.ctx.state === 'running'
+    );
+    if (!liveTrackPlaying) {
+      switchSoundtrack(null, SLOW_FADE_MS, STORY3D_SOUND_CLIP);
+    }
+    return true;
+  }
+  function advanceAfterStory3D(retry) {
+    if (!story3DCleared || sessionComplete) return;
+    if (pathPos !== STORY3D_FRAME_INDEX || !gateOpen) return;
+    if (retry < STORY_READY_RETRIES && !storyNextFrameReady()) {
+      storyAutoAdvanceTimer = window.setTimeout(() => {
+        storyAutoAdvanceTimer = 0;
+        advanceAfterStory3D(retry + 1);
+      }, STORY_READY_RETRY_MS);
+      return;
+    }
+    storyActive = false;
+    storyMode = '';
+    storyTouching = false;
+    stopStoryGpuRelay(true);
+    const api = window.SanctuaryStories;
+    if (api && typeof api.exit3D === 'function') {
+      try { api.exit3D(); } catch (_) {}
+    }
+    go('up', STORY_AUTO_ADVANCE_SPEED, STORY3D_HANDOFF_FADE_MS);
   }
   function unusedEntries(filter) {
     const found = [];
@@ -4482,6 +4639,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         clipFadeMs
       );
       if (pathPos === STORY_FRAME_INDEX) enterStoryScene();
+      else if (pathPos === STORY3D_FRAME_INDEX) enterStory3DScene();
       return;
     }
     if (pathPos < 2) firstShadowDurations.push(record.viewedMs);
@@ -4537,6 +4695,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       clipFadeMs
     );
     if (pathPos === STORY_FRAME_INDEX) enterStoryScene();
+    else if (pathPos === STORY3D_FRAME_INDEX) enterStory3DScene();
   }
   function startHold() {
     holdTimer = 0;

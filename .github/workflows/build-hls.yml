@@ -11,6 +11,19 @@ on:
         options:
           - pixabay-vertical-10
           - full-30
+          - fetch-3d-assets
+  # v141: the studio 3D assets are prepared automatically when the shell that
+  # references them changes and assets/three.min.js does not exist yet. The
+  # download runs on the runner only — never on a visitor's machine.
+  push:
+    branches:
+      - main
+    paths:
+      - "scripts/fetch_3d_assets.py"
+      - ".github/workflows/build-hls.yml"
+      - "stories.js"
+      - "index.html"
+      - "sw.js"
 
 permissions:
   contents: write
@@ -20,7 +33,101 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # ---------------------------------------------------------------------------
+  # v141 studio assets: Three.js r160 + Poly Haven stone PBR maps
+  # ---------------------------------------------------------------------------
+  fetch-3d-assets:
+    if: ${{ (github.event_name == 'workflow_dispatch' && inputs.mode == 'fetch-3d-assets') || github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # On a push the job is a cheap guard: if the bundle is already committed
+      # every download step below is skipped. A manual fetch-3d-assets dispatch
+      # always verifies (the script still keeps valid files unless --force).
+      - name: Check whether the studio assets are missing
+        id: probe
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "needed=1" >> "$GITHUB_OUTPUT"
+          elif [ -f assets/three.min.js ] && [ -f assets/stone-normal.jpg ] && [ -f assets/stone-roughness.jpg ]; then
+            echo "needed=0" >> "$GITHUB_OUTPUT"
+            echo "Studio 3D assets already committed"
+          else
+            echo "needed=1" >> "$GITHUB_OUTPUT"
+            echo "Studio 3D assets are missing: fetching them now"
+          fi
+
+      - name: Set up Python
+        if: steps.probe.outputs.needed == '1'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Pillow
+        if: steps.probe.outputs.needed == '1'
+        run: python -m pip install --upgrade pip pillow
+
+      # Three.js r160 comes from unpkg; the seamless coastal/mountain stone
+      # normal + roughness maps come from the public Poly Haven files API.
+      # Both are resized to 512x512 progressive JPEG on the runner.
+      - name: Fetch Three.js and the stone PBR maps
+        if: steps.probe.outputs.needed == '1'
+        run: python scripts/fetch_3d_assets.py
+
+      - name: Verify the studio assets
+        if: steps.probe.outputs.needed == '1'
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+
+          root = Path("assets")
+          three = root / "three.min.js"
+          assert three.is_file(), "assets/three.min.js is missing"
+          assert three.stat().st_size > 400_000, "three.min.js is too small"
+          print("three.min.js", three.stat().st_size, "bytes")
+
+          for name in ("stone-normal.jpg", "stone-roughness.jpg"):
+              path = root / name
+              assert path.is_file(), f"{name} is missing"
+              with Image.open(path) as image:
+                  assert image.size == (512, 512), f"{name} is {image.size}"
+                  print(name, path.stat().st_size, "bytes", image.size)
+          PY
+
+      - name: Commit the studio assets
+        if: steps.probe.outputs.needed == '1'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/three.min.js assets/stone-normal.jpg assets/stone-roughness.jpg
+          if git diff --cached --quiet; then
+            echo "Studio 3D assets already up to date"
+            exit 0
+          fi
+          git commit -m "chore: fetch studio 3D assets for v141"
+          # The release commit may land while this job runs; rebase before the push.
+          for attempt in 1 2 3; do
+            git pull --rebase origin main
+            if git push origin main; then
+              exit 0
+            fi
+            echo "push attempt $attempt failed, retrying"
+            sleep 5
+          done
+          echo "could not push the studio assets" >&2
+          exit 1
+
+  # ---------------------------------------------------------------------------
+  # Video catalogs (unchanged v140 pipeline)
+  # ---------------------------------------------------------------------------
   build:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode != 'fetch-3d-assets' }}
     runs-on: ubuntu-latest
     timeout-minutes: 180
     steps:
@@ -88,4 +195,13 @@ jobs:
             MESSAGE="chore: build 30 scenes with 720p twins and WebP posters"
           fi
           git commit -m "$MESSAGE"
-          git push origin main
+          for attempt in 1 2 3; do
+            git pull --rebase origin main
+            if git push origin main; then
+              exit 0
+            fi
+            echo "push attempt $attempt failed, retrying"
+            sleep 5
+          done
+          echo "could not push the generated catalog" >&2
+          exit 1

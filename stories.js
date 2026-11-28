@@ -707,11 +707,1805 @@
     };
   }
 
+  // ==========================================================================
+  // v141 — second interactive scene: «Бухта и порог» / the Dali threshold
+  // ==========================================================================
+  //
+  // A living bay in the palette of «Port Lligat, seen with an approaching
+  // storm»: slate-cobalt water (#1B3E64 -> #29517A) with a slow living ripple
+  // and small sun glints, muted ochre-ash headlands (#6E685F / #4E4C49), leaden
+  // smoke clouds (#50555E) torn open by a low pearl-sand sun (#DEC79A) casting
+  // soft oblique god rays through FogExp2 haze (#7B7D7D / #3E4852).
+  //
+  // In the middle of the composition stands one tall, slender stone doorway
+  // with no walls, textured by the Poly Haven normal/roughness maps, throwing
+  // one long graphic shadow over sand and water. A translucent curtain of mist
+  // breathes inside the opening, linking the cloud to the water.
+  //
+  // The visitor's finger writes the hidden Jungian movement — separation and
+  // the crossing to the horizon. Pulling up or simply holding the screen grows
+  // progress from 0 to 100: the veil dissolves, the rays open wider, and the
+  // camera glides over water and shore, through the doorway, toward the ochre
+  // mountains and the bright horizon. At 100 % the scene reports onCleared(),
+  // dissolves for 850 ms, disposes every geometry, material, texture and the
+  // WebGL context, and hands the GPU relay back to the video.
+  //
+  // A light 2D fallback paints the same composition when WebGL is unavailable.
+  // The scene is deliberately self-contained: app.js owns the player pause and
+  // the advance, stories.js owns only the picture and its gestures.
+  // ==========================================================================
+  var threshold = (function () {
+    'use strict';
+
+    var VERSION = '141';
+    var ASSET_QUERY = '?v=141';
+    var FADE_MS = 850;
+    var MAX_PROGRESS = 100;
+    var REPORT_STEP = 5;
+    // ~2.6 s of pure holding reaches the horizon; an upward drag gets there
+    // faster, a downward drag pulls the threshold back a little.
+    var HOLD_RATE = MAX_PROGRESS / 2.6;
+    var DRAG_GAIN = 0.11;
+    var DRAG_BACK = 0.045;
+    var DECAY_RATE = 3.4;
+    var DPR_CAP = 1.5;
+    var FOG_DENSITY = 0.009;
+    var PASS_AT = 0.58;
+    var FRAME_MIN_DT = 1 / 240;
+
+    var PALETTE = {
+      deep: 0x1b3e64,
+      shallow: 0x29517a,
+      mountainLow: 0x4e4c49,
+      mountainHigh: 0x6e685f,
+      stone: 0x6e685f,
+      stoneDark: 0x4e4c49,
+      sand: 0x8a7c64,
+      fog: 0x7b7d7d,
+      fogBlue: 0x3e4852,
+      skyTop: 0x50555e,
+      skyMid: 0x7b7d7d,
+      glow: 0xdec79a,
+      veilCool: 0xb7b3a9,
+      veilWarm: 0xded0ae,
+      shadow: 0x0a141c
+    };
+
+    var SUN_DIRECTION = [0.15, 0.15, -0.977];
+
+    var SKY_VERT = [
+      'varying vec3 vDir;',
+      'void main() {',
+      '  vDir = position;',
+      '  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
+      '}'
+    ].join('\n');
+
+    var SKY_FRAG = [
+      'varying vec3 vDir;',
+      'uniform vec3 uTop;',
+      'uniform vec3 uMid;',
+      'uniform vec3 uGlow;',
+      'uniform vec3 uSunDir;',
+      'uniform float uTime;',
+      'uniform float uOpen;',
+      '',
+      'float hash21(vec2 p) {',
+      '  p = fract(p * vec2(123.34, 456.21));',
+      '  p += dot(p, p + 45.32);',
+      '  return fract(p.x * p.y);',
+      '}',
+      'float noise2(vec2 p) {',
+      '  vec2 i = floor(p);',
+      '  vec2 f = fract(p);',
+      '  vec2 u = f * f * (3.0 - 2.0 * f);',
+      '  return mix(',
+      '    mix(hash21(i), hash21(i + vec2(1.0, 0.0)), u.x),',
+      '    mix(hash21(i + vec2(0.0, 1.0)), hash21(i + vec2(1.0, 1.0)), u.x),',
+      '    u.y',
+      '  );',
+      '}',
+      'float fbm2(vec2 p) {',
+      '  float value = 0.0;',
+      '  float amplitude = 0.5;',
+      '  for (int i = 0; i < 5; i++) {',
+      '    value += amplitude * noise2(p);',
+      '    p *= 2.03;',
+      '    amplitude *= 0.5;',
+      '  }',
+      '  return value;',
+      '}',
+      '',
+      'void main() {',
+      '  vec3 dir = normalize(vDir);',
+      '  float height = clamp(dir.y, -0.2, 1.0);',
+      '',
+      '  vec3 color = mix(uGlow, uMid, smoothstep(0.0, 0.2, height));',
+      '  color = mix(color, uTop, smoothstep(0.18, 0.72, height));',
+      '  color = mix(color, uGlow * 1.05, exp(-abs(height - 0.035) * 20.0) * 0.5);',
+      '',
+      '  vec3 sunDir = normalize(uSunDir);',
+      '  float sun = max(dot(dir, sunDir), 0.0);',
+      '  float horizonGate = 1.0 - smoothstep(0.0, 0.5, height);',
+      '  color += uGlow * (pow(sun, 5.0) * (0.2 + 0.22 * uOpen) + pow(sun, 42.0) * 0.5) * horizonGate;',
+      '',
+      '  vec2 cloudUv = dir.xz / max(dir.y + 0.32, 0.16);',
+      '  float drift = uTime * 0.0055;',
+      '  float cloudA = fbm2(cloudUv * 1.1 + vec2(drift, drift * 0.3));',
+      '  float cloudB = fbm2(cloudUv * 2.35 + vec2(-drift * 0.7, drift * 0.45) + 7.3);',
+      '  float cloud = smoothstep(0.42, 0.8, cloudA * 0.64 + cloudB * 0.36);',
+      '  cloud *= smoothstep(0.0, 0.22, height);',
+      '  cloud *= 1.0 - 0.35 * uOpen * smoothstep(0.05, 0.4, height);',
+      '',
+      '  vec3 cloudColor = mix(uMid * 0.8, uTop * 1.08, smoothstep(0.08, 0.82, height));',
+      '  cloudColor = mix(cloudColor, uGlow * 0.92, pow(sun, 3.0) * 0.38);',
+      '  color = mix(color, cloudColor, cloud * 0.72);',
+      '',
+      '  color += (hash21(gl_FragCoord.xy * 0.7) - 0.5) * 0.008;',
+      '',
+      '  gl_FragColor = vec4(color, 1.0);',
+      '  #include <tonemapping_fragment>',
+      '  #include <colorspace_fragment>',
+      '}'
+    ].join('\n');
+
+    var WATER_VERT = [
+      'varying vec3 vWorld;',
+      'void main() {',
+      '  vec4 world = modelMatrix * vec4(position, 1.0);',
+      '  vWorld = world.xyz;',
+      '  gl_Position = projectionMatrix * viewMatrix * world;',
+      '}'
+    ].join('\n');
+
+    var WATER_FRAG = [
+      'varying vec3 vWorld;',
+      'uniform float uTime;',
+      'uniform float uOpen;',
+      'uniform float uFogDensity;',
+      'uniform vec3 uDeep;',
+      'uniform vec3 uShallow;',
+      'uniform vec3 uSky;',
+      'uniform vec3 uSun;',
+      'uniform vec3 uSunDir;',
+      'uniform vec3 uFogColor;',
+      '',
+      'float hash21(vec2 p) {',
+      '  p = fract(p * vec2(123.34, 456.21));',
+      '  p += dot(p, p + 45.32);',
+      '  return fract(p.x * p.y);',
+      '}',
+      'float noise2(vec2 p) {',
+      '  vec2 i = floor(p);',
+      '  vec2 f = fract(p);',
+      '  vec2 u = f * f * (3.0 - 2.0 * f);',
+      '  return mix(',
+      '    mix(hash21(i), hash21(i + vec2(1.0, 0.0)), u.x),',
+      '    mix(hash21(i + vec2(0.0, 1.0)), hash21(i + vec2(1.0, 1.0)), u.x),',
+      '    u.y',
+      '  );',
+      '}',
+      'float waveHeight(vec2 p, float t) {',
+      '  float h = 0.0;',
+      '  h += sin(p.x * 0.52 + t * 0.72) * 0.50;',
+      '  h += sin(p.y * 0.74 - t * 0.58) * 0.34;',
+      '  h += sin((p.x + p.y) * 0.34 + t * 0.9) * 0.22;',
+      '  h += sin((p.x - p.y) * 0.92 - t * 1.2) * 0.10;',
+      '  return h;',
+      '}',
+      '',
+      'void main() {',
+      '  vec2 p = vWorld.xz;',
+      '  float t = uTime;',
+      '  float e = 0.35;',
+      '  float h0 = waveHeight(p, t);',
+      '  float hx = waveHeight(p + vec2(e, 0.0), t) - h0;',
+      '  float hz = waveHeight(p + vec2(0.0, e), t) - h0;',
+      '  vec3 normal = normalize(vec3(-hx * 2.6, e, -hz * 2.6));',
+      '',
+      '  vec2 q = p * 1.7 + vec2(t * 0.035, -t * 0.028);',
+      '  float n0 = noise2(q);',
+      '  float nx = noise2(q + vec2(0.18, 0.0)) - n0;',
+      '  float nz = noise2(q + vec2(0.0, 0.18)) - n0;',
+      '  normal = normalize(normal + vec3(-nx, 0.0, -nz) * 0.22);',
+      '',
+      '  vec3 viewDir = normalize(cameraPosition - vWorld);',
+      '  float fresnel = pow(1.0 - clamp(dot(normal, viewDir), 0.0, 1.0), 3.0);',
+      '',
+      '  float distanceInBay = length(cameraPosition.xz - p);',
+      '  vec3 color = mix(uDeep, uShallow, smoothstep(0.0, 150.0, distanceInBay));',
+      '  color = mix(color, uSky, fresnel * 0.52);',
+      '',
+      '  vec3 sunDir = normalize(uSunDir);',
+      '  vec3 reflection = reflect(-sunDir, normal);',
+      '  float glint = pow(max(dot(reflection, viewDir), 0.0), 160.0);',
+      '  float sheen = pow(max(dot(reflection, viewDir), 0.0), 14.0);',
+      '  float sparkle = smoothstep(0.72, 0.94, noise2(p * 0.9 + vec2(t * 0.04, -t * 0.05)));',
+      '  color += uSun * (glint * 1.5 + sheen * 0.05 + sparkle * 0.055);',
+      '  color += uSun * 0.022 * uOpen * (0.4 + fresnel);',
+      '',
+      '  float distanceToCamera = length(cameraPosition - vWorld);',
+      '  float fogFactor = 1.0 - exp(-uFogDensity * uFogDensity * distanceToCamera * distanceToCamera);',
+      '  color = mix(color, uFogColor, clamp(fogFactor, 0.0, 0.96));',
+      '',
+      '  gl_FragColor = vec4(color, 1.0);',
+      '  #include <tonemapping_fragment>',
+      '  #include <colorspace_fragment>',
+      '}'
+    ].join('\n');
+
+    var VEIL_VERT = [
+      'varying vec2 vUv;',
+      'void main() {',
+      '  vUv = uv;',
+      '  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
+      '}'
+    ].join('\n');
+
+    var VEIL_FRAG = [
+      'varying vec2 vUv;',
+      'uniform float uTime;',
+      'uniform float uOpacity;',
+      'uniform vec3 uCool;',
+      'uniform vec3 uWarm;',
+      '',
+      'float hash21(vec2 p) {',
+      '  p = fract(p * vec2(123.34, 456.21));',
+      '  p += dot(p, p + 45.32);',
+      '  return fract(p.x * p.y);',
+      '}',
+      'float noise2(vec2 p) {',
+      '  vec2 i = floor(p);',
+      '  vec2 f = fract(p);',
+      '  vec2 u = f * f * (3.0 - 2.0 * f);',
+      '  return mix(',
+      '    mix(hash21(i), hash21(i + vec2(1.0, 0.0)), u.x),',
+      '    mix(hash21(i + vec2(0.0, 1.0)), hash21(i + vec2(1.0, 1.0)), u.x),',
+      '    u.y',
+      '  );',
+      '}',
+      'float fbm2(vec2 p) {',
+      '  float value = 0.0;',
+      '  float amplitude = 0.5;',
+      '  for (int i = 0; i < 4; i++) {',
+      '    value += amplitude * noise2(p);',
+      '    p *= 2.05;',
+      '    amplitude *= 0.5;',
+      '  }',
+      '  return value;',
+      '}',
+      '',
+      'void main() {',
+      '  vec2 uv = vUv;',
+      '  float drift = uTime * 0.06;',
+      '  float n1 = fbm2(vec2(uv.x * 3.2 + drift * 0.35, uv.y * 2.4 - drift));',
+      '  float n2 = fbm2(vec2(uv.x * 6.1 - drift * 0.22, uv.y * 4.8 - drift * 0.7) + 3.7);',
+      '  float veil = smoothstep(0.3, 0.76, n1 * 0.62 + n2 * 0.38);',
+      '',
+      '  float edgeX = smoothstep(0.0, 0.16, uv.x) * smoothstep(0.0, 0.16, 1.0 - uv.x);',
+      '  float edgeY = smoothstep(0.0, 0.1, uv.y) * smoothstep(0.0, 0.22, 1.0 - uv.y);',
+      '  float alpha = veil * edgeX * edgeY * uOpacity;',
+      '',
+      '  vec3 color = mix(uCool, uWarm, n2 * 0.85);',
+      '  color *= 0.9 + 0.1 * n1;',
+      '',
+      '  gl_FragColor = vec4(color, alpha);',
+      '  #include <tonemapping_fragment>',
+      '  #include <colorspace_fragment>',
+      '}'
+    ].join('\n');
+
+    var RAY_FRAG = [
+      'varying vec2 vUv;',
+      'uniform float uTime;',
+      'uniform float uOpacity;',
+      'uniform vec3 uColor;',
+      'void main() {',
+      '  float edge = smoothstep(0.0, 0.32, vUv.x) * smoothstep(0.0, 0.32, 1.0 - vUv.x);',
+      '  float taper = smoothstep(0.0, 0.16, vUv.y) * (1.0 - smoothstep(0.6, 1.0, vUv.y));',
+      '  float shimmer = 0.86 + 0.14 * sin(uTime * 0.5 + vUv.y * 6.5 + vUv.x * 3.1);',
+      '  float alpha = edge * taper * uOpacity * shimmer * 0.16;',
+      '  gl_FragColor = vec4(uColor, alpha);',
+      '  #include <tonemapping_fragment>',
+      '  #include <colorspace_fragment>',
+      '}'
+    ].join('\n');
+
+    var RAY_VERT = VEIL_VERT;
+
+    var host = null;
+    var canvas = null;
+    var ctx2d = null;
+    var renderer = null;
+    var scene = null;
+    var camera = null;
+    var THREE = null;
+    var sunDir = null;
+
+    var skyMesh = null;
+    var skyUniforms = null;
+    var waterUniforms = null;
+    var rayUniforms = null;
+    var veilUniforms = [];
+    var sunSprite = null;
+
+    var stoneNormal = null;
+    var stoneRough = null;
+    var stoneMaterials = [];
+    var textureCache = {};
+    var textures = [];
+    var disposed = true;
+    var fallback2d = false;
+
+    var options = {};
+    var listeners = [];
+    var active = false;
+    var clearing = false;
+    var running = false;
+    var rafId = 0;
+    var fadeTimer = 0;
+    var resizeTimer = 0;
+    var width = 1;
+    var height = 1;
+    var dpr = 1;
+    var progress = 0;
+    var lastReport = -1;
+    var holding = false;
+    var pointerId = null;
+    var lastY = 0;
+    var lastFrameAt = 0;
+    var elapsed = 0;
+    var renderFailed = false;
+
+    function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, value));
+    }
+
+    function smooth(value) {
+      var x = clamp(value, 0, 1);
+      return x * x * (3 - 2 * x);
+    }
+
+    function mix(a, b, t) {
+      return a + (b - a) * t;
+    }
+
+    function track(texture) {
+      if (texture) textures.push(texture);
+      return texture;
+    }
+
+    // ---------------------------------------------------------------- geometry
+
+    function measure() {
+      if (!host) return false;
+      var rect = host.getBoundingClientRect();
+      var w = rect.width || window.innerWidth || 0;
+      var h = rect.height || window.innerHeight || 0;
+      if (!w || !h) return false;
+      width = Math.max(1, Math.round(w));
+      height = Math.max(1, Math.round(h));
+      dpr = Math.min(DPR_CAP, Math.max(1, window.devicePixelRatio || 1));
+      return true;
+    }
+
+    function makeNoise1(seed) {
+      var state = (seed >>> 0) || 1;
+      var table = [];
+      for (var i = 0; i < 256; i += 1) {
+        state = (state * 1664525 + 1013904223) >>> 0;
+        table.push(state / 4294967296);
+      }
+      return function (x) {
+        var floor = Math.floor(x);
+        var fraction = x - floor;
+        var at = floor & 255;
+        var fade = fraction * fraction * (3 - 2 * fraction);
+        return table[at] * (1 - fade) + table[(at + 1) & 255] * fade;
+      };
+    }
+
+    function hash2(x, y) {
+      var value = Math.sin(x * 127.1 + y * 311.7) * 43758.5453123;
+      return value - Math.floor(value);
+    }
+
+    function valueNoise(x, y) {
+      var ix = Math.floor(x);
+      var iy = Math.floor(y);
+      var fx = x - ix;
+      var fy = y - iy;
+      var ux = fx * fx * (3 - 2 * fx);
+      var uy = fy * fy * (3 - 2 * fy);
+      var a = hash2(ix, iy);
+      var b = hash2(ix + 1, iy);
+      var c = hash2(ix, iy + 1);
+      var d = hash2(ix + 1, iy + 1);
+      return mix(mix(a, b, ux), mix(c, d, ux), uy);
+    }
+
+    // ----------------------------------------------------------- stone textures
+
+    function makeFallbackNormal() {
+      var size = 128;
+      var board = document.createElement('canvas');
+      board.width = size;
+      board.height = size;
+      var context = board.getContext('2d');
+      if (!context) return null;
+      var image = context.createImageData(size, size);
+      var data = image.data;
+      for (var y = 0; y < size; y += 1) {
+        for (var x = 0; x < size; x += 1) {
+          var h = valueNoise(x * 0.08, y * 0.08) * 0.62 + valueNoise(x * 0.19, y * 0.19) * 0.38;
+          var hx = valueNoise((x + 1) * 0.08, y * 0.08) * 0.62
+            + valueNoise((x + 1) * 0.19, y * 0.19) * 0.38 - h;
+          var hy = valueNoise(x * 0.08, (y + 1) * 0.08) * 0.62
+            + valueNoise(x * 0.19, (y + 1) * 0.19) * 0.38 - h;
+          var nx = -hx * 9;
+          var ny = -hy * 9;
+          var length = Math.sqrt(nx * nx + ny * ny + 1) || 1;
+          var index = (y * size + x) * 4;
+          data[index] = Math.round((nx / length * 0.5 + 0.5) * 255);
+          data[index + 1] = Math.round((ny / length * 0.5 + 0.5) * 255);
+          data[index + 2] = Math.round((1 / length * 0.5 + 0.5) * 255);
+          data[index + 3] = 255;
+        }
+      }
+      context.putImageData(image, 0, 0);
+      var texture = new THREE.CanvasTexture(board);
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.colorSpace = THREE.NoColorSpace;
+      return texture;
+    }
+
+    function makeFallbackRoughness() {
+      var size = 128;
+      var board = document.createElement('canvas');
+      board.width = size;
+      board.height = size;
+      var context = board.getContext('2d');
+      if (!context) return null;
+      var image = context.createImageData(size, size);
+      var data = image.data;
+      for (var y = 0; y < size; y += 1) {
+        for (var x = 0; x < size; x += 1) {
+          var value = 0.58 + 0.36 * (valueNoise(x * 0.11, y * 0.11) * 0.7
+            + valueNoise(x * 0.27, y * 0.27) * 0.3);
+          var channel = Math.round(value * 255);
+          var index = (y * size + x) * 4;
+          data[index] = channel;
+          data[index + 1] = channel;
+          data[index + 2] = channel;
+          data[index + 3] = 255;
+        }
+      }
+      context.putImageData(image, 0, 0);
+      var texture = new THREE.CanvasTexture(board);
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.colorSpace = THREE.NoColorSpace;
+      return texture;
+    }
+
+    function loadStoneTextures() {
+      stoneNormal = track(makeFallbackNormal());
+      stoneRough = track(makeFallbackRoughness());
+      if (!stoneNormal) stoneNormal = new THREE.Texture();
+      if (!stoneRough) stoneRough = new THREE.Texture();
+      var anisotropy = 1;
+      try {
+        anisotropy = Math.max(1, Math.min(4, renderer.capabilities.getMaxAnisotropy() || 1));
+      } catch (_) {}
+      var loader = new THREE.TextureLoader();
+      function adopt(kind, texture) {
+        // A late loader callback from a 3D build that fell back to 2D must
+        // never touch THREE again: renderer is gone and THREE is null.
+        if (disposed || !THREE || !renderer || fallback2d) {
+          texture.dispose();
+          return;
+        }
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+        texture.colorSpace = THREE.NoColorSpace;
+        texture.anisotropy = anisotropy;
+        texture.needsUpdate = true;
+        if (kind === 'normal') stoneNormal = texture;
+        else stoneRough = texture;
+        track(texture);
+        rebindStone();
+      }
+      loader.load('./assets/stone-normal.jpg' + ASSET_QUERY, function (texture) {
+        adopt('normal', texture);
+      }, undefined, function () {});
+      loader.load('./assets/stone-roughness.jpg' + ASSET_QUERY, function (texture) {
+        adopt('roughness', texture);
+      }, undefined, function () {});
+    }
+
+    function stonePair(rx, ry) {
+      var key = rx + 'x' + ry;
+      if (textureCache[key]) return textureCache[key];
+      var normal = stoneNormal.clone();
+      normal.wrapS = THREE.RepeatWrapping;
+      normal.wrapT = THREE.RepeatWrapping;
+      normal.repeat.set(rx, ry);
+      normal.colorSpace = THREE.NoColorSpace;
+      normal.needsUpdate = true;
+      var rough = stoneRough.clone();
+      rough.wrapS = THREE.RepeatWrapping;
+      rough.wrapT = THREE.RepeatWrapping;
+      rough.repeat.set(rx, ry);
+      rough.colorSpace = THREE.NoColorSpace;
+      rough.needsUpdate = true;
+      track(normal);
+      track(rough);
+      textureCache[key] = { normal: normal, rough: rough };
+      return textureCache[key];
+    }
+
+    function bindStone(entry) {
+      var pair = stonePair(entry.rx, entry.ry);
+      entry.material.normalMap = pair.normal;
+      entry.material.roughnessMap = pair.rough;
+      entry.material.needsUpdate = true;
+    }
+
+    function registerStone(material, rx, ry) {
+      var entry = { material: material, rx: rx, ry: ry };
+      stoneMaterials.push(entry);
+      bindStone(entry);
+      return material;
+    }
+
+    function rebindStone() {
+      var keys = Object.keys(textureCache);
+      for (var i = 0; i < keys.length; i += 1) {
+        var pair = textureCache[keys[i]];
+        if (pair.normal) pair.normal.dispose();
+        if (pair.rough) pair.rough.dispose();
+      }
+      textureCache = {};
+      for (var j = 0; j < stoneMaterials.length; j += 1) {
+        bindStone(stoneMaterials[j]);
+      }
+    }
+
+    // --------------------------------------------------------------- 3D build
+
+    function build3D() {
+      renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        powerPreference: 'high-performance',
+        alpha: false,
+        stencil: false
+      });
+      if (!renderer || !renderer.getContext()) throw new Error('WebGL unavailable');
+      renderer.setPixelRatio(dpr);
+      renderer.setSize(width, height, false);
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.12;
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.setClearColor(PALETTE.fogBlue, 1);
+      canvas = renderer.domElement;
+      canvas.setAttribute('aria-hidden', 'true');
+      host.appendChild(canvas);
+
+      scene = new THREE.Scene();
+      scene.fog = new THREE.FogExp2(PALETTE.fog, FOG_DENSITY);
+      camera = new THREE.PerspectiveCamera(54, width / height, 0.08, 900);
+      camera.position.set(0, 3.0, 10);
+
+      sunDir = new THREE.Vector3(
+        SUN_DIRECTION[0], SUN_DIRECTION[1], SUN_DIRECTION[2]
+      ).normalize();
+
+      loadStoneTextures();
+
+      var hemisphere = new THREE.HemisphereLight(0xa9aeb4, 0x4a443b, 0.9);
+      scene.add(hemisphere);
+
+      var sun = new THREE.DirectionalLight(PALETTE.glow, 2.4);
+      sun.position.set(34, 30, -120);
+      sun.target.position.set(0, 1.8, -9);
+      sun.castShadow = true;
+      sun.shadow.mapSize.set(1024, 1024);
+      sun.shadow.camera.near = 40;
+      sun.shadow.camera.far = 230;
+      sun.shadow.camera.left = -34;
+      sun.shadow.camera.right = 34;
+      sun.shadow.camera.top = 36;
+      sun.shadow.camera.bottom = -36;
+      sun.shadow.bias = -0.0006;
+      sun.shadow.normalBias = 0.03;
+      scene.add(sun);
+      scene.add(sun.target);
+
+      buildSky();
+      buildSun();
+      buildWater();
+      buildShore();
+      buildRanges();
+      buildPortal();
+      buildVeil();
+      buildRays();
+      buildShadowDecal();
+
+      // The light and every caster are static for the whole scene: render the
+      // shadow map once and never spend a second GPU pass on it.
+      renderer.shadowMap.autoUpdate = false;
+      renderer.shadowMap.needsUpdate = true;
+
+      camera.lookAt(0.6, 3.0, -30);
+      update3D(0, 0);
+    }
+
+    function buildSky() {
+      skyUniforms = {
+        uTop: { value: new THREE.Color(PALETTE.skyTop) },
+        uMid: { value: new THREE.Color(PALETTE.skyMid) },
+        uGlow: { value: new THREE.Color(PALETTE.glow) },
+        uSunDir: { value: sunDir.clone() },
+        uTime: { value: 0 },
+        uOpen: { value: 0 }
+      };
+      var material = new THREE.ShaderMaterial({
+        uniforms: skyUniforms,
+        vertexShader: SKY_VERT,
+        fragmentShader: SKY_FRAG,
+        side: THREE.BackSide,
+        depthWrite: false,
+        depthTest: false,
+        fog: false
+      });
+      var geometry = new THREE.SphereGeometry(420, 32, 20);
+      skyMesh = new THREE.Mesh(geometry, material);
+      skyMesh.renderOrder = -100;
+      skyMesh.frustumCulled = false;
+      scene.add(skyMesh);
+    }
+
+    function buildSun() {
+      var board = document.createElement('canvas');
+      board.width = 256;
+      board.height = 256;
+      var context = board.getContext('2d');
+      if (!context) return;
+      var gradient = context.createRadialGradient(128, 128, 0, 128, 128, 128);
+      gradient.addColorStop(0, 'rgba(255, 241, 212, 1)');
+      gradient.addColorStop(0.16, 'rgba(222, 199, 154, 0.82)');
+      gradient.addColorStop(0.42, 'rgba(222, 199, 154, 0.24)');
+      gradient.addColorStop(0.72, 'rgba(222, 199, 154, 0.06)');
+      gradient.addColorStop(1, 'rgba(222, 199, 154, 0)');
+      context.fillStyle = gradient;
+      context.fillRect(0, 0, 256, 256);
+      var texture = track(new THREE.CanvasTexture(board));
+      texture.colorSpace = THREE.SRGBColorSpace;
+      var material = new THREE.SpriteMaterial({
+        map: texture,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        fog: false,
+        toneMapped: false
+      });
+      sunSprite = new THREE.Sprite(material);
+      sunSprite.scale.set(46, 46, 1);
+      sunSprite.renderOrder = 5;
+      scene.add(sunSprite);
+    }
+
+    function buildWater() {
+      waterUniforms = {
+        uTime: { value: 0 },
+        uOpen: { value: 0 },
+        uFogDensity: { value: FOG_DENSITY },
+        uDeep: { value: new THREE.Color(PALETTE.deep) },
+        uShallow: { value: new THREE.Color(PALETTE.shallow) },
+        uSky: { value: new THREE.Color(PALETTE.fog) },
+        uSun: { value: new THREE.Color(PALETTE.glow) },
+        uSunDir: { value: sunDir.clone() },
+        uFogColor: { value: new THREE.Color(PALETTE.fog) }
+      };
+      var material = new THREE.ShaderMaterial({
+        uniforms: waterUniforms,
+        vertexShader: WATER_VERT,
+        fragmentShader: WATER_FRAG,
+        fog: false
+      });
+      var geometry = new THREE.PlaneGeometry(620, 620, 1, 1);
+      geometry.rotateX(-Math.PI / 2);
+      var water = new THREE.Mesh(geometry, material);
+      water.position.set(0, 0, -180);
+      scene.add(water);
+    }
+
+    function buildShore() {
+      var shape = new THREE.Shape();
+      shape.moveTo(-17, 0);
+      shape.bezierCurveTo(-13, 5.4, 4, 6.6, 15, 4.2);
+      shape.bezierCurveTo(19, 2.6, 17, -3.4, 9, -5.2);
+      shape.bezierCurveTo(-1, -6.6, -14, -5.8, -17, 0);
+      var geometry = new THREE.ShapeGeometry(shape, 28);
+      geometry.rotateX(-Math.PI / 2);
+      var material = new THREE.MeshStandardMaterial({
+        color: PALETTE.sand,
+        roughness: 1.0,
+        metalness: 0.0
+      });
+      registerStone(material, 0.3, 0.3);
+      var sand = new THREE.Mesh(geometry, material);
+      sand.position.set(0, 0.05, -9);
+      sand.receiveShadow = true;
+      scene.add(sand);
+
+      // A darker wet rim, just under the dry sand: the sea touching stone.
+      var rimShape = new THREE.Shape();
+      rimShape.moveTo(-19, 0);
+      rimShape.bezierCurveTo(-15, 6.6, 6, 7.8, 17, 4.8);
+      rimShape.bezierCurveTo(21, 2.8, 18.5, -4.2, 10, -6.2);
+      rimShape.bezierCurveTo(-2, -7.8, -16, -6.8, -19, 0);
+      var rimGeometry = new THREE.ShapeGeometry(rimShape, 28);
+      rimGeometry.rotateX(-Math.PI / 2);
+      var rimMaterial = new THREE.MeshStandardMaterial({
+        color: 0x5f5a4f,
+        roughness: 0.62,
+        metalness: 0.0
+      });
+      registerStone(rimMaterial, 0.4, 0.4);
+      var rim = new THREE.Mesh(rimGeometry, rimMaterial);
+      rim.position.set(0, 0.035, -9);
+      rim.receiveShadow = true;
+      scene.add(rim);
+
+      var rockGeometry = new THREE.DodecahedronGeometry(1, 0);
+      var rockMaterial = new THREE.MeshStandardMaterial({
+        color: 0x655f56,
+        roughness: 1.0,
+        metalness: 0.0
+      });
+      registerStone(rockMaterial, 0.7, 0.7);
+      var spots = [
+        [-6.5, -12.2, 0.44, 0.8],
+        [-4.4, -14.1, 0.28, 2.1],
+        [5.8, -10.4, 0.5, 1.2],
+        [7.6, -12.6, 0.33, 2.9],
+        [-8.2, -8.6, 0.25, 0.4],
+        [3.1, -14.8, 0.21, 1.7],
+        [-1.8, -6.4, 0.17, 2.5],
+        [9.4, -7.8, 0.3, 3.3]
+      ];
+      for (var i = 0; i < spots.length; i += 1) {
+        var spot = spots[i];
+        var rock = new THREE.Mesh(rockGeometry, rockMaterial);
+        rock.position.set(spot[0], spot[2] * 0.46, spot[1]);
+        rock.scale.set(spot[2], spot[2] * 0.7, spot[2] * 0.86);
+        rock.rotation.set(spot[3] * 0.2, spot[3], spot[3] * 0.12);
+        rock.castShadow = true;
+        rock.receiveShadow = true;
+        scene.add(rock);
+      }
+    }
+
+    function buildRanges() {
+      addRange({
+        cx: -24,
+        cz: -48,
+        width: 34,
+        depth: 48,
+        peak: 27,
+        seed: 11,
+        low: PALETTE.mountainLow,
+        high: PALETTE.mountainHigh,
+        repeatX: 6,
+        repeatY: 2.4
+      });
+      addRange({
+        cx: 26,
+        cz: -62,
+        width: 36,
+        depth: 52,
+        peak: 24,
+        seed: 29,
+        low: 0x474643,
+        high: 0x686158,
+        repeatX: 6,
+        repeatY: 2.4
+      });
+      addRange({
+        cx: 0,
+        cz: -152,
+        width: 340,
+        depth: 74,
+        peak: 20,
+        seed: 47,
+        low: 0x4c4a47,
+        high: 0x6a6359,
+        repeatX: 6,
+        repeatY: 2.4
+      });
+    }
+
+    function addRange(config) {
+      var geometry = new THREE.PlaneGeometry(config.width, config.depth, 64, 10);
+      geometry.rotateX(-Math.PI / 2);
+      var position = geometry.attributes.position;
+      var noise = makeNoise1(config.seed);
+      var low = new THREE.Color(config.low);
+      var high = new THREE.Color(config.high);
+      var colors = [];
+      for (var i = 0; i < position.count; i += 1) {
+        var lx = position.getX(i);
+        var lz = position.getZ(i);
+        var u = lx / (config.width / 2);
+        var v = lz / (config.depth / 2);
+        var profile = Math.pow(Math.max(0, 1 - u * u), 1.6);
+        var ridge = 0.58 + 0.42 * noise(u * 7 + config.seed * 0.1);
+        var relief = 0.84 + 0.16 * Math.sin(u * 19 + config.seed);
+        var falloff = Math.pow(Math.max(0, Math.cos(v * Math.PI * 0.5)), 1.35);
+        var h = config.peak * profile * falloff * ridge * relief - 0.7;
+        position.setY(i, h);
+        var level = clamp((h + 0.7) / Math.max(1, config.peak), 0, 1);
+        var tint = low.clone().lerp(high, Math.pow(level, 0.8) * 0.86 + noise(u * 3 + 7) * 0.14);
+        colors.push(tint.r, tint.g, tint.b);
+      }
+      geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+      geometry.computeVertexNormals();
+      var material = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        vertexColors: true,
+        roughness: 1.0,
+        metalness: 0.0
+      });
+      registerStone(material, config.repeatX, config.repeatY);
+      var range = new THREE.Mesh(geometry, material);
+      range.position.set(config.cx, 0, config.cz);
+      scene.add(range);
+    }
+
+    function buildPortal() {
+      var outerHalf = 1.36;
+      var outerTop = 4.85;
+      var innerHalf = 0.88;
+      var innerTop = 4.37;
+
+      var shape = new THREE.Shape();
+      shape.moveTo(-outerHalf, 0);
+      shape.lineTo(-outerHalf, outerTop);
+      shape.absarc(0, outerTop, outerHalf, Math.PI, 0, true);
+      shape.lineTo(outerHalf, 0);
+      shape.lineTo(-outerHalf, 0);
+
+      var hole = new THREE.Path();
+      hole.moveTo(innerHalf, 0.02);
+      hole.lineTo(innerHalf, innerTop);
+      hole.absarc(0, innerTop, innerHalf, 0, Math.PI, false);
+      hole.lineTo(-innerHalf, 0.02);
+      hole.lineTo(innerHalf, 0.02);
+      shape.holes.push(hole);
+
+      var geometry = new THREE.ExtrudeGeometry(shape, {
+        depth: 0.52,
+        bevelEnabled: true,
+        bevelThickness: 0.035,
+        bevelSize: 0.035,
+        bevelSegments: 2,
+        curveSegments: 28,
+        steps: 1
+      });
+      geometry.translate(0, 0, -0.26);
+      var stone = new THREE.MeshStandardMaterial({
+        color: PALETTE.stone,
+        roughness: 1.0,
+        metalness: 0.0
+      });
+      registerStone(stone, 0.55, 0.55);
+      var portal = new THREE.Mesh(geometry, stone);
+      portal.position.set(0, 0, -9);
+      portal.castShadow = true;
+      portal.receiveShadow = true;
+      scene.add(portal);
+
+      var darkStone = new THREE.MeshStandardMaterial({
+        color: PALETTE.stoneDark,
+        roughness: 1.0,
+        metalness: 0.0
+      });
+      registerStone(darkStone, 0.55, 0.55);
+
+      var plinth = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.32, 1.25), darkStone);
+      plinth.position.set(0, 0.16, -9);
+      plinth.castShadow = true;
+      plinth.receiveShadow = true;
+      scene.add(plinth);
+
+      // The threshold the camera crosses: one worn slab at the water's edge.
+      var step = new THREE.Mesh(new THREE.BoxGeometry(2.45, 0.14, 0.82), darkStone);
+      step.position.set(0, 0.07, -8.28);
+      step.castShadow = true;
+      step.receiveShadow = true;
+      scene.add(step);
+    }
+
+    function makeVeilMaterial(opacity) {
+      var uniforms = {
+        uTime: { value: 0 },
+        uOpacity: { value: opacity },
+        uCool: { value: new THREE.Color(PALETTE.veilCool) },
+        uWarm: { value: new THREE.Color(PALETTE.veilWarm) }
+      };
+      veilUniforms.push(uniforms);
+      return new THREE.ShaderMaterial({
+        uniforms: uniforms,
+        vertexShader: VEIL_VERT,
+        fragmentShader: VEIL_FRAG,
+        transparent: true,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+        fog: false
+      });
+    }
+
+    function buildVeil() {
+      var curtain = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.74, 5.2),
+        makeVeilMaterial(1.0)
+      );
+      curtain.position.set(0, 2.62, -9.02);
+      curtain.renderOrder = 30;
+      scene.add(curtain);
+
+      // The same mist climbs out of the doorway and links it to the clouds.
+      var column = new THREE.Mesh(
+        new THREE.PlaneGeometry(3.6, 17),
+        makeVeilMaterial(0.55)
+      );
+      column.position.set(0, 10.8, -9.7);
+      column.renderOrder = 29;
+      scene.add(column);
+    }
+
+    function buildRays() {
+      rayUniforms = {
+        uTime: { value: 0 },
+        uOpacity: { value: 0.36 },
+        uColor: { value: new THREE.Color(PALETTE.glow) }
+      };
+      var material = new THREE.ShaderMaterial({
+        uniforms: rayUniforms,
+        vertexShader: RAY_VERT,
+        fragmentShader: RAY_FRAG,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+        fog: false
+      });
+      var specs = [
+        { x: 5, y: 26, z: -56, w: 4.6, h: 62, tilt: -0.5 },
+        { x: 11, y: 28, z: -62, w: 3.2, h: 66, tilt: -0.46 },
+        { x: 17, y: 30, z: -48, w: 5.4, h: 70, tilt: -0.55 },
+        { x: 23, y: 24, z: -70, w: 2.6, h: 54, tilt: -0.42 },
+        { x: 0.5, y: 22, z: -80, w: 7.4, h: 58, tilt: -0.6 },
+        { x: 9, y: 18, z: -40, w: 2.2, h: 44, tilt: -0.48 }
+      ];
+      for (var i = 0; i < specs.length; i += 1) {
+        var spec = specs[i];
+        var beam = new THREE.Mesh(new THREE.PlaneGeometry(spec.w, spec.h), material);
+        beam.position.set(spec.x, spec.y, spec.z);
+        beam.rotation.z = spec.tilt;
+        beam.renderOrder = 15;
+        scene.add(beam);
+      }
+    }
+
+    function buildShadowDecal() {
+      var board = document.createElement('canvas');
+      board.width = 128;
+      board.height = 32;
+      var context = board.getContext('2d');
+      if (!context) return;
+      var across = context.createLinearGradient(0, 0, 0, 32);
+      across.addColorStop(0, 'rgba(10, 20, 28, 0)');
+      across.addColorStop(0.34, 'rgba(10, 20, 28, 0.6)');
+      across.addColorStop(0.66, 'rgba(10, 20, 28, 0.6)');
+      across.addColorStop(1, 'rgba(10, 20, 28, 0)');
+      context.fillStyle = across;
+      context.fillRect(0, 0, 128, 32);
+      var along = context.createLinearGradient(0, 0, 128, 0);
+      along.addColorStop(0, 'rgba(0, 0, 0, 0.95)');
+      along.addColorStop(0.82, 'rgba(0, 0, 0, 0.4)');
+      along.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      context.globalCompositeOperation = 'destination-in';
+      context.fillStyle = along;
+      context.fillRect(0, 0, 128, 32);
+      var texture = track(new THREE.CanvasTexture(board));
+      texture.colorSpace = THREE.SRGBColorSpace;
+      var material = new THREE.MeshBasicMaterial({
+        map: texture,
+        transparent: true,
+        opacity: 0.62,
+        depthWrite: false,
+        color: PALETTE.shadow,
+        fog: false
+      });
+      var geometry = new THREE.PlaneGeometry(23, 4.6);
+      geometry.rotateX(-Math.PI / 2);
+      var decal = new THREE.Mesh(geometry, material);
+      decal.position.set(-3.4, 0.025, 2.0);
+      decal.rotation.y = Math.atan2(-0.956, -0.293);
+      decal.renderOrder = 2;
+      scene.add(decal);
+    }
+
+    // -------------------------------------------------------------- 3D update
+
+    function update3D(time, p) {
+      if (!renderer || !scene || !camera || renderFailed) return;
+      try {
+        var eased = smooth(p);
+        if (skyMesh) skyMesh.position.copy(camera.position);
+        if (sunSprite) {
+          sunSprite.position.copy(camera.position).addScaledVector(sunDir, 320);
+          var sunSize = 44 + 10 * eased;
+          sunSprite.scale.set(sunSize, sunSize, 1);
+        }
+
+        var z;
+        if (p < PASS_AT) z = 10 - 19 * smooth(p / PASS_AT);
+        else z = -9 - 43 * smooth((p - PASS_AT) / (1 - PASS_AT));
+        var lateral = Math.sin(time * 0.28) * 0.14 * (1 - p);
+        var camY = 3.0 + 0.55 * eased + Math.sin(time * 0.55) * 0.025 * (1 - p);
+        camera.position.set(lateral, camY, z);
+        var lookX = 0.8 + 6.5 * smooth((p - 0.6) / 0.4);
+        var lookY = 2.9 + 2.4 * smooth((p - 0.35) / 0.65);
+        camera.lookAt(lookX, lookY, z - 40);
+        camera.fov = 54 + 9 * p;
+        camera.updateProjectionMatrix();
+
+        if (skyUniforms) {
+          skyUniforms.uTime.value = time;
+          skyUniforms.uOpen.value = eased;
+        }
+        if (waterUniforms) {
+          waterUniforms.uTime.value = time;
+          waterUniforms.uOpen.value = eased;
+          var density = FOG_DENSITY * (1 - 0.32 * eased);
+          waterUniforms.uFogDensity.value = density;
+          if (scene.fog) scene.fog.density = density;
+        }
+        if (veilUniforms.length) {
+          veilUniforms[0].uTime.value = time;
+          veilUniforms[0].uOpacity.value = 0.92 * (1 - smooth((p - 0.06) / 0.62));
+          if (veilUniforms[1]) {
+            veilUniforms[1].uTime.value = time;
+            veilUniforms[1].uOpacity.value = 0.55 * (1 - smooth((p - 0.12) / 0.7));
+          }
+        }
+        if (rayUniforms) {
+          rayUniforms.uTime.value = time;
+          rayUniforms.uOpacity.value = 0.34 + 0.85 * smooth((p - 0.08) / 0.9);
+        }
+        renderer.render(scene, camera);
+      } catch (error) {
+        renderFailed = true;
+        complete();
+      }
+    }
+
+    // --------------------------------------------------------------- 2D build
+
+    function build2D() {
+      canvas = document.createElement('canvas');
+      canvas.setAttribute('aria-hidden', 'true');
+      ctx2d = canvas.getContext('2d');
+      if (!ctx2d) throw new Error('2D canvas unavailable');
+      size2D();
+      host.appendChild(canvas);
+      fallback2d = true;
+    }
+
+    function size2D() {
+      if (!canvas || !ctx2d) return;
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(height * dpr);
+      canvas.style.width = '100%';
+      canvas.style.height = '100%';
+    }
+
+    function traceArch(context, cx, baseY, w, h) {
+      var radius = w / 2;
+      var spring = baseY - h + radius;
+      context.moveTo(cx - radius, baseY);
+      context.lineTo(cx - radius, spring);
+      context.arc(cx, spring, radius, Math.PI, 0, false);
+      context.lineTo(cx + radius, baseY);
+      context.closePath();
+    }
+
+    function drawRidge(context, points, color, alpha) {
+      context.save();
+      context.globalAlpha = alpha;
+      context.fillStyle = color;
+      context.beginPath();
+      context.moveTo(points[0][0] * width, points[0][1] * height);
+      for (var i = 1; i < points.length; i += 1) {
+        context.lineTo(points[i][0] * width, points[i][1] * height);
+      }
+      context.closePath();
+      context.fill();
+      context.restore();
+    }
+
+    function draw2D(time, p) {
+      if (!ctx2d) return;
+      var w = width;
+      var h = height;
+      var context = ctx2d;
+      context.setTransform(dpr, 0, 0, dpr, 0, 0);
+      context.clearRect(0, 0, w, h);
+
+      var zoom = 1 + 0.55 * p;
+      context.save();
+      context.translate(w / 2, h * 0.56);
+      context.scale(zoom, zoom);
+      context.translate(-w / 2, -h * 0.56 - h * 0.05 * p);
+
+      var sky = context.createLinearGradient(0, 0, 0, h * 0.53);
+      sky.addColorStop(0, '#50555E');
+      sky.addColorStop(0.58, '#6E7276');
+      sky.addColorStop(0.9, '#A99D8C');
+      sky.addColorStop(1, '#C8B594');
+      context.fillStyle = sky;
+      context.fillRect(-w * 0.3, -h * 0.3, w * 1.6, h * 0.85);
+
+      var glow = context.createRadialGradient(
+        w * 0.72, h * 0.44, 0,
+        w * 0.72, h * 0.44, w * 0.62
+      );
+      glow.addColorStop(0, 'rgba(255, 241, 212, 0.82)');
+      glow.addColorStop(0.22, 'rgba(222, 199, 154, 0.55)');
+      glow.addColorStop(0.62, 'rgba(222, 199, 154, 0.14)');
+      glow.addColorStop(1, 'rgba(222, 199, 154, 0)');
+      context.fillStyle = glow;
+      context.fillRect(0, 0, w, h * 0.8);
+
+      for (var cloudIndex = 0; cloudIndex < 6; cloudIndex += 1) {
+        var cloudX = w * (0.12 + cloudIndex * 0.17) + Math.sin(time * 0.02 + cloudIndex) * w * 0.02;
+        var cloudY = h * (0.12 + (cloudIndex % 3) * 0.055);
+        var cloudR = w * (0.24 + (cloudIndex % 2) * 0.1);
+        var cloud = context.createRadialGradient(cloudX, cloudY, 0, cloudX, cloudY, cloudR);
+        cloud.addColorStop(0, 'rgba(80, 85, 94, 0.55)');
+        cloud.addColorStop(0.55, 'rgba(80, 85, 94, 0.24)');
+        cloud.addColorStop(1, 'rgba(80, 85, 94, 0)');
+        context.save();
+        context.translate(cloudX, cloudY);
+        context.scale(1, 0.42);
+        context.translate(-cloudX, -cloudY);
+        context.fillStyle = cloud;
+        context.beginPath();
+        context.arc(cloudX, cloudY, cloudR, 0, Math.PI * 2);
+        context.fill();
+        context.restore();
+      }
+
+      var sea = context.createLinearGradient(0, h * 0.47, 0, h);
+      sea.addColorStop(0, '#29517A');
+      sea.addColorStop(0.5, '#234A72');
+      sea.addColorStop(1, '#1B3E64');
+      context.fillStyle = sea;
+      context.fillRect(0, h * 0.47, w, h * 0.6);
+
+      // Slow ripple lines and scattered pearl glints on the bay.
+      for (var line = 0; line < 26; line += 1) {
+        var depth = line / 25;
+        var lineY = h * 0.49 + depth * depth * h * 0.5;
+        var drift = Math.sin(time * 0.6 + line * 1.3) * w * 0.03;
+        context.strokeStyle = 'rgba(222, 199, 154, ' + (0.025 + 0.05 * (1 - depth)) + ')';
+        context.lineWidth = 1;
+        context.beginPath();
+        context.moveTo(w * 0.08 + drift, lineY);
+        context.lineTo(w * (0.34 + 0.3 * (1 - depth)) + drift, lineY);
+        context.stroke();
+      }
+
+      drawRidge(context, [
+        [0, 0.47], [0.03, 0.44], [0.08, 0.455], [0.12, 0.39], [0.16, 0.42],
+        [0.21, 0.34], [0.25, 0.38], [0.3, 0.435], [0.36, 0.45], [0.4, 0.47]
+      ], '#4E4C49', 0.96);
+      drawRidge(context, [
+        [0.58, 0.47], [0.63, 0.445], [0.68, 0.4], [0.72, 0.365], [0.76, 0.395],
+        [0.81, 0.34], [0.86, 0.38], [0.9, 0.42], [0.94, 0.445], [1, 0.47]
+      ], '#4E4C49', 0.94);
+      drawRidge(context, [
+        [0.3, 0.465], [0.38, 0.445], [0.46, 0.452], [0.52, 0.437], [0.6, 0.45],
+        [0.68, 0.458], [0.75, 0.466], [0.3, 0.465]
+      ], '#6E685F', 0.55);
+
+      // The long graphic shadow first, so the stone stands inside its own light.
+      var baseY = h * 0.625;
+      context.save();
+      context.fillStyle = 'rgba(138, 124, 100, 0.92)';
+      context.beginPath();
+      context.ellipse(w * 0.5, baseY, w * 0.34, h * 0.036, 0, 0, Math.PI * 2);
+      context.fill();
+      context.fillStyle = 'rgba(95, 90, 79, 0.8)';
+      context.beginPath();
+      context.ellipse(w * 0.5, baseY + h * 0.012, w * 0.37, h * 0.02, 0, 0, Math.PI * 2);
+      context.fill();
+      context.restore();
+
+      context.save();
+      context.fillStyle = 'rgba(8, 18, 26, 0.34)';
+      context.beginPath();
+      context.moveTo(w * 0.5 - w * 0.055, baseY);
+      context.lineTo(w * 0.5 + w * 0.055, baseY);
+      context.lineTo(w * 0.24, h * 0.86);
+      context.lineTo(w * 0.13, h * 0.8);
+      context.closePath();
+      context.fill();
+      context.restore();
+
+      var portalH = h * 0.3 * (1 + 0.75 * p);
+      var portalW = portalH * 0.33;
+      var frame = portalW * 0.17;
+      var innerW = portalW - frame * 2;
+      var innerH = portalH - frame;
+
+      context.save();
+      context.beginPath();
+      traceArch(context, w * 0.5, baseY, portalW, portalH);
+      traceArch(context, w * 0.5, baseY - frame * 0.2, innerW, innerH);
+      var stoneGradient = context.createLinearGradient(
+        w * 0.5 - portalW / 2, 0,
+        w * 0.5 + portalW / 2, 0
+      );
+      stoneGradient.addColorStop(0, '#4E4C49');
+      stoneGradient.addColorStop(0.35, '#6E685F');
+      stoneGradient.addColorStop(0.62, '#7A7368');
+      stoneGradient.addColorStop(1, '#555149');
+      context.fillStyle = stoneGradient;
+      context.fill('evenodd');
+      context.restore();
+
+      var veilFade = 1 - smooth((p - 0.05) / 0.62);
+      context.save();
+      context.beginPath();
+      traceArch(context, w * 0.5, baseY - frame * 0.2, innerW, innerH);
+      context.clip();
+      var veil = context.createLinearGradient(0, baseY - innerH, 0, baseY);
+      veil.addColorStop(0, 'rgba(222, 208, 174, ' + (0.12 * veilFade) + ')');
+      veil.addColorStop(0.42, 'rgba(183, 179, 169, ' + (0.42 * veilFade) + ')');
+      veil.addColorStop(1, 'rgba(123, 125, 125, ' + (0.22 * veilFade) + ')');
+      context.fillStyle = veil;
+      context.fillRect(w * 0.5 - innerW, baseY - innerH, innerW * 2, innerH);
+      for (var puff = 0; puff < 4; puff += 1) {
+        var puffY = baseY - innerH * (0.2 + puff * 0.22) + Math.sin(time * 0.5 + puff) * innerH * 0.03;
+        var puffX = w * 0.5 + Math.sin(time * 0.35 + puff * 1.7) * innerW * 0.18;
+        var puffGradient = context.createRadialGradient(
+          puffX, puffY, 0,
+          puffX, puffY, innerW * 0.62
+        );
+        puffGradient.addColorStop(0, 'rgba(222, 208, 174, ' + (0.22 * veilFade) + ')');
+        puffGradient.addColorStop(1, 'rgba(222, 208, 174, 0)');
+        context.fillStyle = puffGradient;
+        context.beginPath();
+        context.arc(puffX, puffY, innerW * 0.62, 0, Math.PI * 2);
+        context.fill();
+      }
+      context.restore();
+
+      // A soft column of mist rising from the doorway into the clouds.
+      var column = context.createLinearGradient(0, baseY - portalH * 1.9, 0, baseY - portalH * 0.4);
+      column.addColorStop(0, 'rgba(183, 179, 169, 0)');
+      column.addColorStop(0.55, 'rgba(222, 208, 174, ' + (0.14 * veilFade) + ')');
+      column.addColorStop(1, 'rgba(222, 208, 174, 0)');
+      context.fillStyle = column;
+      context.fillRect(w * 0.5 - portalW * 0.9, baseY - portalH * 1.9, portalW * 1.8, portalH * 1.5);
+
+      // Oblique rays: brighter as the threshold opens.
+      context.save();
+      context.globalCompositeOperation = 'lighter';
+      var rayAlpha = 0.03 + 0.075 * smooth((p - 0.05) / 0.9);
+      for (var ray = 0; ray < 5; ray += 1) {
+        var topX = w * (0.46 + ray * 0.085);
+        var topW = w * (0.03 + 0.012 * (ray % 2));
+        context.fillStyle = 'rgba(222, 199, 154, ' + rayAlpha + ')';
+        context.beginPath();
+        context.moveTo(topX, -h * 0.12);
+        context.lineTo(topX + topW, -h * 0.12);
+        context.lineTo(topX + topW - w * 0.36, h * 0.75);
+        context.lineTo(topX - w * 0.36, h * 0.75);
+        context.closePath();
+        context.fill();
+      }
+      context.restore();
+
+      context.restore();
+
+      if (p > 0.68) {
+        var wash = (p - 0.68) / 0.32;
+        context.fillStyle = 'rgba(222, 199, 154, ' + (0.06 + 0.12 * wash) + ')';
+        context.fillRect(0, 0, w, h);
+      }
+    }
+
+    // ---------------------------------------------------------------- gesture
+
+    function notifyPrime() {
+      if (typeof options.onGesturePrime !== 'function') return;
+      try { options.onGesturePrime(); } catch (_) {}
+    }
+
+    function notifyInteract(touching) {
+      if (typeof options.onInteract !== 'function') return;
+      try { options.onInteract(touching === true); } catch (_) {}
+    }
+
+    function reportProgress(force) {
+      if (typeof options.onProgress !== 'function') return;
+      var value = force ? Math.round(progress) : Math.floor(progress / REPORT_STEP) * REPORT_STEP;
+      if (value <= lastReport) return;
+      lastReport = value;
+      try { options.onProgress({ progress: value, percent: value }); } catch (_) {}
+    }
+
+    function addProgress(delta) {
+      if (!active || clearing || !isFinite(delta)) return;
+      progress = clamp(progress + delta, 0, MAX_PROGRESS);
+      reportProgress(false);
+      if (progress >= MAX_PROGRESS) complete();
+    }
+
+    function beginHold(clientY) {
+      if (!active || clearing) return;
+      holding = true;
+      lastY = clientY;
+      notifyInteract(true);
+    }
+
+    function moveHold(clientY) {
+      if (!holding || clearing) return;
+      var delta = clientY - lastY;
+      lastY = clientY;
+      if (delta < 0) addProgress(-delta * DRAG_GAIN);
+      else if (delta > 0) addProgress(-delta * DRAG_BACK);
+    }
+
+    function endHold() {
+      if (!holding) return;
+      holding = false;
+      notifyInteract(false);
+    }
+
+    function seal(event) {
+      if (!event) return;
+      event.stopPropagation();
+      if (event.cancelable) event.preventDefault();
+    }
+
+    function listen(target, type, handler, config) {
+      target.addEventListener(type, handler, config);
+      listeners.push(function () {
+        target.removeEventListener(type, handler, config);
+      });
+    }
+
+    function onTouchStart(event) {
+      if (!active && !clearing) return;
+      notifyPrime();
+      seal(event);
+      if (!active || clearing) return;
+      if (event.touches.length !== 1) {
+        endHold();
+        return;
+      }
+      beginHold(event.touches[0].clientY);
+    }
+
+    function onTouchMove(event) {
+      if (!active && !clearing) return;
+      seal(event);
+      if (!active || clearing || !holding || event.touches.length !== 1) return;
+      moveHold(event.touches[0].clientY);
+    }
+
+    function onTouchEnd(event) {
+      if (!active && !clearing) return;
+      notifyPrime();
+      seal(event);
+      if (!active || clearing) {
+        endHold();
+        return;
+      }
+      var touch = event.changedTouches && event.changedTouches[0];
+      if (touch) moveHold(touch.clientY);
+      endHold();
+    }
+
+    function onPointerDown(event) {
+      if (event.pointerType === 'touch') return;
+      if (!active && !clearing) return;
+      notifyPrime();
+      seal(event);
+      if (!active || clearing) return;
+      beginHold(event.clientY);
+      pointerId = event.pointerId;
+      if (host.setPointerCapture) {
+        try { host.setPointerCapture(event.pointerId); } catch (_) {}
+      }
+    }
+
+    function onPointerMove(event) {
+      if (event.pointerType === 'touch') return;
+      if (!active && !clearing) return;
+      seal(event);
+      if (!active || clearing || !holding) return;
+      if (pointerId !== null && event.pointerId !== pointerId) return;
+      moveHold(event.clientY);
+    }
+
+    function onPointerUp(event) {
+      if (event.pointerType === 'touch') return;
+      if (!active && !clearing) return;
+      seal(event);
+      if (!active || clearing) {
+        endHold();
+        return;
+      }
+      moveHold(event.clientY);
+      endHold();
+      pointerId = null;
+    }
+
+    function onWheel(event) {
+      if (!active && !clearing) return;
+      seal(event);
+      if (!active || clearing) return;
+      notifyPrime();
+      var unit = event.deltaMode === 1 ? 16 : (event.deltaMode === 2 ? height : 1);
+      addProgress(-event.deltaY * unit * 0.028);
+    }
+
+    function onKeyDown(event) {
+      if (!active) return;
+      var key = event.key;
+      var forwards = key === 'ArrowUp' || key === 'PageUp' || key === ' ' || key === 'Spacebar';
+      var backwards = key === 'ArrowDown' || key === 'PageDown';
+      if (!forwards && !backwards) return;
+      event.preventDefault();
+      event.stopPropagation();
+      if (clearing) return;
+      notifyPrime();
+      addProgress(forwards ? 3.5 : -3.5);
+    }
+
+    function onVisibilityChange() {
+      if (document.hidden) {
+        stopLoop();
+      } else if (active && !clearing) {
+        lastFrameAt = 0;
+        startLoop();
+      }
+    }
+
+    function onBlur() {
+      endHold();
+    }
+
+    function onResize() {
+      window.clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(function () {
+        if (!active) return;
+        if (!measure()) return;
+        if (renderer) {
+          renderer.setPixelRatio(dpr);
+          renderer.setSize(width, height, false);
+          if (camera) {
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+          }
+        }
+        if (ctx2d) size2D();
+      }, 220);
+    }
+
+    function onContextMenu(event) {
+      event.preventDefault();
+    }
+
+    function attachEvents() {
+      listen(host, 'touchstart', onTouchStart, { passive: false });
+      listen(host, 'touchmove', onTouchMove, { passive: false });
+      listen(host, 'touchend', onTouchEnd, { passive: false });
+      listen(host, 'touchcancel', function () { endHold(); }, { passive: true });
+      listen(host, 'pointerdown', onPointerDown);
+      listen(host, 'pointermove', onPointerMove);
+      listen(host, 'pointerup', onPointerUp);
+      listen(host, 'pointercancel', function () { endHold(); });
+      listen(host, 'wheel', onWheel, { passive: false });
+      listen(host, 'click', function (event) {
+        if (!active && !clearing) return;
+        event.stopPropagation();
+      }, { passive: true });
+      listen(host, 'contextmenu', onContextMenu);
+      listen(window, 'keydown', onKeyDown, true);
+      listen(window, 'blur', onBlur, { passive: true });
+      listen(document, 'visibilitychange', onVisibilityChange, { passive: true });
+      listen(window, 'resize', onResize, { passive: true });
+    }
+
+    function detachEvents() {
+      for (var i = 0; i < listeners.length; i += 1) {
+        try { listeners[i](); } catch (_) {}
+      }
+      listeners = [];
+    }
+
+    // ------------------------------------------------------------------- loop
+
+    function advance(dt) {
+      if (!active || clearing) return;
+      if (holding) addProgress(dt * HOLD_RATE);
+      else if (progress > 0) {
+        progress = Math.max(0, progress - dt * DECAY_RATE);
+        reportProgress(false);
+      }
+    }
+
+    function frame(now) {
+      if (!running) return;
+      rafId = window.requestAnimationFrame(frame);
+      if (!lastFrameAt) lastFrameAt = now;
+      var dt = (now - lastFrameAt) / 1000;
+      lastFrameAt = now;
+      if (dt < FRAME_MIN_DT) dt = FRAME_MIN_DT;
+      if (dt > 0.05) dt = 0.05;
+      elapsed += dt;
+      advance(dt);
+      try {
+        if (fallback2d) draw2D(elapsed, progress / MAX_PROGRESS);
+        else update3D(elapsed, progress / MAX_PROGRESS);
+      } catch (error) {
+        renderFailed = true;
+        complete();
+      }
+    }
+
+    function startLoop() {
+      if (running) return;
+      running = true;
+      lastFrameAt = 0;
+      rafId = window.requestAnimationFrame(frame);
+    }
+
+    function stopLoop() {
+      running = false;
+      if (rafId) {
+        window.cancelAnimationFrame(rafId);
+        rafId = 0;
+      }
+    }
+
+    // -------------------------------------------------------------- completion
+
+    function complete() {
+      if (!active || clearing) return;
+      clearing = true;
+      holding = false;
+      progress = MAX_PROGRESS;
+      reportProgress(true);
+      if (host) host.classList.add('is-clearing');
+      notifyInteract(false);
+      if (typeof options.onCleared === 'function') {
+        try { options.onCleared({ progress: MAX_PROGRESS, percent: MAX_PROGRESS }); } catch (_) {}
+      }
+      window.clearTimeout(fadeTimer);
+      fadeTimer = window.setTimeout(function () {
+        fadeTimer = 0;
+        finish();
+      }, FADE_MS);
+    }
+
+    function finish() {
+      stopLoop();
+      detachEvents();
+      // The 2D canvas must be detached before dispose3D() clears the shared
+      // canvas reference; otherwise a fallback canvas could stay in the DOM.
+      dispose2D();
+      dispose3D();
+      if (host) {
+        host.classList.remove('is-active', 'is-clearing');
+        host.hidden = true;
+      }
+      active = false;
+      clearing = false;
+      holding = false;
+      disposed = true;
+    }
+
+    function disposeMaterial(material) {
+      if (!material) return;
+      var maps = [
+        'map', 'alphaMap', 'normalMap', 'roughnessMap', 'metalnessMap',
+        'emissiveMap', 'aoMap', 'bumpMap', 'lightMap'
+      ];
+      for (var i = 0; i < maps.length; i += 1) {
+        var texture = material[maps[i]];
+        if (texture && typeof texture.dispose === 'function') {
+          try { texture.dispose(); } catch (_) {}
+        }
+      }
+      try { material.dispose(); } catch (_) {}
+    }
+
+    function dispose3D() {
+      if (scene) {
+        var geometries = [];
+        var materials = [];
+        scene.traverse(function (object) {
+          if (object.geometry && geometries.indexOf(object.geometry) < 0) {
+            geometries.push(object.geometry);
+          }
+          var material = object.material;
+          if (Array.isArray(material)) {
+            for (var i = 0; i < material.length; i += 1) {
+              if (materials.indexOf(material[i]) < 0) materials.push(material[i]);
+            }
+          } else if (material && materials.indexOf(material) < 0) {
+            materials.push(material);
+          }
+        });
+        for (var g = 0; g < geometries.length; g += 1) {
+          try { geometries[g].dispose(); } catch (_) {}
+        }
+        for (var m = 0; m < materials.length; m += 1) disposeMaterial(materials[m]);
+        try { scene.clear(); } catch (_) {}
+      }
+      for (var t = 0; t < textures.length; t += 1) {
+        try { textures[t].dispose(); } catch (_) {}
+      }
+      textures = [];
+      textureCache = {};
+      stoneMaterials = [];
+      veilUniforms = [];
+      rayUniforms = null;
+      skyUniforms = null;
+      waterUniforms = null;
+      skyMesh = null;
+      sunSprite = null;
+      stoneNormal = null;
+      stoneRough = null;
+      if (renderer) {
+        var element = renderer.domElement;
+        try { renderer.dispose(); } catch (_) {}
+        try { renderer.forceContextLoss(); } catch (_) {}
+        if (element && element.parentNode) element.parentNode.removeChild(element);
+      }
+      renderer = null;
+      scene = null;
+      camera = null;
+      canvas = null;
+      THREE = null;
+      sunDir = null;
+    }
+
+    function dispose2D() {
+      if (canvas && canvas.parentNode) canvas.parentNode.removeChild(canvas);
+      canvas = null;
+      ctx2d = null;
+      fallback2d = false;
+    }
+
+    // -------------------------------------------------------------------- API
+
+    function enter(config) {
+      if (active) return false;
+      host = document.getElementById('story-3d-stage');
+      if (!host) return false;
+      window.clearTimeout(fadeTimer);
+      fadeTimer = 0;
+      options = config || {};
+      progress = 0;
+      lastReport = -1;
+      holding = false;
+      pointerId = null;
+      clearing = false;
+      renderFailed = false;
+      fallback2d = false;
+      elapsed = 0;
+      lastFrameAt = 0;
+      host.hidden = false;
+      void host.offsetWidth;
+      if (!measure()) {
+        host.hidden = true;
+        return false;
+      }
+      THREE = window.THREE || null;
+      disposed = true;
+      var built = false;
+      if (THREE && typeof THREE.WebGLRenderer === 'function') {
+        try {
+          build3D();
+          built = true;
+        } catch (error) {
+          dispose3D();
+          built = false;
+        }
+      }
+      if (!built) {
+        try {
+          build2D();
+          built = true;
+        } catch (error) {
+          dispose2D();
+          built = false;
+        }
+      }
+      if (!built) {
+        host.hidden = true;
+        disposed = true;
+        return false;
+      }
+      disposed = false;
+      active = true;
+      attachEvents();
+      if (host.classList) host.classList.remove('is-clearing');
+      host.classList.add('is-active');
+      reportProgress(true);
+      startLoop();
+      return true;
+    }
+
+    function exit() {
+      if (!active && !clearing) return false;
+      window.clearTimeout(fadeTimer);
+      fadeTimer = 0;
+      active = false;
+      clearing = false;
+      holding = false;
+      finish();
+      return true;
+    }
+
+    function isActive() {
+      return active;
+    }
+
+    function snapshot() {
+      return {
+        active: active,
+        clearing: clearing,
+        progress: Math.round(progress),
+        fallback2d: fallback2d,
+        running: running,
+        width: width,
+        height: height,
+        dpr: dpr,
+        version: VERSION
+      };
+    }
+
+    return {
+      enter: enter,
+      exit: exit,
+      isActive: isActive,
+      snapshot: snapshot
+    };
+  })();
+
   window.SanctuaryStories = {
     enter: enter,
     exit: exit,
+    enter3D: threshold.enter,
+    exit3D: threshold.exit,
     isActive: function () { return active; },
+    is3DActive: threshold.isActive,
     snapshot: snapshot,
-    version: '132',
+    snapshot3D: threshold.snapshot,
+    version: '141',
   };
 })();

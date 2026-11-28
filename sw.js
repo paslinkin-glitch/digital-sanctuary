@@ -1,12 +1,13 @@
-/* Yoursanctuary — PWA shell cache (v140).
- * install() precaches only the critical shell: the app, styles, catalog and
- * manifest. Fonts and icons are cached on first use but served cache-first
- * afterwards, so they return from disk instantly instead of holding the
- * browser loading bar while the network is slow. The shell itself stays
- * network-first, so a fresh deployment wins online. Cross-origin video CDN
- * requests and the umami beacon deliberately pass through untouched.
+/* Yoursanctuary — PWA shell cache (v141).
+ * install() precaches only the critical shell: the app, styles, catalog, the
+ * Three.js bundle and its two 512 px stone maps. Fonts and icons are cached on
+ * first use but served cache-first afterwards, so they return from disk
+ * instantly instead of holding the browser loading bar while the network is
+ * slow. The shell itself stays network-first, so a fresh deployment wins
+ * online. Cross-origin video CDN requests and the umami beacon deliberately
+ * pass through untouched.
  */
-const CACHE = 'sanctuary-shell-v140';
+const CACHE = 'sanctuary-shell-v141';
 const SHELL = [
   './',
   './index.html',
@@ -16,10 +17,14 @@ const SHELL = [
   './app.js',
   './videos-data.js',
   './manifest.json',
+  './assets/three.min.js',
+  './assets/stone-normal.jpg',
+  './assets/stone-roughness.jpg',
 ];
 const CACHE_FIRST_PATHS = [
   /^\/fonts\/[^/]+\.woff2$/i,
   /^\/(icon-[^/]+\.png|og-preview\.png|favicon\.ico|apple-touch-icon\.png)$/i,
+  /^\/assets\/(three\.min\.js|stone-normal\.jpg|stone-roughness\.jpg)$/i,
 ];
 
 function isCacheFirst(url) {
