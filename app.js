@@ -2812,6 +2812,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
     if (pathPlan.length > SESSION_LENGTH) pathPlan = pathPlan.slice(0, SESSION_LENGTH);
     if (pathPlan.length) pathPlan = pinInstantOpeningClip(pathPlan);
+    if (pathPlan.length) pathPlan = ensureStoryForestFrame(pathPlan);
     return pathPlan.length === SESSION_LENGTH;
   }
   function ensureFallbackCategories() {
@@ -2952,6 +2953,40 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     }
     return entries;
   }
+  // v139: the interactive mist belongs to the forest. Whatever the shuffle
+  // decides, the third frame (entries[STORY_FRAME_INDEX], pathPos === 2) must be
+  // a Shadow scene whose sound bed is fog or rain, so a water or city frame can
+  // never sit under the interactive haze. Only a same-stage swap is allowed, so
+  // the 3/3/2/2 rhythm of the ten-scene showcase stays intact.
+  const STORY_SOUND_BEDS = ['fog', 'rain'];
+  function isForestShadowEntry(entry) {
+    if (!entry || !entry.clip) return false;
+    if (Number(entry.stage) !== 1) return false;
+    const bed = String(entry.clip.soundCategory || '').trim().toLowerCase();
+    return STORY_SOUND_BEDS.includes(bed);
+  }
+  function ensureStoryForestFrame(entries) {
+    if (!Array.isArray(entries) || entries.length <= STORY_FRAME_INDEX) return entries;
+    const frame = entries[STORY_FRAME_INDEX];
+    if (isForestShadowEntry(frame)) return entries;
+    // A frame outside the Shadow stage cannot be moved without breaking the
+    // stage rhythm, so the guarantee only ever swaps inside Shadow.
+    if (!frame || Number(frame.stage) !== 1) return entries;
+    // Prefer a swap that keeps the pinned opening frame untouched; the opening
+    // only gives up its light pin when it is the single fog/rain Shadow scene.
+    const order = [];
+    for (let index = 1; index < entries.length; index += 1) order.push(index);
+    order.push(0);
+    for (const index of order) {
+      if (index === STORY_FRAME_INDEX) continue;
+      const candidate = entries[index];
+      if (!isForestShadowEntry(candidate)) continue;
+      entries[index] = frame;
+      entries[STORY_FRAME_INDEX] = candidate;
+      return entries;
+    }
+    return entries;
+  }
   function buildSessionPlan() {
     resetViewedCycleIfComplete();
     pathPicked = new Set();
@@ -3004,6 +3039,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     let entries = attempt(false);
     if (entries) entries = pinInstantOpeningClip(entries);
     if (entries) entries = ensureFinaleClosesSession(entries);
+    if (entries) entries = ensureStoryForestFrame(entries);
     if (!entries || entries.length !== SESSION_LENGTH || !sessionPlanIsUnique(entries)) {
       allViewedVideoIds.clear();
       sessionUsedVideoIds.clear();
@@ -3011,6 +3047,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       entries = attempt(false) || attempt(true);
       if (entries) entries = pinInstantOpeningClip(entries);
       if (entries) entries = ensureFinaleClosesSession(entries);
+      if (entries) entries = ensureStoryForestFrame(entries);
     }
     if (!entries || entries.length !== SESSION_LENGTH || !sessionPlanIsUnique(entries)) return false;
     pathPlan = entries;

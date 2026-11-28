@@ -1,36 +1,41 @@
 #!/usr/bin/env python3
-"""Build the v138 ten-scene 4K showcase in the cloud (mode: showcase-4k-10).
+"""Build the v139 ten-scene vertical showcase in the cloud (pixabay-vertical-10).
 
-The live catalog is temporarily replaced by ten reference nature scenes taken
-from open, key-free sources: Wikimedia Commons is the primary library (its
-upload API needs no key at all) and the open Coverr catalog is the reserve. No
-paid API key is used anywhere.
+The live catalog is temporarily replaced by ten reference nature scenes that are
+native vertical phone masters (height > width), sourced from the Pixabay Video
+API. The API key is read from the PIXABAY_API_KEY environment variable, which the
+GitHub Actions workflow fills from the repository secret: the key is never
+written into a committed file and is never printed by this script.
 
-Every scene starts as a real 4K master (>= 2160 px on at least one side) that is
-downloaded here, on the GitHub Actions runner -- never on the owner's machine,
-never on a phone -- trimmed to the stable 2.0-12.0 s window and supersampled
-twice with FFmpeg's lanczos scaler:
+Every scene is downloaded here, on the GitHub Actions runner -- never on the
+owner's machine, never on a phone -- and supersampled twice with FFmpeg's
+lanczos scaler:
 
-  mp4-720-4k/<id>.mp4   720x1280, 10.0 s, 30 fps, -an, two-pass libx264
-                        -b:v 1250k -maxrate 1550k -bufsize 2500k, +faststart,
-                        strictly 1.40-1.85 MB of mobile weight
-  mp4-1080-4k/<id>.mp4  1080x1920, 10.0 s, 30 fps, -an, libx264 CRF 18
-                        -maxrate 5500k -bufsize 11000k, +faststart, <= 7 MB
+  mp4-720-px/px-4k-01.mp4   720x1280, 10.0 s, 30 fps, -an, two-pass libx264
+                            -profile:v high -preset slow -b:v 1250k
+                            -maxrate 1550k -bufsize 2500k, +faststart,
+                            strictly 1.40-1.85 MB of mobile weight
+  mp4-1080-px/px-4k-01.mp4  1080x1920, 10.0 s, 30 fps, -an, libx264 CRF 18
+                            -maxrate 5500k -bufsize 11000k, +faststart, <= 7 MB
+
+Source selection is strict on purpose. A horizontal master is never cropped down
+to a phone: only a native vertical frame (height > width) that already carries at
+least 1920 px of height and sits within a few percent of 9:16 is accepted, so the
+encode never slices the sides off a landscape shot. Ten different scenes are
+required: 3 shadow (misty forest, fog mountains, rain forest -- all with a fog or
+rain sound bed), 3 trickster_abyss (ocean waves night, dark sea waves, light
+through trees), 2 calm (calm lake reflection, sunrise mist valley) and 2 path
+(road forest mist, ocean horizon dawn) whose tenth scene is the is_finale.
+
+When Pixabay returns fewer usable vertical clips for a slot than the showcase
+needs, the missing slot is filled from the natively vertical frames of
+videos-archive.json -- the thirty 1080x1920 scenes kept out of the live catalog.
+A landscape frame is never taken from the archive either.
 
 Both objects land in Timeweb S3 under a one-year immutable Cache-Control, then
 videos.json and videos-data.js are rewritten with the ten scenes in the exact
-v138 order: 3 shadow / 3 trickster_abyss / 2 calm / 2 path, the tenth being
-is_finale. The previous thirty scenes stay in videos-archive.json, in
+v139 order. The previous thirty scenes stay in videos-archive.json, in
 videos-data-archive.js and untouched inside the S3 bucket.
-
-Source resolution is API-driven, not hardcoded: every scene declares a few
-natural-language queries (misty forest, mountains in clouds, ocean waves, rain,
-sunrise, still water, road, light through the canopy) plus the Commons titles
-that the open catalog already proved to be clean 4K nature masters. The script
-asks the Commons search API, keeps only video files that report a 4K frame and
-at least twelve seconds, ranks them by title relevance and duration, and only
-then downloads the first master that survives ffprobe. When Commons returns
-nothing usable for a slot, the Coverr open catalog is queried as the reserve.
 
 Usage:
   python scripts/build_4k_showcase.py                # full cloud build
@@ -40,27 +45,28 @@ import argparse
 import html
 import json
 import os
-import random
 import re
 import shutil
 import subprocess
 import sys
+import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-WORK = ROOT / "mp4-work-4k"
+WORK = ROOT / "mp4-work-px"
 SOURCE_DIR = WORK / "sources"
-OUT_720 = WORK / "720-4k"
-OUT_1080 = WORK / "1080-4k"
+OUT_720 = WORK / "720-px"
+OUT_1080 = WORK / "1080-px"
 
 S3_BUCKET = os.environ.get("S3_BUCKET", "digital-sanctuary")
 S3_ENDPOINT = os.environ.get("S3_ENDPOINT", "https://s3.twcstorage.ru").rstrip("/")
 S3_PREFIX = S3_ENDPOINT + "/" + S3_BUCKET
 
-PREFIX_720 = "mp4-720-4k"
-PREFIX_1080 = "mp4-1080-4k"
+PREFIX_720 = "mp4-720-px"
+PREFIX_1080 = "mp4-1080-px"
 
 DURATION = 10
 FPS = 30
@@ -77,12 +83,25 @@ OPENING_720_MAX = 1_650_000
 MAX_1080_BYTES = 7_000_000
 MAX_SOURCE_BYTES = 2_000_000_000
 
+# Native vertical only. A source below 1920 px of height, or one whose aspect is
+# far away from 9:16, would force a real crop, so it is rejected before encode.
+MIN_SOURCE_HEIGHT = 1920
+MIN_SOURCE_SECONDS = 11.0
+MAX_SOURCE_SECONDS = 600.0
+RATIO_MIN = 0.50
+RATIO_MAX = 0.64
+
 USER_AGENT = (
     "YoursanctuaryShowcase/1.0 (https://yoursanctuary.ru; "
     "contact@yoursanctuary.ru) python-urllib"
 )
-COMMONS_API = "https://commons.wikimedia.org/w/api.php"
+PIXABAY_API = "https://pixabay.com/api/videos/"
+PIXABAY_REFERER = "https://pixabay.com/"
+ARCHIVE_FILE = ROOT / "videos-archive.json"
 REQUEST_TIMEOUT = 120
+SEARCH_PAGES = 1
+PER_PAGE = 50
+CANDIDATES_TRIED = 6
 
 STAGE_ARCH = {
     "shadow": "Shadow",
@@ -108,169 +127,130 @@ REAL_TRACK_IDS = {
 
 # Scene table in catalog order. Three shadow, three trickster_abyss, two calm and
 # two path; the tenth scene closes the session with is_finale. "queries" are the
-# natural-language searches handed to the Commons API, "prefer" are the clean 4K
-# masters the open catalog already knows about (they are still resolved live
-# through the API, never hardcoded to a file URL), "keywords" only score a title.
+# natural-language searches handed to the Pixabay Video API, "keywords" only
+# score the returned tags, and "archive" lists the natively vertical fallback
+# frames of videos-archive.json (used only when Pixabay has nothing usable).
 SCENES = [
     {
-        "id": "showcase-4k-01",
+        "id": "px-4k-01",
         "stage": "shadow",
         "track": "fog-02",
         "title": "Fog Moving Through a Silent Forest",
         "caption_en": "Fog moves between the trees without hurry",
         "caption_ru": "Туман идёт между деревьями не спеша",
-        "queries": ["4K forest fog", "4K misty forest", "4K fog", "4K mist", "4K forest"],
-        "prefer": [
-            "Drone video of foggy Vetla village in Estonia",
-            "Zeitraffer im Wald bei Hof",
-            "Aerial views of a forest in Belarus",
-        ],
-        "keywords": ["fog", "mist", "forest", "tree", "wood", "walt", "nebel"],
+        "queries": ["misty forest", "forest fog", "foggy woods"],
+        "keywords": ["forest", "fog", "mist", "tree", "woods", "woodland"],
+        "archive": ["dream-shadow-01", "dream-shadow-13", "dream-shadow-14"],
     },
     {
-        "id": "showcase-4k-02",
+        "id": "px-4k-02",
         "stage": "shadow",
         "track": "fog-01",
         "title": "Peaks Above a Slow Sea of Clouds",
         "caption_en": "Peaks stand above a slow sea of clouds",
         "caption_ru": "Вершины стоят над медленным морем облаков",
-        "queries": ["4K mountain clouds", "4K mountains", "4K clouds", "4K alps"],
-        "prefer": [
-            "El Hornocal, Humahuaca, Jujuy, Argentina",
-            "Clouds above Japan",
-            "Quebrada de las Señoritas",
-        ],
-        "keywords": ["mountain", "cloud", "peak", "ridge", "hornocal", "quebrada"],
+        "queries": ["fog mountains", "mountain fog", "misty mountains"],
+        "keywords": ["mountain", "fog", "mist", "cloud", "peak", "ridge"],
+        "archive": ["dream-shadow-03", "dream-shadow-11", "dream-calm-06"],
     },
     {
-        "id": "showcase-4k-03",
+        "id": "px-4k-03",
         "stage": "shadow",
         "track": "rain-02",
         "title": "Rain Falling in a Green Forest",
         "caption_en": "Rain touches the leaves and stays there",
         "caption_ru": "Дождь касается листьев и остаётся там",
-        "queries": ["4K rain forest", "4K rain", "4K rainstorm", "4K rainfall"],
-        "prefer": [
-            "Sunshowers - Oze National Park",
-            "October 2021 California rainstorm",
-            "Fife Creek - January 2023",
-        ],
-        "keywords": ["rain", "forest", "leaf", "leaves", "drop", "sunshower", "creek"],
+        "queries": ["rain forest", "forest rain", "raining trees"],
+        "keywords": ["rain", "forest", "leaf", "leaves", "drop", "tree"],
+        "archive": ["dream-shadow-06", "dream-shadow-12", "dream-shadow-07"],
     },
     {
-        "id": "showcase-4k-04",
+        "id": "px-4k-04",
         "stage": "trickster_abyss",
         "track": "water-01",
-        "title": "Ocean Waves Arriving on a Shore",
+        "title": "Ocean Waves Arriving in the Dark",
         "caption_en": "Waves arrive and take the shore back",
         "caption_ru": "Волны приходят и забирают берег назад",
-        "queries": ["4K ocean waves", "4K sea waves", "4K beach", "4K waves"],
-        "prefer": [
-            "Seaside Beach - October 2022 - Sarah Stierch 05",
-            "Une plage à Miami Beach",
-            "20240812 Midnight Oceanscape",
-        ],
-        "keywords": ["wave", "ocean", "sea", "shore", "beach", "surf", "coast"],
+        "queries": ["ocean waves night", "night sea waves", "dark ocean"],
+        "keywords": ["ocean", "sea", "wave", "night", "dark", "shore"],
+        "archive": ["dream-trickster-05", "dream-trickster-09", "dream-calm-07"],
     },
     {
-        "id": "showcase-4k-05",
+        "id": "px-4k-05",
+        "stage": "trickster_abyss",
+        "track": "water-02",
+        "title": "A Black Sea Breathing Slowly",
+        "caption_en": "The dark water breathes and lets go",
+        "caption_ru": "Тёмная вода дышит и отпускает",
+        "queries": ["dark sea waves", "black sea", "stormy sea"],
+        "keywords": ["sea", "wave", "water", "dark", "storm", "ocean"],
+        "archive": ["dream-trickster-06", "dream-trickster-10", "dream-trickster-11"],
+    },
+    {
+        "id": "px-4k-06",
         "stage": "trickster_abyss",
         "track": "space-02",
         "title": "Light Falling Through the Canopy",
         "caption_en": "Light falls through the canopy in pieces",
         "caption_ru": "Свет падает сквозь кроны частями",
-        "queries": ["4K sunlight forest", "4K forest light", "4K tree canopy", "4K sunbeam"],
-        "prefer": [
-            "One Year. One Tree. One Drone",
-            "4K Drone Flight over Ephraim Harbor",
-            "Recovering from the 2003 wildfire",
-        ],
-        "keywords": ["light", "sun", "canopy", "forest", "tree", "beam", "autumn", "fall"],
+        "queries": ["light through trees", "sunlight forest", "tree canopy sun"],
+        "keywords": ["light", "sun", "tree", "canopy", "forest", "beam"],
+        "archive": ["dream-shadow-07", "dream-calm-08", "dream-path-05"],
     },
     {
-        "id": "showcase-4k-06",
-        "stage": "trickster_abyss",
-        "track": "water-03",
-        "title": "A Waterfall Turning the Air Silver",
-        "caption_en": "Water falls and the air turns silver",
-        "caption_ru": "Вода падает, и воздух становится серебряным",
-        "queries": ["4K waterfall", "4K cascade", "4K falls"],
-        "prefer": [
-            "Athirapally falls",
-            "Black grouse waterfall in Lagodekhi",
-            "Rheinfall (Rhine Falls)",
-        ],
-        "keywords": ["waterfall", "cascade", "fall", "water", "river", "falls"],
-    },
-    {
-        "id": "showcase-4k-07",
+        "id": "px-4k-07",
         "stage": "calm",
-        "track": "water-04",
+        "track": "water-03",
         "title": "Still Water Holding a Grey Sky",
         "caption_en": "Still water holds the whole grey sky",
         "caption_ru": "Тихая вода держит всё серое небо",
-        "queries": ["4K still lake", "4K lake reflection", "4K lake", "4K calm water"],
-        "prefer": [
-            "Lake Miyagase 2024 July 28",
-            "East Lake Tohopekaliga May 2023",
-            "Koayu river - summer day",
-        ],
-        "keywords": ["lake", "still", "reflection", "water", "mirror", "miyagase"],
+        "queries": ["calm lake reflection", "still lake", "lake mirror"],
+        "keywords": ["lake", "water", "reflection", "still", "calm", "mirror"],
+        "archive": ["dream-calm-07", "dream-calm-01", "dream-shadow-10"],
     },
     {
-        "id": "showcase-4k-08",
+        "id": "px-4k-08",
         "stage": "calm",
         "track": "fog-04",
         "title": "Dawn Coming Over a Wet Valley",
         "caption_en": "Dawn arrives slowly over the wet valley",
         "caption_ru": "Рассвет медленно приходит над влажной долиной",
-        "queries": ["4K sunrise", "4K dawn", "4K morning mist", "4K sunrise valley"],
-        "prefer": [
-            "Another Sunrise Time Lapse in 4K",
-            "Sunrise atLake Bled",
-            "Cape Town under the clouds",
-        ],
-        "keywords": ["sunrise", "dawn", "morning", "valley", "mist", "sun", "bled"],
+        "queries": ["sunrise mist valley", "morning mist valley", "sunrise fog"],
+        "keywords": ["sunrise", "dawn", "mist", "valley", "morning", "fog"],
+        "archive": ["dream-calm-06", "dream-shadow-14", "dream-shadow-03"],
     },
     {
-        "id": "showcase-4k-09",
+        "id": "px-4k-09",
         "stage": "path",
         "track": "road-02",
         "title": "A Forest Road Entering the Trees",
         "caption_en": "The road enters the trees and disappears",
         "caption_ru": "Дорога входит в деревья и исчезает",
-        "queries": ["4K forest road", "4K country road", "4K dirt road", "4K road"],
-        "prefer": [
-            "Hatfield Forest road Hatfield Broad Oak Essex England",
-            "Aerial views of a car driving in snow through a forest",
-            "Nairobi National Park (August 2025) Dirt road fast",
-        ],
-        "keywords": ["road", "path", "forest", "track", "lane", "hatfield"],
+        "queries": ["road forest mist", "forest road fog", "misty road"],
+        "keywords": ["road", "forest", "mist", "path", "fog", "tree"],
+        "archive": ["dream-path-01", "dream-path-06", "dream-path-07"],
     },
     {
-        "id": "showcase-4k-10",
+        "id": "px-4k-10",
         "stage": "path",
         "track": "road-03",
         "title": "The Last Light Opening the Horizon",
         "caption_en": "Light opens all the way to the horizon",
         "caption_ru": "Свет открывается до самого горизонта",
-        "queries": ["4K road sunrise", "4K empty road", "4K sunset", "4K horizon"],
-        "prefer": [
-            "Nairobi National Park (August 2025) Dirt road fast",
-            "Algonquin Sunset 4k",
-            "Vintgar szoros, Szlovénia 4K",
-            "Time Lapse Sunset 4K 4096x2304",
-        ],
-        "keywords": ["road", "sunset", "sunrise", "light", "horizon", "gorge", "vintgar"],
+        "queries": ["ocean horizon dawn", "sea horizon sunrise", "dawn horizon"],
+        "keywords": ["ocean", "horizon", "dawn", "sunrise", "light", "sea"],
+        "archive": ["dream-calm-08", "dream-path-05", "dream-shadow-12"],
     },
 ]
 
 STAGE_COUNTS = {"shadow": 3, "trickster_abyss": 3, "calm": 2, "path": 2}
+STORY_BEDS = {"fog", "rain"}
 BANNED_TITLE = re.compile(
-    r"\b(nasa|svs|esa|iss|noaa|nesdis|space|rocket|satellite|astronaut|animation|"
-    r"animated|logo|trailer|screen|gameplay|minecraft|lecture|conference|interview|"
-    r"news|advert|commercial|music\s+video|title\s+card|test\s+video|demo\s+reel|"
-    r"greenscreen|city\s+tour|walking\s+in)\b",
+    r"\b(people|person|man|woman|girl|boy|child|children|crowd|portrait|face|"
+    r"city|street|cars?|traffic|building|skyscraper|indoor|office|room|"
+    r"logo|trailer|screen|gameplay|minecraft|lecture|conference|interview|"
+    r"news|advert|commercial|music\s+video|title|text|subtitle|cartoon|"
+    r"animation|animated|greenscreen|fashion|model|wedding)\b",
     re.IGNORECASE,
 )
 HTML_TAG = re.compile(r"<[^>]+>")
@@ -294,13 +274,15 @@ def validate_scene_table():
         counts[scene["stage"]] = counts.get(scene["stage"], 0) + 1
         if scene["track"] not in REAL_TRACK_IDS:
             raise RuntimeError("unknown track id " + scene["track"])
+        if scene["stage"] == "shadow" and scene["track"].split("-")[0] not in STORY_BEDS:
+            raise RuntimeError(scene["id"] + " shadow scene needs a fog or rain bed")
         for key in ("caption_en", "caption_ru"):
             words = len(scene[key].split())
             if not 5 <= words <= 8:
                 raise RuntimeError(
                     scene["id"] + " caption " + key + " has " + str(words) + " words")
-        if not scene["queries"] or not scene["prefer"]:
-            raise RuntimeError(scene["id"] + " has no search query or preferred master")
+        if not scene["queries"] or not scene["archive"]:
+            raise RuntimeError(scene["id"] + " has no search query or archive fallback")
     if counts != STAGE_COUNTS:
         raise RuntimeError("stage distribution " + str(counts) + " != " + str(STAGE_COUNTS))
     if SCENES[-1]["stage"] != "path":
@@ -319,8 +301,17 @@ def http_json(url, params=None):
         "User-Agent": USER_AGENT,
         "Accept": "application/json",
     })
-    with urllib.request.urlopen(request, timeout=REQUEST_TIMEOUT) as response:
-        payload = response.read()
+    try:
+        with urllib.request.urlopen(request, timeout=REQUEST_TIMEOUT) as response:
+            payload = response.read()
+    except urllib.error.HTTPError as error:
+        detail = ""
+        try:
+            detail = error.read().decode("utf-8", "replace")[:400]
+        except Exception:
+            detail = ""
+        # Never echo the request URL here: it carries the API key in its query.
+        raise RuntimeError("HTTP " + str(error.code) + " " + str(error.reason) + " " + detail)
     return json.loads(payload.decode("utf-8"))
 
 
@@ -329,172 +320,172 @@ def plain_text(value):
     return re.sub(r"\s+", " ", html.unescape(text)).strip()
 
 
-def extmeta(info, key):
-    block = (info.get("extmetadata") or {}).get(key) or {}
-    return plain_text(block.get("value"))
+def api_key():
+    key = os.environ.get("PIXABAY_API_KEY", "").strip()
+    if not key:
+        raise RuntimeError("PIXABAY_API_KEY is missing from the environment")
+    return key
 
 
 # --------------------------------------------------------------------------
-# source discovery
+# pixabay discovery
 # --------------------------------------------------------------------------
 SEARCH_CACHE = {}
 
 
-def commons_search(term, limit=50):
-    cached = SEARCH_CACHE.get(term)
+def pixabay_hits(term, page):
+    cached = SEARCH_CACHE.get((term, page))
     if cached is not None:
         return cached
     params = {
-        "action": "query",
-        "format": "json",
-        "formatversion": "2",
-        "generator": "search",
-        "gsrsearch": "filetype:video " + term,
-        "gsrnamespace": "6",
-        "gsrlimit": str(limit),
-        "prop": "videoinfo",
-        "viprop": "url|size|mime|duration|extmetadata",
+        "key": api_key(),
+        "q": term,
+        "lang": "en",
+        "video_type": "film",
+        "category": "nature",
+        "orientation": "vertical",
+        "order": "popular",
+        "safesearch": "true",
+        "per_page": str(PER_PAGE),
+        "page": str(page),
     }
-    try:
-        payload = http_json(COMMONS_API, params)
-    except Exception as error:  # a single dead query must not kill the build
-        print("  commons query failed (" + term + "): " + str(error), flush=True)
-        SEARCH_CACHE[term] = []
+    hits = []
+    for attempt in range(3):
+        try:
+            payload = http_json(PIXABAY_API, params)
+            hits = payload.get("hits") or []
+            break
+        except Exception as error:  # one dead query must not kill the build
+            print("  pixabay query failed (" + term + ", page " + str(page) + "): "
+                  + str(error), flush=True)
+            if attempt < 2:
+                time.sleep(4 * (attempt + 1))
+    SEARCH_CACHE[(term, page)] = hits
+    return hits
+
+
+def pick_vertical_stream(hit):
+    """The highest-resolution native vertical stream of a Pixabay video hit."""
+    videos = hit.get("videos") or {}
+    best = None
+    for name in ("large", "medium", "small", "tiny"):
+        stream = videos.get(name) or {}
+        url = str(stream.get("url") or "")
+        width = int(stream.get("width") or 0)
+        height = int(stream.get("height") or 0)
+        if not url.startswith("https://") or width <= 0 or height <= 0:
+            continue
+        # Iron rule: a landscape frame is never accepted, never cropped.
+        if height <= width:
+            continue
+        if height < MIN_SOURCE_HEIGHT:
+            continue
+        ratio = float(width) / float(height)
+        if ratio < RATIO_MIN or ratio > RATIO_MAX:
+            continue
+        area = width * height
+        if best is None or area > best[1]["width"] * best[1]["height"]:
+            best = (name, {
+                "url": url,
+                "width": width,
+                "height": height,
+                "bytes": int(stream.get("size") or 0),
+            })
+    return best
+
+
+def pixabay_candidates(scene):
+    """Vertical Pixabay clips for one scene, best tag match first."""
+    pool = {}
+    for qindex, term in enumerate(scene["queries"]):
+        for pindex in range(1, SEARCH_PAGES + 1):
+            for hindex, hit in enumerate(pixabay_hits(term, pindex)):
+                picked = pick_vertical_stream(hit)
+                if not picked:
+                    continue
+                stream_name, stream = picked
+                tags = plain_text(hit.get("tags") or "")
+                duration = float(hit.get("duration") or 0.0)
+                if duration < MIN_SOURCE_SECONDS or duration > MAX_SOURCE_SECONDS:
+                    continue
+                if BANNED_TITLE.search(tags):
+                    continue
+                key = "pixabay:" + str(hit.get("id"))
+                if key in pool:
+                    continue
+                lowered = tags.lower()
+                matched = sum(1 for keyword in scene["keywords"] if keyword in lowered)
+                if not matched:
+                    continue
+                pool[key] = {
+                    "key": key,
+                    "library": "pixabay",
+                    "title": tags or ("Pixabay clip " + str(hit.get("id"))),
+                    "tags": tags,
+                    "url": stream["url"],
+                    "width": stream["width"],
+                    "height": stream["height"],
+                    "bytes": stream["bytes"],
+                    "duration": duration,
+                    "page": str(hit.get("pageURL") or ""),
+                    "credit": plain_text(hit.get("user") or "Pixabay"),
+                    "license": "Pixabay Content License",
+                    "stream": stream_name,
+                    "rank": qindex * 1000 + pindex * 100 + hindex,
+                    "keyword_hits": matched,
+                }
+    return sorted(pool.values(), key=lambda item: (
+        -item["keyword_hits"],
+        item["rank"],
+        -item["width"] * item["height"],
+        abs(item["duration"] - 20.0),
+    ))
+
+
+def archive_candidates(scene):
+    """Natively vertical frames of the archived thirty-scene dream, never wide."""
+    if not ARCHIVE_FILE.exists():
         return []
-    pages = ((payload.get("query") or {}).get("pages") or [])
-    results = []
-    for page in pages:
-        info = (page.get("videoinfo") or [{}])[0]
-        url = info.get("url") or ""
+    try:
+        entries = json.loads(ARCHIVE_FILE.read_text(encoding="utf-8"))
+    except Exception as error:
+        print("  archive unreadable: " + str(error), flush=True)
+        return []
+    by_id = {}
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        width = int(entry.get("width") or 0)
+        height = int(entry.get("height") or 0)
+        if not entry.get("vertical") or width <= 0 or height <= 0 or height <= width:
+            continue
+        url = str(entry.get("url1080") or entry.get("url") or "")
         if not url.startswith("https://"):
             continue
-        raw_size = info.get("size")
-        results.append({
-            "key": "commons:" + str(page.get("pageid") or page.get("title")),
-            "library": "wikimedia",
-            "title": plain_text(page.get("title") or "").replace("File:", ""),
+        by_id[str(entry.get("id") or "")] = {
+            "key": "archive:" + str(entry.get("id") or ""),
+            "library": "archive",
+            "title": plain_text(entry.get("title") or ""),
+            "tags": "",
             "url": url,
-            "width": int(info.get("width") or 0),
-            "height": int(info.get("height") or 0),
-            "duration": float(info.get("duration") or 0.0),
-            "bytes": int(raw_size) if str(raw_size or "").isdigit() else 0,
-            "mime": str(info.get("mime") or ""),
-            "credit": extmeta(info, "Artist"),
-            "license": extmeta(info, "LicenseShortName"),
-            "page": str(info.get("descriptionurl") or ""),
-        })
-    SEARCH_CACHE[term] = results
-    return results
-
-
-def collect_mp4_urls(node, found):
-    if isinstance(node, dict):
-        for value in node.values():
-            collect_mp4_urls(value, found)
-    elif isinstance(node, list):
-        for value in node:
-            collect_mp4_urls(value, found)
-    elif isinstance(node, str):
-        low = node.lower()
-        if low.startswith("https://") and ".mp4" in low and "coverr" in low:
-            if "4k" in low or "2160" in low or "uhd" in low:
-                found.add(node)
-
-
-def coverr_search(term):
-    """Open Coverr catalog as the reserve library; never fatal when it is down."""
-    endpoints = (
-        "https://coverr.co/api/videos?page=1&per_page=24&query=" + urllib.parse.quote(term),
-        "https://coverr.co/api/videos?query=" + urllib.parse.quote(term),
-    )
-    for endpoint in endpoints:
-        try:
-            payload = http_json(endpoint)
-        except Exception:
+            "width": width,
+            "height": height,
+            "bytes": int(entry.get("size") or 0),
+            "duration": float(entry.get("duration") or 0.0),
+            "page": "",
+            "credit": "Yoursanctuary archive",
+            "license": "Yoursanctuary archive",
+            "stream": "master",
+            "rank": 5000,
+            "keyword_hits": 0,
+        }
+    ordered = []
+    for index, clip_id in enumerate(scene["archive"]):
+        candidate = by_id.get(clip_id)
+        if not candidate:
             continue
-        urls = set()
-        collect_mp4_urls(payload, urls)
-        if not urls:
-            continue
-        return [{
-            "key": "coverr:" + url,
-            "library": "coverr",
-            "title": "Coverr nature clip",
-            "url": url,
-            "width": 0,
-            "height": 0,
-            "duration": 0.0,
-            "bytes": 0,
-            "mime": "video/mp4",
-            "credit": "Coverr",
-            "license": "Coverr free license",
-            "page": "https://coverr.co/",
-        } for url in sorted(urls)]
-    return []
-
-
-def is_probably_video(candidate):
-    if candidate["mime"].startswith("video/"):
-        return True
-    return candidate["url"].lower().split("?")[0].endswith((".webm", ".ogv", ".ogg", ".mp4", ".mov"))
-
-
-def is_4k_candidate(candidate):
-    return candidate["width"] >= 2160 or candidate["height"] >= 2160
-
-
-def acceptable(candidate):
-    if not is_probably_video(candidate):
-        return False
-    if not is_4k_candidate(candidate):
-        return False
-    if candidate["duration"] < 12.0 or candidate["duration"] > 900.0:
-        return False
-    if BANNED_TITLE.search(candidate["title"]):
-        return False
-    if candidate["bytes"] and candidate["bytes"] > MAX_SOURCE_BYTES:
-        return False
-    return True
-
-
-def gather_candidates(scene):
-    """Preferred 4K masters first, then live keyword queries, best first."""
-    pool = {}
-    prefer = scene["prefer"]
-    for rank, fragment in enumerate(prefer):
-        matches = [item for item in commons_search(fragment) if acceptable(item)]
-        exact = [item for item in matches if fragment.lower() in item["title"].lower()]
-        for candidate in (exact or matches):
-            pool.setdefault(candidate["key"], dict(candidate, rank=rank))
-    generic_start = len(prefer)
-    for rank, term in enumerate(scene["queries"]):
-        for candidate in commons_search(term):
-            if not acceptable(candidate):
-                continue
-            if candidate["key"] in pool:
-                continue
-            hits = sum(1 for keyword in scene["keywords"] if keyword in candidate["title"].lower())
-            if not hits:
-                continue
-            pool[candidate["key"]] = dict(candidate, rank=generic_start + rank)
-    ordered = sorted(pool.values(), key=lambda item: (
-        item["rank"],
-        -sum(1 for keyword in scene["keywords"] if keyword in item["title"].lower()),
-        -min(item["width"], item["height"]),
-        abs(item["duration"] - 70.0),
-        item["bytes"],
-    ))
-    return ordered
-
-
-def reserve_candidates(scene):
-    """Coverr fallback, only when Commons has nothing usable for this scene."""
-    pool = {}
-    for term in scene["queries"][:2]:
-        for candidate in coverr_search(term):
-            pool[candidate["key"]] = candidate
-    ordered = list(pool.values())
-    random.Random(scene["id"]).shuffle(ordered)
+        candidate = dict(candidate, rank=5000 + index)
+        ordered.append(candidate)
     return ordered
 
 
@@ -535,7 +526,7 @@ def ffprobe(path):
     }
 
 
-def download(url, path, referer="https://commons.wikimedia.org/"):
+def download(url, path, referer=PIXABAY_REFERER):
     request = urllib.request.Request(url, headers={
         "User-Agent": USER_AGENT,
         "Referer": referer,
@@ -660,7 +651,7 @@ def build_720(src, out, start):
             break
         bitrate = next_bitrate
     # Last resort: a real CBR stream with x264 filler pads the frame to the exact
-    # mobile weight. Nothing visual is added or removed — the floor of the band is
+    # mobile weight. Nothing visual is added or removed -- the floor of the band is
     # honoured instead of publishing an unexpectedly light 1.0 MB clip.
     encode_720(src, out, start, 1260, True, filler=True)
     size = out.stat().st_size
@@ -677,12 +668,15 @@ def build_1080(src, out, start):
     encode_1080(src, out, start, 18, "5500k", "11000k")
     size = out.stat().st_size
     print("  " + out.name + ": " + str(size) + " bytes at CRF 18", flush=True)
-    if size > MAX_1080_BYTES:
-        encode_1080(src, out, start, 20, "5000k", "10000k")
+    for crf, maxrate, bufsize in ((20, "5000k", "10000k"), (22, "4500k", "9000k")):
+        if size <= MAX_1080_BYTES:
+            break
+        encode_1080(src, out, start, crf, maxrate, bufsize)
         size = out.stat().st_size
-        print("  " + out.name + ": " + str(size) + " bytes at CRF 20 (ceiling retry)", flush=True)
-        if size > MAX_1080_BYTES:
-            raise RuntimeError(out.name + ": " + str(size) + " bytes exceeds the 7 MB ceiling")
+        print("  " + out.name + ": " + str(size) + " bytes at CRF " + str(crf)
+              + " (ceiling retry)", flush=True)
+    if size > MAX_1080_BYTES:
+        raise RuntimeError(out.name + ": " + str(size) + " bytes exceeds the 7 MB ceiling")
     verify_clip(out, W1080, H1080)
     return size
 
@@ -732,8 +726,9 @@ def accept_source(scene, candidate, used_sources):
         return None
     suffix = Path(urllib.parse.urlparse(candidate["url"]).path).suffix or ".mp4"
     source_path = SOURCE_DIR / (scene["id"] + ".source" + suffix)
-    referer = "https://coverr.co/" if candidate["library"] == "coverr" else "https://commons.wikimedia.org/"
-    print("  downloading " + candidate["library"] + ": " + candidate["title"], flush=True)
+    referer = PIXABAY_REFERER if candidate["library"] == "pixabay" else "https://s3.twcstorage.ru/"
+    print("  downloading " + candidate["library"] + ": " + candidate["title"]
+          + " [" + str(candidate["width"]) + "x" + str(candidate["height"]) + "]", flush=True)
     try:
         download(candidate["url"], source_path, referer)
         probe = ffprobe(source_path)
@@ -741,46 +736,66 @@ def accept_source(scene, candidate, used_sources):
         print("  rejected (" + str(error) + ")", flush=True)
         source_path.unlink(missing_ok=True)
         return None
+    # Native vertical only: a wide master is never cropped into a phone frame.
+    if probe["height"] <= probe["width"]:
+        print("  rejected: " + str(probe["width"]) + "x" + str(probe["height"])
+              + " is not a vertical master", flush=True)
+        source_path.unlink(missing_ok=True)
+        return None
+    if probe["height"] < MIN_SOURCE_HEIGHT:
+        print("  rejected: " + str(probe["width"]) + "x" + str(probe["height"])
+              + " is below 1920 px of height", flush=True)
+        source_path.unlink(missing_ok=True)
+        return None
+    ratio = float(probe["width"]) / float(probe["height"])
+    if ratio < RATIO_MIN or ratio > RATIO_MAX:
+        print("  rejected: " + str(probe["width"]) + "x" + str(probe["height"])
+              + " is too far from 9:16 and would need a real crop", flush=True)
+        source_path.unlink(missing_ok=True)
+        return None
     if probe["duration"] < DURATION + 0.4:
         print("  rejected: only " + str(round(probe["duration"], 2)) + " s of video", flush=True)
         source_path.unlink(missing_ok=True)
         return None
-    if probe["width"] < 2160 and probe["height"] < 2160:
-        print("  rejected: " + str(probe["width"]) + "x" + str(probe["height"])
-              + " is not a 4K master", flush=True)
-        source_path.unlink(missing_ok=True)
-        return None
-    if probe["width"] * probe["height"] < 2560 * 1440:
-        print("  warning: below 1440p, keeping " + str(probe["width"]) + "x" + str(probe["height"]), flush=True)
     used_sources.add(candidate["key"])
     return source_path, probe, candidate
 
 
-def build_scene(scene, used_sources, s3, dry_run=False):
-    candidates = gather_candidates(scene)
-    if not candidates:
-        print("  no Commons 4K result for " + scene["id"] + ", asking the Coverr reserve", flush=True)
-        candidates = reserve_candidates(scene)
-    if not candidates:
-        raise RuntimeError("no 4K source found for " + scene["id"])
+def build_scene(scene, used_sources, dry_run=False):
+    pixabay = pixabay_candidates(scene)
+    archive = archive_candidates(scene)
+    candidates = pixabay + archive
     if dry_run:
-        for candidate in candidates[:4]:
-            print("  " + scene["id"] + " candidate: " + str(candidate["width"]) + "x"
-                  + str(candidate["height"]) + " " + str(round(candidate["duration"], 1)) + "s "
-                  + format(candidate["bytes"] / 1e6, ".0f") + "MB "
-                  + candidate["title"], flush=True)
+        if not candidates:
+            print("  " + scene["id"] + ": no vertical candidate at all", flush=True)
+        for candidate in candidates[:6]:
+            print("  " + scene["id"] + " candidate: " + candidate["library"] + " "
+                  + str(candidate["width"]) + "x" + str(candidate["height"]) + " "
+                  + str(round(candidate["duration"], 1)) + "s "
+                  + format(candidate["bytes"] / 1e6, ".1f") + "MB " + candidate["title"],
+                  flush=True)
         return None
+    if not candidates:
+        raise RuntimeError("no vertical source found for " + scene["id"])
     accepted = None
-    for candidate in candidates[:8]:
+    for candidate in pixabay[:CANDIDATES_TRIED]:
         accepted = accept_source(scene, candidate, used_sources)
         if accepted:
             break
     if not accepted:
-        raise RuntimeError("every candidate failed for " + scene["id"])
+        print("  Pixabay has no usable vertical clip for " + scene["id"]
+              + ", taking the native vertical archive", flush=True)
+        for candidate in archive:
+            accepted = accept_source(scene, candidate, used_sources)
+            if accepted:
+                break
+    if not accepted:
+        raise RuntimeError("every vertical candidate failed for " + scene["id"])
     source_path, probe, candidate = accepted
     start = trim_start(probe["duration"])
-    print("  master " + str(probe["width"]) + "x" + str(probe["height"]) + " "
-          + str(round(probe["duration"], 1)) + "s, cutting from " + format(start, ".2f") + "s", flush=True)
+    print("  master " + candidate["library"] + " " + str(probe["width"]) + "x"
+          + str(probe["height"]) + " " + str(round(probe["duration"], 1))
+          + "s, cutting from " + format(start, ".2f") + "s", flush=True)
     mobile = OUT_720 / (scene["id"] + ".mp4")
     studio = OUT_1080 / (scene["id"] + ".mp4")
     size_720 = build_720(source_path, mobile, start)
@@ -795,6 +810,7 @@ def build_scene(scene, used_sources, s3, dry_run=False):
         "mobile": mobile,
         "studio": studio,
         "source": candidate,
+        "probe": probe,
     }
 
 
@@ -844,17 +860,17 @@ def write_catalog(catalog):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Build the ten-scene 4K showcase")
+    parser = argparse.ArgumentParser(description="Build the ten-scene Pixabay vertical showcase")
     parser.add_argument("--dry-run", action="store_true",
                         help="only resolve and print source candidates, download nothing")
     args = parser.parse_args()
 
     validate_scene_table()
+    api_key()  # fail before any media work when the repository secret is missing
     if args.dry_run:
         print("dry run: " + str(len(SCENES)) + " scenes, metadata only", flush=True)
-        used = set()
         for scene in SCENES:
-            build_scene(scene, used, None, dry_run=True)
+            build_scene(scene, set(), dry_run=True)
         return 0
 
     prepare_workdir()
@@ -863,15 +879,22 @@ def main():
     built = []
     for scene in SCENES:
         print("building " + scene["id"] + " (" + scene["stage"] + ")", flush=True)
-        built.append(build_scene(scene, used_sources, s3))
+        built.append(build_scene(scene, used_sources))
 
     weights = [item["size720"] for item in built]
     if min(weights) < SIZE_720_MIN or max(weights) > SIZE_720_MAX:
         raise RuntimeError("mobile weights outside 1.40-1.85 MB: " + str(weights))
+    masters = [item["size1080"] for item in built]
+    if max(masters) > MAX_1080_BYTES:
+        raise RuntimeError("studio masters above 7 MB: " + str(masters))
     opening = [item for item in built
                if item["scene"]["stage"] == "shadow" and item["size720"] <= OPENING_720_MAX]
     if not opening:
         raise RuntimeError("no shadow scene fits the 1.65 MB instant-opening pool")
+    for item in built:
+        probe = item["probe"]
+        if probe["height"] <= probe["width"]:
+            raise RuntimeError(item["scene"]["id"] + ": a horizontal master slipped through")
 
     for item in built:
         upload(s3, item["mobile"], PREFIX_720 + "/" + item["scene"]["id"] + ".mp4")
@@ -881,15 +904,15 @@ def main():
     write_catalog(catalog)
 
     print("", flush=True)
-    print("showcase built: " + str(len(catalog)) + " scenes", flush=True)
+    print("showcase built: " + str(len(catalog)) + " vertical scenes", flush=True)
     print("mobile 720p: " + str(min(weights)) + "-" + str(max(weights)) + " bytes", flush=True)
-    masters = [item["size1080"] for item in built]
     print("studio 1080p: " + str(min(masters)) + "-" + str(max(masters)) + " bytes", flush=True)
     print("instant opening pool: " + str(len(opening)) + " shadow scenes <= "
           + str(OPENING_720_MAX) + " bytes", flush=True)
     for entry in catalog:
         print("  " + entry["id"] + " " + entry["stage"] + " " + entry["trackId"] + " "
-              + str(entry["size720"]) + " B / " + str(entry["size"]) + " B", flush=True)
+              + entry["source"] + " " + str(entry["size720"]) + " B / "
+              + str(entry["size"]) + " B", flush=True)
     return 0
 
 

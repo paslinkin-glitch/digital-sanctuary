@@ -6,11 +6,11 @@ on:
       mode:
         description: "Catalog to build in the cloud"
         required: true
-        default: "full-30"
+        default: "pixabay-vertical-10"
         type: choice
         options:
+          - pixabay-vertical-10
           - full-30
-          - showcase-4k-10
 
 permissions:
   contents: write
@@ -42,13 +42,17 @@ jobs:
       - name: Install Python dependencies
         run: pip install boto3
 
-      # v138 showcase: ten reference 4K nature masters from the open Wikimedia
-      # Commons API (Coverr as the reserve), supersampled twice with lanczos into
-      # a 1.40-1.85 MB 720x1280 mobile file and a <=7 MB 1080x1920 studio file,
-      # uploaded to S3 under mp4-720-4k/ and mp4-1080-4k/.
-      - name: Build 10-scene 4K showcase (showcase-4k-10)
-        if: ${{ inputs.mode == 'showcase-4k-10' }}
+      # v139: ten native vertical 9:16 nature scenes from the Pixabay Video API.
+      # The key arrives from the PIXABAY_API_KEY repository secret only -- it is
+      # never written into a committed file. Every master is downloaded here, on
+      # the runner, and supersampled twice with lanczos into a 1.40-1.85 MB
+      # 720x1280 mobile file and a <=7 MB 1080x1920 studio file, then uploaded to
+      # S3 under mp4-720-px/ and mp4-1080-px/. Horizontal masters are rejected
+      # outright: only frames with height > width and height >= 1920 are used.
+      - name: Build 10 vertical Pixabay scenes (pixabay-vertical-10)
+        if: ${{ inputs.mode == 'pixabay-vertical-10' }}
         env:
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
           S3_ACCESS_KEY: ${{ secrets.S3_ACCESS_KEY }}
           S3_SECRET_KEY: ${{ secrets.S3_SECRET_KEY }}
           S3_BUCKET: ${{ secrets.S3_BUCKET }}
@@ -77,8 +81,8 @@ jobs:
             echo "Catalog already up to date"
             exit 0
           fi
-          if [ "${{ inputs.mode }}" = "showcase-4k-10" ]; then
-            MESSAGE="chore: publish 10-scene 4K showcase catalog, v138"
+          if [ "${{ inputs.mode }}" = "pixabay-vertical-10" ]; then
+            MESSAGE="chore: publish 10 vertical Pixabay scenes, v139"
           else
             MESSAGE="chore: build 30 scenes with 720p twins and WebP posters"
           fi

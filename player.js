@@ -88,7 +88,8 @@
   }
 
   function levelOf(src) {
-    return String(src || '').indexOf('/mp4-720/') !== -1 ? '720' : '1080';
+    // v139: /mp4-720/, /mp4-720-4k/ and /mp4-720-px/ are all the light stream.
+    return /\/mp4-720(?:-[a-z0-9]+)?\//.test(String(src || '')) ? '720' : '1080';
   }
 
   // v136: the stream level follows the device, not the momentary link. Phones
