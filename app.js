@@ -290,6 +290,20 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     return 'mid';
   }
   const SCREEN_TIER = detectScreenTier();
+  // v135: the light 720p opening is allowed only when the browser explicitly
+  // reports a cellular or slow link. Wi-Fi and iOS Safari without
+  // connection.type always keep the full 1080p first frame.
+  function isCellularOpening() {
+    try {
+      const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection || null;
+      if (!connection) return false;
+      if (connection.type === 'cellular') return true;
+      if (connection.saveData === true) return true;
+      return ['slow-2g', '2g', '3g'].includes(connection.effectiveType);
+    } catch (_) {
+      return false;
+    }
+  }
   const MOBILE_MAX_WIDTH = 900;
   function isMobileViewport() {
     const ua = navigator.userAgent || '';
@@ -3680,7 +3694,15 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (clip.id) markVideoViewed(clip.id);
     const player = window.SanctuaryPlayer;
     if (!player || typeof player.show !== 'function') return false;
-    player.show(clip, nextPlannedClip(), fadeMs ? { fadeMs } : undefined);
+    const playerOptions = {};
+    if (fadeMs) playerOptions.fadeMs = fadeMs;
+    // v135: force720 is passed only for the very first frame and only when
+    // isCellularOpening() is true; on Wi-Fi it is explicitly false, so the
+    // opening frame streams its full 1080p file.
+    if (!pathStarted || pathPos === 0) {
+      playerOptions.force720 = isCellularOpening();
+    }
+    player.show(clip, nextPlannedClip(), playerOptions);
     return true;
   }
   function showClip(category, index, fadeMs) {
@@ -4882,7 +4904,11 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         // v126: buffer the first frame in #playerCurrent while the entry screen
         // is still up, so the swipe up opens a live stream, not a buffer.
         const player = window.SanctuaryPlayer;
-        if (player && typeof player.warm === 'function') player.warm(pathPlan[0] && pathPlan[0].clip);
+        if (player && typeof player.warm === 'function') {
+          // v135: cellular/slow links warm the light 720p file for frame 1 only;
+          // Wi-Fi warms the full 1080p file.
+          player.warm(pathPlan[0] && pathPlan[0].clip, { force720: isCellularOpening() });
+        }
         const first = pathPlan[0];
         prefetchCaption(first.clip, first.category, behaviorContext(), first.stage);
       } catch (error) {

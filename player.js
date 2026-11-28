@@ -51,6 +51,8 @@
   var pendingSrc = '';
   var pendingFadeMs = FADE_MS;
   var activeFadeMs = FADE_MS;
+  var currentFadeMs = FADE_MS;
+  var currentShowPending = false;
   var rate = 1;
   var ready = false;
   var destroyed = false;
@@ -109,6 +111,16 @@
     return isFinite(downlink) && downlink > 0 && downlink < FAST_DOWNLINK_MBPS;
   }
 
+  // v135: only a connection that explicitly says "cellular" (or reports a slow
+  // link) may open on the light 720p file. Wi-Fi and iOS Safari without
+  // connection.type keep the full 1080p first frame.
+  function isCellularOrSlow() {
+    var connection = connectionInfo();
+    if (!connection) return false;
+    if (connection.type === 'cellular') return true;
+    return isSlowNetwork();
+  }
+
   // A link that turns slow mid-session (Wi-Fi -> 3G) lowers the level at once;
   // the return to 1080p still needs two genuinely fast mobile starts.
   function watchConnection() {
@@ -134,9 +146,9 @@
     return String(src || '').indexOf('/mp4-720/') !== -1 ? '720' : '1080';
   }
 
-  function sourceFor(clip) {
+  function sourceFor(clip, force720) {
     if (!clip) return '';
-    if (prefer720) return clip.url720 || clip.url1080 || clip.url || '';
+    if (force720 || prefer720) return clip.url720 || clip.url1080 || clip.url || '';
     return clip.url1080 || clip.url || '';
   }
 
@@ -274,7 +286,19 @@
     var onReady = function () {
       if (destroyed) return;
       if (video.readyState >= 2) noteLoadTime(video);
-      if (video === pending) promotePending();
+      if (video === pending) {
+        promotePending();
+        return;
+      }
+      // v135: the entry frame may finish buffering after the swipe up has
+      // already asked for it. Reveal it the moment data is playable instead of
+      // waiting for a second `playing` event and showing a black screen.
+      if (video === current && currentShowPending && !video.classList.contains('is-current')) {
+        currentShowPending = false;
+        handOver(current, next, currentFadeMs);
+        playVideo(current);
+        scheduleWarmFollowing();
+      }
     };
     video.addEventListener('loadeddata', onReady);
     video.addEventListener('canplay', onReady);
@@ -285,7 +309,10 @@
         return;
       }
       if (video !== current) return;
-      if (!video.classList.contains('is-current')) handOver(video, other(video));
+      if (!video.classList.contains('is-current')) {
+        currentShowPending = false;
+        handOver(video, other(video), currentFadeMs);
+      }
       scheduleWarmFollowing();
     });
     video.addEventListener('timeupdate', function () {
@@ -338,11 +365,14 @@
 
   // Entry warm-up: the first frame is buffered in #playerCurrent itself, before
   // the visitor swipes up. Nothing is shown yet, so replacing src is safe.
-  function warm(clip) {
+  // v135: on cellular only, opts.force720 warms the light 720p file for this one
+  // frame; global prefer720 stays untouched, so frame 2 goes back to 1080p.
+  function warm(clip, opts) {
     if (destroyed || !clip) return false;
     init();
     if (!current || !next) return false;
-    var src = sourceFor(clip);
+    var force720 = Boolean(opts && opts.force720 === true) && isCellularOrSlow();
+    var src = sourceFor(clip, force720);
     if (!src) return false;
     if (currentSrc === src || nextSrc === src) return true;
     if (current.getAttribute('src') && current.readyState >= 2) return false;
@@ -359,19 +389,24 @@
     if (!current || !next) return false;
     var fadeMs = opts && Number(opts.fadeMs);
     if (!isFinite(fadeMs) || fadeMs <= 0) fadeMs = FADE_MS;
-    var src = sourceFor(clip);
+    var force720 = Boolean(opts && opts.force720 === true) && isCellularOrSlow();
+    var src = sourceFor(clip, force720);
     if (!src) return false;
     nextClip = following && following !== clip ? following : null;
     currentClip = clip;
+    currentShowPending = false;
 
     // Already buffering or playing in the visible slot.
     if (currentSrc === src && current.getAttribute('src') === src) {
+      currentFadeMs = (opts && opts.fadeMs) || FADE_MS;
+      currentShowPending = true;
       if (pending && pending !== current) {
         pending = null;
         pendingSrc = '';
         pendingFadeMs = FADE_MS;
       }
       if (current.readyState >= 2) {
+        currentShowPending = false;
         handOver(current, next, fadeMs);
         playVideo(current);
         scheduleWarmFollowing();
@@ -491,6 +526,8 @@
     pendingSrc = '';
     pendingFadeMs = FADE_MS;
     activeFadeMs = FADE_MS;
+    currentFadeMs = FADE_MS;
+    currentShowPending = false;
     currentClip = null;
     nextClip = null;
   }
