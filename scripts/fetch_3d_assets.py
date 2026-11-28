@@ -259,15 +259,18 @@ def encode_to_budget(
     subsampling: int = 2,
     qualities: range = range(92, 29, -3),
 ) -> bytes:
-    """Pick the quality whose JPEG is closest to the target inside the window."""
+    """Pick the quality whose JPEG is closest to the target inside the window.
+
+    Every quality is measured instead of returning the first one that merely
+    fits: a detailed 2048x1024 panorama at quality 90 can sit 80 KB above the
+    target while quality 82 lands almost exactly on it.
+    """
     best: bytes | None = None
     best_distance: int | None = None
     for quality in qualities:
         payload = jpeg_bytes(image, quality=quality, subsampling=subsampling)
         if not payload:
             continue
-        if min_bytes <= len(payload) <= max_bytes:
-            return payload
         distance = abs(len(payload) - target_bytes)
         if best_distance is None or distance < best_distance:
             best = payload
