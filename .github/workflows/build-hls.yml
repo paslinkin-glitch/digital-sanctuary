@@ -12,9 +12,9 @@ on:
           - pixabay-vertical-10
           - full-30
           - fetch-3d-assets
-  # v141: the studio 3D assets are prepared automatically when the shell that
-  # references them changes and assets/three.min.js does not exist yet. The
-  # download runs on the runner only — never on a visitor's machine.
+  # v142: the photoreal studio 3D assets are prepared automatically when the
+  # shell that references them changes and any of the six files is missing.
+  # The download runs on the runner only — never on a visitor's machine.
   push:
     branches:
       - main
@@ -34,7 +34,8 @@ concurrency:
 
 jobs:
   # ---------------------------------------------------------------------------
-  # v141 studio assets: Three.js r160 + Poly Haven stone PBR maps
+  # v142 studio assets: Three.js r160, a Poly Haven coastal panorama, a full
+  # limestone PBR set and a generated seamless water normal map
   # ---------------------------------------------------------------------------
   fetch-3d-assets:
     if: ${{ (github.event_name == 'workflow_dispatch' && inputs.mode == 'fetch-3d-assets') || github.event_name == 'push' }}
@@ -54,12 +55,25 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "needed=1" >> "$GITHUB_OUTPUT"
-          elif [ -f assets/three.min.js ] && [ -f assets/stone-normal.jpg ] && [ -f assets/stone-roughness.jpg ]; then
-            echo "needed=0" >> "$GITHUB_OUTPUT"
-            echo "Studio 3D assets already committed"
           else
-            echo "needed=1" >> "$GITHUB_OUTPUT"
-            echo "Studio 3D assets are missing: fetching them now"
+            missing=0
+            for file in \
+              assets/three.min.js \
+              assets/bay-env.jpg \
+              assets/stone-color.jpg \
+              assets/stone-normal.jpg \
+              assets/stone-roughness.jpg \
+              assets/water-normal.jpg
+            do
+              [ -f "$file" ] || missing=1
+            done
+            if [ "$missing" = "0" ]; then
+              echo "needed=0" >> "$GITHUB_OUTPUT"
+              echo "Photoreal 3D assets already committed"
+            else
+              echo "needed=1" >> "$GITHUB_OUTPUT"
+              echo "Photoreal 3D assets are missing: fetching them now"
+            fi
           fi
 
       - name: Set up Python
@@ -68,14 +82,15 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install Pillow
+      - name: Install Pillow and numpy
         if: steps.probe.outputs.needed == '1'
-        run: python -m pip install --upgrade pip pillow
+        run: python -m pip install --upgrade pip pillow numpy
 
-      # Three.js r160 comes from unpkg; the seamless coastal/mountain stone
-      # normal + roughness maps come from the public Poly Haven files API.
-      # Both are resized to 512x512 progressive JPEG on the runner.
-      - name: Fetch Three.js and the stone PBR maps
+      # Three.js r160 comes from unpkg; the coastal panorama and the limestone
+      # colour/normal/roughness maps come from the public Poly Haven files API;
+      # the seamless water-ripple normal map is generated with numpy. Everything
+      # is resized and re-encoded on the runner, never on a visitor's machine.
+      - name: Fetch the photoreal 3D assets
         if: steps.probe.outputs.needed == '1'
         run: python scripts/fetch_3d_assets.py
 
@@ -92,12 +107,24 @@ jobs:
           assert three.stat().st_size > 400_000, "three.min.js is too small"
           print("three.min.js", three.stat().st_size, "bytes")
 
-          for name in ("stone-normal.jpg", "stone-roughness.jpg"):
+          checks = {
+              "bay-env.jpg": ((2048, 1024), 120_000, 380_000),
+              "stone-color.jpg": ((512, 512), 40_000, 100_000),
+              "stone-normal.jpg": ((512, 512), 40_000, 100_000),
+              "stone-roughness.jpg": ((512, 512), 40_000, 100_000),
+              "water-normal.jpg": ((512, 512), 35_000, 120_000),
+          }
+          total = 0
+          for name, (expected_size, min_bytes, max_bytes) in checks.items():
               path = root / name
               assert path.is_file(), f"{name} is missing"
+              size = path.stat().st_size
+              assert min_bytes <= size <= max_bytes, f"{name} weighs {size} bytes"
               with Image.open(path) as image:
-                  assert image.size == (512, 512), f"{name} is {image.size}"
-                  print(name, path.stat().st_size, "bytes", image.size)
+                  assert image.size == expected_size, f"{name} is {image.size}"
+              total += size
+              print(name, size, "bytes", expected_size)
+          print("texture payload", total, "bytes")
           PY
 
       - name: Commit the studio assets
@@ -105,12 +132,18 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add assets/three.min.js assets/stone-normal.jpg assets/stone-roughness.jpg
+          git add \
+            assets/three.min.js \
+            assets/bay-env.jpg \
+            assets/stone-color.jpg \
+            assets/stone-normal.jpg \
+            assets/stone-roughness.jpg \
+            assets/water-normal.jpg
           if git diff --cached --quiet; then
-            echo "Studio 3D assets already up to date"
+            echo "Photoreal 3D assets already up to date"
             exit 0
           fi
-          git commit -m "chore: fetch studio 3D assets for v141"
+          git commit -m "chore: fetch photoreal 3D assets for v142"
           # The release commit may land while this job runs; rebase before the push.
           for attempt in 1 2 3; do
             git pull --rebase origin main
