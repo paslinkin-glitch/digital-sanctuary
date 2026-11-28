@@ -2,6 +2,15 @@ name: Build dream video catalog
 
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: "Catalog to build in the cloud"
+        required: true
+        default: "full-30"
+        type: choice
+        options:
+          - full-30
+          - showcase-4k-10
 
 permissions:
   contents: write
@@ -33,7 +42,24 @@ jobs:
       - name: Install Python dependencies
         run: pip install boto3
 
+      # v138 showcase: ten reference 4K nature masters from the open Wikimedia
+      # Commons API (Coverr as the reserve), supersampled twice with lanczos into
+      # a 1.40-1.85 MB 720x1280 mobile file and a <=7 MB 1080x1920 studio file,
+      # uploaded to S3 under mp4-720-4k/ and mp4-1080-4k/.
+      - name: Build 10-scene 4K showcase (showcase-4k-10)
+        if: ${{ inputs.mode == 'showcase-4k-10' }}
+        env:
+          S3_ACCESS_KEY: ${{ secrets.S3_ACCESS_KEY }}
+          S3_SECRET_KEY: ${{ secrets.S3_SECRET_KEY }}
+          S3_BUCKET: ${{ secrets.S3_BUCKET }}
+          S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
+          AWS_DEFAULT_REGION: ru-1
+        run: python scripts/build_4k_showcase.py
+
+      # The archived thirty-scene dream stays reachable: videos-archive.json and
+      # videos-data-archive.js are never touched by either build.
       - name: Build 30 scenes (1080p + 720p + WebP posters) in cloud
+        if: ${{ inputs.mode == 'full-30' }}
         env:
           S3_ACCESS_KEY: ${{ secrets.S3_ACCESS_KEY }}
           S3_SECRET_KEY: ${{ secrets.S3_SECRET_KEY }}
@@ -49,7 +75,12 @@ jobs:
           git add videos-data.js videos.json
           if git diff --cached --quiet; then
             echo "Catalog already up to date"
-          else
-            git commit -m "chore: build 30 scenes with 720p twins and WebP posters, v124"
-            git push origin main
+            exit 0
           fi
+          if [ "${{ inputs.mode }}" = "showcase-4k-10" ]; then
+            MESSAGE="chore: publish 10-scene 4K showcase catalog, v138"
+          else
+            MESSAGE="chore: build 30 scenes with 720p twins and WebP posters"
+          fi
+          git commit -m "$MESSAGE"
+          git push origin main

@@ -40,14 +40,21 @@
   const STUPOR_IDLE_MS = 20000;
   const ANCHOR_WATCH_MS = 12000;
   const MAX_WEIGHT = 6;
-  const CYCLE_LENGTH = 15;
-  const SESSION_LENGTH = 30;
-  const CYCLE_STAGES = [
+  // v138: the live catalog is either the full thirty-scene dream or the
+  // ten-scene 4K showcase, and the session geometry follows whatever is
+  // published. Up to twelve scenes play one repeat-free pass through every
+  // scene (3/3/2/2 in the showcase); thirty scenes keep the two 15-frame cycles.
+  const SHOWCASE_MAX_SCENES = 12;
+  const FULL_CYCLE_STAGES = [
     { id: 1, count: 5 },
     { id: 2, count: 4 },
     { id: 3, count: 3 },
     { id: 4, count: 3 },
   ];
+  let CYCLE_STAGES = FULL_CYCLE_STAGES.map((spec) => ({ ...spec }));
+  let CYCLE_LENGTH = 15;
+  let SESSION_LENGTH = 30;
+  let SESSION_CYCLES = 2;
   const SESSION_FINALE_DELAY_MS = 3400;
   const SESSION_LOCK_MS = 2 * 60 * 60 * 1000;
   const SESSION_LOCK_KEY = 'sanctuary-unlock-at';
@@ -2574,10 +2581,14 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     lastPerspective = perspective;
     sound.currentPerspective = perspective;
   }
+  // v138: the door closes on the last three frames of whatever plan is live —
+  // frames 27-29 of the thirty-scene dream, frames 7-9 of the ten-scene showcase.
   function finalDoorFade() {
-    if (pathPos === 29) return 0.48;
-    if (pathPos === 28) return 0.65;
-    if (pathPos === 27) return 0.82;
+    const total = pathPlan.length || SESSION_LENGTH;
+    const fromEnd = total - 1 - pathPos;
+    if (fromEnd === 0) return 0.48;
+    if (fromEnd === 1) return 0.65;
+    if (fromEnd === 2) return 0.82;
     return 1;
   }
   // v131: overrideClip lets the mist scene ask the same engine for its fog/rain
@@ -2925,13 +2936,29 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     entries[0] = { stage: 1, category: pick.category, clip: pick.clip };
     return entries;
   }
+  // v138: in the ten-scene showcase the tenth frame must be the finale while
+  // the 3/3/2/2 stage rhythm stays untouched, so only a same-stage swap happens.
+  function ensureFinaleClosesSession(entries) {
+    if (!Array.isArray(entries) || !entries.length) return entries;
+    const last = entries[entries.length - 1];
+    if (!last || !last.clip || last.clip.is_finale) return entries;
+    for (let index = entries.length - 2; index >= 0; index -= 1) {
+      const entry = entries[index];
+      if (!entry || !entry.clip || !entry.clip.is_finale) continue;
+      if (entry.stage !== last.stage) continue;
+      entries[index] = last;
+      entries[entries.length - 1] = entry;
+      return entries;
+    }
+    return entries;
+  }
   function buildSessionPlan() {
     resetViewedCycleIfComplete();
     pathPicked = new Set();
     const attempt = (allowSeen) => {
       const entries = [];
       const usedBefore = new Set();
-      for (let cycle = 0; cycle < 2; cycle += 1) {
+      for (let cycle = 0; cycle < SESSION_CYCLES; cycle += 1) {
         // v124: the catalog holds exactly 30 scenes and a session is 30 frames,
         // so the second half is drawn from the scenes the first half left alone
         // (see the exclude option) and nothing repeats inside one session.
@@ -2976,12 +3003,14 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     };
     let entries = attempt(false);
     if (entries) entries = pinInstantOpeningClip(entries);
+    if (entries) entries = ensureFinaleClosesSession(entries);
     if (!entries || entries.length !== SESSION_LENGTH || !sessionPlanIsUnique(entries)) {
       allViewedVideoIds.clear();
       sessionUsedVideoIds.clear();
       persistAllViewedVideoIds();
       entries = attempt(false) || attempt(true);
       if (entries) entries = pinInstantOpeningClip(entries);
+      if (entries) entries = ensureFinaleClosesSession(entries);
     }
     if (!entries || entries.length !== SESSION_LENGTH || !sessionPlanIsUnique(entries)) return false;
     pathPlan = entries;
@@ -2992,10 +3021,13 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   function updateSessionProgress() {
     if (!progressFill) return;
+    // v138: the top bar always keeps one step per planned frame, so the
+    // ten-scene showcase divides it into ten steps instead of thirty.
+    const total = pathPlan.length || SESSION_LENGTH;
     const currentFrame = sessionComplete
-      ? SESSION_LENGTH
-      : Math.min(SESSION_LENGTH, Math.max(0, pathPos + 1));
-    progressFill.style.width = `${(currentFrame / SESSION_LENGTH) * 100}%`;
+      ? total
+      : Math.min(total, Math.max(0, pathPos + 1));
+    progressFill.style.width = `${(currentFrame / total) * 100}%`;
   }
   function updateStageLabel(stageId) {
     sessionStage = stageId || sessionStage;
@@ -3478,7 +3510,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   function trackFrameMilestone() {
     const frame = pathPos + 1;
-    if (![5, 15, 25, 30].includes(frame) || trackedMilestones.has(frame)) return;
+    const milestones = [5, 15, 25, 30].filter((value) => value <= SESSION_LENGTH);
+    if (!milestones.includes(frame) || trackedMilestones.has(frame)) return;
     trackedMilestones.add(frame);
     trackEvent('frame_milestone', { frame });
   }
@@ -3829,6 +3862,33 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     for (const word of dark) if (text.includes(word)) score -= 0.7;
     return score;
   }
+  // v138: how many scenes the catalog really holds decides the session shape.
+  function stageClipCount(stageId) {
+    const stage = stageFor(stageId);
+    return categories
+      .filter((category) => stage.categories.includes(category.tag))
+      .reduce((sum, category) => sum + category.clips.length, 0);
+  }
+  function configureSessionForCatalog(total) {
+    const available = Math.max(1, Number(total) || 0);
+    if (available <= SHOWCASE_MAX_SCENES) {
+      // Every published scene plays exactly once, in stage order, so the mist
+      // story still lands on the third frame (pathPos === 2) and the finale on
+      // the last one (pathPos === SESSION_LENGTH - 1).
+      CYCLE_STAGES = [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }]
+        .map((spec) => ({ id: spec.id, count: stageClipCount(spec.id) }))
+        .filter((spec) => spec.count > 0);
+      CYCLE_LENGTH = CYCLE_STAGES.reduce((sum, spec) => sum + spec.count, 0);
+      SESSION_CYCLES = 1;
+      SESSION_LENGTH = CYCLE_LENGTH;
+    } else {
+      CYCLE_STAGES = FULL_CYCLE_STAGES.map((spec) => ({ ...spec }));
+      CYCLE_LENGTH = 15;
+      SESSION_CYCLES = 2;
+      SESSION_LENGTH = 30;
+    }
+    return SESSION_LENGTH;
+  }
   async function loadVideoCatalog() {
     const catalog = Array.isArray(window.VIDEOS_DATA) && window.VIDEOS_DATA.length
       ? window.VIDEOS_DATA
@@ -3913,6 +3973,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       }
     }
     resetViewedCycleIfComplete();
+    configureSessionForCatalog(loaded);
     return loaded;
   }
   // v124: player.js loops the MP4 seam itself and reports every wrap here, so
@@ -4195,9 +4256,12 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     return true;
   }
   function adaptUpcomingPath(record, quickPair = false, fastSurreal = false) {
-    if (!record || pathPlan.length !== 30) return;
+    // v138: the showcase plan is one unique pass of ten scenes and must stay
+    // exactly 3/3/2/2, so improvisation runs only in the thirty-scene dream.
+    if (SESSION_CYCLES < 2) return;
+    if (!record || pathPlan.length !== SESSION_LENGTH) return;
     const nextIndex = pathPos + 1;
-    if (nextIndex >= 30) return;
+    if (nextIndex >= SESSION_LENGTH) return;
     const current = activeClip();
     if (!current) return;
     // v129: the third frame stays a Shadow scene so the mist story always opens
@@ -4210,7 +4274,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       if (same.length) {
         const pick = same[Math.floor(Math.random() * same.length)];
         replaceFutureEntry(nextIndex, pick.category, pick.clip, pick.stage);
-        const anchorIndex = Math.min(29, nextIndex + (Math.random() < 0.5 ? 5 : 6));
+        const anchorIndex = Math.min(SESSION_LENGTH - 1, nextIndex + (Math.random() < 0.5 ? 5 : 6));
         const anchorPool = same.filter((entry) => entry.clip.id !== pick.clip.id);
         if (anchorPool.length) {
           anchorPool.sort((a, b) => Math.abs((a.clip.lightPriority || 0) - (current.lightPriority || 0))
@@ -4238,7 +4302,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (
       (threshold || resonanceReady || fastSurreal)
       && surrealInserts < 2
-      && nextIndex >= 5 && nextIndex <= 26
+      && nextIndex >= 5 && nextIndex <= SESSION_LENGTH - 4
       && nextIndex - lastSurrealIndex >= 7
       && surrealClips.length
     ) {
@@ -4286,6 +4350,9 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     return record;
   }
   function compressShadowCycle() {
+    // v138: the ten-scene showcase keeps its 3/3/2/2 rhythm; compressing the
+    // shadow cycle is a thirty-scene improvisation only.
+    if (SESSION_CYCLES < 2) return;
     if (shadowCompressed || pathPos !== 1) return;
     const replacements = [];
     for (const tag of ['Calm', 'Path']) {
