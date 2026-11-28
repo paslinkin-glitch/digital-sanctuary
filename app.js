@@ -2029,6 +2029,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     const track = findLiveTrackForClip(clip);
     if (track) getTrackBuffer(track).catch(() => {});
   }
+  // v137: kept, but deliberately NOT scheduled during a session. Preloading the
+  // next frame's MP3 competed with the <video> elements for the same 4G pipe to
+  // s3.twcstorage.ru and delayed the stream itself. The next track is fetched
+  // only when the swipe actually needs it.
   function preloadNextAudioFrame() {
     const next = pathPlan[pathPos + 1];
     if (next && next.clip) preloadBufferForClip(next.clip);
@@ -2620,7 +2624,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       sound.activeGain = gain;
       sound.activeType = 'music';
       applyLivePerspective(chosen, clip);
-      preloadNextAudioFrame();
+      // v137: no background MP3 for the next frame here. The audio prefetch was
+      // starving the video buffer on 4G; the track is fetched on demand instead.
     }).catch(() => {});
   }
   function startSoundCrossfade(channel, fadeMs) {
@@ -2870,26 +2875,34 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   function buildPathPlan() {
     return buildSessionPlan();
   }
-  // v134: the opening frame must be ready before the entry swipe ends. The 1080p
-  // Shadow scenes under 7.5 MB (5.1–6.9 MB in the current catalog) warm up on the
-  // entry screen in a fraction of the time a 10–11 MB clip needs. One of them is
-  // chosen at random on every plan, so even Incognito never sees a repeated
-  // opening, while the other 29 frames stay fully shuffled.
+  // v134/v137: the opening frame must be ready before the entry swipe ends. On a
+  // phone the session streams the light 720p twin, so the pool is picked by the
+  // weight the device will really download — size720 <= 1.65 MB, i.e. the
+  // lightest 1.37–1.60 MB scenes — and the first frame opens instantly even on a
+  // weak 4G link. Desktops keep the 1080p rule (<= 7.5 MB). One of up to five
+  // light scenes is chosen at random on every plan, so even Incognito never sees
+  // a repeated opening, while the other 29 frames stay fully shuffled.
   const OPENING_LIGHT_MAX_BYTES = 7_500_000;
+  const OPENING_MOBILE_MAX_BYTES = 1_650_000;
   const OPENING_LIGHT_MAX_COUNT = 5;
   function instantOpeningPool() {
     const shadowStage = stageFor(1);
+    const mobile = isMobileDevice() || isMobileViewport();
+    const maxBytes = mobile ? OPENING_MOBILE_MAX_BYTES : OPENING_LIGHT_MAX_BYTES;
+    const weightOf = (clip) => (mobile
+      ? (Number(clip.size720) || Number(clip.size))
+      : Number(clip.size));
     const pool = [];
     for (const category of categories) {
       if (!shadowStage.categories.includes(category.tag)) continue;
       for (const clip of category.clips) {
         if (!clip || !clip.id || !clip.url || clip.invalid) continue;
-        const size = Number(clip.size);
-        if (!isFinite(size) || size <= 0 || size > OPENING_LIGHT_MAX_BYTES) continue;
-        pool.push({ stage: 1, category, clip });
+        const weight = weightOf(clip);
+        if (!isFinite(weight) || weight <= 0 || weight > maxBytes) continue;
+        pool.push({ stage: 1, category, clip, weight });
       }
     }
-    pool.sort((a, b) => (Number(a.clip.size) || 0) - (Number(b.clip.size) || 0));
+    pool.sort((a, b) => a.weight - b.weight);
     return pool.slice(0, OPENING_LIGHT_MAX_COUNT);
   }
   function pinInstantOpeningClip(entries) {

@@ -1,4 +1,4 @@
-/* Yoursanctuary — SanctuaryPlayer (v136).
+/* Yoursanctuary — SanctuaryPlayer (v137).
  *
  * One small isolated video layer. It owns exactly two <video> elements and no
  * poster image: the stream itself is the picture, from the very first frame.
@@ -14,7 +14,7 @@
  *      it cannot jump in the middle of a session;
  *   2. if the hidden slot already holds that source, promote it — the outgoing
  *      frame stays visible underneath while the new one breathes in over
- *      600 ms of pure opacity (no transform, filter or black curtain);
+ *      320 ms of pure opacity (no transform, filter or black curtain);
  *   3. otherwise load the source into the hidden slot, keep playing whatever is
  *      on screen, and swap the moment the new frame reports loadeddata/playing;
  *   4. once the visible clip really plays, fetch nextClip into the hidden slot.
@@ -25,7 +25,7 @@
  * Public surface (window.SanctuaryPlayer):
  *   show(clip, nextClip, opts)  warm(clip)  setRate(rate)  pause()  resume()
  *   duration()  snapshot()  destroy()  onLoop(clip)  init()
- * opts.fadeMs overrides the 600 ms crossfade for that one handoff (the mist
+ * opts.fadeMs overrides the 320 ms crossfade for that one handoff (the mist
  * story hands over with 950 ms); snapshot() reports the active stream level
  * as '1080' or '720'.
  */
@@ -35,10 +35,11 @@
   var LOOP_EDGE = 0.15;
   var LOOP_START = 0.04;
   var MOBILE_MAX_WIDTH = 900;
-  // v136: one calm cinematic breath between every two frames. 600 ms of pure
-  // opacity crossfade, then the outgoing slot is released at 660 ms.
-  var FADE_MS = 600;
-  var HANDOFF_MS = FADE_MS + 60;
+  // v137: a soft but quick handoff. 320 ms of pure opacity crossfade keeps two
+  // hardware decoders overlapped only briefly and releases the outgoing slot at
+  // 360 ms, so the next frame starts warming ~300 ms earlier than in v136.
+  var FADE_MS = 320;
+  var HANDOFF_MS = FADE_MS + 40;
 
   var current = null;
   var next = null;
@@ -132,9 +133,9 @@
 
   // Put `target` on screen: it fades in at z-index 2 while `outgoing` holds the
   // previous picture at z-index 1, and is paused only after the crossfade ends.
-  // v136: the fade is 600 ms by default (a calm cinematic breath between every
-  // two frames), still per handoff via --player-fade-ms; the mist story asks
-  // for 950 ms and keeps its silk handoff.
+  // v137: the fade is 320 ms by default (soft, but short enough that the two
+  // decoders barely overlap), still per handoff via --player-fade-ms; the mist
+  // story asks for 950 ms and keeps its silk handoff.
   function handOver(target, outgoing, fadeMs) {
     if (!target) return;
     var duration = Number(fadeMs);
@@ -351,7 +352,7 @@
     slot.classList.remove('is-current');
     if (slot.classList.contains('is-outgoing')) {
       // Still visible in the previous crossfade: never swap its src mid-fade.
-      // The wait follows the current fade length (600 ms by default, the 950 ms
+      // The wait follows the current fade length (320 ms by default, the 950 ms
       // mist handoff otherwise), so a quick swipe during the fade cannot cut it
       // short.
       window.clearTimeout(coldTimer);
