@@ -95,11 +95,18 @@
   const CAPTION_HOLD_REVEAL_MS = 750;
   const CAPTION_YOU_LIMIT = 1;
   const CAPTION_TIMEOUT_MS = 1500;
-  // v128: one interactive scene, on the third frame of the first session.
-  const INTERACTIVE_FRAME_INDEX = 2;
-  const INTERACTIVE_CAPTION = {
-    en: 'Sweep your hand through mist toward light',
-    ru: 'Проведи рукой сквозь туман к свету',
+  // v129: the mist story lives on the third frame. The scene itself is isolated
+  // in stories.js; app.js only paints its two captions and records the response.
+  const STORY_FRAME_INDEX = 2;
+  const STORY_CAPTIONS = {
+    invite: {
+      en: 'Sweep your hand to clear the mist',
+      ru: 'Проведи рукой, чтобы рассеять туман',
+    },
+    cleared: {
+      en: 'The mist has parted. Now you see the forest',
+      ru: 'Туман отступил. Теперь ты видишь лес',
+    },
   };
   const CAPTION_SYSTEM_PROMPT_RU = `Ты — тихий голос сна, который звучит рядом с изображением. Пиши только по-русски.
 Верни одну короткую фразу строго из 5–8 слов, 1–2 короткие строки. Без поэтических загадок, терминов, оценок, советов и латиницы.
@@ -508,7 +515,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   const ALL_MUSIC_TRACKS = Object.values(MUSIC_CATALOG).flat();
   const stage = document.querySelector('.stage');
-  const interactiveStageEl = document.getElementById('interactive-stage');
   // v124: the video layer lives entirely in player.js (window.SanctuaryPlayer).
   // app.js never touches a <video> element for the streamed scenes any more.
   const cycleWhisperEl = document.getElementById('cycle-whisper');
@@ -1147,10 +1153,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   let pathPicked = new Set();
   let pathStarted = false;
   let pathStartPending = false;
-  let interactiveActive = false;
-  // The scene belongs to the first session only; a later session after the
-  // two-hour door keeps the pure stream.
-  let interactiveEnabled = true;
+  let storyActive = false;
+  let storyCleared = false;
   let sessionEvents = [];
   let sessionStartedAt = 0;
   let sessionComplete = false;
@@ -2760,29 +2764,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   function buildPathPlan() {
     return buildSessionPlan();
   }
-  // v128: the interactive forest wants a forest/rain soundtrack. If the third
-  // frame of the plan landed on a dry Shadow scene, exchange it with an unused
-  // fog/rain frame of the same stage, so the scene always breathes with mist.
-  function entryHasForestSound(entry) {
-    const category = entry && entry.clip && entry.clip.soundCategory;
-    return category === 'fog' || category === 'rain';
-  }
-  function placeForestFrame(entries) {
-    const target = entries[INTERACTIVE_FRAME_INDEX];
-    if (!target || !target.clip || entryHasForestSound(target)) return;
-    for (let index = 0; index < entries.length; index += 1) {
-      if (index === INTERACTIVE_FRAME_INDEX) continue;
-      const candidate = entries[index];
-      if (!candidate || !candidate.clip) continue;
-      if (candidate.stage !== target.stage) continue;
-      if (candidate.category !== target.category) continue;
-      if (!entryHasForestSound(candidate)) continue;
-      const swap = target.clip;
-      target.clip = candidate.clip;
-      candidate.clip = swap;
-      return;
-    }
-  }
   function buildSessionPlan() {
     resetViewedCycleIfComplete();
     pathPicked = new Set();
@@ -2843,7 +2824,6 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       entries = attempt(false) || attempt(true);
     }
     if (!entries || entries.length !== SESSION_LENGTH || !sessionPlanIsUnique(entries)) return false;
-    if (interactiveEnabled) placeForestFrame(entries);
     pathPlan = entries;
     pathPicked = new Set(entries.map((entry) => entry.clip.id));
     pathPos = -1;
@@ -3444,8 +3424,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     pathPicked = new Set();
     pathPos = -1;
     pathStarted = false;
-    interactiveEnabled = false;
-    if (interactiveActive) exitInteractiveScene();
+    storyCleared = false;
+    if (storyActive) exitStoryScene();
     if (finaleEl) {
       finaleEl.hidden = true;
       finaleEl.classList.remove('is-visible');
@@ -3656,7 +3636,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   }
   function handlePageHide(event) {
     if (event && event.persisted) return;
-    if (interactiveActive) exitInteractiveScene();
+    if (storyActive) exitStoryScene();
     releaseAllPlaybackVideos();
   }
 
@@ -3808,7 +3788,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   function navigateTo(targetIndex, direction, fadeMs, forcedClipId, sceneContext) {
     if (targetIndex === null || targetIndex === undefined) return;
     if (!slides[targetIndex]) return;
-    if (interactiveActive) exitInteractiveScene();
+    if (storyActive) exitStoryScene();
     maybeRecordResonance();
     markInteraction();
     setBreath(0);
@@ -3869,86 +3849,71 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       engine.historyPos = engine.history.length - 1;
     }
   }
-  // v128: the interactive scene is a separate layer above the stream. On entry
-  // the player is paused (GPU relay); on exit the scene cancels its frame loop
-  // and releases the WebGL context before the stream takes the screen back.
-  function interactiveSceneClip() {
+  // v129: stories.js owns the volumetric mist over the live 1080p stream. app.js
+  // keeps only the entry hook, the two captions and the resonance response.
+  function storyCaptionClip(kind) {
+    const text = STORY_CAPTIONS[kind] || STORY_CAPTIONS.invite;
     return {
-      id: 'webgl-misty-forest',
-      title: 'Misty Pine Forest',
-      description: 'Misty pine forest and scattered light',
-      caption_en: INTERACTIVE_CAPTION.en,
-      caption_ru: INTERACTIVE_CAPTION.ru,
+      id: kind === 'cleared' ? 'story-mist-cleared' : 'story-mist-invite',
+      title: 'Mist over the forest',
+      description: 'Volumetric mist over the living forest',
+      caption_en: text.en,
+      caption_ru: text.ru,
       duration: 10,
       soundCategory: 'fog',
-      trackId: 'fog-01',
       element: 'fog',
       vertical: true,
     };
   }
-  function canEnterInteractive() {
+  function showStoryCaption(kind) {
+    const category = activeCategory();
+    if (!category) return;
+    activateCaption(category, storyCaptionClip(kind), behaviorContext(), true, sessionStage, {
+      held: false,
+    });
+    revealCaptionNow();
+  }
+  function canEnterStory() {
     return Boolean(
-      interactiveEnabled
-      && interactiveStageEl
-      && window.SanctuaryInteractive
-      && pathStarted
+      !storyCleared
+      && !storyActive
+      && window.SanctuaryStories
       && gateOpen
       && !sessionComplete
-      && pathPos === INTERACTIVE_FRAME_INDEX
-      && !interactiveActive
+      && pathStarted
+      && pathPos === STORY_FRAME_INDEX
     );
   }
-  function enterInteractiveScene(entry) {
-    if (!canEnterInteractive() || !entry) return false;
-    interactiveActive = true;
-    stage.classList.add('is-interactive');
-    interactiveStageEl.hidden = false;
-    void interactiveStageEl.offsetWidth;
-    interactiveStageEl.classList.add('is-active');
-    // mount() itself pauses the stream, so the picture freezes under the fog
-    // before the first frame of the scene is painted.
-    const mounted = window.SanctuaryInteractive.mount(interactiveStageEl, {
-      onDepthChange: (deep) => setSoundDepth(Boolean(deep)),
-      onSwipe: (direction) => {
-        exitInteractiveScene();
+  function enterStoryScene() {
+    if (!canEnterStory()) return false;
+    storyActive = true;
+    const entered = window.SanctuaryStories.enter({
+      onCleared: () => {
+        storyActive = false;
+        storyCleared = true;
+        safeVibrate([5, 80, 5], 1000);
+        showStoryCaption('cleared');
+        if (currentCaption) currentCaption.recorded = true;
+        registerResonance(activeClip());
+      },
+      onAdvance: (direction) => {
+        exitStoryScene();
         if (gateOpen && !sessionComplete) go(direction === 'down' ? 'down' : 'up', 1);
       },
     });
-    if (!mounted) {
-      interactiveActive = false;
-      stage.classList.remove('is-interactive');
-      interactiveStageEl.classList.remove('is-active');
-      interactiveStageEl.hidden = true;
-      const player = window.SanctuaryPlayer;
-      if (player && typeof player.resume === 'function') player.resume();
+    if (!entered) {
+      storyActive = false;
       return false;
     }
-    pauseSlots();
-    // A frame that was still decoding can promote itself a moment later and
-    // resume playback behind the fog; hold the relay down while the scene lives.
-    window.setTimeout(() => { if (interactiveActive) pauseSlots(); }, 320);
-    window.setTimeout(() => { if (interactiveActive) pauseSlots(); }, 1200);
-    // A forest / rain track carries the scene while the stream stays frozen.
-    switchSoundtrack(null, SLOW_FADE_MS);
-    activateCaption(entry.category, interactiveSceneClip(), behaviorContext(), true, entry.stage, {
-      held: false,
-    });
+    showStoryCaption('invite');
     return true;
   }
-  function exitInteractiveScene() {
-    if (!interactiveActive) return;
-    interactiveActive = false;
-    stage.classList.remove('is-interactive');
-    setSoundDepth(false);
-    const api = window.SanctuaryInteractive;
-    if (api && typeof api.unmount === 'function') {
-      try { api.unmount(); } catch (_) {}
-    }
-    if (interactiveStageEl) {
-      interactiveStageEl.classList.remove('is-active');
-      window.setTimeout(() => {
-        if (!interactiveActive) interactiveStageEl.hidden = true;
-      }, 950);
+  function exitStoryScene() {
+    if (!storyActive) return;
+    storyActive = false;
+    const api = window.SanctuaryStories;
+    if (api && typeof api.exit === 'function') {
+      try { api.exit(); } catch (_) {}
     }
   }
   function unusedEntries(filter) {
@@ -3981,10 +3946,10 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
     if (nextIndex >= 30) return;
     const current = activeClip();
     if (!current) return;
-    // v128: keep the interactive forest frame (index 2) a Shadow forest frame
-    // instead of letting a resonance swap turn it into another stage.
-    const protectInteractiveFrame = interactiveEnabled && nextIndex === INTERACTIVE_FRAME_INDEX;
-    const resonance = !protectInteractiveFrame && (record.heldMs >= 1000 || record.loopCount >= 1);
+    // v129: the third frame stays a Shadow scene so the mist story always opens
+    // over a forest frame instead of being swapped into another stage.
+    const protectStoryFrame = nextIndex === STORY_FRAME_INDEX;
+    const resonance = !protectStoryFrame && (record.heldMs >= 1000 || record.loopCount >= 1);
     if (resonance) {
       const same = unusedEntries((clip, category) => clip.element === current.element
         && category !== (activeCategory() || {}));
@@ -4000,7 +3965,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         }
       }
     }
-    if (quickPair && !protectInteractiveFrame) {
+    if (quickPair && !protectStoryFrame) {
       const next = pathPlan[nextIndex];
       if (next && next.stage === 'shadow') {
         const calm = unusedEntries((clip, category) => (
@@ -4084,8 +4049,8 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       if (replacements.length >= 3) break;
     }
     if (replacements.length < 3) return;
-    // v128: index 2 is the interactive forest frame and must stay a Shadow
-    // scene, so the compression starts one frame later and keeps three swaps.
+    // v129: index 2 is the mist story frame and must stay a Shadow scene, so
+    // the compression starts one frame later and keeps three swaps.
     const removed = pathPlan.slice(3, 6);
     for (const entry of removed) pathPicked.delete(entry.clip.id);
     pathPlan.splice(3, 3, ...replacements);
@@ -4142,7 +4107,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
         previous.clip.id,
         sceneContext
       );
-      if (pathPos === INTERACTIVE_FRAME_INDEX) enterInteractiveScene(previous);
+      if (pathPos === STORY_FRAME_INDEX) enterStoryScene();
       return;
     }
     if (pathPos < 2) firstShadowDurations.push(record.viewedMs);
@@ -4196,7 +4161,7 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
       entry.clip.id,
       sceneContext
     );
-    if (pathPos === INTERACTIVE_FRAME_INDEX) enterInteractiveScene(entry);
+    if (pathPos === STORY_FRAME_INDEX) enterStoryScene();
   }
   function startHold() {
     holdTimer = 0;
