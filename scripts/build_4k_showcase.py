@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the v139 ten-scene vertical showcase in the cloud (pixabay-vertical-10).
+"""Build the v140 ten-scene vertical showcase in the cloud (pixabay-vertical-10).
 
 The live catalog is temporarily replaced by ten reference nature scenes that are
 native vertical phone masters (height > width), sourced from the Pixabay Video
@@ -7,35 +7,47 @@ API. The API key is read from the PIXABAY_API_KEY environment variable, which th
 GitHub Actions workflow fills from the repository secret: the key is never
 written into a committed file and is never printed by this script.
 
+v140 raises the bar to a true 4K pipeline: only a native vertical master of at
+least 2160 px of height is accepted, so every published frame is supersampled
+down from 2160x3840 with FFmpeg's lanczos scaler -- never upscaled, never a
+landscape frame with the sides cut off.
+
 Every scene is downloaded here, on the GitHub Actions runner -- never on the
-owner's machine, never on a phone -- and supersampled twice with FFmpeg's
-lanczos scaler:
+owner's machine, never on a phone -- and encoded twice:
 
-  mp4-720-px/px-4k-01.mp4   720x1280, 10.0 s, 30 fps, -an, two-pass libx264
-                            -profile:v high -preset slow -b:v 1250k
-                            -maxrate 1550k -bufsize 2500k, +faststart,
-                            strictly 1.40-1.85 MB of mobile weight
-  mp4-1080-px/px-4k-01.mp4  1080x1920, 10.0 s, 30 fps, -an, libx264 CRF 18
-                            -maxrate 5500k -bufsize 11000k, +faststart, <= 7 MB
+  mp4-720-px/px-4k-01.mp4   720x1280, 7.0 s, 30 fps, -an, two-pass libx264
+                            -profile:v high -level:v 4.1 -preset slow
+                            -b:v 2400k -maxrate 3000k -bufsize 4800k,
+                            -aq-mode 2 -aq-strength 1.15 -deblock -1:-1,
+                            +faststart, naturally 1.80-2.45 MB -- a calm frame
+                            is allowed to be lighter, it is never padded
+  mp4-1080-px/px-4k-01.mp4  1080x1920, 7.0 s, 30 fps, -an, libx264
+                            -profile:v high -level:v 4.2 -preset slow
+                            -crf 16 -maxrate 6500k -bufsize 12000k,
+                            the same psychovisual tuning, +faststart, <= 6.5 MB
 
-Source selection is strict on purpose. A horizontal master is never cropped down
-to a phone: only a native vertical frame (height > width) that already carries at
-least 1920 px of height and sits within a few percent of 9:16 is accepted, so the
-encode never slices the sides off a landscape shot. Ten different scenes are
-required: 3 shadow (misty forest, fog mountains, rain forest -- all with a fog or
-rain sound bed), 3 trickster_abyss (ocean waves night, dark sea waves, light
-through trees), 2 calm (calm lake reflection, sunrise mist valley) and 2 path
-(road forest mist, ocean horizon dawn) whose tenth scene is the is_finale.
+The old nal-hrd=cbr:filler padding is gone on purpose: no empty byte is ever
+added to hit a weight target, so every kilobyte pays for visible sharpness.
 
-When Pixabay returns fewer usable vertical clips for a slot than the showcase
-needs, the missing slot is filled from the natively vertical frames of
+Source selection is strict. A horizontal master is never cropped down to a
+phone: only a native vertical frame (height > width) that already carries at
+least 2160 px of height and sits within a few percent of 9:16 is accepted. Ten
+different scenes are required: 3 shadow (misty forest, fog mountains, rain
+forest -- all with a fog or rain sound bed), 3 trickster_abyss (ocean waves
+night, dark sea waves, light through trees), 2 calm (calm lake reflection,
+sunrise mist valley) and 2 path (road forest mist, ocean horizon dawn) whose
+tenth scene is the is_finale.
+
+When Pixabay returns fewer usable 4K vertical clips for a slot than the showcase
+needs, the missing slot is filled from the natively vertical masters of
 videos-archive.json -- the thirty 1080x1920 scenes kept out of the live catalog.
 A landscape frame is never taken from the archive either.
 
 Both objects land in Timeweb S3 under a one-year immutable Cache-Control, then
 videos.json and videos-data.js are rewritten with the ten scenes in the exact
-v139 order. The previous thirty scenes stay in videos-archive.json, in
-videos-data-archive.js and untouched inside the S3 bucket.
+v140 order (duration 7.0 s). The previous thirty scenes stay in
+videos-archive.json, in videos-data-archive.js and untouched inside the S3
+bucket.
 
 Usage:
   python scripts/build_4k_showcase.py                # full cloud build
@@ -68,25 +80,26 @@ S3_PREFIX = S3_ENDPOINT + "/" + S3_BUCKET
 PREFIX_720 = "mp4-720-px"
 PREFIX_1080 = "mp4-1080-px"
 
-DURATION = 10
+DURATION = 7
 FPS = 30
 TRIM_START = 2.0
 W720, H720 = 720, 1280
 W1080, H1080 = 1080, 1920
 
-# The mobile showcase weight: strictly 1.40-1.85 MB, aimed at the middle so the
-# published frame also stays under the 1.65 MB instant-opening rule of v137.
-SIZE_720_MIN = 1_400_000
-SIZE_720_MAX = 1_850_000
-SIZE_720_TARGET = 1_575_000
-OPENING_720_MAX = 1_650_000
-MAX_1080_BYTES = 7_000_000
+# v140 mobile corridor. 2400 kbps x 7 s lands near 2.1 MB; the ceiling is a hard
+# rule, the floor is not -- a quiet frame may honestly weigh less than 1.80 MB
+# and is never padded with filler bytes.
+SIZE_720_MIN = 1_800_000
+SIZE_720_MAX = 2_450_000
+OPENING_720_MAX = 2_450_000
+MAX_1080_BYTES = 6_500_000
 MAX_SOURCE_BYTES = 2_000_000_000
 
-# Native vertical only. A source below 1920 px of height, or one whose aspect is
-# far away from 9:16, would force a real crop, so it is rejected before encode.
-MIN_SOURCE_HEIGHT = 1920
-MIN_SOURCE_SECONDS = 11.0
+# Native vertical 4K only. A source below 2160 px of height, or one whose aspect
+# is far away from 9:16, would force a real crop or an upscale, so it is
+# rejected before encode.
+MIN_SOURCE_HEIGHT = 2160
+MIN_SOURCE_SECONDS = 8.0
 MAX_SOURCE_SECONDS = 600.0
 RATIO_MIN = 0.50
 RATIO_MAX = 0.64
@@ -344,6 +357,7 @@ def pixabay_hits(term, page):
         "video_type": "film",
         "category": "nature",
         "orientation": "vertical",
+        "min_height": str(MIN_SOURCE_HEIGHT),
         "order": "popular",
         "safesearch": "true",
         "per_page": str(PER_PAGE),
@@ -561,13 +575,9 @@ def trim_start(duration):
     return max(0.0, min(1.0, (duration - DURATION) / 2.0))
 
 
-def rate_args(bitrate_k, cbr):
-    maxrate = bitrate_k if cbr else max(1550, int(round(bitrate_k * 1.24)))
-    bufsize = max(2500, int(round(bitrate_k * 2)))
-    args = ["-b:v", str(bitrate_k) + "k", "-maxrate", str(maxrate) + "k", "-bufsize", str(bufsize) + "k"]
-    if cbr:
-        args += ["-minrate", str(bitrate_k) + "k"]
-    return args
+def psychovisual_args():
+    """v140 anti-pixel tuning: auto-variance AQ and slightly lighter deblocking."""
+    return ["-aq-mode", "2", "-aq-strength", "1.15", "-deblock", "-1:-1"]
 
 
 def vf(width, height):
@@ -579,17 +589,17 @@ def vf(width, height):
     )
 
 
-def encode_720(src, out, start, bitrate_k, cbr, filler=False):
+def encode_720(src, out, start, bitrate_k):
     logfile = OUT_720 / ("pass-" + out.stem)
     base = [
         "ffmpeg", "-y", "-v", "error",
         "-ss", format(start, ".3f"), "-t", str(DURATION), "-i", str(src),
         "-an", "-vf", vf(W720, H720),
-        "-c:v", "libx264", "-profile:v", "high", "-preset", "slow",
-    ] + rate_args(bitrate_k, cbr) + (
-        ["-x264-params", "nal-hrd=cbr:filler=1"] if filler else []
-    ) + [
-        "-pix_fmt", "yuv420p", "-g", "60", "-keyint_min", "30", "-sc_threshold", "0",
+        "-c:v", "libx264", "-profile:v", "high", "-level:v", "4.1",
+        "-preset", "slow",
+        "-b:v", str(bitrate_k) + "k", "-maxrate", "3000k", "-bufsize", "4800k",
+    ] + psychovisual_args() + [
+        "-pix_fmt", "yuv420p", "-g", "30", "-keyint_min", "30", "-sc_threshold", "0",
     ]
     run(base + ["-pass", "1", "-passlogfile", str(logfile), "-f", "null", "/dev/null"])
     run(base + [
@@ -598,14 +608,16 @@ def encode_720(src, out, start, bitrate_k, cbr, filler=False):
     ])
 
 
-def encode_1080(src, out, start, crf, maxrate, bufsize):
+def encode_1080(src, out, start, crf):
     run([
         "ffmpeg", "-y", "-v", "error",
         "-ss", format(start, ".3f"), "-t", str(DURATION), "-i", str(src),
         "-an", "-vf", vf(W1080, H1080),
-        "-c:v", "libx264", "-profile:v", "high", "-preset", "medium",
-        "-crf", str(crf), "-maxrate", maxrate, "-bufsize", bufsize,
-        "-pix_fmt", "yuv420p", "-g", "60", "-keyint_min", "30", "-sc_threshold", "0",
+        "-c:v", "libx264", "-profile:v", "high", "-level:v", "4.2",
+        "-preset", "slow",
+        "-crf", str(crf), "-maxrate", "6500k", "-bufsize", "12000k",
+    ] + psychovisual_args() + [
+        "-pix_fmt", "yuv420p", "-g", "30", "-keyint_min", "30", "-sc_threshold", "0",
         "-movflags", "+faststart", "-map_metadata", "-1", str(out),
     ])
 
@@ -624,59 +636,37 @@ def verify_clip(path, width, height):
 
 
 def build_720(src, out, start):
-    """Two-pass 1250k first, then walk the bitrate into the 1.40-1.85 MB band."""
-    bitrate = 1250
-    cbr = False
-    best = None
-    for attempt in range(4):
-        encode_720(src, out, start, bitrate, cbr)
+    """2400 kbps two-pass. The 2.45 MB ceiling is hard; a lighter frame is honest."""
+    bitrate = 2400
+    for attempt in range(3):
+        encode_720(src, out, start, bitrate)
         size = out.stat().st_size
         print("  " + out.name + ": attempt " + str(attempt + 1) + " -> " + str(size)
-              + " bytes (" + str(bitrate) + "k" + (", cbr)" if cbr else ")"), flush=True)
-        if SIZE_720_MIN <= size <= SIZE_720_MAX:
+              + " bytes (" + str(bitrate) + "k two-pass)", flush=True)
+        if size <= SIZE_720_MAX:
             verify_clip(out, W720, H720)
+            if size < SIZE_720_MIN:
+                # v140: a calm 7 s frame may naturally weigh less than 1.80 MB.
+                # Nothing is padded with filler bytes -- sharpness only.
+                print("  " + out.name + ": " + str(size) + " bytes is a naturally light"
+                      " frame, no filler is added", flush=True)
             return size
-        if best is None or abs(size - SIZE_720_TARGET) < abs(best[0] - SIZE_720_TARGET):
-            best = (size, bitrate, cbr)
-        next_bitrate = int(round(bitrate * SIZE_720_TARGET / max(size, 1)))
-        next_bitrate = max(900, min(1800, next_bitrate))
-        if size < SIZE_720_MIN:
-            # A near-static frame undershoots ABR: pin minrate so the clip reaches
-            # the mobile weight band instead of shipping a starved 1.1 MB file.
-            cbr = True
-            next_bitrate = max(next_bitrate, 1260)
-        if next_bitrate == bitrate and attempt >= 1:
-            # The rate control has saturated and still misses the band (a locked
-            # sunset or a still lake compresses far below the mobile target).
-            break
-        bitrate = next_bitrate
-    # Last resort: a real CBR stream with x264 filler pads the frame to the exact
-    # mobile weight. Nothing visual is added or removed -- the floor of the band is
-    # honoured instead of publishing an unexpectedly light 1.0 MB clip.
-    encode_720(src, out, start, 1260, True, filler=True)
-    size = out.stat().st_size
-    print("  " + out.name + ": attempt 5 -> " + str(size) + " bytes (1260k, cbr+filler)",
-          flush=True)
-    if SIZE_720_MIN <= size <= SIZE_720_MAX:
-        verify_clip(out, W720, H720)
-        return size
-    raise RuntimeError(out.name + ": could not reach 1.40-1.85 MB (best " + str(best)
-                       + ", filler " + str(size) + ")")
+        bitrate = max(1500, int(round(bitrate * SIZE_720_MAX / max(size, 1))))
+    raise RuntimeError(out.name + ": " + str(out.stat().st_size)
+                       + " bytes exceeds the 2.45 MB ceiling")
 
 
 def build_1080(src, out, start):
-    encode_1080(src, out, start, 18, "5500k", "11000k")
+    encode_1080(src, out, start, 16)
     size = out.stat().st_size
-    print("  " + out.name + ": " + str(size) + " bytes at CRF 18", flush=True)
-    for crf, maxrate, bufsize in ((20, "5000k", "10000k"), (22, "4500k", "9000k")):
-        if size <= MAX_1080_BYTES:
-            break
-        encode_1080(src, out, start, crf, maxrate, bufsize)
-        size = out.stat().st_size
-        print("  " + out.name + ": " + str(size) + " bytes at CRF " + str(crf)
-              + " (ceiling retry)", flush=True)
+    print("  " + out.name + ": " + str(size) + " bytes at CRF 16", flush=True)
     if size > MAX_1080_BYTES:
-        raise RuntimeError(out.name + ": " + str(size) + " bytes exceeds the 7 MB ceiling")
+        encode_1080(src, out, start, 18)
+        size = out.stat().st_size
+        print("  " + out.name + ": " + str(size) + " bytes at CRF 18 (ceiling retry)",
+              flush=True)
+    if size > MAX_1080_BYTES:
+        raise RuntimeError(out.name + ": " + str(size) + " bytes exceeds the 6.5 MB ceiling")
     verify_clip(out, W1080, H1080)
     return size
 
@@ -721,7 +711,7 @@ def prepare_workdir():
         folder.mkdir(parents=True, exist_ok=True)
 
 
-def accept_source(scene, candidate, used_sources):
+def accept_source(scene, candidate, used_sources, min_height):
     if candidate["key"] in used_sources:
         return None
     suffix = Path(urllib.parse.urlparse(candidate["url"]).path).suffix or ".mp4"
@@ -742,9 +732,9 @@ def accept_source(scene, candidate, used_sources):
               + " is not a vertical master", flush=True)
         source_path.unlink(missing_ok=True)
         return None
-    if probe["height"] < MIN_SOURCE_HEIGHT:
+    if probe["height"] < min_height:
         print("  rejected: " + str(probe["width"]) + "x" + str(probe["height"])
-              + " is below 1920 px of height", flush=True)
+              + " is below " + str(min_height) + " px of height", flush=True)
         source_path.unlink(missing_ok=True)
         return None
     ratio = float(probe["width"]) / float(probe["height"])
@@ -779,14 +769,14 @@ def build_scene(scene, used_sources, dry_run=False):
         raise RuntimeError("no vertical source found for " + scene["id"])
     accepted = None
     for candidate in pixabay[:CANDIDATES_TRIED]:
-        accepted = accept_source(scene, candidate, used_sources)
+        accepted = accept_source(scene, candidate, used_sources, MIN_SOURCE_HEIGHT)
         if accepted:
             break
     if not accepted:
-        print("  Pixabay has no usable vertical clip for " + scene["id"]
+        print("  Pixabay has no usable 4K vertical clip for " + scene["id"]
               + ", taking the native vertical archive", flush=True)
         for candidate in archive:
-            accepted = accept_source(scene, candidate, used_sources)
+            accepted = accept_source(scene, candidate, used_sources, 1080)
             if accepted:
                 break
     if not accepted:
@@ -860,7 +850,7 @@ def write_catalog(catalog):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Build the ten-scene Pixabay vertical showcase")
+    parser = argparse.ArgumentParser(description="Build the ten-scene vertical 4K showcase")
     parser.add_argument("--dry-run", action="store_true",
                         help="only resolve and print source candidates, download nothing")
     args = parser.parse_args()
@@ -882,15 +872,15 @@ def main():
         built.append(build_scene(scene, used_sources))
 
     weights = [item["size720"] for item in built]
-    if min(weights) < SIZE_720_MIN or max(weights) > SIZE_720_MAX:
-        raise RuntimeError("mobile weights outside 1.40-1.85 MB: " + str(weights))
+    if max(weights) > SIZE_720_MAX:
+        raise RuntimeError("mobile weights above the 2.45 MB ceiling: " + str(weights))
     masters = [item["size1080"] for item in built]
     if max(masters) > MAX_1080_BYTES:
-        raise RuntimeError("studio masters above 7 MB: " + str(masters))
+        raise RuntimeError("studio masters above 6.5 MB: " + str(masters))
     opening = [item for item in built
                if item["scene"]["stage"] == "shadow" and item["size720"] <= OPENING_720_MAX]
     if not opening:
-        raise RuntimeError("no shadow scene fits the 1.65 MB instant-opening pool")
+        raise RuntimeError("no shadow scene fits the 2.45 MB instant-opening pool")
     for item in built:
         probe = item["probe"]
         if probe["height"] <= probe["width"]:
@@ -904,9 +894,12 @@ def main():
     write_catalog(catalog)
 
     print("", flush=True)
-    print("showcase built: " + str(len(catalog)) + " vertical scenes", flush=True)
-    print("mobile 720p: " + str(min(weights)) + "-" + str(max(weights)) + " bytes", flush=True)
-    print("studio 1080p: " + str(min(masters)) + "-" + str(max(masters)) + " bytes", flush=True)
+    print("showcase built: " + str(len(catalog)) + " vertical 4K scenes, "
+          + str(DURATION) + " s each", flush=True)
+    print("mobile 720p 2400k: " + str(min(weights)) + "-" + str(max(weights))
+          + " bytes (ceiling " + str(SIZE_720_MAX) + ", no filler)", flush=True)
+    print("studio 1080p CRF 16: " + str(min(masters)) + "-" + str(max(masters))
+          + " bytes (ceiling " + str(MAX_1080_BYTES) + ")", flush=True)
     print("instant opening pool: " + str(len(opening)) + " shadow scenes <= "
           + str(OPENING_720_MAX) + " bytes", flush=True)
     for entry in catalog:

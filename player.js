@@ -92,14 +92,28 @@
     return /\/mp4-720(?:-[a-z0-9]+)?\//.test(String(src || '')) ? '720' : '1080';
   }
 
-  // v136: the stream level follows the device, not the momentary link. Phones
-  // and tablets always stream the compact 720p twin (1.37–2.15 MB, 720×1280),
-  // so a 4G session never stutters and the quality cannot jump mid-session;
-  // desktops always stream the full 1080p studio file.
+  // v140: the link decides the stream, not the device. Only a cellular link, a
+  // data-saver preference or a 2G/3G report is held on the crisp 2400 kbps
+  // 720x1280 twin; Wi-Fi, home internet, an iPhone on Wi-Fi and every desktop
+  // get the studio 1080x1920 CRF 16 master. No bandwidth guessing, no
+  // mid-session downgrade of an already loaded source.
+  function isCellularOrConstrained() {
+    try {
+      var connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+      if (!connection) return false;
+      if (connection.type === 'cellular') return true;
+      if (connection.saveData === true) return true;
+      var effectiveType = String(connection.effectiveType || '').toLowerCase();
+      return effectiveType === 'slow-2g' || effectiveType === '2g' || effectiveType === '3g';
+    } catch (_) {
+      return false;
+    }
+  }
+
   function sourceFor(clip) {
     if (!clip) return '';
-    if (mobile === true) return clip.url720 || clip.url1080 || clip.url || '';
-    return clip.url1080 || clip.url || '';
+    if (isCellularOrConstrained()) return clip.url720 || clip.url1080 || clip.url || '';
+    return clip.url1080 || clip.url720 || clip.url || '';
   }
 
   function other(video) {
@@ -410,6 +424,7 @@
     }
     return {
       mobile: mobile,
+      constrained: isCellularOrConstrained(),
       level: levelOf(currentSrc),
       rate: rate,
       clip: (currentClip && currentClip.id) || null,

@@ -2887,15 +2887,15 @@ Do not moralize, over-comfort, or ask questions. Return only the line.`;
   function buildPathPlan() {
     return buildSessionPlan();
   }
-  // v134/v137: the opening frame must be ready before the entry swipe ends. On a
-  // phone the session streams the light 720p twin, so the pool is picked by the
-  // weight the device will really download — size720 <= 1.65 MB, i.e. the
-  // lightest 1.37–1.60 MB scenes — and the first frame opens instantly even on a
-  // weak 4G link. Desktops keep the 1080p rule (<= 7.5 MB). One of up to five
-  // light scenes is chosen at random on every plan, so even Incognito never sees
-  // a repeated opening, while the other 29 frames stay fully shuffled.
+  // v134/v137/v140: the opening frame must be ready before the entry swipe ends.
+  // A cellular session streams the 2400 kbps 720p twin (~2.1 MB), so the pool is
+  // picked by the weight the device will really download — size720 <= 2.45 MB,
+  // which now covers every 7-second scene — and the first frame opens instantly
+  // even on a weak 4G link. Wi-Fi and desktops keep the 1080p rule (<= 7.5 MB).
+  // One of up to five light scenes is chosen at random on every plan, so even
+  // Incognito never sees a repeated opening, while the other frames are shuffled.
   const OPENING_LIGHT_MAX_BYTES = 7_500_000;
-  const OPENING_MOBILE_MAX_BYTES = 1_650_000;
+  const OPENING_MOBILE_MAX_BYTES = 2_450_000;
   const OPENING_LIGHT_MAX_COUNT = 5;
   function instantOpeningPool() {
     const shadowStage = stageFor(1);

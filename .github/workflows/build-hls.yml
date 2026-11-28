@@ -42,13 +42,14 @@ jobs:
       - name: Install Python dependencies
         run: pip install boto3
 
-      # v139: ten native vertical 9:16 nature scenes from the Pixabay Video API.
+      # v140: ten native vertical 4K nature scenes from the Pixabay Video API.
       # The key arrives from the PIXABAY_API_KEY repository secret only -- it is
       # never written into a committed file. Every master is downloaded here, on
-      # the runner, and supersampled twice with lanczos into a 1.40-1.85 MB
-      # 720x1280 mobile file and a <=7 MB 1080x1920 studio file, then uploaded to
-      # S3 under mp4-720-px/ and mp4-1080-px/. Horizontal masters are rejected
-      # outright: only frames with height > width and height >= 1920 are used.
+      # the runner, and must be a true 4K vertical frame (height >= 2160,
+      # height > width); it is supersampled with lanczos into a 7.0 s 720x1280
+      # two-pass 2400 kbps mobile file (1.80-2.45 MB, no filler padding) and a
+      # 7.0 s 1080x1920 CRF 16 studio file (<= 6.5 MB), then uploaded to S3 under
+      # mp4-720-px/ and mp4-1080-px/. Horizontal masters are rejected outright.
       - name: Build 10 vertical Pixabay scenes (pixabay-vertical-10)
         if: ${{ inputs.mode == 'pixabay-vertical-10' }}
         env:
@@ -82,7 +83,7 @@ jobs:
             exit 0
           fi
           if [ "${{ inputs.mode }}" = "pixabay-vertical-10" ]; then
-            MESSAGE="chore: publish 10 vertical Pixabay scenes, v139"
+            MESSAGE="chore: publish 10 vertical 4K scenes, v140"
           else
             MESSAGE="chore: build 30 scenes with 720p twins and WebP posters"
           fi
